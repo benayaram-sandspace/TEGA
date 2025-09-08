@@ -41,10 +41,7 @@ class AdminsManagementPage extends StatelessWidget {
                   const SizedBox(height: 8),
                   Text(
                     'This page will be implemented with real data',
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: Colors.grey[500],
-                    ),
+                    style: TextStyle(fontSize: 16, color: Colors.grey[500]),
                   ),
                 ],
               ),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:tega/pages/admin_dashboard.dart';
 
 // Compose Notification Page
 class ComposeNotificationPage extends StatefulWidget {
@@ -396,7 +397,11 @@ class NotificationManagerPage extends StatelessWidget {
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.black),
           onPressed: () {
-            Navigator.pop(context); // Navigate back to previous page
+            Navigator.pushAndRemoveUntil(
+              context,
+              MaterialPageRoute(builder: (context) => const AdminDashboard()),
+              (route) => false,
+            );
           },
         ),
         title: const Text(

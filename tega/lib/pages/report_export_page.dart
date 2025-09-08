@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:tega/pages/admin_dashboard.dart';
+import 'package:tega/pages/college_report_page.dart';
+import 'package:tega/pages/custom_report_builder.dart';
+import 'package:tega/pages/student_report_builder.dart';
 
 // Reports & Export Center Page
 class ReportsExportCenterPage extends StatelessWidget {
@@ -11,6 +15,7 @@ class ReportsExportCenterPage extends StatelessWidget {
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
+        centerTitle: true,
         title: const Text(
           'Reports & Export Center',
           style: TextStyle(
@@ -19,17 +24,18 @@ class ReportsExportCenterPage extends StatelessWidget {
             fontWeight: FontWeight.w600,
           ),
         ),
-        centerTitle: true,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.settings, color: Colors.black54),
-            onPressed: () {
-              // Handle settings
-              _showSettings(context);
-            },
-          ),
-        ],
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          onPressed: () {
+            Navigator.pushAndRemoveUntil(
+              context,
+              MaterialPageRoute(builder: (context) => const AdminDashboard()),
+              (route) => false,
+            );
+          },
+        ),
       ),
+
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
@@ -88,29 +94,28 @@ class ReportsExportCenterPage extends StatelessWidget {
   }
 
   void _generateCollegeReport(BuildContext context) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Generating college-wise report...'),
-        backgroundColor: Color(0xFF4B3FB5),
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const ConfigureCollegeReportPage(),
       ),
     );
   }
 
   void _generateStudentReport(BuildContext context) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Generating student-wise report...'),
-        backgroundColor: Color(0xFF4B3FB5),
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const ConfigureStudentReportPage(),
       ),
     );
   }
 
   void _openCustomReportBuilder(BuildContext context) {
-    // Navigate to custom report builder page
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Opening custom report builder...'),
-        backgroundColor: Color(0xFF4B3FB5),
+    Navigator.of(context, rootNavigator: true).push(
+      MaterialPageRoute(
+        builder: (context) => const CustomReportBuilderPage(),
+        fullscreenDialog: false, // Ensure it's not treated as a dialog
       ),
     );
   }
@@ -143,7 +148,7 @@ class ReportCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFF4B3FB5),
+        color: const Color(0xFF21209C),
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(

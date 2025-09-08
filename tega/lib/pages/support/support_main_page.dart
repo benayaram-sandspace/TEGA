@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:tega/pages/admin_dashboard.dart';
 import '../../constants/app_colors.dart';
 import '../../services/support_service.dart';
 import '../../models/support_models.dart' as support_models;
@@ -27,7 +28,7 @@ class _SupportMainPageState extends State<SupportMainPage> {
     try {
       final statistics = await _supportService.getStatistics();
       final recentFeedback = await _supportService.getRecentFeedback(limit: 3);
-      
+
       setState(() {
         _statistics = statistics;
         _recentFeedback = recentFeedback;
@@ -54,19 +55,26 @@ class _SupportMainPageState extends State<SupportMainPage> {
         title: const Text(
           'Support & Feedback',
           style: TextStyle(
-            color: AppColors.textPrimary,
             fontWeight: FontWeight.bold,
+            color: AppColors.textPrimary,
           ),
         ),
         backgroundColor: AppColors.pureWhite,
         elevation: 0,
-        iconTheme: const IconThemeData(color: AppColors.textPrimary),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          onPressed: () {
+            Navigator.pushAndRemoveUntil(
+              context,
+              MaterialPageRoute(builder: (context) => const AdminDashboard()),
+              (route) => false,
+            );
+          },
+        ),
       ),
       body: _isLoading
           ? const Center(
-              child: CircularProgressIndicator(
-                color: AppColors.primary,
-              ),
+              child: CircularProgressIndicator(color: AppColors.primary),
             )
           : SingleChildScrollView(
               padding: const EdgeInsets.all(20),
@@ -175,11 +183,7 @@ class _SupportMainPageState extends State<SupportMainPage> {
                   color: color.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: Icon(
-                  icon,
-                  color: color,
-                  size: 20,
-                ),
+                child: Icon(icon, color: color, size: 20),
               ),
               const Spacer(),
             ],

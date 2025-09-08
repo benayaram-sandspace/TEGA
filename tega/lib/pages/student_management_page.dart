@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:tega/pages/admin_dashboard.dart';
 import '../constants/app_colors.dart';
 import '../models/student.dart';
 import 'flagged_users_page.dart';
@@ -46,9 +47,15 @@ class _StudentManagementPageState extends State<StudentManagementPage> {
   void _applyFilters() {
     setState(() {
       _filteredStudents = _students.where((student) {
-        bool matchesSearch = student.name.toLowerCase().contains(_searchController.text.toLowerCase()) ||
-                           student.college.toLowerCase().contains(_searchController.text.toLowerCase());
-        bool matchesStatus = _selectedStatus == 'All' || student.status == _selectedStatus;
+        bool matchesSearch =
+            student.name.toLowerCase().contains(
+              _searchController.text.toLowerCase(),
+            ) ||
+            student.college.toLowerCase().contains(
+              _searchController.text.toLowerCase(),
+            );
+        bool matchesStatus =
+            _selectedStatus == 'All' || student.status == _selectedStatus;
         return matchesSearch && matchesStatus;
       }).toList();
     });
@@ -62,8 +69,14 @@ class _StudentManagementPageState extends State<StudentManagementPage> {
         backgroundColor: AppColors.surface,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
-          onPressed: () => Navigator.pop(context),
+          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          onPressed: () {
+            Navigator.pushAndRemoveUntil(
+              context,
+              MaterialPageRoute(builder: (context) => const AdminDashboard()),
+              (route) => false,
+            );
+          },
         ),
         title: const Text(
           'Student Management',
@@ -109,7 +122,9 @@ class _StudentManagementPageState extends State<StudentManagementPage> {
                 onPressed: () {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (context) => const FlaggedUsersPage()),
+                    MaterialPageRoute(
+                      builder: (context) => const FlaggedUsersPage(),
+                    ),
                   );
                 },
                 style: ElevatedButton.styleFrom(
@@ -133,14 +148,20 @@ class _StudentManagementPageState extends State<StudentManagementPage> {
                 decoration: InputDecoration(
                   hintText: 'Name, Email, or Student ID',
                   hintStyle: TextStyle(color: AppColors.textSecondary),
-                  prefixIcon: Icon(Icons.search, color: AppColors.textSecondary),
+                  prefixIcon: Icon(
+                    Icons.search,
+                    color: AppColors.textSecondary,
+                  ),
                   filled: true,
                   fillColor: AppColors.surface,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
                     borderSide: BorderSide.none,
                   ),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
                 ),
               ),
             ),
@@ -160,19 +181,29 @@ class _StudentManagementPageState extends State<StudentManagementPage> {
             Row(
               children: [
                 Expanded(
-                  child: _buildDropdown('College', _selectedCollege, ['All', 'College A', 'College B', 'College C'], (value) {
-                    setState(() {
-                      _selectedCollege = value!;
-                    });
-                  }),
+                  child: _buildDropdown(
+                    'College',
+                    _selectedCollege,
+                    ['All', 'College A', 'College B', 'College C'],
+                    (value) {
+                      setState(() {
+                        _selectedCollege = value!;
+                      });
+                    },
+                  ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
-                  child: _buildDropdown('Branch', _selectedBranch, ['All', 'B.Tech CSE', 'B.Tech IT', 'B.Com', 'BBA', 'B.Sc'], (value) {
-                    setState(() {
-                      _selectedBranch = value!;
-                    });
-                  }),
+                  child: _buildDropdown(
+                    'Branch',
+                    _selectedBranch,
+                    ['All', 'B.Tech CSE', 'B.Tech IT', 'B.Com', 'BBA', 'B.Sc'],
+                    (value) {
+                      setState(() {
+                        _selectedBranch = value!;
+                      });
+                    },
+                  ),
                 ),
               ],
             ),
@@ -260,7 +291,12 @@ class _StudentManagementPageState extends State<StudentManagementPage> {
     );
   }
 
-  Widget _buildDropdown(String label, String value, List<String> items, Function(String?) onChanged) {
+  Widget _buildDropdown(
+    String label,
+    String value,
+    List<String> items,
+    Function(String?) onChanged,
+  ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -312,7 +348,9 @@ class _StudentManagementPageState extends State<StudentManagementPage> {
         },
         style: ElevatedButton.styleFrom(
           backgroundColor: isSelected ? AppColors.primary : AppColors.pureWhite,
-          foregroundColor: isSelected ? AppColors.pureWhite : AppColors.textPrimary,
+          foregroundColor: isSelected
+              ? AppColors.pureWhite
+              : AppColors.textPrimary,
           elevation: 0,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(8),
@@ -377,4 +415,3 @@ class _StudentManagementPageState extends State<StudentManagementPage> {
     );
   }
 }
-
