@@ -33,7 +33,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
     const AdminManagementPage(),
     const SettingsPage(),
     const NotificationManagerPage(),
-    const ReportExportPage(),
+    const ReportsExportCenterPage(),
   ];
 
   @override
@@ -45,11 +45,11 @@ class _AdminDashboardState extends State<AdminDashboard> {
           duration: const Duration(milliseconds: 200),
           child: IconButton(
             key: ValueKey(_isSidebarOpen),
-                                 icon: Icon(
-                       _isSidebarOpen ? Icons.close : Icons.menu,
-                       color: AppColors.pureWhite,
-                       size: 24,
-                     ),
+            icon: Icon(
+              _isSidebarOpen ? Icons.close : Icons.menu,
+              color: AppColors.pureWhite,
+              size: 24,
+            ),
             onPressed: () {
               setState(() {
                 _isSidebarOpen = !_isSidebarOpen;
@@ -91,10 +91,16 @@ class _AdminDashboardState extends State<AdminDashboard> {
                   children: [
                     Icon(
                       Icons.admin_panel_settings,
-                      color: _authService.getRoleColor(_authService.currentUserRole!),
+                      color: _authService.getRoleColor(
+                        _authService.currentUserRole!,
+                      ),
                     ),
                     const SizedBox(width: 8),
-                    Text(_authService.getRoleDisplayName(_authService.currentUserRole!)),
+                    Text(
+                      _authService.getRoleDisplayName(
+                        _authService.currentUserRole!,
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -117,7 +123,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
         children: [
           // Main Content
           _pages[_selectedIndex],
-          
+
           // Overlay Background
           if (_isSidebarOpen)
             AnimatedOpacity(
@@ -129,12 +135,10 @@ class _AdminDashboardState extends State<AdminDashboard> {
                     _isSidebarOpen = false;
                   });
                 },
-                child: Container(
-                  color: Colors.black.withValues(alpha: 0.5),
-                ),
+                child: Container(color: Colors.black.withValues(alpha: 0.5)),
               ),
             ),
-          
+
           // Sidebar
           AnimatedPositioned(
             duration: const Duration(milliseconds: 300),
@@ -143,8 +147,8 @@ class _AdminDashboardState extends State<AdminDashboard> {
             top: 0,
             bottom: 0,
             width: 250,
-                                 child: Container(
-                       color: AppColors.surface,
+            child: Container(
+              color: AppColors.surface,
               child: Column(
                 children: [
                   // Navigation Menu
@@ -227,9 +231,9 @@ class _AdminDashboardState extends State<AdminDashboard> {
           duration: const Duration(milliseconds: 200),
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-                                 color: isSelected
-                         ? AppColors.primary.withValues(alpha: 0.1)
-                         : Colors.transparent,
+            color: isSelected
+                ? AppColors.primary.withValues(alpha: 0.1)
+                : Colors.transparent,
             borderRadius: BorderRadius.circular(8),
           ),
           child: Icon(
@@ -244,17 +248,11 @@ class _AdminDashboardState extends State<AdminDashboard> {
             fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
             fontSize: 14,
           ),
-          child: Text(
-            title,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-          ),
+          child: Text(title, maxLines: 2, overflow: TextOverflow.ellipsis),
         ),
         selected: isSelected,
-                         selectedTileColor: AppColors.primary.withValues(alpha: 0.1),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(8),
-        ),
+        selectedTileColor: AppColors.primary.withValues(alpha: 0.1),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         onTap: () {
           setState(() {
             _selectedIndex = index;
@@ -281,10 +279,9 @@ class _AdminDashboardState extends State<AdminDashboard> {
               Navigator.of(context).pop();
               await _authService.logout();
               if (mounted) {
-                Navigator.of(context).pushNamedAndRemoveUntil(
-                  '/login',
-                  (route) => false,
-                );
+                Navigator.of(
+                  context,
+                ).pushNamedAndRemoveUntil('/login', (route) => false);
               }
             },
             child: const Text('Logout', style: TextStyle(color: Colors.red)),
@@ -307,11 +304,11 @@ class DashboardHome extends StatelessWidget {
         children: [
           const Text(
             'Dashboard Overview',
-                                 style: TextStyle(
-                       fontSize: 28,
-                       fontWeight: FontWeight.bold,
-                       color: AppColors.textPrimary,
-                     ),
+            style: TextStyle(
+              fontSize: 28,
+              fontWeight: FontWeight.bold,
+              color: AppColors.textPrimary,
+            ),
           ),
           const SizedBox(height: 24),
           Expanded(
@@ -319,27 +316,27 @@ class DashboardHome extends StatelessWidget {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                                             Icon(
-                             Icons.dashboard,
-                             size: 64,
-                             color: AppColors.textSecondary,
-                           ),
+                  Icon(
+                    Icons.dashboard,
+                    size: 64,
+                    color: AppColors.textSecondary,
+                  ),
                   const SizedBox(height: 16),
                   Text(
                     'Welcome to TEGA Admin Dashboard',
-                                         style: TextStyle(
-                       fontSize: 24,
-                       fontWeight: FontWeight.bold,
-                       color: AppColors.textSecondary,
-                     ),
+                    style: TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.textSecondary,
+                    ),
                   ),
                   const SizedBox(height: 8),
                   Text(
                     'Select a menu item from the sidebar to get started',
-                                         style: TextStyle(
-                       fontSize: 16,
-                       color: AppColors.textSecondary,
-                     ),
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: AppColors.textSecondary,
+                    ),
                   ),
                 ],
               ),
