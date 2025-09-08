@@ -1,0 +1,182 @@
+{
+  "statistics": {
+    "totalTickets": 45,
+    "openTickets": 12,
+    "inProgressTickets": 8,
+    "resolvedTickets": 25,
+    "totalFeedback": 28,
+    "newFeedback": 5,
+    "inProgressFeedback": 7,
+    "completedFeedback": 16,
+    "averageResponseTime": 2.5,
+    "customerSatisfaction": 4.2
+  },
+  "tickets": [
+    {
+      "id": "TKT-001",
+      "title": "Login Issue",
+      "description": "User unable to login with correct credentials",
+      "status": "open",
+      "priority": "high",
+      "category": "technical",
+      "userId": "user001",
+      "userName": "John Doe",
+      "userEmail": "john@example.com",
+      "createdAt": "2024-01-15T10:30:00Z",
+      "updatedAt": "2024-01-15T14:20:00Z",
+      "tags": ["login", "authentication", "urgent"],
+      "messages": [
+        {
+          "id": "MSG-001",
+          "ticketId": "TKT-001",
+          "senderId": "user001",
+          "senderName": "John Doe",
+          "senderType": "user",
+          "content": "I'm having trouble logging into my account. I've tried resetting my password, but I'm not receiving the reset email.",
+          "timestamp": "2024-01-15T10:30:00Z",
+          "attachments": [],
+          "isInternal": false
+        },
+        {
+          "id": "MSG-002",
+          "ticketId": "TKT-001",
+          "senderId": "support001",
+          "senderName": "Customer Support",
+          "senderType": "support",
+          "content": "Hi there, thanks for reaching out. Can you please provide more details about the issue you're experiencing?",
+          "timestamp": "2024-01-15T11:00:00Z",
+          "attachments": [],
+          "isInternal": false
+        },
+        {
+          "id": "MSG-003",
+          "ticketId": "TKT-001",
+          "senderId": "support001",
+          "senderName": "Customer Support",
+          "senderType": "support",
+          "content": "I see. Let me check our system for any issues with the email service. In the meantime, could you provide the email address associated with your account?",
+          "timestamp": "2024-01-15T14:20:00Z",
+          "attachments": [],
+          "isInternal": false
+        }
+      ]
+    },
+    {
+      "id": "TKT-002",
+      "title": "Feature Request: Dark Mode",
+      "description": "User requesting dark mode functionality",
+      "status": "in_progress",
+      "priority": "medium",
+      "category": "feature_request",
+      "userId": "user002",
+      "userName": "Alex Johnson",
+      "userEmail": "alex@example.com",
+      "createdAt": "2024-01-14T09:15:00Z",
+      "updatedAt": "2024-01-15T16:45:00Z",
+      "tags": ["dark-mode", "ui", "feature"],
+      "messages": [
+        {
+          "id": "MSG-004",
+          "ticketId": "TKT-002",
+          "senderId": "user002",
+          "senderName": "Alex Johnson",
+          "senderType": "user",
+          "content": "Would love to see a dark mode option in the app. It would be great for night usage.",
+          "timestamp": "2024-01-14T09:15:00Z",
+          "attachments": [],
+          "isInternal": false
+        }
+      ]
+    }
+  ],
+  "feedback": [
+    {
+      "id": "FB-001",
+      "title": "Checkout Bug",
+      "description": "User reported a bug in the checkout process",
+      "type": "bug_report",
+      "status": "in_progress",
+      "userId": "user003",
+      "userName": "Sarah Wilson",
+      "createdAt": "2024-01-15T08:20:00Z",
+      "updatedAt": "2024-01-15T12:30:00Z",
+      "tags": ["checkout", "payment", "bug"],
+      "priority": 2
+    },
+    {
+      "id": "FB-002",
+      "title": "Dark Mode Request",
+      "description": "User suggested adding a dark mode option",
+      "type": "feature_request",
+      "status": "new",
+      "userId": "user004",
+      "userName": "Alex Chen",
+      "createdAt": "2024-01-15T14:10:00Z",
+      "tags": ["dark-mode", "ui", "feature"],
+      "priority": 3
+    },
+    {
+      "id": "FB-003",
+      "title": "Positive Feedback",
+      "description": "User praised the app's intuitive design",
+      "type": "positive",
+      "status": "completed",
+      "userId": "user005",
+      "userName": "Emily Davis",
+      "createdAt": "2024-01-14T16:45:00Z",
+      "updatedAt": "2024-01-15T10:00:00Z",
+      "tags": ["design", "positive", "ui"],
+      "priority": 1
+    },
+    {
+      "id": "FB-004",
+      "title": "Feature Request: Offline Mode",
+      "description": "User requesting offline functionality",
+      "type": "feature_request",
+      "status": "in_progress",
+      "userId": "user006",
+      "userName": "Emily Rodriguez",
+      "createdAt": "2024-01-13T11:30:00Z",
+      "updatedAt": "2024-01-15T09:15:00Z",
+      "tags": ["offline", "feature", "sync"],
+      "priority": 2
+    },
+    {
+      "id": "FB-005",
+      "title": "Bug Report: App Crashes on Startup",
+      "description": "App crashes when opening on certain devices",
+      "type": "bug_report",
+      "status": "in_progress",
+      "userId": "user007",
+      "userName": "Sarah Thompson",
+      "createdAt": "2024-01-12T15:20:00Z",
+      "updatedAt": "2024-01-15T13:45:00Z",
+      "tags": ["crash", "startup", "bug"],
+      "priority": 1
+    },
+    {
+      "id": "FB-006",
+      "title": "Improvement Suggestion: UI/UX",
+      "description": "Suggestions for improving user interface",
+      "type": "improvement",
+      "status": "new",
+      "userId": "user008",
+      "userName": "David Kim",
+      "createdAt": "2024-01-15T10:15:00Z",
+      "tags": ["ui", "ux", "improvement"],
+      "priority": 3
+    },
+    {
+      "id": "FB-007",
+      "title": "Bug Report: Incorrect Data",
+      "description": "Data not displaying correctly in reports",
+      "type": "bug_report",
+      "status": "new",
+      "userId": "user009",
+      "userName": "Michael Brown",
+      "createdAt": "2024-01-15T13:30:00Z",
+      "tags": ["data", "reports", "bug"],
+      "priority": 2
+    }
+  ]
+}

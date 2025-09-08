@@ -1,0 +1,20 @@
+{
+    "configurations": [
+        
+        {
+            "name": "tega (Flutter)",
+            "program": "lib/main.dart",
+            "cwd": "tega",
+            "request": "launch",
+            "type": "dart"
+        },
+        {
+            "name": "tega (Flutter CPH2325)",
+            "program": "lib/main.dart",
+            "cwd": "tega",
+            "deviceId": "JZYTLFYSFY7DAMOF",
+            "request": "launch",
+            "type": "dart"
+        }
+    ]
+}

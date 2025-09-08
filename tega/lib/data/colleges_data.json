@@ -1,0 +1,353 @@
+{
+  "colleges": [
+    {
+      "id": "AUCEV",
+      "name": "Andhra University College of Engineering",
+      "city": "Visakhapatnam",
+      "state": "Andhra Pradesh",
+      "address": "Opposite AU Main Gate, Visakhapatnam, Andhra Pradesh 530003",
+      "status": "Active",
+      "totalStudents": 1250,
+      "dailyActiveStudents": 120,
+      "avgSkillScore": 78,
+      "avgInterviewPractices": 3.2,
+      "primaryAdmin": {
+        "name": "Dr. Lakshmi Devi",
+        "email": "lakshmi.devi@andhrauniversity.ac.in",
+        "phone": "+91 98765 43210"
+      },
+      "admins": [
+        {
+          "id": "admin_001",
+          "name": "Ruth",
+          "email": "ruth@andhrauniversity.ac.in",
+          "phone": "+91 98765 43211",
+          "status": "Active",
+          "role": "College Admin"
+        },
+        {
+          "id": "admin_002",
+          "name": "Alen Walker",
+          "email": "alen.walker@andhrauniversity.ac.in",
+          "phone": "+91 98765 43212",
+          "status": "Active",
+          "role": "College Admin"
+        }
+      ],
+      "students": [
+        {
+          "id": "student_001",
+          "name": "Ramesh",
+          "course": "Computer Science",
+          "year": 2024,
+          "email": "ramesh@andhrauniversity.ac.in",
+          "phone": "+91 98765 43220",
+          "skillScore": 85,
+          "interviewPractices": 4
+        },
+        {
+          "id": "student_002",
+          "name": "Lavanya",
+          "course": "Artificial Intelligence",
+          "year": 2025,
+          "email": "lavanya@andhrauniversity.ac.in",
+          "phone": "+91 98765 43221",
+          "skillScore": 92,
+          "interviewPractices": 5
+        }
+      ]
+    },
+    {
+      "id": "OU",
+      "name": "Osmania University",
+      "city": "Hyderabad",
+      "state": "Telangana",
+      "address": "Osmania University Campus, Hyderabad, Telangana 500007",
+      "status": "Active",
+      "totalStudents": 2100,
+      "dailyActiveStudents": 180,
+      "avgSkillScore": 82,
+      "avgInterviewPractices": 3.8,
+      "primaryAdmin": {
+        "name": "Dr. Rajesh Kumar",
+        "email": "rajesh.kumar@osmania.ac.in",
+        "phone": "+91 98765 43230"
+      },
+      "admins": [
+        {
+          "id": "admin_003",
+          "name": "Sophia",
+          "email": "sophia@osmania.ac.in",
+          "phone": "+91 98765 43231",
+          "status": "Inactive",
+          "role": "College Admin"
+        },
+        {
+          "id": "admin_004",
+          "name": "David",
+          "email": "david@osmania.ac.in",
+          "phone": "+91 98765 43232",
+          "status": "Active",
+          "role": "College Admin"
+        }
+      ],
+      "students": [
+        {
+          "id": "student_003",
+          "name": "Suresh",
+          "course": "Data Science",
+          "year": 2023,
+          "email": "suresh@osmania.ac.in",
+          "phone": "+91 98765 43240",
+          "skillScore": 78,
+          "interviewPractices": 3
+        },
+        {
+          "id": "student_004",
+          "name": "Kavya",
+          "course": "Cyber Security",
+          "year": 2026,
+          "email": "kavya@osmania.ac.in",
+          "phone": "+91 98765 43241",
+          "skillScore": 88,
+          "interviewPractices": 4
+        }
+      ]
+    },
+    {
+      "id": "AU",
+      "name": "Anna University",
+      "city": "Chennai",
+      "state": "Tamil Nadu",
+      "address": "Anna University Campus, Chennai, Tamil Nadu 600025",
+      "status": "Active",
+      "totalStudents": 1800,
+      "dailyActiveStudents": 150,
+      "avgSkillScore": 80,
+      "avgInterviewPractices": 3.5,
+      "primaryAdmin": {
+        "name": "Dr. Priya Sharma",
+        "email": "priya.sharma@annauniv.edu",
+        "phone": "+91 98765 43250"
+      },
+      "admins": [
+        {
+          "id": "admin_005",
+          "name": "Nikitha",
+          "email": "nikitha@annauniv.edu",
+          "phone": "+91 98765 43251",
+          "status": "Active",
+          "role": "College Admin"
+        }
+      ],
+      "students": [
+        {
+          "id": "student_005",
+          "name": "Nagesh",
+          "course": "Artificial Intelligence",
+          "year": 2024,
+          "email": "nagesh@annauniv.edu",
+          "phone": "+91 98765 43260",
+          "skillScore": 90,
+          "interviewPractices": 5
+        },
+        {
+          "id": "student_006",
+          "name": "Isabella",
+          "course": "Artificial Intelligence",
+          "year": 2025,
+          "email": "isabella@annauniv.edu",
+          "phone": "+91 98765 43261",
+          "skillScore": 85,
+          "interviewPractices": 4
+        }
+      ]
+    },
+    {
+      "id": "VTU",
+      "name": "Visvesvaraya Technological University",
+      "city": "Bangalore",
+      "state": "Karnataka",
+      "address": "VTU Campus, Bangalore, Karnataka 560018",
+      "status": "Active",
+      "totalStudents": 1950,
+      "dailyActiveStudents": 165,
+      "avgSkillScore": 79,
+      "avgInterviewPractices": 3.3,
+      "primaryAdmin": {
+        "name": "Dr. Suresh Reddy",
+        "email": "suresh.reddy@vtu.ac.in",
+        "phone": "+91 98765 43270"
+      },
+      "admins": [],
+      "students": [
+        {
+          "id": "student_007",
+          "name": "John",
+          "course": "Data Science",
+          "year": 2023,
+          "email": "john@vtu.ac.in",
+          "phone": "+91 98765 43280",
+          "skillScore": 82,
+          "interviewPractices": 3
+        },
+        {
+          "id": "student_008",
+          "name": "Arundathi",
+          "course": "Artificial Intelligence",
+          "year": 2026,
+          "email": "arundathi@vtu.ac.in",
+          "phone": "+91 98765 43281",
+          "skillScore": 87,
+          "interviewPractices": 4
+        }
+      ]
+    },
+    {
+      "id": "DU",
+      "name": "Delhi University",
+      "city": "Delhi",
+      "state": "Delhi",
+      "address": "Delhi University Campus, Delhi 110007",
+      "status": "Active",
+      "totalStudents": 2200,
+      "dailyActiveStudents": 200,
+      "avgSkillScore": 84,
+      "avgInterviewPractices": 3.9,
+      "primaryAdmin": {
+        "name": "Dr. Amit Kumar",
+        "email": "amit.kumar@du.ac.in",
+        "phone": "+91 98765 43290"
+      },
+      "admins": [],
+      "students": [
+        {
+          "id": "student_009",
+          "name": "David",
+          "course": "Machine Learning",
+          "year": 2024,
+          "email": "david@du.ac.in",
+          "phone": "+91 98765 43300",
+          "skillScore": 89,
+          "interviewPractices": 5
+        }
+      ]
+    },
+    {
+      "id": "MU",
+      "name": "Mumbai University",
+      "city": "Mumbai",
+      "state": "Maharashtra",
+      "address": "Mumbai University Campus, Mumbai, Maharashtra 400001",
+      "status": "Active",
+      "totalStudents": 1750,
+      "dailyActiveStudents": 140,
+      "avgSkillScore": 81,
+      "avgInterviewPractices": 3.6,
+      "primaryAdmin": {
+        "name": "Dr. Sunita Patel",
+        "email": "sunita.patel@mu.ac.in",
+        "phone": "+91 98765 43310"
+      },
+      "admins": [],
+      "students": []
+    },
+    {
+      "id": "JU",
+      "name": "Jadavpur University",
+      "city": "Kolkata",
+      "state": "West Bengal",
+      "address": "Jadavpur University Campus, Kolkata, West Bengal 700032",
+      "status": "Active",
+      "totalStudents": 1600,
+      "dailyActiveStudents": 130,
+      "avgSkillScore": 83,
+      "avgInterviewPractices": 3.7,
+      "primaryAdmin": {
+        "name": "Dr. Anil Banerjee",
+        "email": "anil.banerjee@jadavpuruniversity.in",
+        "phone": "+91 98765 43320"
+      },
+      "admins": [],
+      "students": []
+    },
+    {
+      "id": "SPPU",
+      "name": "Savitribai Phule Pune University",
+      "city": "Pune",
+      "state": "Maharashtra",
+      "address": "SPPU Campus, Pune, Maharashtra 411007",
+      "status": "Active",
+      "totalStudents": 1900,
+      "dailyActiveStudents": 160,
+      "avgSkillScore": 80,
+      "avgInterviewPractices": 3.4,
+      "primaryAdmin": {
+        "name": "Dr. Rajesh Joshi",
+        "email": "rajesh.joshi@unipune.ac.in",
+        "phone": "+91 98765 43330"
+      },
+      "admins": [],
+      "students": []
+    },
+    {
+      "id": "UR",
+      "name": "University of Rajasthan",
+      "city": "Jaipur",
+      "state": "Rajasthan",
+      "address": "University of Rajasthan Campus, Jaipur, Rajasthan 302004",
+      "status": "Active",
+      "totalStudents": 1450,
+      "dailyActiveStudents": 120,
+      "avgSkillScore": 77,
+      "avgInterviewPractices": 3.1,
+      "primaryAdmin": {
+        "name": "Dr. Meera Singh",
+        "email": "meera.singh@uniraj.ac.in",
+        "phone": "+91 98765 43340"
+      },
+      "admins": [],
+      "students": []
+    },
+    {
+      "id": "LU",
+      "name": "Lucknow University",
+      "city": "Lucknow",
+      "state": "Uttar Pradesh",
+      "address": "Lucknow University Campus, Lucknow, Uttar Pradesh 226007",
+      "status": "Active",
+      "totalStudents": 1350,
+      "dailyActiveStudents": 110,
+      "avgSkillScore": 76,
+      "avgInterviewPractices": 3.0,
+      "primaryAdmin": {
+        "name": "Dr. Vikram Singh",
+        "email": "vikram.singh@lkouniv.ac.in",
+        "phone": "+91 98765 43350"
+      },
+      "admins": [],
+      "students": []
+    },
+    {
+      "id": "GU",
+      "name": "Gujarat University",
+      "city": "Ahmedabad",
+      "state": "Gujarat",
+      "address": "Gujarat University Campus, Ahmedabad, Gujarat 380009",
+      "status": "Active",
+      "totalStudents": 1650,
+      "dailyActiveStudents": 135,
+      "avgSkillScore": 79,
+      "avgInterviewPractices": 3.2,
+      "primaryAdmin": {
+        "name": "Dr. Pankaj Shah",
+        "email": "pankaj.shah@gujaratuniversity.ac.in",
+        "phone": "+91 98765 43360"
+      },
+      "admins": [],
+      "students": []
+    }
+  ]
+}
+
+

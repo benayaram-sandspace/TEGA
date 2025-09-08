@@ -1,0 +1,311 @@
+{
+  "skillDrills": [
+    {
+      "id": "drill_001",
+      "question": "What is the capital of France?",
+      "subject": "Geography",
+      "difficulty": "Easy",
+      "skill": "General Knowledge",
+      "questionType": "Multiple Choice",
+      "options": [
+        "London",
+        "Berlin",
+        "Paris",
+        "Madrid"
+      ],
+      "correctAnswer": 2,
+      "explanation": "Paris is the capital and largest city of France.",
+      "imageUrl": "https://images.unsplash.com/photo-1502602898536-47ad22581b52?w=400",
+      "isActive": true,
+      "createdAt": "2024-01-15",
+      "tags": ["geography", "capitals", "europe"]
+    },
+    {
+      "id": "drill_002",
+      "question": "Solve for x: 2x + 5 = 15",
+      "subject": "Algebra",
+      "difficulty": "Medium",
+      "skill": "Mathematics",
+      "questionType": "Multiple Choice",
+      "options": [
+        "x = 3",
+        "x = 5",
+        "x = 7",
+        "x = 10"
+      ],
+      "correctAnswer": 1,
+      "explanation": "2x + 5 = 15, so 2x = 10, therefore x = 5",
+      "imageUrl": "https://images.unsplash.com/photo-1635070041078-e363dbe005cb?w=400",
+      "isActive": true,
+      "createdAt": "2024-01-16",
+      "tags": ["algebra", "equations", "math"]
+    },
+    {
+      "id": "drill_003",
+      "question": "Who wrote 'Romeo and Juliet'?",
+      "subject": "Literature",
+      "difficulty": "Medium",
+      "skill": "English Literature",
+      "questionType": "Multiple Choice",
+      "options": [
+        "Charles Dickens",
+        "William Shakespeare",
+        "Jane Austen",
+        "Mark Twain"
+      ],
+      "correctAnswer": 1,
+      "explanation": "William Shakespeare wrote the famous tragedy 'Romeo and Juliet'.",
+      "imageUrl": "https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=400",
+      "isActive": true,
+      "createdAt": "2024-01-17",
+      "tags": ["literature", "shakespeare", "drama"]
+    },
+    {
+      "id": "drill_004",
+      "question": "What is the chemical symbol for gold?",
+      "subject": "Chemistry",
+      "difficulty": "Easy",
+      "skill": "Science",
+      "questionType": "Multiple Choice",
+      "options": [
+        "Go",
+        "Gd",
+        "Au",
+        "Ag"
+      ],
+      "correctAnswer": 2,
+      "explanation": "Au is the chemical symbol for gold, derived from the Latin word 'aurum'.",
+      "imageUrl": "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400",
+      "isActive": true,
+      "createdAt": "2024-01-18",
+      "tags": ["chemistry", "elements", "symbols"]
+    },
+    {
+      "id": "drill_005",
+      "question": "Which planet is known as the Red Planet?",
+      "subject": "Astronomy",
+      "difficulty": "Easy",
+      "skill": "Science",
+      "questionType": "Multiple Choice",
+      "options": [
+        "Venus",
+        "Mars",
+        "Jupiter",
+        "Saturn"
+      ],
+      "correctAnswer": 1,
+      "explanation": "Mars is known as the Red Planet due to its reddish appearance caused by iron oxide on its surface.",
+      "imageUrl": "https://images.unsplash.com/photo-1614728894747-a83421e2b9c9?w=400",
+      "isActive": true,
+      "createdAt": "2024-01-19",
+      "tags": ["astronomy", "planets", "space"]
+    },
+    {
+      "id": "drill_006",
+      "question": "What is the derivative of x²?",
+      "subject": "Calculus",
+      "difficulty": "Hard",
+      "skill": "Mathematics",
+      "questionType": "Multiple Choice",
+      "options": [
+        "x",
+        "2x",
+        "x²",
+        "2x²"
+      ],
+      "correctAnswer": 1,
+      "explanation": "The derivative of x² is 2x using the power rule.",
+      "imageUrl": "https://images.unsplash.com/photo-1635070041078-e363dbe005cb?w=400",
+      "isActive": true,
+      "createdAt": "2024-01-20",
+      "tags": ["calculus", "derivatives", "math"]
+    }
+  ],
+  "softSkillScenarios": [
+    {
+      "id": "scenario_001",
+      "title": "Navigating Team Conflicts",
+      "description": "A scenario where the user must mediate a conflict between two team members.",
+      "tags": ["Communication", "Conflict Resolution"],
+      "difficulty": "Medium",
+      "category": "Team Management",
+      "steps": [
+        "Identify the root cause of the conflict",
+        "Listen to both parties' perspectives",
+        "Find common ground and propose solutions",
+        "Follow up to ensure resolution"
+      ],
+      "expectedOutcome": "Resolved conflict with improved team dynamics",
+      "isActive": true,
+      "createdAt": "2024-01-15",
+      "imageUrl": "https://images.unsplash.com/photo-1552664730-d307ca884978?w=400"
+    },
+    {
+      "id": "scenario_002",
+      "title": "Client Presentation Challenge",
+      "description": "A scenario where the user must deliver a critical presentation to a demanding client.",
+      "tags": ["Presentation Skills", "Client Management"],
+      "difficulty": "Hard",
+      "category": "Communication",
+      "steps": [
+        "Prepare thoroughly with backup plans",
+        "Anticipate difficult questions",
+        "Maintain professionalism under pressure",
+        "Follow up with action items"
+      ],
+      "expectedOutcome": "Successful presentation with client satisfaction",
+      "isActive": true,
+      "createdAt": "2024-01-16",
+      "imageUrl": "https://images.unsplash.com/photo-1511578314322-379afb476865?w=400"
+    },
+    {
+      "id": "scenario_003",
+      "title": "Handling Unexpected Project Delays",
+      "description": "A scenario where the user must manage a project delay and communicate effectively with stakeholders.",
+      "tags": ["Project Management", "Communication"],
+      "difficulty": "Medium",
+      "category": "Project Management",
+      "steps": [
+        "Assess the impact of the delay",
+        "Communicate proactively with stakeholders",
+        "Develop a recovery plan",
+        "Implement risk mitigation strategies"
+      ],
+      "expectedOutcome": "Minimized impact with stakeholder confidence maintained",
+      "isActive": true,
+      "createdAt": "2024-01-17",
+      "imageUrl": "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=400"
+    },
+    {
+      "id": "scenario_004",
+      "title": "Difficult Feedback Conversation",
+      "description": "A scenario where the user must deliver constructive feedback to a team member with performance issues.",
+      "tags": ["Feedback", "Performance Management"],
+      "difficulty": "Hard",
+      "category": "Leadership",
+      "steps": [
+        "Prepare specific examples and documentation",
+        "Choose appropriate time and setting",
+        "Use the SBI model (Situation, Behavior, Impact)",
+        "Create an improvement plan together"
+      ],
+      "expectedOutcome": "Constructive feedback delivered with clear improvement path",
+      "isActive": true,
+      "createdAt": "2024-01-18",
+      "imageUrl": "https://images.unsplash.com/photo-1552664730-d307ca884978?w=400"
+    },
+    {
+      "id": "scenario_005",
+      "title": "Cross-Cultural Communication",
+      "description": "A scenario where the user must navigate cultural differences in an international team meeting.",
+      "tags": ["Cultural Awareness", "Communication"],
+      "difficulty": "Medium",
+      "category": "Diversity & Inclusion",
+      "steps": [
+        "Research cultural norms and expectations",
+        "Adapt communication style appropriately",
+        "Be patient and ask clarifying questions",
+        "Build bridges between different perspectives"
+      ],
+      "expectedOutcome": "Effective communication across cultural boundaries",
+      "isActive": true,
+      "createdAt": "2024-01-19",
+      "imageUrl": "https://images.unsplash.com/photo-1521737711867-e3b97375f902?w=400"
+    }
+  ],
+  "onboardingQuiz": {
+    "id": "onboarding_001",
+    "title": "Student Onboarding Assessment",
+    "description": "Initial quiz to assess student's baseline knowledge and skills",
+    "totalQuestions": 25,
+    "timeLimit": 30,
+    "questions": [
+      {
+        "id": "q001",
+        "question": "What is your primary field of study?",
+        "type": "Multiple Choice",
+        "options": [
+          "Computer Science",
+          "Engineering",
+          "Business",
+          "Other"
+        ],
+        "correctAnswer": null,
+        "isRequired": true
+      },
+      {
+        "id": "q002",
+        "question": "How would you rate your programming experience?",
+        "type": "Multiple Choice",
+        "options": [
+          "Beginner (0-1 years)",
+          "Intermediate (1-3 years)",
+          "Advanced (3+ years)",
+          "Expert (5+ years)"
+        ],
+        "correctAnswer": null,
+        "isRequired": true
+      },
+      {
+        "id": "q003",
+        "question": "What is your preferred learning style?",
+        "type": "Multiple Choice",
+        "options": [
+          "Visual (diagrams, charts)",
+          "Auditory (lectures, discussions)",
+          "Kinesthetic (hands-on practice)",
+          "Reading/Writing"
+        ],
+        "correctAnswer": null,
+        "isRequired": true
+      },
+      {
+        "id": "q004",
+        "question": "How many hours per week can you dedicate to skill development?",
+        "type": "Multiple Choice",
+        "options": [
+          "1-5 hours",
+          "6-10 hours",
+          "11-15 hours",
+          "16+ hours"
+        ],
+        "correctAnswer": null,
+        "isRequired": true
+      },
+      {
+        "id": "q005",
+        "question": "What is your career goal?",
+        "type": "Multiple Choice",
+        "options": [
+          "Software Developer",
+          "Data Scientist",
+          "Product Manager",
+          "Entrepreneur",
+          "Other"
+        ],
+        "correctAnswer": null,
+        "isRequired": true
+      }
+    ],
+    "isActive": true,
+    "lastModified": "2024-01-20"
+  },
+  "statistics": {
+    "totalActiveDrills": 500,
+    "totalScenarios": 75,
+    "totalQuestions": 25,
+    "categories": [
+      "Mathematics",
+      "Science",
+      "Literature",
+      "Geography",
+      "Computer Science",
+      "Business",
+      "Communication",
+      "Leadership"
+    ],
+    "difficultyLevels": ["Easy", "Medium", "Hard"],
+    "questionTypes": ["Multiple Choice", "True/False", "Fill in the Blank", "Short Answer"]
+  }
+}
+
