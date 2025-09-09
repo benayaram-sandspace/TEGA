@@ -30,99 +30,106 @@ class StudentProfilePage extends StatelessWidget {
         centerTitle: true,
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Student Profile Section
-            _buildProfileSection(),
-            const SizedBox(height: 24),
+            // Student Profile Section - Full Width
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 20),
+              decoration: BoxDecoration(
+                color: AppColors.surface,
+                border: Border(
+                  bottom: BorderSide(color: AppColors.borderLight, width: 1),
+                ),
+              ),
+              child: Column(
+                children: [
+                  // Profile Picture
+                  Container(
+                    width: 100,
+                    height: 100,
+                    decoration: BoxDecoration(
+                      color: AppColors.primary.withOpacity(0.1),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      Icons.person,
+                      size: 50,
+                      color: AppColors.primary,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
 
-            // Job Readiness Section
-            _buildJobReadinessSection(context),
-            const SizedBox(height: 24),
+                  // Student Name
+                  Text(
+                    student.name,
+                    style: const TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
 
-            // Recommended Career Paths
-            _buildCareerPathsSection(),
-            const SizedBox(height: 24),
+                  // Email
+                  Text(
+                    'priya.sharma@example.com',
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
 
-            // Personal Information
-            _buildPersonalInfoSection(),
-            const SizedBox(height: 24),
+                  // Student ID
+                  Text(
+                    'Student ID: 123456',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
 
-            // Academic Details
-            _buildAcademicDetailsSection(),
-            const SizedBox(height: 24),
+            // Rest of the content with padding
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const SizedBox(height: 8),
 
-            // Interests
-            _buildInterestsSection(),
-            const SizedBox(height: 24),
+                  // Job Readiness Section
+                  _buildJobReadinessSection(context),
+                  const SizedBox(height: 24),
 
-            // Uploaded Resume
-            _buildResumeSection(),
-            const SizedBox(height: 24),
+                  // Recommended Career Paths
+                  _buildCareerPathsSection(),
+                  const SizedBox(height: 24),
+
+                  // Personal Information
+                  _buildPersonalInfoSection(),
+                  const SizedBox(height: 24),
+
+                  // Academic Details
+                  _buildAcademicDetailsSection(),
+                  const SizedBox(height: 24),
+
+                  // Interests
+                  _buildInterestsSection(),
+                  const SizedBox(height: 24),
+
+                  // Uploaded Resume
+                  _buildResumeSection(),
+                  const SizedBox(height: 24),
+                ],
+              ),
+            ),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildProfileSection() {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.borderLight),
-      ),
-      child: Column(
-        children: [
-          // Profile Picture
-          Container(
-            width: 100,
-            height: 100,
-            decoration: BoxDecoration(
-              color: AppColors.primary.withOpacity(0.1),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(
-              Icons.person,
-              size: 50,
-              color: AppColors.primary,
-            ),
-          ),
-          const SizedBox(height: 16),
-          
-          // Student Name
-          Text(
-            student.name,
-            style: const TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-              color: AppColors.textPrimary,
-            ),
-          ),
-          const SizedBox(height: 8),
-          
-          // Email
-          Text(
-            'priya.sharma@example.com',
-            style: TextStyle(
-              fontSize: 16,
-              color: AppColors.textSecondary,
-            ),
-          ),
-          const SizedBox(height: 4),
-          
-          // Student ID
-          Text(
-            'Student ID: 123456',
-            style: TextStyle(
-              fontSize: 14,
-              color: AppColors.textSecondary,
-            ),
-          ),
-        ],
       ),
     );
   }
@@ -167,7 +174,7 @@ class StudentProfilePage extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 16),
-          
+
           // Generate Report Button
           Expanded(
             child: ElevatedButton(
@@ -175,7 +182,8 @@ class StudentProfilePage extends StatelessWidget {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => ProgressReportGeneratorPage(student: student),
+                    builder: (context) =>
+                        ProgressReportGeneratorPage(student: student),
                   ),
                 );
               },
@@ -215,7 +223,7 @@ class StudentProfilePage extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 16),
-          
+
           _buildCareerPathItem('Software Development', '75% Readiness'),
           const SizedBox(height: 12),
           _buildCareerPathItem('Data Science', '60% Readiness'),
@@ -240,10 +248,7 @@ class StudentProfilePage extends StatelessWidget {
         ),
         Text(
           readiness,
-          style: TextStyle(
-            fontSize: 14,
-            color: AppColors.textSecondary,
-          ),
+          style: TextStyle(fontSize: 14, color: AppColors.textSecondary),
         ),
       ],
     );
@@ -269,7 +274,7 @@ class StudentProfilePage extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 16),
-          
+
           _buildInfoRow('Full Name', student.name),
           const Divider(color: AppColors.borderLight),
           _buildInfoRow('Email', 'priya.sharma@example.com'),
@@ -304,7 +309,7 @@ class StudentProfilePage extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 16),
-          
+
           _buildInfoRow('CGPA / % Marks', '8.5 / 85%'),
         ],
       ),
@@ -331,7 +336,7 @@ class StudentProfilePage extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 16),
-          
+
           Wrap(
             spacing: 8,
             runSpacing: 8,
@@ -386,15 +391,12 @@ class StudentProfilePage extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 16),
-          
+
           Row(
             children: [
               const Text(
                 'View Resume',
-                style: TextStyle(
-                  fontSize: 16,
-                  color: AppColors.textPrimary,
-                ),
+                style: TextStyle(fontSize: 16, color: AppColors.textPrimary),
               ),
               const SizedBox(width: 8),
               Icon(
@@ -417,10 +419,7 @@ class StudentProfilePage extends StatelessWidget {
         children: [
           Text(
             label,
-            style: TextStyle(
-              fontSize: 14,
-              color: AppColors.textSecondary,
-            ),
+            style: TextStyle(fontSize: 14, color: AppColors.textSecondary),
           ),
           Text(
             value,
@@ -435,4 +434,3 @@ class StudentProfilePage extends StatelessWidget {
     );
   }
 }
-

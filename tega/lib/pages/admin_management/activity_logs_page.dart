@@ -12,11 +12,11 @@ class ActivityLogsPage extends StatefulWidget {
 
 class _ActivityLogsPageState extends State<ActivityLogsPage> {
   final AdminService _adminService = AdminService.instance;
-  
+
   List<ActivityLog> _allLogs = [];
   List<ActivityLog> _filteredLogs = [];
   bool _isLoading = true;
-  
+
   DateTime? _startDate;
   DateTime? _endDate;
   String _selectedAdmin = '';
@@ -30,31 +30,38 @@ class _ActivityLogsPageState extends State<ActivityLogsPage> {
 
   Future<void> _loadActivityLogs() async {
     setState(() => _isLoading = true);
-    
+
     await _adminService.loadData();
     _allLogs = _adminService.getAllActivityLogs();
     _filteredLogs = _allLogs;
-    
+
     setState(() => _isLoading = false);
   }
 
   void _applyFilters() {
     setState(() {
       _filteredLogs = _allLogs;
-      
+
       // Apply date range filter
       if (_startDate != null && _endDate != null) {
-        _filteredLogs = _adminService.getActivityLogsByDateRange(_startDate!, _endDate!);
+        _filteredLogs = _adminService.getActivityLogsByDateRange(
+          _startDate!,
+          _endDate!,
+        );
       }
-      
+
       // Apply admin filter
       if (_selectedAdmin.isNotEmpty) {
-        _filteredLogs = _filteredLogs.where((log) => log.adminName == _selectedAdmin).toList();
+        _filteredLogs = _filteredLogs
+            .where((log) => log.adminName == _selectedAdmin)
+            .toList();
       }
-      
+
       // Apply action type filter
       if (_selectedActionType.isNotEmpty) {
-        _filteredLogs = _filteredLogs.where((log) => log.actionType == _selectedActionType).toList();
+        _filteredLogs = _filteredLogs
+            .where((log) => log.actionType == _selectedActionType)
+            .toList();
       }
     });
   }
@@ -74,7 +81,9 @@ class _ActivityLogsPageState extends State<ActivityLogsPage> {
     return Scaffold(
       backgroundColor: AppColors.background,
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
+          ? const Center(
+              child: CircularProgressIndicator(color: AppColors.primary),
+            )
           : Column(
               children: [
                 // Filters Section
@@ -92,35 +101,31 @@ class _ActivityLogsPageState extends State<ActivityLogsPage> {
                         ),
                       ),
                       const SizedBox(height: 16),
-                      
+
                       // Date Range Filters
                       Row(
                         children: [
                           Expanded(
-                            child: _buildDateField(
-                              'Start Date',
-                              _startDate,
-                              (date) {
-                                setState(() => _startDate = date);
-                                _applyFilters();
-                              },
-                            ),
+                            child: _buildDateField('Start Date', _startDate, (
+                              date,
+                            ) {
+                              setState(() => _startDate = date);
+                              _applyFilters();
+                            }),
                           ),
                           const SizedBox(width: 12),
                           Expanded(
-                            child: _buildDateField(
-                              'End Date',
-                              _endDate,
-                              (date) {
-                                setState(() => _endDate = date);
-                                _applyFilters();
-                              },
-                            ),
+                            child: _buildDateField('End Date', _endDate, (
+                              date,
+                            ) {
+                              setState(() => _endDate = date);
+                              _applyFilters();
+                            }),
                           ),
                         ],
                       ),
                       const SizedBox(height: 16),
-                      
+
                       // Admin and Action Type Filters
                       Row(
                         children: [
@@ -142,16 +147,21 @@ class _ActivityLogsPageState extends State<ActivityLogsPage> {
                               _selectedActionType,
                               _adminService.getAvailableActionTypes(),
                               (value) {
-                                setState(() => _selectedActionType = value ?? '');
+                                setState(
+                                  () => _selectedActionType = value ?? '',
+                                );
                                 _applyFilters();
                               },
                             ),
                           ),
                         ],
                       ),
-                      
+
                       // Clear Filters Button
-                      if (_startDate != null || _endDate != null || _selectedAdmin.isNotEmpty || _selectedActionType.isNotEmpty)
+                      if (_startDate != null ||
+                          _endDate != null ||
+                          _selectedAdmin.isNotEmpty ||
+                          _selectedActionType.isNotEmpty)
                         Padding(
                           padding: const EdgeInsets.only(top: 12),
                           child: TextButton(
@@ -165,7 +175,7 @@ class _ActivityLogsPageState extends State<ActivityLogsPage> {
                     ],
                   ),
                 ),
-                
+
                 // Activity Log Section
                 Expanded(
                   child: Container(
@@ -182,7 +192,7 @@ class _ActivityLogsPageState extends State<ActivityLogsPage> {
                           ),
                         ),
                         const SizedBox(height: 16),
-                        
+
                         Expanded(
                           child: _filteredLogs.isEmpty
                               ? Center(
@@ -222,7 +232,11 @@ class _ActivityLogsPageState extends State<ActivityLogsPage> {
     );
   }
 
-  Widget _buildDateField(String label, DateTime? date, ValueChanged<DateTime?> onChanged) {
+  Widget _buildDateField(
+    String label,
+    DateTime? date,
+    ValueChanged<DateTime?> onChanged,
+  ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -258,7 +272,9 @@ class _ActivityLogsPageState extends State<ActivityLogsPage> {
             child: Text(
               date != null ? _formatDate(date) : 'Select Date',
               style: TextStyle(
-                color: date != null ? AppColors.textPrimary : AppColors.textSecondary,
+                color: date != null
+                    ? AppColors.textPrimary
+                    : AppColors.textSecondary,
                 fontSize: 14,
               ),
             ),
@@ -365,22 +381,16 @@ class _ActivityLogsPageState extends State<ActivityLogsPage> {
             ],
           ),
           const SizedBox(height: 8),
-          
+
           // Action Details
           Text(
             'Target: ${log.target}',
-            style: TextStyle(
-              fontSize: 14,
-              color: AppColors.textSecondary,
-            ),
+            style: TextStyle(fontSize: 14, color: AppColors.textSecondary),
           ),
           const SizedBox(height: 4),
           Text(
             'Action: ${log.action}',
-            style: const TextStyle(
-              fontSize: 14,
-              color: AppColors.textPrimary,
-            ),
+            style: const TextStyle(fontSize: 14, color: AppColors.textPrimary),
           ),
           if (log.details.isNotEmpty) ...[
             const SizedBox(height: 4),
@@ -394,7 +404,7 @@ class _ActivityLogsPageState extends State<ActivityLogsPage> {
             ),
           ],
           const SizedBox(height: 8),
-          
+
           // Action Type Badge
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -429,9 +439,11 @@ class _ActivityLogsPageState extends State<ActivityLogsPage> {
   }
 
   String _formatActionType(String actionType) {
-    return actionType.replaceAll('_', ' ').split(' ').map((word) => 
-      word[0].toUpperCase() + word.substring(1)
-    ).join(' ');
+    return actionType
+        .replaceAll('_', ' ')
+        .split(' ')
+        .map((word) => word[0].toUpperCase() + word.substring(1))
+        .join(' ');
   }
 
   Color _getActionTypeColor(String actionType) {

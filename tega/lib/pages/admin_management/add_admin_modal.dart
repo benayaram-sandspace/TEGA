@@ -14,9 +14,9 @@ class _AddAdminModalState extends State<AddAdminModal> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
-  
+
   final AdminService _adminService = AdminService.instance;
-  
+
   String _selectedRole = '';
   bool _manageUsers = false;
   bool _editContent = false;
@@ -116,7 +116,7 @@ class _AddAdminModalState extends State<AddAdminModal> {
                       },
                     ),
                     const SizedBox(height: 20),
-                    
+
                     // Email Address Field
                     const Text(
                       'Email Address',
@@ -148,14 +148,16 @@ class _AddAdminModalState extends State<AddAdminModal> {
                         if (value == null || value.isEmpty) {
                           return 'Please enter email address';
                         }
-                        if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
+                        if (!RegExp(
+                          r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
+                        ).hasMatch(value)) {
                           return 'Please enter a valid email';
                         }
                         return null;
                       },
                     ),
                     const SizedBox(height: 20),
-                    
+
                     // Assign Role Field
                     const Text(
                       'Assign Role',
@@ -168,7 +170,10 @@ class _AddAdminModalState extends State<AddAdminModal> {
                     const SizedBox(height: 8),
                     Container(
                       width: double.infinity,
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 4,
+                      ),
                       decoration: BoxDecoration(
                         color: AppColors.surface,
                         borderRadius: BorderRadius.circular(12),
@@ -182,12 +187,16 @@ class _AddAdminModalState extends State<AddAdminModal> {
                             style: TextStyle(color: AppColors.textSecondary),
                           ),
                           isExpanded: true,
-                          items: _adminService.getAvailableRoles().map((String role) {
+                          items: _adminService.getAvailableRoles().map((
+                            String role,
+                          ) {
                             return DropdownMenuItem<String>(
                               value: role,
                               child: Text(
                                 role,
-                                style: const TextStyle(color: AppColors.textPrimary),
+                                style: const TextStyle(
+                                  color: AppColors.textPrimary,
+                                ),
                               ),
                             );
                           }).toList(),
@@ -200,7 +209,7 @@ class _AddAdminModalState extends State<AddAdminModal> {
                       ),
                     ),
                     const SizedBox(height: 20),
-                    
+
                     // Assign Features Section
                     const Text(
                       'Assign Features',
@@ -211,38 +220,48 @@ class _AddAdminModalState extends State<AddAdminModal> {
                       ),
                     ),
                     const SizedBox(height: 12),
-                    
-                    _buildPermissionCheckbox('Manage Users', _manageUsers, (value) {
+
+                    _buildPermissionCheckbox('Manage Users', _manageUsers, (
+                      value,
+                    ) {
                       setState(() => _manageUsers = value ?? false);
                     }),
-                    _buildPermissionCheckbox('Edit Content', _editContent, (value) {
+                    _buildPermissionCheckbox('Edit Content', _editContent, (
+                      value,
+                    ) {
                       setState(() => _editContent = value ?? false);
                     }),
-                    _buildPermissionCheckbox('View Analytics', _viewAnalytics, (value) {
+                    _buildPermissionCheckbox('View Analytics', _viewAnalytics, (
+                      value,
+                    ) {
                       setState(() => _viewAnalytics = value ?? false);
                     }),
-                    _buildPermissionCheckbox('Manage Colleges', _manageColleges, (value) {
-                      setState(() => _manageColleges = value ?? false);
-                    }),
-                    _buildPermissionCheckbox('Manage Admins', _manageAdmins, (value) {
+                    _buildPermissionCheckbox(
+                      'Manage Colleges',
+                      _manageColleges,
+                      (value) {
+                        setState(() => _manageColleges = value ?? false);
+                      },
+                    ),
+                    _buildPermissionCheckbox('Manage Admins', _manageAdmins, (
+                      value,
+                    ) {
                       setState(() => _manageAdmins = value ?? false);
                     }),
-                    
+
                     const SizedBox(height: 30),
                   ],
                 ),
               ),
             ),
           ),
-          
+
           // Action Buttons
           Container(
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
               color: AppColors.pureWhite,
-              border: Border(
-                top: BorderSide(color: AppColors.lightGray),
-              ),
+              border: Border(top: BorderSide(color: AppColors.lightGray)),
             ),
             child: Row(
               children: [
@@ -283,7 +302,9 @@ class _AddAdminModalState extends State<AddAdminModal> {
                             width: 20,
                             child: CircularProgressIndicator(
                               strokeWidth: 2,
-                              valueColor: AlwaysStoppedAnimation<Color>(AppColors.pureWhite),
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                AppColors.pureWhite,
+                              ),
                             ),
                           )
                         : const Text(
@@ -303,7 +324,11 @@ class _AddAdminModalState extends State<AddAdminModal> {
     );
   }
 
-  Widget _buildPermissionCheckbox(String title, bool value, ValueChanged<bool?> onChanged) {
+  Widget _buildPermissionCheckbox(
+    String title,
+    bool value,
+    ValueChanged<bool?> onChanged,
+  ) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Row(
@@ -319,10 +344,7 @@ class _AddAdminModalState extends State<AddAdminModal> {
           const SizedBox(width: 8),
           Text(
             title,
-            style: const TextStyle(
-              fontSize: 16,
-              color: AppColors.textPrimary,
-            ),
+            style: const TextStyle(fontSize: 16, color: AppColors.textPrimary),
           ),
         ],
       ),
@@ -331,11 +353,11 @@ class _AddAdminModalState extends State<AddAdminModal> {
 
   Future<void> _sendInvitation() async {
     if (!_formKey.currentState!.validate()) return;
-    
+
     if (_selectedRole.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please select a role')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Please select a role')));
       return;
     }
 
@@ -357,7 +379,7 @@ class _AddAdminModalState extends State<AddAdminModal> {
       );
 
       final success = await _adminService.sendAdminInvite(invite);
-      
+
       if (success) {
         Navigator.of(context).pop();
         ScaffoldMessenger.of(context).showSnackBar(

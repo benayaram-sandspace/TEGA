@@ -61,6 +61,72 @@ class _StudentManagementPageState extends State<StudentManagementPage> {
     });
   }
 
+  void _showStudentOptions(Student student) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (BuildContext context) {
+        return Container(
+          padding: const EdgeInsets.symmetric(vertical: 20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: const Icon(Icons.person),
+                title: const Text('View Profile'),
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) =>
+                          StudentProfilePage(student: student),
+                    ),
+                  );
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.edit),
+                title: const Text('Edit Details'),
+                onTap: () {
+                  Navigator.pop(context);
+                  // Add edit functionality
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Edit ${student.name}')),
+                  );
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.block),
+                title: const Text('Block Student'),
+                onTap: () {
+                  Navigator.pop(context);
+                  // Add block functionality
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Block ${student.name}')),
+                  );
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.flag),
+                title: const Text('Flag Student'),
+                onTap: () {
+                  Navigator.pop(context);
+                  // Add flag functionality
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Flag ${student.name}')),
+                  );
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -366,51 +432,58 @@ class _StudentManagementPageState extends State<StudentManagementPage> {
   }
 
   Widget _buildStudentItem(Student student) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: AppColors.borderLight),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  student.name,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.textPrimary,
+    return GestureDetector(
+      onTap: () {
+        // Navigate to profile page when card is tapped
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => StudentProfilePage(student: student),
+          ),
+        );
+      },
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: AppColors.borderLight),
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    student.name,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.textPrimary,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  student.college,
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: AppColors.textSecondary,
+                  const SizedBox(height: 4),
+                  Text(
+                    student.college,
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: AppColors.textSecondary,
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-          IconButton(
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => StudentProfilePage(student: student),
-                ),
-              );
-            },
-            icon: const Icon(Icons.more_vert, color: AppColors.textSecondary),
-          ),
-        ],
+            IconButton(
+              onPressed: () {
+                // Show options menu when three dots are tapped
+                _showStudentOptions(student);
+              },
+              icon: const Icon(Icons.more_vert, color: AppColors.textSecondary),
+            ),
+          ],
+        ),
       ),
     );
   }

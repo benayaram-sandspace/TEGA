@@ -87,12 +87,6 @@ class ReportsExportCenterPage extends StatelessWidget {
     );
   }
 
-  void _showSettings(BuildContext context) {
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('Opening report settings...')));
-  }
-
   void _generateCollegeReport(BuildContext context) {
     Navigator.push(
       context,

@@ -10,6 +10,7 @@ import 'admin_management_page.dart';
 import 'notification_manager_page.dart';
 import 'report_export_page.dart';
 import '../constants/app_colors.dart';
+import 'login_page.dart'; // Add this import
 
 class AdminDashboard extends StatefulWidget {
   const AdminDashboard({super.key});
@@ -35,6 +36,51 @@ class _AdminDashboardState extends State<AdminDashboard> {
     const NotificationManagerPage(),
     const ReportsExportCenterPage(),
   ];
+
+  // Handle logout with proper context management
+  Future<void> _handleLogout() async {
+    // Show loading indicator
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return const Center(child: CircularProgressIndicator());
+      },
+    );
+
+    try {
+      // Perform logout
+      await _authService.logout();
+
+      // Close loading indicator and navigate
+      if (mounted) {
+        Navigator.of(context).pop(); // Close loading dialog
+
+        // Small delay to ensure dialog is closed
+        await Future.delayed(const Duration(milliseconds: 100));
+
+        if (mounted) {
+          // Navigate to login page
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(
+              builder: (BuildContext context) => const LoginPage(),
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      // Handle any errors
+      if (mounted) {
+        Navigator.of(context).pop(); // Close loading dialog
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error logging out: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -71,7 +117,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
             icon: const Icon(Icons.account_circle, color: AppColors.pureWhite),
             onSelected: (value) {
               if (value == 'logout') {
-                _showLogoutDialog();
+                _showLogoutConfirmation();
               }
             },
             itemBuilder: (context) => [
@@ -121,6 +167,26 @@ class _AdminDashboardState extends State<AdminDashboard> {
       ),
       body: Stack(
         children: [
+          // Watermark Layer
+          Positioned.fill(
+            child: IgnorePointer(
+              child: Center(
+                child: Opacity(
+                  opacity: 0.08, // Very subtle watermark
+                  child: Image.asset(
+                    'assets/logo.png',
+                    width: 300,
+                    height: 300,
+                    fit: BoxFit.contain,
+                    errorBuilder: (context, error, stackTrace) {
+                      return Container(); // Return empty container if image fails
+                    },
+                  ),
+                ),
+              ),
+            ),
+          ),
+
           // Main Content
           _pages[_selectedIndex],
 
@@ -135,7 +201,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
                     _isSidebarOpen = false;
                   });
                 },
-                child: Container(color: Colors.black.withValues(alpha: 0.5)),
+                child: Container(color: Colors.black.withOpacity(0.5)),
               ),
             ),
 
@@ -208,6 +274,25 @@ class _AdminDashboardState extends State<AdminDashboard> {
                       ],
                     ),
                   ),
+                  // Add Logout Button at bottom of sidebar
+                  const Divider(height: 1),
+                  ListTile(
+                    leading: const Icon(Icons.logout, color: Colors.red),
+                    title: const Text(
+                      'Logout',
+                      style: TextStyle(
+                        color: Colors.red,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    onTap: () {
+                      setState(() {
+                        _isSidebarOpen = false;
+                      });
+                      _showLogoutConfirmation();
+                    },
+                  ),
+                  const SizedBox(height: 16),
                 ],
               ),
             ),
@@ -232,7 +317,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
             color: isSelected
-                ? AppColors.primary.withValues(alpha: 0.1)
+                ? AppColors.primary.withOpacity(0.1)
                 : Colors.transparent,
             borderRadius: BorderRadius.circular(8),
           ),
@@ -251,7 +336,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
           child: Text(title, maxLines: 2, overflow: TextOverflow.ellipsis),
         ),
         selected: isSelected,
-        selectedTileColor: AppColors.primary.withValues(alpha: 0.1),
+        selectedTileColor: AppColors.primary.withOpacity(0.1),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         onTap: () {
           setState(() {
@@ -263,31 +348,43 @@ class _AdminDashboardState extends State<AdminDashboard> {
     );
   }
 
-  void _showLogoutDialog() {
+  // Show logout confirmation dialog
+  void _showLogoutConfirmation() {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Logout'),
-        content: const Text('Are you sure you want to logout?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel'),
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
           ),
-          TextButton(
-            onPressed: () async {
-              Navigator.of(context).pop();
-              await _authService.logout();
-              if (mounted) {
-                Navigator.of(
-                  context,
-                ).pushNamedAndRemoveUntil('/login', (route) => false);
-              }
-            },
-            child: const Text('Logout', style: TextStyle(color: Colors.red)),
-          ),
-        ],
-      ),
+          title: const Text('Logout'),
+          content: const Text('Are you sure you want to logout?'),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(); // Just close the dialog
+              },
+              child: const Text(
+                'Cancel',
+                style: TextStyle(color: AppColors.textSecondary),
+              ),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(); // Close dialog first
+                _handleLogout(); // Then handle logout
+              },
+              child: const Text(
+                'Logout',
+                style: TextStyle(
+                  color: Colors.red,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 }
