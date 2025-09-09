@@ -282,7 +282,7 @@ class SkillDrillPage extends StatelessWidget {
 
             // XP badge (inside card)
             Container(
-              padding: const EdgeInsets.all(12),
+              padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
                 color: Colors.blue.withOpacity(0.1),
                 shape: BoxShape.circle,

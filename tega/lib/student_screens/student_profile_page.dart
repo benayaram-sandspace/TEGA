@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:tega/student_screens/studen_home_page.dart';
 import '../services/auth_service.dart';
 import '../pages/login_page.dart';
+// Import your student home page
 
 class StudentProfilePage extends StatelessWidget {
   final String studentName;
@@ -66,6 +68,22 @@ class StudentProfilePage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF5F5F5),
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.black87),
+          onPressed: () {
+            Navigator.of(context).pushReplacement(
+              MaterialPageRoute(builder: (context) => const StudentHomePage()),
+            );
+          },
+        ),
+        title: const Text(
+          "Profile",
+          style: TextStyle(color: Colors.black87, fontWeight: FontWeight.bold),
+        ),
+      ),
       body: SafeArea(
         child: SingleChildScrollView(
           child: Column(

@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:tega/student_screens/studen_home_page.dart';
+import 'package:tega/student_screens/student_quiz_leaderboard_page.dart';
 
 class QuestionPage extends StatefulWidget {
   const QuestionPage({super.key});
@@ -586,7 +587,12 @@ class QuizCompletedPage extends StatelessWidget {
                       Expanded(
                         child: OutlinedButton(
                           onPressed: () {
-                            // TODO: Leaderboard navigation
+                            Navigator.of(context).pushAndRemoveUntil(
+                              MaterialPageRoute(
+                                builder: (_) => const LeaderboardPage(),
+                              ),
+                              (route) => false,
+                            );
                           },
                           style: OutlinedButton.styleFrom(
                             side: const BorderSide(color: Color(0xFF5E4FDB)),

@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:tega/student_screens/student_ai_interview_page.dart';
 import 'package:tega/student_screens/student_profile_page.dart';
+import 'package:tega/student_screens/student_resume_optimizer.dart';
 import 'package:tega/student_screens/student_skill_drill_page.dart';
+import 'package:tega/student_screens/student_skill_graph.dart';
 
 class StudentHomePage extends StatelessWidget {
   final String studentName;
@@ -12,7 +15,7 @@ class StudentHomePage extends StatelessWidget {
     Key? key,
     this.studentName = 'Ramesh',
     this.course = 'B.Tech | CSE',
-    this.year = '3nd Year',
+    this.year = '3rd Year',
     this.college = 'AI College',
   }) : super(key: key);
 
@@ -85,7 +88,10 @@ class StudentHomePage extends StatelessWidget {
                       CircleAvatar(
                         radius: 20,
                         backgroundColor: Colors.grey[300],
-                        child: Icon(Icons.person, color: Colors.grey[600]),
+                        child: Hero(
+                          tag: UniqueKey(), // prevent hero conflict
+                          child: Icon(Icons.person, color: Colors.grey[600]),
+                        ),
                       ),
                     ],
                   ),
@@ -324,34 +330,88 @@ class StudentHomePage extends StatelessWidget {
                       childAspectRatio: 1,
                       children: [
                         _buildQuickAccessItem(
+                          context,
                           Icons.description,
                           'Resume Optimizer',
                           Colors.blue,
+                          () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) =>
+                                    const ResumeOptimizerPage(),
+                              ),
+                            );
+                          },
                         ),
+
                         _buildQuickAccessItem(
+                          context,
                           Icons.mic,
                           'Interview Prep',
                           Colors.green,
+                          () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const AiInterviewPage(),
+                              ),
+                            );
+                          },
                         ),
+
                         _buildQuickAccessItem(
+                          context,
                           Icons.psychology,
                           'Skill Graph',
                           Colors.purple,
+                          () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const SkillGraphPage(),
+                              ),
+                            );
+                          },
                         ),
                         _buildQuickAccessItem(
+                          context,
                           Icons.route,
-                          'Carrier Pathways',
+                          'Career Pathways',
                           Colors.orange,
+                          () {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Career Pathways Coming Soon!'),
+                              ),
+                            );
+                          },
                         ),
                         _buildQuickAccessItem(
+                          context,
                           Icons.work,
                           'AI Job Connect',
                           const Color(0xFF6B5FFF),
+                          () {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('AI Job Connect Coming Soon!'),
+                              ),
+                            );
+                          },
                         ),
                         _buildQuickAccessItem(
+                          context,
                           Icons.hub,
                           'Skills Hub',
                           Colors.pink,
+                          () {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Skills Hub Coming Soon!'),
+                              ),
+                            );
+                          },
                         ),
                       ],
                     ),
@@ -505,25 +565,26 @@ class StudentHomePage extends StatelessWidget {
           ],
           currentIndex: 0,
           onTap: (index) {
-            // Handle navigation based on index
             switch (index) {
               case 0:
                 // Already on Home page
                 break;
               case 1:
-                // Navigate to Process page
-                // Navigator.push(context, MaterialPageRoute(builder: (context) => ProcessPage()));
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Process Page Coming Soon!')),
+                );
                 break;
               case 2:
-                // Navigate to Learn page
-                // Navigator.push(context, MaterialPageRoute(builder: (context) => LearnPage()));
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Learn Page Coming Soon!')),
+                );
                 break;
               case 3:
-                // Navigate to Jobs page
-                // Navigator.push(context, MaterialPageRoute(builder: (context) => JobsPage()));
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Jobs Page Coming Soon!')),
+                );
                 break;
               case 4:
-                // Navigate to Profile page
                 Navigator.push(
                   context,
                   MaterialPageRoute(builder: (context) => StudentProfilePage()),
@@ -536,7 +597,13 @@ class StudentHomePage extends StatelessWidget {
     );
   }
 
-  Widget _buildQuickAccessItem(IconData icon, String label, Color color) {
+  Widget _buildQuickAccessItem(
+    BuildContext context,
+    IconData icon,
+    String label,
+    Color color,
+    VoidCallback onTap,
+  ) {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -550,7 +617,7 @@ class StudentHomePage extends StatelessWidget {
         ],
       ),
       child: InkWell(
-        onTap: () {},
+        onTap: onTap,
         borderRadius: BorderRadius.circular(12),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
