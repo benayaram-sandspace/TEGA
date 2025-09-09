@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'splash_screen.dart';
-import 'services/auth_service.dart';
 
 void main() {
   // debug to confirm app start

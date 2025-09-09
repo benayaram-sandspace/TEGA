@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:tega/pages/admin_dashboard.dart';
 import '../constants/app_colors.dart';
 
 class AnalyticsPage extends StatelessWidget {
@@ -9,14 +10,33 @@ class AnalyticsPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
+      appBar: AppBar(
+        title: const Text(
+          'Module Usage',
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            color: AppColors.textPrimary,
+          ),
+        ),
+        backgroundColor: AppColors.background,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          onPressed: () {
+            Navigator.pushAndRemoveUntil(
+              context,
+              MaterialPageRoute(builder: (context) => const AdminDashboard()),
+              (route) => false,
+            );
+          },
+        ),
+      ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Module Usage Section
-            _buildSectionTitle('Module Usage'),
-            const SizedBox(height: 16),
+            // Module Usage Card
             _buildModuleUsageCard(),
             const SizedBox(height: 24),
 
@@ -75,7 +95,7 @@ class AnalyticsPage extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 8),
-          
+
           // Main metric
           const Text(
             '100%',
@@ -86,7 +106,7 @@ class AnalyticsPage extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 4),
-          
+
           // Timeframe
           Text(
             'Last 30 Days',
@@ -97,7 +117,7 @@ class AnalyticsPage extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 20),
-          
+
           // Bar chart
           _buildModuleUsageChart(),
         ],
@@ -145,10 +165,7 @@ class AnalyticsPage extends StatelessWidget {
                       text = const Text('', style: style);
                       break;
                   }
-                  return SideTitleWidget(
-                    axisSide: meta.axisSide,
-                    child: text,
-                  );
+                  return SideTitleWidget(axisSide: meta.axisSide, child: text);
                 },
                 reservedSize: 42,
               ),
@@ -235,7 +252,7 @@ class AnalyticsPage extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 8),
-          
+
           // Main metric
           const Text(
             '+15%',
@@ -246,7 +263,7 @@ class AnalyticsPage extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 4),
-          
+
           // Timeframe
           Text(
             'Last 6 Months',
@@ -257,7 +274,7 @@ class AnalyticsPage extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 20),
-          
+
           // Line chart
           _buildSkillGrowthChart(),
         ],
@@ -312,10 +329,7 @@ class AnalyticsPage extends StatelessWidget {
                       text = const Text('', style: style);
                       break;
                   }
-                  return SideTitleWidget(
-                    axisSide: meta.axisSide,
-                    child: text,
-                  );
+                  return SideTitleWidget(axisSide: meta.axisSide, child: text);
                 },
                 reservedSize: 30,
               ),
@@ -394,25 +408,23 @@ class AnalyticsPage extends StatelessWidget {
     );
   }
 
-  Widget _buildStudentItem(String name, String field, Color avatarColor, IconData icon) {
+  Widget _buildStudentItem(
+    String name,
+    String field,
+    Color avatarColor,
+    IconData icon,
+  ) {
     return Row(
       children: [
         // Avatar
         Container(
           width: 50,
           height: 50,
-          decoration: BoxDecoration(
-            color: avatarColor,
-            shape: BoxShape.circle,
-          ),
-          child: Icon(
-            icon,
-            color: AppColors.pureWhite,
-            size: 24,
-          ),
+          decoration: BoxDecoration(color: avatarColor, shape: BoxShape.circle),
+          child: Icon(icon, color: AppColors.pureWhite, size: 24),
         ),
         const SizedBox(width: 16),
-        
+
         // Student info
         Expanded(
           child: Column(

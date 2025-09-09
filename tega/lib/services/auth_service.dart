@@ -1,11 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-enum UserRole {
-  admin,
-  user,
-  moderator,
-}
+enum UserRole { admin, user, moderator }
 
 class User {
   final String id;
@@ -40,12 +36,15 @@ class AuthService {
   UserRole? get currentUserRole => _currentUser?.role;
   DateTime? get loginTime => _loginTime;
 
+  // Ensure SharedPreferences is always initialized
+  Future<void> _ensurePrefs() async {
+    _prefs ??= await SharedPreferences.getInstance();
+  }
+
   // Fake login method - replace with real API call later
   Future<Map<String, dynamic>> login(String email, String password) async {
-    // Simulate API delay
     await Future.delayed(const Duration(seconds: 2));
 
-    // Fake user data - replace with real API response
     final fakeUsers = {
       'admin@tega.com': {
         'password': 'admin123',
@@ -84,24 +83,18 @@ class AuthService {
       if (userData['password'] == password) {
         _currentUser = userData['user'] as User;
         _isLoggedIn = true;
-        _loginTime = DateTime.now(); // Record login time
-        await _saveSession(); // Save session to storage
+        _loginTime = DateTime.now();
+        await _saveSession(); // ✅ Now always saves
         return {
           'success': true,
           'message': 'Login successful',
           'user': _currentUser,
         };
       } else {
-        return {
-          'success': false,
-          'message': 'Invalid password',
-        };
+        return {'success': false, 'message': 'Invalid password'};
       }
     } else {
-      return {
-        'success': false,
-        'message': 'User not found',
-      };
+      return {'success': false, 'message': 'User not found'};
     }
   }
 
@@ -112,28 +105,24 @@ class AuthService {
     required String password,
     required String phone,
   }) async {
-    // Simulate API delay
     await Future.delayed(const Duration(seconds: 2));
 
-    // Check if user already exists
-    if (email == 'admin@tega.com' || email == 'moderator@tega.com' || email == 'user@tega.com') {
-      return {
-        'success': false,
-        'message': 'User already exists',
-      };
+    if (email == 'admin@tega.com' ||
+        email == 'moderator@tega.com' ||
+        email == 'user@tega.com') {
+      return {'success': false, 'message': 'User already exists'};
     }
 
-    // Create new user with default role
     _currentUser = User(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
       name: name,
       email: email,
-      role: UserRole.user, // Default role for new users
+      role: UserRole.user, // default role
       createdAt: DateTime.now(),
     );
     _isLoggedIn = true;
-    _loginTime = DateTime.now(); // Record login time
-    await _saveSession(); // Save session to storage
+    _loginTime = DateTime.now();
+    await _saveSession();
 
     return {
       'success': true,
@@ -142,27 +131,21 @@ class AuthService {
     };
   }
 
-  // Fake logout method
+  // Logout method
   Future<void> logout() async {
     await Future.delayed(const Duration(milliseconds: 500));
     _currentUser = null;
     _isLoggedIn = false;
-    _loginTime = null; // Clear login time
-    await _clearSession(); // Clear session from storage
+    _loginTime = null;
+    await _clearSession();
   }
 
-  // Check if user has specific role
-  bool hasRole(UserRole role) {
-    return _currentUser?.role == role;
-  }
-
-  // Check if user is admin
+  // Role helpers
+  bool hasRole(UserRole role) => _currentUser?.role == role;
   bool get isAdmin => hasRole(UserRole.admin);
+  bool get isModeratorOrAdmin =>
+      hasRole(UserRole.moderator) || hasRole(UserRole.admin);
 
-  // Check if user is moderator or admin
-  bool get isModeratorOrAdmin => hasRole(UserRole.moderator) || hasRole(UserRole.admin);
-
-  // Get role display name
   String getRoleDisplayName(UserRole role) {
     switch (role) {
       case UserRole.admin:
@@ -174,7 +157,6 @@ class AuthService {
     }
   }
 
-  // Get role color
   Color getRoleColor(UserRole role) {
     switch (role) {
       case UserRole.admin:
@@ -186,45 +168,35 @@ class AuthService {
     }
   }
 
-  // Check if session is still valid (no expiration for now)
-  bool isSessionValid() {
-    return _isLoggedIn && _currentUser != null;
-  }
+  bool isSessionValid() => _isLoggedIn && _currentUser != null;
 
-  // Get session duration
   Duration? getSessionDuration() {
     if (_loginTime == null) return null;
     return DateTime.now().difference(_loginTime!);
   }
 
-  // Get formatted session duration
   String getFormattedSessionDuration() {
     final duration = getSessionDuration();
     if (duration == null) return 'Not logged in';
-    
     final hours = duration.inHours;
     final minutes = duration.inMinutes % 60;
-    
-    if (hours > 0) {
-      return '${hours}h ${minutes}m';
-    } else {
-      return '${minutes}m';
-    }
+    return hours > 0 ? '${hours}h ${minutes}m' : '${minutes}m';
   }
 
-  // Initialize session (for app startup)
+  // Restore session when app restarts
   Future<void> initializeSession() async {
-    _prefs = await SharedPreferences.getInstance();
-    
-    // Check if user was previously logged in
+    await _ensurePrefs();
+
     final isLoggedIn = _prefs?.getBool('isLoggedIn') ?? false;
     final userEmail = _prefs?.getString('userEmail');
     final userName = _prefs?.getString('userName');
     final userRole = _prefs?.getString('userRole');
     final loginTimeString = _prefs?.getString('loginTime');
-    
-    if (isLoggedIn && userEmail != null && userName != null && userRole != null) {
-      // Restore session
+
+    if (isLoggedIn &&
+        userEmail != null &&
+        userName != null &&
+        userRole != null) {
       _isLoggedIn = true;
       _currentUser = User(
         id: _prefs?.getString('userId') ?? '',
@@ -234,38 +206,48 @@ class AuthService {
           (role) => role.toString() == 'UserRole.$userRole',
           orElse: () => UserRole.user,
         ),
-        createdAt: DateTime.tryParse(_prefs?.getString('createdAt') ?? '') ?? DateTime.now(),
+        createdAt:
+            DateTime.tryParse(_prefs?.getString('createdAt') ?? '') ??
+            DateTime.now(),
       );
-      
+
       if (loginTimeString != null) {
         _loginTime = DateTime.tryParse(loginTimeString);
       }
-      
-      print('Session restored for user: ${_currentUser!.name}');
+
+      debugPrint(
+        '✅ Session restored for ${_currentUser!.name} as ${_currentUser!.role}',
+      );
     }
   }
 
-  // Save session data to SharedPreferences
+  // Save session
   Future<void> _saveSession() async {
-    if (_prefs == null) return;
-    
+    await _ensurePrefs();
+
     await _prefs!.setBool('isLoggedIn', _isLoggedIn);
     if (_currentUser != null) {
       await _prefs!.setString('userId', _currentUser!.id);
       await _prefs!.setString('userName', _currentUser!.name);
       await _prefs!.setString('userEmail', _currentUser!.email);
-      await _prefs!.setString('userRole', _currentUser!.role.toString().split('.').last);
-      await _prefs!.setString('createdAt', _currentUser!.createdAt.toIso8601String());
+      await _prefs!.setString(
+        'userRole',
+        _currentUser!.role.toString().split('.').last,
+      );
+      await _prefs!.setString(
+        'createdAt',
+        _currentUser!.createdAt.toIso8601String(),
+      );
     }
     if (_loginTime != null) {
       await _prefs!.setString('loginTime', _loginTime!.toIso8601String());
     }
   }
 
-  // Clear session data from SharedPreferences
+  // Clear session
   Future<void> _clearSession() async {
-    if (_prefs == null) return;
-    
+    await _ensurePrefs();
+
     await _prefs!.remove('isLoggedIn');
     await _prefs!.remove('userId');
     await _prefs!.remove('userName');

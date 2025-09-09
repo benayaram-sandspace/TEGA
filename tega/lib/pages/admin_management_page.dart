@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:tega/pages/admin_dashboard.dart';
 import '../constants/app_colors.dart';
 import 'admin_management/admin_users_page.dart';
 import 'admin_management/activity_logs_page.dart';
@@ -32,7 +33,7 @@ class _AdminManagementPageState extends State<AdminManagementPage>
       backgroundColor: AppColors.background,
       appBar: AppBar(
         title: const Text(
-          'Admins Management',
+          'Admin Management',
           style: TextStyle(
             fontSize: 24,
             fontWeight: FontWeight.bold,
@@ -41,6 +42,16 @@ class _AdminManagementPageState extends State<AdminManagementPage>
         ),
         backgroundColor: AppColors.background,
         elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          onPressed: () {
+            Navigator.pushAndRemoveUntil(
+              context,
+              MaterialPageRoute(builder: (context) => const AdminDashboard()),
+              (route) => false,
+            );
+          },
+        ),
         bottom: TabBar(
           controller: _tabController,
           indicatorColor: AppColors.primary,
@@ -63,10 +74,7 @@ class _AdminManagementPageState extends State<AdminManagementPage>
       ),
       body: TabBarView(
         controller: _tabController,
-        children: const [
-          AdminUsersPage(),
-          ActivityLogsPage(),
-        ],
+        children: const [AdminUsersPage(), ActivityLogsPage()],
       ),
     );
   }

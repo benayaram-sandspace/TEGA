@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:tega/pages/admin_dashboard.dart';
 import '../../constants/app_colors.dart';
 import '../../services/college_service.dart';
 import 'college_details_page.dart';
@@ -91,14 +92,26 @@ class _CollegesListPageState extends State<CollegesListPage> {
         ),
         backgroundColor: AppColors.background,
         elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          onPressed: () {
+            Navigator.pushAndRemoveUntil(
+              context,
+              MaterialPageRoute(builder: (context) => const AdminDashboard()),
+              (route) => false,
+            );
+          },
+        ),
         actions: [
           TextButton(
             onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (context) => const AddCollegePage(),
-                ),
-              ).then((_) => _loadColleges());
+              Navigator.of(context)
+                  .push(
+                    MaterialPageRoute(
+                      builder: (context) => const AddCollegePage(),
+                    ),
+                  )
+                  .then((_) => _loadColleges());
             },
             child: const Text(
               '+ Add',
@@ -142,57 +155,61 @@ class _CollegesListPageState extends State<CollegesListPage> {
             child: _isLoading
                 ? const Center(
                     child: CircularProgressIndicator(
-                      valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
+                      valueColor: AlwaysStoppedAnimation<Color>(
+                        AppColors.primary,
+                      ),
                     ),
                   )
                 : _filteredColleges.isEmpty
-                    ? Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.school_outlined,
-                              size: 64,
-                              color: AppColors.textSecondary,
-                            ),
-                            const SizedBox(height: 16),
-                            Text(
-                              'No colleges found',
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.w600,
-                                color: AppColors.textSecondary,
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              'Try adjusting your search or add a new college',
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: AppColors.textSecondary,
-                              ),
-                            ),
-                          ],
+                ? Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.school_outlined,
+                          size: 64,
+                          color: AppColors.textSecondary,
                         ),
-                      )
-                    : ListView.builder(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        itemCount: _filteredColleges.length,
-                        itemBuilder: (context, index) {
-                          final college = _filteredColleges[index];
-                          return _buildCollegeCard(college);
-                        },
-                      ),
+                        const SizedBox(height: 16),
+                        Text(
+                          'No colleges found',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Try adjusting your search or add a new college',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                      ],
+                    ),
+                  )
+                : ListView.builder(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    itemCount: _filteredColleges.length,
+                    itemBuilder: (context, index) {
+                      final college = _filteredColleges[index];
+                      return _buildCollegeCard(college);
+                    },
+                  ),
           ),
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () {
-          Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: (context) => const BulkImportCollegesPage(),
-            ),
-          ).then((_) => _loadColleges());
+          Navigator.of(context)
+              .push(
+                MaterialPageRoute(
+                  builder: (context) => const BulkImportCollegesPage(),
+                ),
+              )
+              .then((_) => _loadColleges());
         },
         backgroundColor: AppColors.primary,
         foregroundColor: AppColors.pureWhite,
@@ -242,30 +259,21 @@ class _CollegesListPageState extends State<CollegesListPage> {
             const SizedBox(height: 4),
             Text(
               college.city,
-              style: const TextStyle(
-                color: AppColors.info,
-                fontSize: 14,
-              ),
+              style: const TextStyle(color: AppColors.info, fontSize: 14),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),
             const SizedBox(height: 2),
             Text(
               'ID: ${college.id} | ${college.totalStudents} students',
-              style: TextStyle(
-                color: AppColors.textSecondary,
-                fontSize: 12,
-              ),
+              style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),
           ],
         ),
         trailing: PopupMenuButton<String>(
-          icon: Icon(
-            Icons.more_vert,
-            color: AppColors.textSecondary,
-          ),
+          icon: Icon(Icons.more_vert, color: AppColors.textSecondary),
           onSelected: (value) {
             switch (value) {
               case 'view':
@@ -358,5 +366,3 @@ class _CollegesListPageState extends State<CollegesListPage> {
     );
   }
 }
-
-

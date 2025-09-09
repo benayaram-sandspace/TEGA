@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:tega/pages/admin_dashboard.dart';
 import '../services/auth_service.dart';
 
 class SettingsPage extends StatefulWidget {
@@ -16,168 +17,214 @@ class _SettingsPageState extends State<SettingsPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Settings',
-            style: TextStyle(
-              fontSize: 28,
-              fontWeight: FontWeight.bold,
-              color: Colors.black87,
-            ),
-          ),
-          const SizedBox(height: 24),
-          Expanded(
-            child: SingleChildScrollView(
-              child: Column(
-                children: [
-                  // General Settings
-                  _buildSettingsSection(
-                    title: 'General Settings',
-                    children: [
-                      _buildSettingsTile(
-                        icon: Icons.notifications,
-                        title: 'Push Notifications',
-                        subtitle: 'Receive notifications for important updates',
-                        trailing: Switch(
-                          value: _notificationsEnabled,
-                          onChanged: (value) {
-                            setState(() {
-                              _notificationsEnabled = value;
-                            });
-                          },
-                          activeColor: const Color(0xFFFFA726),
+    return Scaffold(
+      backgroundColor: Colors.white,
+      appBar: AppBar(
+        title: const Text(
+          'Settings',
+          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black87),
+        ),
+        backgroundColor: Colors.white,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          onPressed: () {
+            Navigator.pushAndRemoveUntil(
+              context,
+              MaterialPageRoute(builder: (context) => const AdminDashboard()),
+              (route) => false,
+            );
+          },
+        ),
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: SingleChildScrollView(
+                child: Column(
+                  children: [
+                    // General Settings
+                    _buildSettingsSection(
+                      title: 'General Settings',
+                      children: [
+                        _buildSettingsTile(
+                          icon: Icons.notifications,
+                          title: 'Push Notifications',
+                          subtitle:
+                              'Receive notifications for important updates',
+                          trailing: Switch(
+                            value: _notificationsEnabled,
+                            onChanged: (value) {
+                              setState(() {
+                                _notificationsEnabled = value;
+                              });
+                            },
+                            activeColor: const Color(0xFFFFA726),
+                          ),
                         ),
-                      ),
-                      _buildSettingsTile(
-                        icon: Icons.dark_mode,
-                        title: 'Dark Mode',
-                        subtitle: 'Switch to dark theme',
-                        trailing: Switch(
-                          value: _darkModeEnabled,
-                          onChanged: (value) {
-                            setState(() {
-                              _darkModeEnabled = value;
-                            });
-                          },
-                          activeColor: const Color(0xFFFFA726),
+                        _buildSettingsTile(
+                          icon: Icons.dark_mode,
+                          title: 'Dark Mode',
+                          subtitle: 'Switch to dark theme',
+                          trailing: Switch(
+                            value: _darkModeEnabled,
+                            onChanged: (value) {
+                              setState(() {
+                                _darkModeEnabled = value;
+                              });
+                            },
+                            activeColor: const Color(0xFFFFA726),
+                          ),
                         ),
-                      ),
-                      _buildSettingsTile(
-                        icon: Icons.language,
-                        title: 'Language',
-                        subtitle: 'English (US)',
-                        trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-                        onTap: () => _showLanguageDialog(),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 24),
-                  // Security Settings
-                  _buildSettingsSection(
-                    title: 'Security',
-                    children: [
-                      _buildSettingsTile(
-                        icon: Icons.lock,
-                        title: 'Change Password',
-                        subtitle: 'Update your account password',
-                        trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-                        onTap: () => _showChangePasswordDialog(),
-                      ),
-                      _buildSettingsTile(
-                        icon: Icons.security,
-                        title: 'Two-Factor Authentication',
-                        subtitle: 'Add an extra layer of security',
-                        trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-                        onTap: () => _show2FADialog(),
-                      ),
-                      _buildSettingsTile(
-                        icon: Icons.login,
-                        title: 'Login Sessions',
-                        subtitle: 'Manage active login sessions',
-                        trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-                        onTap: () => _showSessionsDialog(),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 24),
-                  // Data & Privacy
-                  _buildSettingsSection(
-                    title: 'Data & Privacy',
-                    children: [
-                      _buildSettingsTile(
-                        icon: Icons.backup,
-                        title: 'Auto Backup',
-                        subtitle: 'Automatically backup your data',
-                        trailing: Switch(
-                          value: _autoBackupEnabled,
-                          onChanged: (value) {
-                            setState(() {
-                              _autoBackupEnabled = value;
-                            });
-                          },
-                          activeColor: const Color(0xFFFFA726),
+                        _buildSettingsTile(
+                          icon: Icons.language,
+                          title: 'Language',
+                          subtitle: 'English (US)',
+                          trailing: const Icon(
+                            Icons.arrow_forward_ios,
+                            size: 16,
+                          ),
+                          onTap: () => _showLanguageDialog(),
                         ),
-                      ),
-                      _buildSettingsTile(
-                        icon: Icons.download,
-                        title: 'Export Data',
-                        subtitle: 'Download your account data',
-                        trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-                        onTap: () => _exportData(),
-                      ),
-                      _buildSettingsTile(
-                        icon: Icons.delete_forever,
-                        title: 'Delete Account',
-                        subtitle: 'Permanently delete your account',
-                        trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-                        onTap: () => _showDeleteAccountDialog(),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 24),
-                  // System Information
-                  _buildSettingsSection(
-                    title: 'System Information',
-                    children: [
-                      _buildSettingsTile(
-                        icon: Icons.info,
-                        title: 'App Version',
-                        subtitle: '1.0.0 (Build 1)',
-                        trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-                        onTap: () => _showVersionInfo(),
-                      ),
-                      _buildSettingsTile(
-                        icon: Icons.help,
-                        title: 'Help & Support',
-                        subtitle: 'Get help and contact support',
-                        trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-                        onTap: () => _showHelpDialog(),
-                      ),
-                      _buildSettingsTile(
-                        icon: Icons.privacy_tip,
-                        title: 'Privacy Policy',
-                        subtitle: 'Read our privacy policy',
-                        trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-                        onTap: () => _showPrivacyPolicy(),
-                      ),
-                      _buildSettingsTile(
-                        icon: Icons.description,
-                        title: 'Terms of Service',
-                        subtitle: 'Read our terms of service',
-                        trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-                        onTap: () => _showTermsOfService(),
-                      ),
-                    ],
-                  ),
-                ],
+                      ],
+                    ),
+                    const SizedBox(height: 24),
+
+                    // Security Settings
+                    _buildSettingsSection(
+                      title: 'Security',
+                      children: [
+                        _buildSettingsTile(
+                          icon: Icons.lock,
+                          title: 'Change Password',
+                          subtitle: 'Update your account password',
+                          trailing: const Icon(
+                            Icons.arrow_forward_ios,
+                            size: 16,
+                          ),
+                          onTap: () => _showChangePasswordDialog(),
+                        ),
+                        _buildSettingsTile(
+                          icon: Icons.security,
+                          title: 'Two-Factor Authentication',
+                          subtitle: 'Add an extra layer of security',
+                          trailing: const Icon(
+                            Icons.arrow_forward_ios,
+                            size: 16,
+                          ),
+                          onTap: () => _show2FADialog(),
+                        ),
+                        _buildSettingsTile(
+                          icon: Icons.login,
+                          title: 'Login Sessions',
+                          subtitle: 'Manage active login sessions',
+                          trailing: const Icon(
+                            Icons.arrow_forward_ios,
+                            size: 16,
+                          ),
+                          onTap: () => _showSessionsDialog(),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 24),
+
+                    // Data & Privacy
+                    _buildSettingsSection(
+                      title: 'Data & Privacy',
+                      children: [
+                        _buildSettingsTile(
+                          icon: Icons.backup,
+                          title: 'Auto Backup',
+                          subtitle: 'Automatically backup your data',
+                          trailing: Switch(
+                            value: _autoBackupEnabled,
+                            onChanged: (value) {
+                              setState(() {
+                                _autoBackupEnabled = value;
+                              });
+                            },
+                            activeColor: const Color(0xFFFFA726),
+                          ),
+                        ),
+                        _buildSettingsTile(
+                          icon: Icons.download,
+                          title: 'Export Data',
+                          subtitle: 'Download your account data',
+                          trailing: const Icon(
+                            Icons.arrow_forward_ios,
+                            size: 16,
+                          ),
+                          onTap: () => _exportData(),
+                        ),
+                        _buildSettingsTile(
+                          icon: Icons.delete_forever,
+                          title: 'Delete Account',
+                          subtitle: 'Permanently delete your account',
+                          trailing: const Icon(
+                            Icons.arrow_forward_ios,
+                            size: 16,
+                          ),
+                          onTap: () => _showDeleteAccountDialog(),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 24),
+
+                    // System Information
+                    _buildSettingsSection(
+                      title: 'System Information',
+                      children: [
+                        _buildSettingsTile(
+                          icon: Icons.info,
+                          title: 'App Version',
+                          subtitle: '1.0.0 (Build 1)',
+                          trailing: const Icon(
+                            Icons.arrow_forward_ios,
+                            size: 16,
+                          ),
+                          onTap: () => _showVersionInfo(),
+                        ),
+                        _buildSettingsTile(
+                          icon: Icons.help,
+                          title: 'Help & Support',
+                          subtitle: 'Get help and contact support',
+                          trailing: const Icon(
+                            Icons.arrow_forward_ios,
+                            size: 16,
+                          ),
+                          onTap: () => _showHelpDialog(),
+                        ),
+                        _buildSettingsTile(
+                          icon: Icons.privacy_tip,
+                          title: 'Privacy Policy',
+                          subtitle: 'Read our privacy policy',
+                          trailing: const Icon(
+                            Icons.arrow_forward_ios,
+                            size: 16,
+                          ),
+                          onTap: () => _showPrivacyPolicy(),
+                        ),
+                        _buildSettingsTile(
+                          icon: Icons.description,
+                          title: 'Terms of Service',
+                          subtitle: 'Read our terms of service',
+                          trailing: const Icon(
+                            Icons.arrow_forward_ios,
+                            size: 16,
+                          ),
+                          onTap: () => _showTermsOfService(),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -232,25 +279,15 @@ class _SettingsPageState extends State<SettingsPage> {
           color: const Color(0xFFFFA726).withOpacity(0.1),
           borderRadius: BorderRadius.circular(8),
         ),
-        child: Icon(
-          icon,
-          color: const Color(0xFFFFA726),
-          size: 20,
-        ),
+        child: Icon(icon, color: const Color(0xFFFFA726), size: 20),
       ),
       title: Text(
         title,
-        style: const TextStyle(
-          fontWeight: FontWeight.w600,
-          fontSize: 16,
-        ),
+        style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
       ),
       subtitle: Text(
         subtitle,
-        style: TextStyle(
-          color: Colors.grey[600],
-          fontSize: 14,
-        ),
+        style: TextStyle(color: Colors.grey[600], fontSize: 14),
       ),
       trailing: trailing,
       onTap: onTap,
@@ -262,7 +299,9 @@ class _SettingsPageState extends State<SettingsPage> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Select Language'),
-        content: const Text('Language selection will be implemented with real backend integration.'),
+        content: const Text(
+          'Language selection will be implemented with real backend integration.',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
@@ -278,7 +317,9 @@ class _SettingsPageState extends State<SettingsPage> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Change Password'),
-        content: const Text('Password change functionality will be implemented with real backend integration.'),
+        content: const Text(
+          'Password change functionality will be implemented with real backend integration.',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
@@ -294,7 +335,9 @@ class _SettingsPageState extends State<SettingsPage> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Two-Factor Authentication'),
-        content: const Text('2FA setup will be implemented with real backend integration.'),
+        content: const Text(
+          '2FA setup will be implemented with real backend integration.',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
@@ -310,7 +353,9 @@ class _SettingsPageState extends State<SettingsPage> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Login Sessions'),
-        content: const Text('Session management will be implemented with real backend integration.'),
+        content: const Text(
+          'Session management will be implemented with real backend integration.',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
@@ -326,7 +371,9 @@ class _SettingsPageState extends State<SettingsPage> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Export Data'),
-        content: const Text('Data export functionality will be implemented with real backend integration.'),
+        content: const Text(
+          'Data export functionality will be implemented with real backend integration.',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
@@ -342,7 +389,9 @@ class _SettingsPageState extends State<SettingsPage> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Delete Account'),
-        content: const Text('Are you sure you want to permanently delete your account? This action cannot be undone.'),
+        content: const Text(
+          'Are you sure you want to permanently delete your account? This action cannot be undone.',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
@@ -387,7 +436,9 @@ class _SettingsPageState extends State<SettingsPage> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Help & Support'),
-        content: const Text('Help and support features will be implemented with real backend integration.'),
+        content: const Text(
+          'Help and support features will be implemented with real backend integration.',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
@@ -403,7 +454,9 @@ class _SettingsPageState extends State<SettingsPage> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Privacy Policy'),
-        content: const Text('Privacy policy will be implemented with real backend integration.'),
+        content: const Text(
+          'Privacy policy will be implemented with real backend integration.',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
@@ -419,7 +472,9 @@ class _SettingsPageState extends State<SettingsPage> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Terms of Service'),
-        content: const Text('Terms of service will be implemented with real backend integration.'),
+        content: const Text(
+          'Terms of service will be implemented with real backend integration.',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
