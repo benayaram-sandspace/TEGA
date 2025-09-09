@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
-import 'splash_screen.dart';
+import 'package:tega/pages/home_screens/splash_screen.dart';
 
 void main() {
   // debug to confirm app start
   // ignore: avoid_print
   print('main(): starting app');
-  
+
   runApp(const MyApp());
 }
- 
+
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 

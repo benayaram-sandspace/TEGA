@@ -137,6 +137,12 @@ class Student {
       interviewPractices: json['interviewPractices'],
     );
   }
+
+  get college => null;
+
+  get status => null;
+
+  static basic(String s, String t, String u) {}
 }
 
 class CollegeService {
