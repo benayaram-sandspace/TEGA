@@ -1,7 +1,36 @@
 import 'package:flutter/material.dart';
+import 'package:file_picker/file_picker.dart';
 
-class ResumeAnalysisPage extends StatelessWidget {
+class ResumeAnalysisPage extends StatefulWidget {
   const ResumeAnalysisPage({super.key});
+
+  @override
+  State<ResumeAnalysisPage> createState() => _ResumeAnalysisPageState();
+}
+
+class _ResumeAnalysisPageState extends State<ResumeAnalysisPage> {
+  String? uploadedFileName;
+
+  Future<void> _pickResume() async {
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: ['pdf', 'docx'],
+    );
+
+    if (result != null && result.files.isNotEmpty) {
+      setState(() {
+        uploadedFileName = result.files.single.name;
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("✅ Uploaded: ${result.files.single.name}"),
+          backgroundColor: Colors.deepPurple,
+          duration: const Duration(seconds: 2),
+        ),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -31,55 +60,43 @@ class ResumeAnalysisPage extends StatelessWidget {
                 color: Colors.grey[200],
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: Stack(
-                alignment: Alignment.bottomLeft,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Image.network(
-                        "https://img.freepik.com/free-photo/resume-paper-closeup_23-2148898742.jpg", // placeholder resume image
-                        height: 160,
-                        width: double.infinity,
-                        fit: BoxFit.cover,
+                  Image.network(
+                    "https://img.freepik.com/free-photo/resume-paper-closeup_23-2148898742.jpg",
+                    height: 160,
+                    width: double.infinity,
+                    fit: BoxFit.cover,
+                  ),
+                  const SizedBox(height: 12),
+                  const Text(
+                    "Step 1: Upload Your Resume",
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black87,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.deepPurple,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 10,
                       ),
-                      const SizedBox(height: 12),
-                      const Text(
-                        "Step 1: Upload Your Resume",
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                          shadows: [
-                            Shadow(
-                              offset: Offset(0, 1),
-                              blurRadius: 4,
-                              color: Colors.black45,
-                            ),
-                          ],
-                        ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
                       ),
-                      const SizedBox(height: 12),
-                      ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.deepPurple,
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 20,
-                            vertical: 10,
-                          ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                        ),
-                        onPressed: () {
-                          // TODO: File picker logic
-                        },
-                        child: const Text(
-                          "Drag & drop or click to upload. (PDF, DOCX)",
-                          style: TextStyle(fontSize: 13, color: Colors.white),
-                        ),
-                      ),
-                    ],
+                    ),
+                    onPressed: _pickResume,
+                    child: Text(
+                      uploadedFileName == null
+                          ? "Drag & drop or click to upload. (PDF, DOCX)"
+                          : "Uploaded: $uploadedFileName",
+                      style: const TextStyle(fontSize: 13, color: Colors.white),
+                    ),
                   ),
                 ],
               ),
@@ -95,7 +112,7 @@ class ResumeAnalysisPage extends StatelessWidget {
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Image.network(
-                "https://img.freepik.com/free-photo/flat-lay-resume-template-with-pen_23-2148915271.jpg", // placeholder job description
+                "https://img.freepik.com/free-photo/flat-lay-resume-template-with-pen_23-2148915271.jpg",
                 height: 160,
                 width: double.infinity,
                 fit: BoxFit.cover,
@@ -119,7 +136,22 @@ class ResumeAnalysisPage extends StatelessWidget {
                   ),
                 ),
                 onPressed: () {
-                  // TODO: Perform analysis
+                  // Dummy analysis action
+                  if (uploadedFileName == null) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text("⚠️ Please upload a resume first"),
+                        backgroundColor: Colors.redAccent,
+                      ),
+                    );
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text("🔍 Analyzing $uploadedFileName ..."),
+                        backgroundColor: Colors.deepPurple,
+                      ),
+                    );
+                  }
                 },
                 child: const Text(
                   "Analyze Now",

@@ -41,6 +41,9 @@ dependencies:
   open_file: ^3.3.2
   pdf: ^3.10.7
   csv: ^5.0.2
+  file_picker: ^8.1.2
+  permission_handler: ^11.3.1
+  camera: ^0.10.5+9
 
 dev_dependencies:
   flutter_test:

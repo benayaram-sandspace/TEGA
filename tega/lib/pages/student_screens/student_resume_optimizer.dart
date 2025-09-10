@@ -95,22 +95,22 @@ class ResumeOptimizerPage extends StatelessWidget {
             const SizedBox(height: 12),
 
             _buildHistoryItem(
+              context,
               title: "Software Engineer at TechCorp",
               date: "Analyzed on 18 Aug 2025",
               score: "Match Score: 82%",
-              onTap: () {},
             ),
             _buildHistoryItem(
+              context,
               title: "Product Manager at Innovate Solutions",
               date: "Analyzed on 15 Aug 2025",
               score: "Match Score: 75%",
-              onTap: () {},
             ),
             _buildHistoryItem(
+              context,
               title: "Data Scientist at Data Insights Inc.",
               date: "Analyzed on 12 Aug 2025",
               score: "Match Score: 68%",
-              onTap: () {},
             ),
           ],
         ),
@@ -118,11 +118,11 @@ class ResumeOptimizerPage extends StatelessWidget {
     );
   }
 
-  Widget _buildHistoryItem({
+  Widget _buildHistoryItem(
+    BuildContext context, {
     required String title,
     required String date,
     required String score,
-    required VoidCallback onTap,
   }) {
     return Column(
       children: [
@@ -150,10 +150,90 @@ class ResumeOptimizerPage extends StatelessWidget {
             size: 16,
             color: Colors.black54,
           ),
-          onTap: onTap,
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) =>
+                    HistoryDetailPage(title: title, date: date, score: score),
+              ),
+            );
+          },
         ),
         const Divider(height: 1),
       ],
+    );
+  }
+}
+
+// Dummy history details page
+class HistoryDetailPage extends StatelessWidget {
+  final String title;
+  final String date;
+  final String score;
+
+  const HistoryDetailPage({
+    super.key,
+    required this.title,
+    required this.date,
+    required this.score,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 2,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          onPressed: () => Navigator.pop(context),
+        ),
+        title: const Text(
+          "Analysis Details",
+          style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
+        ),
+        centerTitle: true,
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              title,
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              date,
+              style: const TextStyle(fontSize: 14, color: Colors.grey),
+            ),
+            Text(
+              score,
+              style: const TextStyle(fontSize: 14, color: Colors.grey),
+            ),
+            const SizedBox(height: 20),
+            const Divider(),
+            const Text(
+              "Analysis Summary (Dummy):",
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 12),
+            const Text(
+              "Your resume has strong technical skills and matches well "
+              "with the job description. Work on highlighting leadership "
+              "experiences and quantifiable achievements to improve the "
+              "match score further.",
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.black87,
+                height: 1.5,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
