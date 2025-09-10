@@ -1,6 +1,7 @@
 {
     "configurations": [
         
+        
         {
             "name": "tega (Flutter)",
             "program": "lib/main.dart",
