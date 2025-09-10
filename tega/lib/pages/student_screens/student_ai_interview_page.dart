@@ -38,8 +38,14 @@ class _AiInterviewPageState extends State<AiInterviewPage> {
 
   Future<void> _initCamera() async {
     if (cameras.isNotEmpty) {
+      // Pick the front camera if available
+      final frontCamera = cameras.firstWhere(
+        (cam) => cam.lensDirection == CameraLensDirection.front,
+        orElse: () => cameras.first,
+      );
+
       _controller = CameraController(
-        cameras.first,
+        frontCamera,
         ResolutionPreset.high,
         enableAudio: true,
       );
@@ -190,7 +196,7 @@ class _AiInterviewPageState extends State<AiInterviewPage> {
 
                 // AI interviewer chatbot thumbnail
                 Positioned(
-                  bottom: 120,
+                  bottom: 260,
                   right: 16,
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(8),
@@ -204,41 +210,58 @@ class _AiInterviewPageState extends State<AiInterviewPage> {
                 ),
 
                 // Bottom overlay: Question & Status
+                // Bottom overlay: Question & Status
                 Positioned(
                   bottom: 100,
                   left: 16,
                   right: 16,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        "Current Question:",
-                        style: TextStyle(
-                          fontWeight: FontWeight.w600,
-                          fontSize: 14,
-                          color: Colors.white,
-                        ),
-                      ),
-                      const SizedBox(height: 6),
-                      Text(
-                        _questions[_currentQuestionIndex],
-                        style: const TextStyle(
-                          fontSize: 15,
-                          color: Colors.white,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Row(
-                        children: const [
-                          Icon(Icons.mic, size: 16, color: Colors.green),
-                          SizedBox(width: 6),
-                          Text(
-                            "AI is listening to your response...",
-                            style: TextStyle(color: Colors.green, fontSize: 13),
+                  child: Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.black54, // semi-transparent background
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          "Current Question:",
+                          style: TextStyle(
+                            fontWeight: FontWeight.w600,
+                            fontSize: 15,
+                            color: Colors.white,
                           ),
-                        ],
-                      ),
-                    ],
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          _questions[_currentQuestionIndex],
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w500,
+                            color: Colors.white,
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        Row(
+                          children: const [
+                            Icon(
+                              Icons.mic,
+                              size: 18,
+                              color: Colors.greenAccent,
+                            ),
+                            SizedBox(width: 8),
+                            Text(
+                              "AI is listening to your response...",
+                              style: TextStyle(
+                                color: Colors.greenAccent,
+                                fontSize: 14,
+                                fontWeight: FontWeight.w400,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
                 ),
 
