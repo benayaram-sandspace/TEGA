@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:tega/pages/login_screens/login_page.dart';
-import 'package:tega/pages/student_screens/studen_home_page.dart';
+import 'package:tega/pages/student_screens/student_home_page.dart';
 import 'package:tega/services/auth_service.dart';
 // Import your student home page
 

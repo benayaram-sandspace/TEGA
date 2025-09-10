@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:tega/pages/student_screens/studen_home_page.dart';
+import 'package:tega/pages/student_screens/student_home_page.dart';
 
 class LeaderboardPage extends StatelessWidget {
   const LeaderboardPage({super.key});
