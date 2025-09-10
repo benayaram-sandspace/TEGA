@@ -1,3 +1,5 @@
+// ignore_for_file: unused_element
+
 import 'package:flutter/material.dart';
 import 'package:tega/constants/app_colors.dart';
 import 'package:tega/models/student.dart';
