@@ -65,6 +65,7 @@ class _AdminUsersPageState extends State<AdminUsersPage> {
     });
   }
 
+  // ignore: unused_element
   void _clearFilters() {
     setState(() {
       _searchController.clear();
