@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:tega/pages/student_screens/student_ai_interview_page.dart';
+import 'package:tega/pages/student_screens/student_avatar_screen.dart';
+import 'package:tega/pages/student_screens/student_notification_page.dart';
 import 'package:tega/pages/student_screens/student_profile_page.dart';
 import 'package:tega/pages/student_screens/student_resume_optimizer.dart';
 import 'package:tega/pages/student_screens/student_skill_drill_page.dart';
@@ -60,7 +62,14 @@ class StudentHomePage extends StatelessWidget {
                         children: [
                           IconButton(
                             icon: const Icon(Icons.notifications_outlined),
-                            onPressed: () {},
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => const NotificationPage(),
+                                ),
+                              );
+                            },
                             iconSize: 28,
                           ),
                           Positioned(
@@ -73,7 +82,7 @@ class StudentHomePage extends StatelessWidget {
                                 shape: BoxShape.circle,
                               ),
                               child: const Text(
-                                '5',
+                                '5', // later replace with dynamic count
                                 style: TextStyle(
                                   color: Colors.white,
                                   fontSize: 10,
@@ -88,9 +97,20 @@ class StudentHomePage extends StatelessWidget {
                       CircleAvatar(
                         radius: 20,
                         backgroundColor: Colors.grey[300],
-                        child: Hero(
-                          tag: UniqueKey(), // prevent hero conflict
-                          child: Icon(Icons.person, color: Colors.grey[600]),
+                        child: GestureDetector(
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) =>
+                                    const AvatarScreen(), // new screen
+                              ),
+                            );
+                          },
+                          child: Hero(
+                            tag: 'avatarHero', // keep this tag consistent
+                            child: Icon(Icons.person, color: Colors.grey[600]),
+                          ),
                         ),
                       ),
                     ],
