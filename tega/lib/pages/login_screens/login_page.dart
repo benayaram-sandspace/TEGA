@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:tega/constants/app_colors.dart';
-import 'package:tega/pages/admin_screens/admin_home_page.dart';
+import 'package:tega/pages/home_screens/home_page.dart';
 import 'package:tega/pages/admin_screens/admin_related_pages/admin_dashboard.dart';
 
 import 'package:tega/pages/signup_screens/signup_page.dart';

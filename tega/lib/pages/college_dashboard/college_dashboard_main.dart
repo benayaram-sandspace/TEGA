@@ -8,6 +8,7 @@ import 'learning_activity_engagement.dart';
 import 'resume_interview_monitor.dart';
 import 'college_student_analytics.dart';
 import 'college_reports_page.dart';
+import 'settings_support_page.dart';
 import 'package:tega/pages/login_screens/login_page.dart';
 import 'package:tega/services/auth_service.dart';
 
@@ -22,6 +23,7 @@ class CollegeDashboardMain extends StatefulWidget {
 
 class _CollegeDashboardMainState extends State<CollegeDashboardMain> {
   int _selectedIndex = 0;
+  bool _isSidebarOpen = true;
   final AuthService _authService = AuthService();
 
   final List<Widget> _pages = [
@@ -39,6 +41,7 @@ class _CollegeDashboardMainState extends State<CollegeDashboardMain> {
       ResumeInterviewMonitor(college: widget.college),
       CollegeStudentAnalytics(college: widget.college),
       CollegeReportsPage(college: widget.college),
+      SettingsSupportPage(college: widget.college),
     ]);
   }
 
@@ -86,10 +89,12 @@ class _CollegeDashboardMainState extends State<CollegeDashboardMain> {
       backgroundColor: AppColors.background,
       body: Row(
         children: [
-          // Sidebar - Always visible
-          Container(
-            width: 250,
-            child: _buildSidebar(),
+          // Sidebar - Collapsible
+          AnimatedContainer(
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeInOut,
+            width: _isSidebarOpen ? 250 : 0,
+            child: _isSidebarOpen ? _buildSidebar() : const SizedBox.shrink(),
           ),
           
           // Main Content Area
@@ -131,6 +136,22 @@ class _CollegeDashboardMainState extends State<CollegeDashboardMain> {
       ),
       child: Row(
         children: [
+          // Hamburger Menu Button
+          IconButton(
+            onPressed: () {
+              setState(() {
+                _isSidebarOpen = !_isSidebarOpen;
+              });
+            },
+            icon: Icon(
+              _isSidebarOpen ? Icons.menu_open : Icons.menu,
+              color: AppColors.textPrimary,
+            ),
+            tooltip: _isSidebarOpen ? 'Close Sidebar' : 'Open Sidebar',
+          ),
+          
+          const SizedBox(width: 16),
+          
           // College Name and Title
           Expanded(
             child: Row(
@@ -352,8 +373,12 @@ class _CollegeDashboardMainState extends State<CollegeDashboardMain> {
           onTap: () {
             setState(() {
               _selectedIndex = index;
+              // Auto-close sidebar on mobile devices (screen width < 768)
+              if (MediaQuery.of(context).size.width < 768) {
+                _isSidebarOpen = false;
+              }
             });
-            print('Navigating to page: $index'); // Debug print
+            print('Navigated to: $title (Index: $index)');
           },
           borderRadius: BorderRadius.circular(8),
           child: Container(

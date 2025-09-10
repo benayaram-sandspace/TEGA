@@ -1,10 +1,12 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:tega/constants/app_colors.dart';
-import 'package:tega/pages/admin_screens/admin_home_page.dart';
+import 'package:tega/pages/home_screens/home_page.dart';
 import 'package:tega/pages/admin_screens/admin_related_pages/admin_dashboard.dart';
 import 'package:tega/pages/login_screens/login_page.dart';
 import 'package:tega/pages/student_screens/studen_home_page.dart';
+import 'package:tega/pages/college_dashboard/college_dashboard_main.dart';
+import 'package:tega/services/college_service.dart';
 import 'package:tega/services/auth_service.dart';
 
 /// A splash screen that matches the original TEGA design with circular logo,
@@ -98,13 +100,12 @@ class _SplashScreenState extends State<SplashScreen>
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(builder: (_) => const AdminDashboard()),
         );
+      } else if (_authService.hasRole(UserRole.moderator)) {
+        // College Principal - redirect to College Dashboard
+        _navigateToCollegeDashboard();
       } else if (_authService.hasRole(UserRole.user)) {
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(builder: (_) => const StudentHomePage()),
-        );
-      } else if (_authService.hasRole(UserRole.moderator)) {
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (_) => const HomePage(title: 'TEGA')),
         );
       } else {
         // fallback if role not recognized
@@ -117,6 +118,35 @@ class _SplashScreenState extends State<SplashScreen>
       Navigator.of(
         context,
       ).pushReplacement(MaterialPageRoute(builder: (_) => const LoginPage()));
+    }
+  }
+
+  Future<void> _navigateToCollegeDashboard() async {
+    try {
+      // Load colleges and find the first one (for demo purposes)
+      final collegeService = CollegeService();
+      final colleges = await collegeService.loadColleges();
+      
+      if (colleges.isNotEmpty) {
+        // For demo, use the first college
+        final college = colleges.first;
+        
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(
+            builder: (context) => CollegeDashboardMain(college: college),
+          ),
+        );
+      } else {
+        // If no colleges found, go to login page
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (_) => const LoginPage()),
+        );
+      }
+    } catch (e) {
+      // If error occurs, go to login page
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (_) => const LoginPage()),
+      );
     }
   }
 

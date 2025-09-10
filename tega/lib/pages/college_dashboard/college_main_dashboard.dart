@@ -96,35 +96,41 @@ class _CollegeMainDashboardState extends State<CollegeMainDashboard> {
   }
 
   Widget _buildMetricsSection() {
-    return Row(
-      children: [
-        Expanded(
-          child: _buildMetricCard(
-            title: 'Total Registered Students',
-            value: '2,847',
-            icon: Icons.people,
-            color: Colors.purple,
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        children: [
+          SizedBox(
+            width: 200,
+            child: _buildMetricCard(
+              title: 'Total Registered Students',
+              value: '2,847',
+              icon: Icons.people,
+              color: Colors.purple,
+            ),
           ),
-        ),
-        const SizedBox(width: 16),
-        Expanded(
-          child: _buildMetricCard(
-            title: 'Daily Active Students',
-            value: '1,423',
-            icon: Icons.trending_up,
-            color: Colors.green,
+          const SizedBox(width: 16),
+          SizedBox(
+            width: 200,
+            child: _buildMetricCard(
+              title: 'Daily Active Students',
+              value: '1,423',
+              icon: Icons.trending_up,
+              color: Colors.green,
+            ),
           ),
-        ),
-        const SizedBox(width: 16),
-        Expanded(
-          child: _buildMetricCard(
-            title: 'Top Performing Students',
-            value: '186',
-            icon: Icons.emoji_events,
-            color: Colors.amber,
+          const SizedBox(width: 16),
+          SizedBox(
+            width: 200,
+            child: _buildMetricCard(
+              title: 'Top Performing Students',
+              value: '186',
+              icon: Icons.emoji_events,
+              color: Colors.amber,
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
@@ -408,6 +414,8 @@ class _CollegeMainDashboardState extends State<CollegeMainDashboard> {
                     fontWeight: FontWeight.w500,
                     color: AppColors.textPrimary,
                   ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
                 ),
                 const SizedBox(height: 4),
                 Text(
@@ -421,6 +429,7 @@ class _CollegeMainDashboardState extends State<CollegeMainDashboard> {
               ],
             ),
           ),
+          const SizedBox(width: 8),
           Icon(
             Icons.arrow_forward_ios,
             color: AppColors.textSecondary,
