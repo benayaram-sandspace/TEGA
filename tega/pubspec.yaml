@@ -44,6 +44,7 @@ dependencies:
   file_picker: ^8.1.2
   permission_handler: ^11.3.1
   camera: ^0.10.5+9
+  font_awesome_flutter: ^10.7.0
 
 dev_dependencies:
   flutter_test:
@@ -74,6 +75,7 @@ flutter:
   assets:
     - assets/logo.png
     - assets/splash_logo.png
+    - assets/illustration.png
     - assets/centered_splash_logo.png
     - lib/data/colleges_data.json
     - lib/data/content_quiz_data.json
