@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:tega/pages/admin_screens/admin_home_page.dart';
+import 'package:tega/pages/home_screens/home_page.dart';
 
 class OTPVerificationPage extends StatefulWidget {
   final String email;
