@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:tega/pages/student_screens/studen_home_page.dart';
+import 'package:tega/pages/student_screens/student_home_page.dart';
 import 'package:tega/pages/student_screens/student_quiz_leaderboard_page.dart';
 
 class QuestionPage extends StatefulWidget {

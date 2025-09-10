@@ -4,7 +4,7 @@ import 'package:tega/constants/app_colors.dart';
 import 'package:tega/pages/home_screens/home_page.dart';
 import 'package:tega/pages/admin_screens/admin_related_pages/admin_dashboard.dart';
 import 'package:tega/pages/login_screens/login_page.dart';
-import 'package:tega/pages/student_screens/studen_home_page.dart';
+import 'package:tega/pages/student_screens/student_home_page.dart';
 import 'package:tega/pages/college_dashboard/college_dashboard_main.dart';
 import 'package:tega/services/college_service.dart';
 import 'package:tega/services/auth_service.dart';
