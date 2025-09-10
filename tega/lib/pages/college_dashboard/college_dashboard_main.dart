@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:tega/constants/app_colors.dart';
 import 'package:tega/services/college_service.dart';
-import 'college_overview_page.dart';
-import 'college_student_analytics.dart';
+import 'college_main_dashboard.dart';
 import 'college_student_management.dart';
+import 'career_progress_tracker.dart';
+import 'learning_activity_engagement.dart';
+import 'resume_interview_monitor.dart';
+import 'college_student_analytics.dart';
 import 'college_reports_page.dart';
 import 'package:tega/pages/login_screens/login_page.dart';
 import 'package:tega/services/auth_service.dart';
@@ -19,7 +22,6 @@ class CollegeDashboardMain extends StatefulWidget {
 
 class _CollegeDashboardMainState extends State<CollegeDashboardMain> {
   int _selectedIndex = 0;
-  bool _isSidebarOpen = false;
   final AuthService _authService = AuthService();
 
   final List<Widget> _pages = [
@@ -30,9 +32,12 @@ class _CollegeDashboardMainState extends State<CollegeDashboardMain> {
   void initState() {
     super.initState();
     _pages.addAll([
-      CollegeOverviewPage(college: widget.college),
-      CollegeStudentAnalytics(college: widget.college),
+      CollegeMainDashboard(college: widget.college),
       CollegeStudentManagement(college: widget.college),
+      CareerProgressTracker(college: widget.college),
+      LearningActivityEngagement(college: widget.college),
+      ResumeInterviewMonitor(college: widget.college),
+      CollegeStudentAnalytics(college: widget.college),
       CollegeReportsPage(college: widget.college),
     ]);
   }
@@ -79,52 +84,30 @@ class _CollegeDashboardMainState extends State<CollegeDashboardMain> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
-      body: Stack(
+      body: Row(
         children: [
-          // Main Content
-          Row(
-            children: [
-              // Sidebar
-              AnimatedContainer(
-                duration: const Duration(milliseconds: 300),
-                curve: Curves.easeInOut,
-                width: _isSidebarOpen ? 250 : 0,
-                child: _isSidebarOpen ? _buildSidebar() : const SizedBox.shrink(),
-              ),
-              
-              // Main Content Area
-              Expanded(
-                child: Column(
-                  children: [
-                    // Top Bar
-                    _buildTopBar(),
-                    
-                    // Page Content
-                    Expanded(
-                      child: _pages.isNotEmpty ? _pages[_selectedIndex] : const Center(
-                        child: CircularProgressIndicator(),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
+          // Sidebar - Always visible
+          Container(
+            width: 250,
+            child: _buildSidebar(),
           ),
-
-          // Sidebar Overlay
-          if (_isSidebarOpen)
-            Positioned(
-              left: 0,
-              top: 0,
-              bottom: 0,
-              right: 0,
-              child: GestureDetector(
-                onTap: () => setState(() => _isSidebarOpen = false),
-                child: Container(
-                  color: Colors.black.withOpacity(0.3),
+          
+          // Main Content Area
+          Expanded(
+            child: Column(
+              children: [
+                // Top Bar
+                _buildTopBar(),
+                
+                // Page Content
+                Expanded(
+                  child: _pages.isNotEmpty ? _pages[_selectedIndex] : const Center(
+                    child: CircularProgressIndicator(),
+                  ),
                 ),
-              ),
+              ],
             ),
+          ),
         ],
       ),
     );
@@ -148,34 +131,44 @@ class _CollegeDashboardMainState extends State<CollegeDashboardMain> {
       ),
       child: Row(
         children: [
-          // Menu Button
-          IconButton(
-            onPressed: () => setState(() => _isSidebarOpen = !_isSidebarOpen),
-            icon: const Icon(Icons.menu, color: AppColors.textPrimary),
-          ),
-          
-          const SizedBox(width: 16),
-          
           // College Name and Title
           Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            child: Row(
               children: [
-                Text(
-                  widget.college.name,
-                  style: const TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.textPrimary,
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: Colors.amber,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Icon(
+                    Icons.school,
+                    color: Colors.white,
+                    size: 24,
                   ),
                 ),
-                Text(
-                  'College Dashboard',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: AppColors.textSecondary,
-                    fontWeight: FontWeight.w500,
-                  ),
+                const SizedBox(width: 12),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'TEGA',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                    Text(
+                      widget.college.name,
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: AppColors.textSecondary,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -231,7 +224,7 @@ class _CollegeDashboardMainState extends State<CollegeDashboardMain> {
           Container(
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-              color: AppColors.primary,
+              color: const Color(0xFF1E3A8A), // Dark blue header
               borderRadius: const BorderRadius.only(
                 bottomRight: Radius.circular(12),
               ),
@@ -242,12 +235,12 @@ class _CollegeDashboardMainState extends State<CollegeDashboardMain> {
                   width: 40,
                   height: 40,
                   decoration: BoxDecoration(
-                    color: AppColors.pureWhite,
+                    color: Colors.amber,
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: const Icon(
                     Icons.school,
-                    color: AppColors.primary,
+                    color: Colors.white,
                     size: 24,
                   ),
                 ),
@@ -256,18 +249,18 @@ class _CollegeDashboardMainState extends State<CollegeDashboardMain> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
+                      const Text(
                         'TEGA',
-                        style: const TextStyle(
-                          color: AppColors.pureWhite,
+                        style: TextStyle(
+                          color: Colors.white,
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
                       Text(
-                        'College Portal',
-                        style: TextStyle(
-                          color: AppColors.pureWhite.withOpacity(0.8),
+                        widget.college.name,
+                        style: const TextStyle(
+                          color: Colors.white,
                           fontSize: 12,
                         ),
                       ),
@@ -285,23 +278,38 @@ class _CollegeDashboardMainState extends State<CollegeDashboardMain> {
               children: [
                 _buildNavItem(
                   icon: Icons.dashboard,
-                  title: 'Overview',
+                  title: 'Dashboard',
                   index: 0,
-                ),
-                _buildNavItem(
-                  icon: Icons.analytics,
-                  title: 'Student Analytics',
-                  index: 1,
                 ),
                 _buildNavItem(
                   icon: Icons.people,
                   title: 'Student Management',
+                  index: 1,
+                ),
+                _buildNavItem(
+                  icon: Icons.track_changes,
+                  title: 'Career Progress Tracker',
                   index: 2,
                 ),
                 _buildNavItem(
-                  icon: Icons.assessment,
-                  title: 'Reports & Insights',
+                  icon: Icons.play_circle_outline,
+                  title: 'Learning Activity & Engagement',
                   index: 3,
+                ),
+                _buildNavItem(
+                  icon: Icons.work_outline,
+                  title: 'Resume & Interview Monitor',
+                  index: 4,
+                ),
+                _buildNavItem(
+                  icon: Icons.analytics,
+                  title: 'Reports & Analytics',
+                  index: 5,
+                ),
+                _buildNavItem(
+                  icon: Icons.assessment,
+                  title: 'Settings & Support',
+                  index: 6,
                 ),
               ],
             ),
@@ -344,8 +352,8 @@ class _CollegeDashboardMainState extends State<CollegeDashboardMain> {
           onTap: () {
             setState(() {
               _selectedIndex = index;
-              _isSidebarOpen = false;
             });
+            print('Navigating to page: $index'); // Debug print
           },
           borderRadius: BorderRadius.circular(8),
           child: Container(
