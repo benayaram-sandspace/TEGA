@@ -56,12 +56,12 @@ class AuthService {
           createdAt: DateTime.now().subtract(const Duration(days: 30)),
         ),
       },
-      'moderator@tega.com': {
-        'password': 'mod123',
+      'principal@college.com': {
+        'password': 'principal123',
         'user': User(
           id: '2',
-          name: 'Moderator User',
-          email: 'moderator@tega.com',
+          name: 'College Principal',
+          email: 'principal@college.com',
           role: UserRole.moderator,
           createdAt: DateTime.now().subtract(const Duration(days: 15)),
         ),
@@ -151,7 +151,7 @@ class AuthService {
       case UserRole.admin:
         return 'Administrator';
       case UserRole.moderator:
-        return 'Moderator';
+        return 'College Principal';
       case UserRole.user:
         return 'User';
     }

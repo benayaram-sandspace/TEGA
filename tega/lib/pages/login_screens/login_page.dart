@@ -6,6 +6,8 @@ import 'package:tega/pages/admin_screens/admin_related_pages/admin_dashboard.dar
 import 'package:tega/pages/signup_screens/signup_page.dart';
 import 'package:tega/pages/student_screens/studen_home_page.dart';
 import 'package:tega/services/auth_service.dart';
+import 'package:tega/pages/college_dashboard/college_dashboard_main.dart';
+import 'package:tega/services/college_service.dart';
 import 'forget_password_page.dart';
 
 class LoginPage extends StatefulWidget {
@@ -50,6 +52,9 @@ class _LoginPageState extends State<LoginPage> {
           Navigator.of(context).pushReplacement(
             MaterialPageRoute(builder: (context) => const AdminDashboard()),
           );
+        } else if (_authService.hasRole(UserRole.moderator)) {
+          // College Principal - redirect to College Dashboard
+          _navigateToCollegeDashboard();
         } else if (_authService.hasRole(UserRole.user)) {
           Navigator.of(context).pushReplacement(
             MaterialPageRoute(
@@ -71,6 +76,31 @@ class _LoginPageState extends State<LoginPage> {
       setState(() {
         _isLoading = false;
       });
+    }
+  }
+
+  Future<void> _navigateToCollegeDashboard() async {
+    try {
+      // Load colleges and find the first one (for demo purposes)
+      // In a real app, you might want to associate the principal with a specific college
+      final collegeService = CollegeService();
+      final colleges = await collegeService.loadColleges();
+      
+      if (colleges.isNotEmpty) {
+        // For demo, use the first college
+        // In production, you'd match the principal to their specific college
+        final college = colleges.first;
+        
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(
+            builder: (context) => CollegeDashboardMain(college: college),
+          ),
+        );
+      } else {
+        _showErrorDialog('No colleges available. Please contact administrator.');
+      }
+    } catch (e) {
+      _showErrorDialog('Error loading college data: $e');
     }
   }
 
