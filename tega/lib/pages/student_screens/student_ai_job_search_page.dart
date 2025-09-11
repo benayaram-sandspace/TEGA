@@ -1,18 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dart:math' as math;
 
-// Assuming you have a StudentHomePage defined
-class StudentHomePage extends StatelessWidget {
-  const StudentHomePage({super.key});
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Student Home Page')),
-      body: const Center(child: Text('Welcome to the Student Home Page!')),
-    );
-  }
-}
 
 // Data model for a Job
 class Job {
