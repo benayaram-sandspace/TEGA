@@ -168,7 +168,7 @@ class _MyCoursesScreenState extends State<MyCoursesScreen> {
           const SizedBox(height: 16),
           _buildActiveCoursesList(),
           const SizedBox(height: 24),
-          _buildSectionHeader('Subscribed Eourses'),
+          _buildSectionHeader('Subscribed Courses'),
           const SizedBox(height: 16),
           _buildSubscribedCoursesGrid(),
         ],

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:tega/pages/login_screens/login_page.dart';
-import 'package:tega/pages/student_screens/student_ai_job_search_page.dart';
 import 'package:tega/pages/student_screens/student_home_page.dart';
 import 'package:tega/pages/student_screens/student_profile_pages/student_edit_profile_page.dart';
 import 'package:tega/pages/student_screens/student_profile_pages/student_help_page.dart';
