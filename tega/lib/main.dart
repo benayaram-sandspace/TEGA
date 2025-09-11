@@ -1,12 +1,17 @@
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:tega/pages/home_screens/splash_screen.dart';
 
 /// Store available cameras globally so any page can use them
 late final List<CameraDescription> cameras;
 
 Future<void> main() async {
-  WidgetsFlutterBinding.ensureInitialized();
+  // Ensure widgets are initialized
+  WidgetsBinding widgetsBinding = WidgetsFlutterBinding.ensureInitialized();
+
+  // Keep the native splash screen on screen until it is removed manually
+  FlutterNativeSplash.preserve(widgetsBinding: widgetsBinding);
 
   // Get list of device cameras
   cameras = await availableCameras();
