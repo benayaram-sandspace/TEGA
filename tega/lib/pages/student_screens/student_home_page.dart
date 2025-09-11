@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:tega/pages/student_screens/student_ai_interview_page.dart';
+import 'package:tega/pages/student_screens/student_ai_job_search_page.dart';
 import 'package:tega/pages/student_screens/student_avatar_screen.dart';
 import 'package:tega/pages/student_screens/student_notification_page.dart';
 import 'package:tega/pages/student_screens/student_profile_page.dart';
 import 'package:tega/pages/student_screens/student_resume_optimizer.dart';
 import 'package:tega/pages/student_screens/student_skill_drill_page.dart';
 import 'package:tega/pages/student_screens/student_skill_graph.dart';
+import 'package:tega/pages/student_screens/student_skills_hub_page.dart';
 
 class StudentHomePage extends StatelessWidget {
   final String studentName;
@@ -413,9 +415,11 @@ class StudentHomePage extends StatelessWidget {
                           'AI Job Connect',
                           const Color(0xFF6B5FFF),
                           () {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('AI Job Connect Coming Soon!'),
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) =>
+                                    const JobRecommendationScreen(),
                               ),
                             );
                           },
@@ -426,9 +430,10 @@ class StudentHomePage extends StatelessWidget {
                           'Skills Hub',
                           Colors.pink,
                           () {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Skills Hub Coming Soon!'),
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const SkillsHubScreen(),
                               ),
                             );
                           },
