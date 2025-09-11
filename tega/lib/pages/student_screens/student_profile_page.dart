@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:tega/pages/login_screens/login_page.dart';
+import 'package:tega/pages/student_screens/student_ai_job_search_page.dart';
 import 'package:tega/pages/student_screens/student_home_page.dart';
+import 'package:tega/pages/student_screens/student_profile_pages/student_edit_profile_page.dart';
+import 'package:tega/pages/student_screens/student_profile_pages/student_help_page.dart';
+import 'package:tega/pages/student_screens/student_profile_pages/student_setting_page.dart';
 import 'package:tega/services/auth_service.dart';
-// Import your student home page
 
 class StudentProfilePage extends StatelessWidget {
+  // ... (constructor and _handleLogout method are unchanged)
   final String studentName;
   final String course;
   final String year;
@@ -20,7 +24,6 @@ class StudentProfilePage extends StatelessWidget {
   }) : super(key: key);
 
   Future<void> _handleLogout(BuildContext context) async {
-    // Show loading indicator
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -30,18 +33,13 @@ class StudentProfilePage extends StatelessWidget {
     );
 
     try {
-      // Perform logout
       await _authService.logout();
 
-      // Close loading indicator and navigate
       if (context.mounted) {
         Navigator.of(context).pop(); // Close loading dialog
-
-        // Small delay to ensure dialog is closed
         await Future.delayed(const Duration(milliseconds: 100));
 
         if (context.mounted) {
-          // Navigate to login page
           Navigator.of(context).pushAndRemoveUntil(
             MaterialPageRoute(
               builder: (BuildContext context) => const LoginPage(),
@@ -51,7 +49,6 @@ class StudentProfilePage extends StatelessWidget {
         }
       }
     } catch (e) {
-      // Handle any errors
       if (context.mounted) {
         Navigator.of(context).pop(); // Close loading dialog
         ScaffoldMessenger.of(context).showSnackBar(
@@ -70,12 +67,12 @@ class StudentProfilePage extends StatelessWidget {
       backgroundColor: const Color(0xFFF5F5F5),
       appBar: AppBar(
         backgroundColor: Colors.white,
-        elevation: 0,
+        elevation: 1,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.black87),
           onPressed: () {
             Navigator.of(context).pushReplacement(
-              MaterialPageRoute(builder: (context) => const StudentHomePage()),
+              MaterialPageRoute(builder: (context) => StudentHomePage()),
             );
           },
         ),
@@ -84,166 +81,258 @@ class StudentProfilePage extends StatelessWidget {
           style: TextStyle(color: Colors.black87, fontWeight: FontWeight.bold),
         ),
       ),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          child: Column(
-            children: [
-              // Top Header with gradient and avatar
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.symmetric(
-                  vertical: 40,
-                  horizontal: 20,
-                ),
-                decoration: const BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [Color(0xFF6B5FFF), Color(0xFF4A47A3)],
-                  ),
-                  borderRadius: BorderRadius.vertical(
-                    bottom: Radius.circular(30),
-                  ),
-                ),
-                child: Column(
-                  children: [
-                    const CircleAvatar(
-                      radius: 45,
-                      backgroundImage: NetworkImage(
-                        'https://randomuser.me/api/portraits/men/32.jpg',
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    Text(
-                      studentName,
-                      style: const TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      'B.Tech | $course | $year | $college',
-                      style: const TextStyle(
-                        fontSize: 14,
-                        color: Colors.white70,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                  ],
-                ),
-              ),
-
-              const SizedBox(height: 20),
-
-              // College details card
-              Container(
-                margin: const EdgeInsets.symmetric(horizontal: 20),
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(16),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.grey.withOpacity(0.1),
-                      spreadRadius: 1,
-                      blurRadius: 10,
-                    ),
-                  ],
-                ),
-                child: Column(
-                  children: [
-                    _buildInfoRow(Icons.school, 'College name', college),
-                    const SizedBox(height: 16),
-                    _buildInfoRow(Icons.computer, 'Branch', course),
-                    const SizedBox(height: 16),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: _buildInfoRow(
-                            Icons.calendar_today,
-                            'Year',
-                            year,
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: _buildInfoRow(
-                            Icons.school,
-                            'Degree',
-                            'B.Tech',
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-
-              const SizedBox(height: 20),
-
-              // Logout button
-              ElevatedButton(
-                onPressed: () => _handleLogout(context),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFFFC107),
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 50,
-                    vertical: 14,
-                  ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(30),
-                  ),
-                ),
-                child: const Text(
-                  'LOGOUT',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                ),
-              ),
-
-              const SizedBox(height: 20),
-
-              // Logo
-              Image.asset('assets/logo.png', height: 100),
-            ],
-          ),
+      body: SingleChildScrollView(
+        child: Column(
+          children: [
+            _buildProfileHeader(
+              context,
+            ), // This method has the borderRadius removed now
+            const SizedBox(height: 20),
+            _buildStatsSection(),
+            const SizedBox(height: 20),
+            _buildSettingsMenu(context), // This method now handles navigation
+            const SizedBox(height: 40),
+            Image.asset(
+              'assets/logo.png',
+              height: 80,
+              opacity: const AlwaysStoppedAnimation(.5),
+            ),
+            const SizedBox(height: 40),
+          ],
         ),
       ),
     );
   }
 
-  Widget _buildInfoRow(IconData icon, String label, String value) {
-    return Row(
-      children: [
-        Icon(icon, size: 20, color: Colors.black54),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+  // UPDATED: This widget has the borderRadius removed
+  Widget _buildProfileHeader(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(vertical: 30, horizontal: 20),
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFF6B5FFF), Color(0xFF4A47A3)],
+        ),
+        // borderRadius property was here, now it is removed.
+      ),
+      child: Column(
+        children: [
+          Stack(
             children: [
-              Text(
-                label,
-                style: const TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w500,
-                  color: Colors.black54,
+              const CircleAvatar(
+                radius: 45,
+                backgroundImage: NetworkImage(
+                  'https://randomuser.me/api/portraits/men/32.jpg',
                 ),
               ),
-              const SizedBox(height: 4),
-              Text(
-                value,
-                style: const TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black87,
+              Positioned(
+                bottom: 0,
+                right: 0,
+                child: GestureDetector(
+                  onTap: () {
+                    // UPDATED: Navigate to the actual Edit Profile page
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const EditProfilePage(),
+                      ),
+                    );
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.all(6),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: const Color(0xFF6B5FFF),
+                        width: 2,
+                      ),
+                    ),
+                    child: const Icon(
+                      Icons.edit,
+                      size: 18,
+                      color: Color(0xFF6B5FFF),
+                    ),
+                  ),
                 ),
               ),
             ],
           ),
+          const SizedBox(height: 12),
+          Text(
+            studentName,
+            style: const TextStyle(
+              fontSize: 22,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'B.Tech | $course | $year | $college',
+            style: const TextStyle(fontSize: 14, color: Colors.white70),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ... (_buildStatsSection and _buildStatCard are unchanged)
+  Widget _buildStatsSection() {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 20),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
+        children: [
+          _buildStatCard(Icons.check_circle, '75%', 'Job Readiness'),
+          _buildStatCard(Icons.star, '1,250', 'XP Earned'),
+          _buildStatCard(Icons.psychology, '15', 'Skills Mastered'),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatCard(IconData icon, String value, String label) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+        margin: const EdgeInsets.symmetric(horizontal: 4),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.grey.withOpacity(0.1),
+              spreadRadius: 1,
+              blurRadius: 10,
+            ),
+          ],
         ),
-      ],
+        child: Column(
+          children: [
+            Icon(icon, color: const Color(0xFF6B5FFF), size: 28),
+            const SizedBox(height: 8),
+            Text(
+              value,
+              style: const TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Colors.black87,
+              ),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              label,
+              textAlign: TextAlign.center,
+              style: const TextStyle(fontSize: 12, color: Colors.black54),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // UPDATED: This widget now navigates to the new pages
+  Widget _buildSettingsMenu(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 20),
+      padding: const EdgeInsets.symmetric(vertical: 10),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.1),
+            spreadRadius: 1,
+            blurRadius: 10,
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          _buildMenuOption(
+            icon: Icons.person_outline,
+            title: 'Edit Profile', // Changed title for clarity
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const EditProfilePage()),
+              );
+            },
+          ),
+          _buildMenuOption(
+            icon: Icons.settings_outlined,
+            title: 'App Settings',
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const SettingsPage()),
+              );
+            },
+          ),
+          _buildMenuOption(
+            icon: Icons.help_outline,
+            title: 'Help & Support',
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const HelpPage()),
+              );
+            },
+          ),
+          const Divider(indent: 20, endIndent: 20),
+          _buildMenuOption(
+            icon: Icons.logout,
+            title: 'Logout',
+            isLogout: true,
+            onTap: () => _handleLogout(context),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ... (_buildMenuOption is unchanged)
+  Widget _buildMenuOption({
+    required IconData icon,
+    required String title,
+    required VoidCallback onTap,
+    bool isLogout = false,
+  }) {
+    final color = isLogout ? Colors.redAccent : Colors.black87;
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+          child: Row(
+            children: [
+              Icon(icon, color: color, size: 24),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Text(
+                  title,
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                    color: color,
+                  ),
+                ),
+              ),
+              Icon(
+                Icons.arrow_forward_ios,
+                color: color.withOpacity(0.6),
+                size: 16,
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
