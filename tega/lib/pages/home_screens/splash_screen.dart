@@ -1,11 +1,10 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
-import 'package:tega/constants/app_colors.dart';
 import 'package:tega/pages/admin_screens/admin_related_pages/admin_dashboard.dart';
+import 'package:tega/pages/college_screens/college_dashboard_page.dart';
 import 'package:tega/pages/login_screens/login_page.dart';
 import 'package:tega/pages/student_screens/student_home_page.dart';
-import 'package:tega/pages/college_dashboard/college_dashboard_main.dart';
 import 'package:tega/services/college_service.dart';
 import 'package:tega/services/auth_service.dart';
 import 'package:video_player/video_player.dart';
@@ -108,10 +107,9 @@ class _SplashScreenState extends State<SplashScreen> {
         return; // Always check if the widget is mounted before async navigation.
 
       if (colleges.isNotEmpty) {
-        final college = colleges.first;
-        Navigator.of(context).pushReplacement(
-          _createFadeRoute(CollegeDashboardMain(college: college)),
-        );
+        Navigator.of(
+          context,
+        ).pushReplacement(_createFadeRoute(DashboardScreen()));
       } else {
         Navigator.of(
           context,
