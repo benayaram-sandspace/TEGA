@@ -50,7 +50,7 @@ class AuthService {
         'password': 'admin123',
         'user': User(
           id: '1',
-          name: 'Benayaram',
+          name: 'Administrator',
           email: 'admin@tega.com',
           role: UserRole.admin,
           createdAt: DateTime.now().subtract(const Duration(days: 30)),

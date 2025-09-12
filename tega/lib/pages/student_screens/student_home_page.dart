@@ -10,6 +10,7 @@ import 'package:tega/pages/student_screens/student_resume_optimizer.dart';
 import 'package:tega/pages/student_screens/student_skill_drill_page.dart';
 import 'package:tega/pages/student_screens/student_skill_graph.dart';
 import 'package:tega/pages/student_screens/student_skills_hub_page.dart';
+import 'package:tega/pages/student_screens/student_upcoming_opps_page.dart';
 
 // FIX: Converted to a StatefulWidget
 class StudentHomePage extends StatefulWidget {
@@ -593,7 +594,16 @@ class _HomePageContent extends StatelessWidget {
                               ),
                             ),
                             TextButton(
-                              onPressed: () {},
+                              onPressed: () {
+                                // This is the navigation logic
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) =>
+                                        const AllOpportunitiesScreen(),
+                                  ),
+                                );
+                              },
                               child: const Text('View All'),
                             ),
                           ],

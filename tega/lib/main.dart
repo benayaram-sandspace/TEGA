@@ -5,7 +5,6 @@ import 'package:provider/provider.dart';
 import 'package:tega/pages/home_screens/splash_screen.dart';
 import 'package:tega/pages/providers/theme_provider.dart';
 
-
 /// Store available cameras globally so any page can use them
 late final List<CameraDescription> cameras;
 

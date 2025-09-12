@@ -4,28 +4,119 @@ import 'package:tega/pages/admin_screens/colleges/college_report_page.dart';
 import 'package:tega/pages/admin_screens/reports/custom_report_builder.dart';
 import 'package:tega/pages/admin_screens/reports/student_report_builder.dart';
 
-// Reports & Export Center Page
-class ReportsExportCenterPage extends StatelessWidget {
+// A simple data model for our report cards for cleaner code
+class ReportInfo {
+  final IconData iconData;
+  final Color iconColor;
+  final Color
+  backgroundColor; // This will be the accent color for the icon section
+  final String title;
+  final String description;
+  final String buttonText;
+  final VoidCallback onPressed;
+
+  ReportInfo({
+    required this.iconData,
+    required this.iconColor,
+    required this.backgroundColor,
+    required this.title,
+    required this.description,
+    required this.buttonText,
+    required this.onPressed,
+  });
+}
+
+// Reports & Export Center Page - Now a StatefulWidget for animations
+class ReportsExportCenterPage extends StatefulWidget {
   const ReportsExportCenterPage({Key? key}) : super(key: key);
 
   @override
+  State<ReportsExportCenterPage> createState() =>
+      _ReportsExportCenterPageState();
+}
+
+class _ReportsExportCenterPageState extends State<ReportsExportCenterPage>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _animationController;
+  late List<ReportInfo> _reports;
+
+  @override
+  void initState() {
+    super.initState();
+    _animationController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1000),
+    );
+    _animationController.forward();
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
+  }
+
+  // Helper method to build the list of reports
+  void _buildReports(BuildContext context) {
+    _reports = [
+      ReportInfo(
+        iconData: Icons.school_outlined,
+        iconColor: const Color(0xFFD4A574), // More vibrant icon color
+        backgroundColor: const Color(
+          0xFFF5E6D8,
+        ), // Lighter background for the icon section
+        title: 'College-Wise Report',
+        description: 'Generate a comprehensive report for all colleges.',
+        buttonText: 'Generate Report',
+        onPressed: () =>
+            _navigateTo(context, const ConfigureCollegeReportPage()),
+      ),
+      ReportInfo(
+        iconData: Icons.person_search_outlined,
+        iconColor: const Color(0xFF506A6B), // Darker icon for contrast
+        backgroundColor: const Color(0xFFB8CDCE), // Lighter background
+        title: 'Student-Wise Report',
+        description: 'Generate a detailed report for individual students.',
+        buttonText: 'Generate Report',
+        onPressed: () =>
+            _navigateTo(context, const ConfigureStudentReportPage()),
+      ),
+      ReportInfo(
+        iconData: Icons.bar_chart_rounded,
+        iconColor: const Color(0xFF5A8D6F), // Muted green for icon
+        backgroundColor: const Color(0xFFC7E0D3), // Lighter background
+        title: 'Custom Report Builder',
+        description: 'Create tailored reports with specific data points.',
+        buttonText: 'Create Custom Report',
+        onPressed: () => _navigateTo(context, const CustomReportBuilderPage()),
+      ),
+    ];
+  }
+
+  void _navigateTo(BuildContext context, Widget page) {
+    Navigator.push(context, MaterialPageRoute(builder: (context) => page));
+  }
+
+  @override
   Widget build(BuildContext context) {
+    _buildReports(context); // Build the list
     return Scaffold(
-      backgroundColor: const Color(0xFFF0F0F0),
+      backgroundColor: const Color(0xFFF9F9F9), // A slightly warmer white
       appBar: AppBar(
         backgroundColor: Colors.white,
-        elevation: 0,
+        elevation: 1,
+        shadowColor: Colors.grey.withOpacity(0.1),
         centerTitle: true,
         title: const Text(
-          'Reports & Export Center',
+          'Reports & Export',
           style: TextStyle(
             color: Colors.black,
-            fontSize: 20,
-            fontWeight: FontWeight.w600,
+            fontSize: 22,
+            fontWeight: FontWeight.bold,
           ),
         ),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.black),
           onPressed: () {
             Navigator.pushAndRemoveUntil(
               context,
@@ -35,443 +126,254 @@ class ReportsExportCenterPage extends StatelessWidget {
           },
         ),
       ),
-
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          // College-Wise Report Card
-          ReportCard(
-            imageWidget: const CollegeIllustration(),
-            title: 'College-Wise Report',
-            titleColor: const Color(0xFFFFC107),
-            description: 'Generate a comprehensive report for all colleges.',
-            subtitleText: 'College-Wise Report',
-            buttonText: 'Generate',
-            buttonColor: const Color(0xFFFFC107),
-            onPressed: () {
-              _generateCollegeReport(context);
-            },
-          ),
-          const SizedBox(height: 16),
-
-          // Student-Wise Report Card
-          ReportCard(
-            imageWidget: const StudentIllustration(),
-            title: 'Student-Wise Report',
-            titleColor: const Color(0xFFFFC107),
-            description: 'Generate a detailed report for individual students.',
-            subtitleText: 'Student-Wise Report',
-            buttonText: 'Generate',
-            buttonColor: const Color(0xFFFFC107),
-            onPressed: () {
-              _generateStudentReport(context);
-            },
-          ),
-          const SizedBox(height: 16),
-
-          // Custom Report Builder Card
-          ReportCard(
-            imageWidget: const ChartIllustration(),
-            title: 'Custom Report Builder',
-            titleColor: const Color(0xFFFFC107),
-            description: 'Create tailored reports with specific data points.',
-            subtitleText: 'Custom Report Builder',
-            buttonText: 'Create Report',
-            buttonColor: const Color(0xFFFFC107),
-            onPressed: () {
-              _openCustomReportBuilder(context);
-            },
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _generateCollegeReport(BuildContext context) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => const ConfigureCollegeReportPage(),
-      ),
-    );
-  }
-
-  void _generateStudentReport(BuildContext context) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => const ConfigureStudentReportPage(),
-      ),
-    );
-  }
-
-  void _openCustomReportBuilder(BuildContext context) {
-    Navigator.of(context, rootNavigator: true).push(
-      MaterialPageRoute(
-        builder: (context) => const CustomReportBuilderPage(),
-        fullscreenDialog: false, // Ensure it's not treated as a dialog
+      body: ListView.builder(
+        padding: const EdgeInsets.all(16.0),
+        itemCount: _reports.length,
+        itemBuilder: (context, index) {
+          final report = _reports[index];
+          // Each card will animate with a delay
+          return AnimatedCard(
+            animationController: _animationController,
+            index: index,
+            child: ReportCard(
+              iconData: report.iconData,
+              iconColor: report.iconColor,
+              backgroundColor: report.backgroundColor,
+              title: report.title,
+              description: report.description,
+              buttonText: report.buttonText,
+              onPressed: report.onPressed,
+            ),
+          );
+        },
       ),
     );
   }
 }
 
-// Reusable Report Card Widget
+// Reusable Report Card with more visual polish
 class ReportCard extends StatelessWidget {
-  final Widget imageWidget;
+  final IconData iconData;
+  final Color iconColor;
+  final Color
+  backgroundColor; // This is the accent background for the icon part
   final String title;
-  final Color titleColor;
   final String description;
-  final String subtitleText;
   final String buttonText;
-  final Color buttonColor;
   final VoidCallback onPressed;
 
   const ReportCard({
     Key? key,
-    required this.imageWidget,
+    required this.iconData,
+    required this.iconColor,
+    required this.backgroundColor,
     required this.title,
-    required this.titleColor,
     required this.description,
-    required this.subtitleText,
     required this.buttonText,
-    required this.buttonColor,
     required this.onPressed,
   }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
+    // Deep Teal gradient for the main card background
+    const Color primaryDarkTeal = Color(0xFF004D40); // Darker teal
+    const Color primaryMidTeal = Color(0xFF00695C); // Mid-range teal
+
     return Container(
+      margin: const EdgeInsets.only(bottom: 20),
       decoration: BoxDecoration(
-        color: const Color(0xFF21209C),
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Image Container
-          Container(
-            height: 200,
-            margin: const EdgeInsets.all(16),
-            decoration: BoxDecoration(borderRadius: BorderRadius.circular(12)),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(12),
-              child: imageWidget,
-            ),
-          ),
-
-          // Content
-          Padding(
-            padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: TextStyle(
-                    color: titleColor,
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  description,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 15,
-                    height: 1.4,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      subtitleText,
-                      style: TextStyle(
-                        color: Colors.white.withOpacity(0.9),
-                        fontSize: 14,
-                      ),
-                    ),
-                    ElevatedButton(
-                      onPressed: onPressed,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: buttonColor,
-                        foregroundColor: Colors.black87,
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 24,
-                          vertical: 10,
-                        ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        elevation: 0,
-                      ),
-                      child: Text(
-                        buttonText,
-                        style: const TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// College Building Illustration
-class CollegeIllustration extends StatelessWidget {
-  const CollegeIllustration({Key? key}) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [
-            Color(0xFF87CEEB), // Sky blue
-            Color(0xFFB8E6B8), // Light green
-          ],
-        ),
-      ),
-      child: Stack(
-        children: [
-          // Clouds
-          Positioned(top: 20, left: 30, child: _buildCloud()),
-          Positioned(top: 30, right: 40, child: _buildCloud()),
-
-          // Building
-          Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                // Main building
-                Container(
-                  width: 180,
-                  height: 100,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFD4A574),
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  child: Stack(
-                    children: [
-                      // Windows
-                      for (int i = 0; i < 3; i++)
-                        for (int j = 0; j < 3; j++)
-                          Positioned(
-                            left: 20.0 + (i * 55),
-                            top: 15.0 + (j * 30),
-                            child: Container(
-                              width: 20,
-                              height: 20,
-                              decoration: BoxDecoration(
-                                color: const Color(0xFF8B7355),
-                                borderRadius: BorderRadius.circular(2),
-                              ),
-                            ),
-                          ),
-                      // Entrance
-                      Positioned(
-                        bottom: 0,
-                        left: 75,
-                        child: Container(
-                          width: 30,
-                          height: 40,
-                          decoration: const BoxDecoration(
-                            color: Color(0xFF6B5D54),
-                            borderRadius: BorderRadius.only(
-                              topLeft: Radius.circular(15),
-                              topRight: Radius.circular(15),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                // Ground
-                Container(
-                  width: 200,
-                  height: 10,
-                  color: const Color(0xFF90C890),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildCloud() {
-    return Container(
-      width: 40,
-      height: 20,
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.8),
-        borderRadius: BorderRadius.circular(20),
-      ),
-    );
-  }
-}
-
-// Student with Laptop Illustration
-class StudentIllustration extends StatelessWidget {
-  const StudentIllustration({Key? key}) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      color: const Color(0xFFF5E6D8),
-      child: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            // Person icon
-            Container(
-              width: 60,
-              height: 60,
-              decoration: BoxDecoration(
-                color: const Color(0xFF2C3E50),
-                shape: BoxShape.circle,
-                border: Border.all(color: const Color(0xFFD4A574), width: 2),
-              ),
-              child: const Icon(Icons.person, color: Colors.white, size: 35),
-            ),
-            const SizedBox(height: 10),
-
-            // Laptop
-            Container(
-              width: 80,
-              height: 50,
-              decoration: BoxDecoration(
-                color: const Color(0xFF34495E),
-                borderRadius: BorderRadius.circular(4),
-              ),
-              child: Center(
-                child: Container(
-                  width: 65,
-                  height: 35,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF7F8C8D),
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-              ),
-            ),
-
-            // Plant decoration
-            Positioned(
-              right: 20,
-              bottom: 20,
-              child: Container(
-                width: 30,
-                height: 40,
-                decoration: const BoxDecoration(
-                  color: Color(0xFF27AE60),
-                  shape: BoxShape.circle,
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-// Chart/Graph Illustration
-class ChartIllustration extends StatelessWidget {
-  const ChartIllustration({Key? key}) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
+        borderRadius: BorderRadius.circular(24),
+        gradient: const LinearGradient(
+          colors: [primaryDarkTeal, primaryMidTeal],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [const Color(0xFF2E7D32), const Color(0xFF4CAF50)],
         ),
-      ),
-      child: Center(
-        child: Container(
-          width: 140,
-          height: 120,
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(8),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.1),
-                blurRadius: 10,
-                offset: const Offset(0, 2),
-              ),
-            ],
+        border: Border.all(color: Colors.white.withOpacity(0.2), width: 1),
+        boxShadow: [
+          BoxShadow(
+            color: primaryDarkTeal.withOpacity(
+              0.4,
+            ), // Shadow reflecting new color
+            blurRadius: 20,
+            offset: const Offset(0, 10),
           ),
-          padding: const EdgeInsets.all(12),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              // Bar chart
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                crossAxisAlignment: CrossAxisAlignment.end,
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Top section with Icon - uses the accent background color
+            Container(
+              padding: const EdgeInsets.symmetric(vertical: 32),
+              width: double.infinity,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [backgroundColor.withOpacity(0.9), backgroundColor],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+              ),
+              child: Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.white.withOpacity(
+                    0.2,
+                  ), // Slightly more opaque white accent
+                  border: Border.all(
+                    color: Colors.white.withOpacity(0.4),
+                    width: 1.5,
+                  ),
+                ),
+                child: Icon(iconData, size: 48, color: iconColor),
+              ),
+            ),
+
+            // Bottom section with Text and Button
+            Padding(
+              padding: const EdgeInsets.fromLTRB(24, 24, 24, 24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _buildBar(30),
-                  _buildBar(50),
-                  _buildBar(40),
-                  _buildBar(70),
-                  _buildBar(45),
-                  _buildBar(60),
-                  _buildBar(80),
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      color: Color(0xFFFFC107), // Gold accent
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    description,
+                    style: TextStyle(
+                      color: Colors.white.withOpacity(
+                        0.9,
+                      ), // Slightly more prominent white text
+                      fontSize: 16,
+                      height: 1.5,
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 24.0),
+                    child: Divider(
+                      color: Colors.white.withOpacity(0.3),
+                    ), // Divider for visual break
+                  ),
+                  // Button with gradient
+                  Container(
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(12),
+                      gradient: const LinearGradient(
+                        colors: [
+                          Color(0xFFFFD700),
+                          Color(0xFFFFC107),
+                        ], // Gold gradient
+                        begin: Alignment.centerLeft,
+                        end: Alignment.centerRight,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(
+                            0xFFFFC107,
+                          ).withOpacity(0.4), // Gold shadow
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: ElevatedButton(
+                      onPressed: onPressed,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor:
+                            Colors.transparent, // Transparent to show gradient
+                        shadowColor: Colors
+                            .transparent, // No shadow from ElevatedButton itself
+                        minimumSize: const Size(double.infinity, 50),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        textStyle: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            buttonText,
+                            style: const TextStyle(color: Colors.black87),
+                          ), // Dark text for contrast
+                          const SizedBox(width: 8),
+                          const Icon(
+                            Icons.arrow_forward_ios,
+                            size: 16,
+                            color: Colors.black87,
+                          ), // Dark icon
+                        ],
+                      ),
+                    ),
+                  ),
                 ],
               ),
-              const SizedBox(height: 8),
-              // X-axis line
-              Container(height: 2, color: const Color(0xFF2E7D32)),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildBar(double height) {
-    return Container(
-      width: 12,
-      height: height,
-      decoration: BoxDecoration(
-        color: const Color(0xFF4CAF50),
-        borderRadius: const BorderRadius.only(
-          topLeft: Radius.circular(2),
-          topRight: Radius.circular(2),
+            ),
+          ],
         ),
       ),
     );
   }
 }
 
-// Example of how to navigate to this page:
-// Navigator.push(
-//   context,
-//   MaterialPageRoute(
-//     builder: (context) => const ReportsExportCenterPage(),
-//   ),
-// );
+// A new widget to handle the animation for each card
+class AnimatedCard extends StatelessWidget {
+  final AnimationController animationController;
+  final int index;
+  final Widget child;
+
+  const AnimatedCard({
+    Key? key,
+    required this.animationController,
+    required this.index,
+    required this.child,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    // Stagger the animation of each card
+    final interval = Interval(
+      (0.1 * index), // Start time for this card's animation
+      0.8, // End time for all cards (adjust as needed)
+      curve: Curves.easeOut,
+    );
+
+    return AnimatedBuilder(
+      animation: animationController,
+      builder: (context, _) {
+        // Only animate if the animation is actually running
+        if (!animationController.isAnimating &&
+            animationController.value == 0) {
+          return const SizedBox.shrink(); // Or return the child directly without animation
+        }
+
+        return FadeTransition(
+          opacity: Tween<double>(begin: 0.0, end: 1.0).animate(
+            CurvedAnimation(parent: animationController, curve: interval),
+          ),
+          child: SlideTransition(
+            position:
+                Tween<Offset>(
+                  begin: const Offset(0.0, 0.3), // Slide up from slightly below
+                  end: Offset.zero,
+                ).animate(
+                  CurvedAnimation(parent: animationController, curve: interval),
+                ),
+            child: child,
+          ),
+        );
+      },
+    );
+  }
+}

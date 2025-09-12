@@ -15,7 +15,7 @@ class AdminUsersPage extends StatefulWidget {
 class _AdminUsersPageState extends State<AdminUsersPage> {
   final AdminService _adminService = AdminService.instance;
   final TextEditingController _searchController = TextEditingController();
-  
+
   List<AdminUser> _allAdmins = [];
   List<AdminUser> _filteredAdmins = [];
   String _selectedRole = '';
@@ -36,31 +36,35 @@ class _AdminUsersPageState extends State<AdminUsersPage> {
 
   Future<void> _loadAdmins() async {
     setState(() => _isLoading = true);
-    
+
     await _adminService.loadData();
     _allAdmins = _adminService.getAllAdmins();
     _filteredAdmins = _allAdmins;
-    
+
     setState(() => _isLoading = false);
   }
 
   void _applyFilters() {
     setState(() {
       _filteredAdmins = _allAdmins;
-      
+
       // Apply search filter
       if (_searchController.text.isNotEmpty) {
         _filteredAdmins = _adminService.searchAdmins(_searchController.text);
       }
-      
+
       // Apply role filter
       if (_selectedRole.isNotEmpty) {
-        _filteredAdmins = _filteredAdmins.where((admin) => admin.role == _selectedRole).toList();
+        _filteredAdmins = _filteredAdmins
+            .where((admin) => admin.role == _selectedRole)
+            .toList();
       }
-      
+
       // Apply status filter
       if (_selectedStatus.isNotEmpty) {
-        _filteredAdmins = _filteredAdmins.where((admin) => admin.status == _selectedStatus).toList();
+        _filteredAdmins = _filteredAdmins
+            .where((admin) => admin.status == _selectedStatus)
+            .toList();
       }
     });
   }
@@ -80,7 +84,9 @@ class _AdminUsersPageState extends State<AdminUsersPage> {
     return Scaffold(
       backgroundColor: AppColors.background,
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
+          ? const Center(
+              child: CircularProgressIndicator(color: AppColors.primary),
+            )
           : Column(
               children: [
                 // Search and Filter Section
@@ -95,7 +101,10 @@ class _AdminUsersPageState extends State<AdminUsersPage> {
                         decoration: InputDecoration(
                           hintText: 'Search by name or email...',
                           hintStyle: TextStyle(color: AppColors.textSecondary),
-                          prefixIcon: Icon(Icons.search, color: AppColors.textSecondary),
+                          prefixIcon: Icon(
+                            Icons.search,
+                            color: AppColors.textSecondary,
+                          ),
                           filled: true,
                           fillColor: AppColors.surface,
                           border: OutlineInputBorder(
@@ -207,10 +216,7 @@ class _AdminUsersPageState extends State<AdminUsersPage> {
           value: value.isEmpty ? null : value,
           hint: Text(
             label,
-            style: TextStyle(
-              color: AppColors.textSecondary,
-              fontSize: 14,
-            ),
+            style: TextStyle(color: AppColors.textSecondary, fontSize: 14),
           ),
           isExpanded: true,
           items: items.map((String item) {
@@ -289,7 +295,10 @@ class _AdminUsersPageState extends State<AdminUsersPage> {
                 Row(
                   children: [
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
                       decoration: BoxDecoration(
                         color: _getRoleColor(admin.role).withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(12),
@@ -305,9 +314,14 @@ class _AdminUsersPageState extends State<AdminUsersPage> {
                     ),
                     const SizedBox(width: 8),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
                       decoration: BoxDecoration(
-                        color: _getStatusColor(admin.status).withValues(alpha: 0.1),
+                        color: _getStatusColor(
+                          admin.status,
+                        ).withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Text(
@@ -359,10 +373,7 @@ class _AdminUsersPageState extends State<AdminUsersPage> {
                 ),
               ),
             ],
-            child: Icon(
-              Icons.more_vert,
-              color: AppColors.textSecondary,
-            ),
+            child: Icon(Icons.more_vert, color: AppColors.textSecondary),
           ),
         ],
       ),
@@ -428,7 +439,10 @@ class _AdminUsersPageState extends State<AdminUsersPage> {
             _buildDetailRow('Created', _formatDate(admin.createdAt)),
             _buildDetailRow('Last Login', _formatDate(admin.lastLogin)),
             const SizedBox(height: 8),
-            const Text('Permissions:', style: TextStyle(fontWeight: FontWeight.bold)),
+            const Text(
+              'Permissions:',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
             ...admin.permissions.map((permission) => Text('• $permission')),
           ],
         ),
@@ -476,9 +490,9 @@ class _AdminUsersPageState extends State<AdminUsersPage> {
 
   void _showEditAdminModal(AdminUser admin) {
     // TODO: Implement edit admin modal
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Edit ${admin.name} - Coming Soon')),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text('Edit ${admin.name} - Coming Soon')));
   }
 
   void _showDeactivateDialog(AdminUser admin) {
@@ -501,7 +515,10 @@ class _AdminUsersPageState extends State<AdminUsersPage> {
               );
             },
             style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
-            child: const Text('Deactivate', style: TextStyle(color: AppColors.pureWhite)),
+            child: const Text(
+              'Deactivate',
+              style: TextStyle(color: AppColors.pureWhite),
+            ),
           ),
         ],
       ),
