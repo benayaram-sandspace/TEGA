@@ -11,326 +11,355 @@ class CreateSkillDrillPage extends StatefulWidget {
 }
 
 class _CreateSkillDrillPageState extends State<CreateSkillDrillPage> {
+  // Combined list to manage all questions for the UI
   final List<SkillDrill> _questions = [];
-  final List<SkillDrill> _reviewQuestions = [
-    SkillDrill(
-      id: 'review_001',
-      question: 'What is the capital of France?',
-      subject: 'Geography',
-      difficulty: 'Easy',
-      skill: 'General Knowledge',
-      questionType: 'Multiple Choice',
-      options: ['London', 'Berlin', 'Paris', 'Madrid'],
-      correctAnswer: 2,
-      explanation: 'Paris is the capital and largest city of France.',
-      imageUrl:
-          'https://images.unsplash.com/photo-1502602898536-47ad22581b52?w=400',
-      isActive: true,
-      createdAt: '2024-01-15',
-      tags: ['geography', 'capitals', 'europe'],
-    ),
-    SkillDrill(
-      id: 'review_002',
-      question: 'Solve for x: 2x + 3 = 7',
-      subject: 'Algebra',
-      difficulty: 'Medium',
-      skill: 'Mathematics',
-      questionType: 'Multiple Choice',
-      options: ['x = 1', 'x = 2', 'x = 3', 'x = 4'],
-      correctAnswer: 1,
-      explanation: '2x + 3 = 7, so 2x = 4, therefore x = 2',
-      imageUrl:
-          'https://images.unsplash.com/photo-1635070041078-e363dbe005cb?w=400',
-      isActive: true,
-      createdAt: '2024-01-16',
-      tags: ['algebra', 'equations', 'math'],
-    ),
-    SkillDrill(
-      id: 'review_003',
-      question: 'Who wrote \'Romeo and Juliet\'?',
-      subject: 'Literature',
-      difficulty: 'Medium',
-      skill: 'English Literature',
-      questionType: 'Multiple Choice',
-      options: [
-        'Charles Dickens',
-        'William Shakespeare',
-        'Jane Austen',
-        'Mark Twain',
-      ],
-      correctAnswer: 1,
-      explanation:
-          'William Shakespeare wrote the famous tragedy \'Romeo and Juliet\'.',
-      imageUrl:
-          'https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=400',
-      isActive: true,
-      createdAt: '2024-01-17',
-      tags: ['literature', 'shakespeare', 'drama'],
-    ),
-  ];
+
+  @override
+  void initState() {
+    super.initState();
+    // Initialize with mock data
+    _questions.addAll([
+      SkillDrill(
+        id: 'review_001',
+        question: 'What is the capital of France?',
+        subject: 'Geography',
+        difficulty: 'Easy',
+        skill: 'General Knowledge',
+        questionType: 'Multiple Choice',
+        options: ['London', 'Berlin', 'Paris', 'Madrid'],
+        correctAnswer: 2,
+        explanation: 'Paris is the capital and largest city of France.',
+        imageUrl:
+            'https://images.unsplash.com/photo-1502602898536-47ad22581b52?w=400',
+        isActive: true,
+        createdAt: '2024-01-15',
+        tags: ['geography', 'capitals', 'europe'],
+      ),
+      SkillDrill(
+        id: 'review_002',
+        question: 'Solve for x: 2x + 3 = 7',
+        subject: 'Algebra',
+        difficulty: 'Medium',
+        skill: 'Mathematics',
+        questionType: 'Multiple Choice',
+        options: ['x = 1', 'x = 2', 'x = 3', 'x = 4'],
+        correctAnswer: 1,
+        explanation: '2x + 3 = 7, so 2x = 4, therefore x = 2',
+        imageUrl:
+            'https://images.unsplash.com/photo-1635070041078-e363dbe005cb?w=400',
+        isActive: true,
+        createdAt: '2024-01-16',
+        tags: ['algebra', 'equations', 'math'],
+      ),
+      SkillDrill(
+        id: 'review_003',
+        question: 'Who wrote \'Romeo and Juliet\'?',
+        subject: 'Literature',
+        difficulty: 'Medium',
+        skill: 'English Literature',
+        questionType: 'Multiple Choice',
+        options: [
+          'Charles Dickens',
+          'William Shakespeare',
+          'Jane Austen',
+          'Mark Twain',
+        ],
+        correctAnswer: 1,
+        explanation:
+            'William Shakespeare wrote the famous tragedy \'Romeo and Juliet\'.',
+        imageUrl:
+            'https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=400',
+        isActive: true,
+        createdAt: '2024-01-17',
+        tags: ['literature', 'shakespeare', 'drama'],
+      ),
+    ]);
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.pureWhite,
-      appBar: AppBar(
-        title: const Text(
-          'Create Skill Drill',
-          style: TextStyle(
-            color: AppColors.textPrimary,
-            fontWeight: FontWeight.bold,
+      backgroundColor: AppColors.background,
+      body: CustomScrollView(
+        slivers: [
+          SliverAppBar(
+            title: const Text(
+              'Create Skill Drill',
+              style: TextStyle(
+                color: AppColors.textPrimary,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            backgroundColor: AppColors.background,
+            surfaceTintColor: AppColors.background,
+            elevation: 1,
+            pinned: true,
+            leading: IconButton(
+              onPressed: () => Navigator.pop(context),
+              icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
+            ),
           ),
-        ),
-        backgroundColor: AppColors.pureWhite,
-        elevation: 0,
-        iconTheme: const IconThemeData(color: AppColors.textPrimary),
-        leading: IconButton(
-          onPressed: () => Navigator.pop(context),
-          icon: const Icon(Icons.arrow_back),
-        ),
+          SliverPadding(
+            padding: const EdgeInsets.all(20),
+            sliver: SliverList(
+              delegate: SliverChildListDelegate([
+                _buildSectionTitle('Questions'),
+                const SizedBox(height: 16),
+                _buildActionButtons(),
+                const SizedBox(height: 24),
+                if (_questions.isEmpty)
+                  _buildEmptyState()
+                else
+                  _buildQuestionsList(),
+              ]),
+            ),
+          ),
+        ],
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Add Questions section
-            const Text(
-              'Add Questions',
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                color: AppColors.textPrimary,
-              ),
-            ),
-            const SizedBox(height: 16),
+      bottomNavigationBar: _buildBottomActionBar(),
+    );
+  }
 
-            // Question placeholders
-            _buildQuestionPlaceholder('Question 1'),
-            const SizedBox(height: 12),
-            _buildQuestionPlaceholder('Question 2'),
-            const SizedBox(height: 12),
-            _buildQuestionPlaceholder('Question 3'),
-
-            const SizedBox(height: 16),
-
-            // Add Question and Bulk Upload buttons
-            Row(
-              children: [
-                Expanded(
-                  child: ElevatedButton.icon(
-                    onPressed: _addQuestion,
-                    icon: const Icon(Icons.add),
-                    label: const Text('Add Question'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.warning,
-                      foregroundColor: AppColors.pureWhite,
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      elevation: 0,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: ElevatedButton.icon(
-                    onPressed: _bulkUpload,
-                    icon: const Icon(Icons.upload),
-                    label: const Text('Bulk Upload'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.info,
-                      foregroundColor: AppColors.pureWhite,
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      elevation: 0,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-
-            const SizedBox(height: 32),
-
-            // Review section
-            const Text(
-              'Review',
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                color: AppColors.textPrimary,
-              ),
-            ),
-            const SizedBox(height: 16),
-
-            // Review questions
-            ..._reviewQuestions.asMap().entries.map((entry) {
-              final index = entry.key;
-              final question = entry.value;
-              return Column(
-                children: [
-                  _buildReviewQuestionCard(question, index + 1),
-                  if (index < _reviewQuestions.length - 1)
-                    const SizedBox(height: 12),
-                ],
-              );
-            }).toList(),
-
-            const SizedBox(height: 16),
-
-            // Add New Question button
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton.icon(
-                onPressed: _addQuestion,
-                icon: const Icon(Icons.add),
-                label: const Text('Add New Question'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primary,
-                  foregroundColor: AppColors.pureWhite,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  elevation: 0,
-                ),
-              ),
-            ),
-
-            const SizedBox(height: 40),
-
-            // Action buttons
-            Row(
-              children: [
-                Expanded(
-                  child: ElevatedButton(
-                    onPressed: () => Navigator.pop(context),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.warning,
-                      foregroundColor: AppColors.pureWhite,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      elevation: 0,
-                    ),
-                    child: const Text(
-                      'Cancel',
-                      style: TextStyle(
-                        fontWeight: FontWeight.w600,
-                        fontSize: 16,
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: ElevatedButton(
-                    onPressed: _saveSkillDrill,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primary,
-                      foregroundColor: AppColors.pureWhite,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      elevation: 0,
-                    ),
-                    child: const Text(
-                      'Save',
-                      style: TextStyle(
-                        fontWeight: FontWeight.w600,
-                        fontSize: 16,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
+  Widget _buildSectionTitle(String title) {
+    return Text(
+      title,
+      style: const TextStyle(
+        fontSize: 22,
+        fontWeight: FontWeight.bold,
+        color: AppColors.textPrimary,
       ),
     );
   }
 
-  Widget _buildQuestionPlaceholder(String title) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.lightGray.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: AppColors.lightGray,
-          style: BorderStyle.solid,
+  Widget _buildActionButtons() {
+    return Row(
+      children: [
+        Expanded(
+          child: ElevatedButton.icon(
+            onPressed: _addQuestion,
+            icon: const Icon(Icons.add_circle_outline, size: 20),
+            label: const Text('Add Question'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primary,
+              foregroundColor: AppColors.pureWhite,
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              textStyle: const TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 16,
+              ),
+            ),
+          ),
         ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: ElevatedButton.icon(
+            onPressed: _bulkUpload,
+            icon: const Icon(Icons.upload_file_outlined, size: 20),
+            label: const Text('Bulk Upload'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.surface,
+              foregroundColor: AppColors.primary,
+              side: const BorderSide(color: AppColors.primary),
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              textStyle: const TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 16,
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildEmptyState() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 48),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.borderLight),
       ),
-      child: Row(
+      child: Column(
         children: [
-          Text(
-            title,
-            style: const TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
+          Icon(
+            Icons.list_alt_outlined,
+            size: 64,
+            color: AppColors.textSecondary.withOpacity(0.5),
+          ),
+          const SizedBox(height: 16),
+          const Text(
+            'No Questions Added',
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
               color: AppColors.textPrimary,
             ),
           ),
-          const Spacer(),
-          Icon(
-            Icons.arrow_forward_ios,
-            size: 16,
-            color: AppColors.textSecondary,
+          const SizedBox(height: 8),
+          Text(
+            'Click on "Add Question" to start building your skill drill.',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 16,
+              color: AppColors.textSecondary,
+              height: 1.5,
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildReviewQuestionCard(SkillDrill question, int questionNumber) {
+  Widget _buildQuestionsList() {
+    return ListView.separated(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      itemCount: _questions.length,
+      separatorBuilder: (_, __) => const SizedBox(height: 16),
+      itemBuilder: (context, index) {
+        final question = _questions[index];
+        return _buildQuestionCard(question, index);
+      },
+    );
+  }
+
+  Widget _buildQuestionCard(SkillDrill question, int index) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.pureWhite,
+        color: AppColors.surface,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.lightGray),
         boxShadow: [
           BoxShadow(
-            color: AppColors.lightGray.withOpacity(0.2),
-            blurRadius: 4,
-            offset: const Offset(0, 2),
+            color: AppColors.shadowLight.withOpacity(0.5),
+            blurRadius: 8,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Text(
-                'Question $questionNumber',
-                style: const TextStyle(
-                  fontSize: 14,
-                  color: AppColors.textSecondary,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-              const Spacer(),
-              Icon(
-                Icons.arrow_forward_ios,
-                size: 16,
-                color: AppColors.textSecondary,
-              ),
-            ],
+          Text(
+            'Question ${index + 1}',
+            style: const TextStyle(
+              fontSize: 14,
+              color: AppColors.textSecondary,
+              fontWeight: FontWeight.w500,
+            ),
           ),
           const SizedBox(height: 8),
           Text(
             question.question,
             style: const TextStyle(
               fontSize: 16,
-              fontWeight: FontWeight.w600,
+              fontWeight: FontWeight.bold,
               color: AppColors.textPrimary,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              _buildTag(question.subject, AppColors.primary),
+              const SizedBox(width: 8),
+              _buildTag(question.difficulty, AppColors.info),
+              const Spacer(),
+              IconButton(
+                icon: const Icon(
+                  Icons.edit_outlined,
+                  color: AppColors.textSecondary,
+                ),
+                onPressed: () {
+                  // TODO: Implement edit functionality
+                },
+              ),
+              IconButton(
+                icon: const Icon(Icons.delete_outline, color: AppColors.error),
+                onPressed: () {
+                  setState(() => _questions.removeAt(index));
+                },
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTag(String text, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Text(
+        text,
+        style: TextStyle(
+          color: color,
+          fontWeight: FontWeight.w600,
+          fontSize: 12,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBottomActionBar() {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(20, 10, 20, 30),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.shadowLight,
+            blurRadius: 10,
+            offset: const Offset(0, -2),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: ElevatedButton(
+              onPressed: () => Navigator.pop(context),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.surface,
+                foregroundColor: AppColors.textPrimary,
+                side: const BorderSide(color: AppColors.borderLight),
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              child: const Text(
+                'Cancel',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+              ),
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: ElevatedButton(
+              onPressed: _saveSkillDrill,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.success,
+                foregroundColor: AppColors.pureWhite,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              child: const Text(
+                'Save',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+              ),
             ),
           ),
         ],
@@ -356,30 +385,29 @@ class _CreateSkillDrillPageState extends State<CreateSkillDrillPage> {
       const SnackBar(
         content: Text('Bulk upload functionality coming soon!'),
         backgroundColor: AppColors.info,
+        behavior: SnackBarBehavior.floating,
       ),
     );
   }
 
   void _saveSkillDrill() {
-    if (_questions.isEmpty && _reviewQuestions.isEmpty) {
+    if (_questions.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Please add at least one question'),
+          content: Text('Please add at least one question to save.'),
           backgroundColor: AppColors.error,
+          behavior: SnackBarBehavior.floating,
         ),
       );
       return;
     }
-
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(
-          'Skill drill saved with ${_questions.length + _reviewQuestions.length} questions!',
-        ),
+        content: Text('Skill drill saved with ${_questions.length} questions!'),
         backgroundColor: AppColors.success,
+        behavior: SnackBarBehavior.floating,
       ),
     );
-
     Navigator.pop(context);
   }
 }

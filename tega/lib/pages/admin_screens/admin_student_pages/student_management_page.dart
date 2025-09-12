@@ -12,7 +12,8 @@ class StudentManagementPage extends StatefulWidget {
   State<StudentManagementPage> createState() => _StudentManagementPageState();
 }
 
-class _StudentManagementPageState extends State<StudentManagementPage> {
+class _StudentManagementPageState extends State<StudentManagementPage>
+    with SingleTickerProviderStateMixin {
   final TextEditingController _searchController = TextEditingController();
   String _selectedCollege = 'All';
   String _selectedBranch = 'All';
@@ -20,111 +21,91 @@ class _StudentManagementPageState extends State<StudentManagementPage> {
   List<Student> _students = [];
   List<Student> _filteredStudents = [];
 
+  late AnimationController _animationController;
+
   @override
   void initState() {
     super.initState();
+    _animationController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 500),
+    );
     _loadStudents();
+    _animationController.forward();
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    _animationController.dispose();
+    super.dispose();
   }
 
   void _loadStudents() {
+    // Using sample data as in the original code
     _students = [
       Student.basic('Arjun Reddy', 'College A, B.Tech CSE', 'Active'),
       Student.basic('Priya Sharma', 'College B, B.Com', 'Active'),
-      Student.basic('Vikram Singh', 'College C, B.Sc', 'Active'),
+      Student.basic('Vikram Singh', 'College C, B.Sc', 'Flagged'),
       Student.basic('Anjali Verma', 'College A, B.Tech IT', 'Active'),
-      Student.basic('Rohan Kapoor', 'College B, BBA', 'Active'),
+      Student.basic('Rohan Kapoor', 'College B, BBA', 'Inactive'),
       Student.basic('Divya Patel', 'College C, B.Sc', 'Active'),
       Student.basic('Siddharth Joshi', 'College A, B.Tech CSE', 'Active'),
       Student.basic('Neha Gupta', 'College B, B.Com', 'Active'),
-      Student.basic('Karan Malhotra', 'College C, B.Sc', 'Active'),
-      Student.basic('Ishita Khanna', 'College A, B.Tech IT', 'Active'),
+      Student.basic('Karan Malhotra', 'College C, B.Sc', 'Inactive'),
+      Student.basic('Ishita Khanna', 'College A, B.Tech IT', 'Flagged'),
       Student.basic('Varun Mehra', 'College B, BBA', 'Active'),
       Student.basic('Sakshi Rao', 'College C, B.Sc', 'Active'),
     ];
-    _filteredStudents = List.from(_students);
+    _applyFilters(); // Apply default filters on initial load
   }
 
   void _applyFilters() {
+    _animationController.reset();
     setState(() {
       _filteredStudents = _students.where((student) {
+        // Search filter
         bool matchesSearch =
+            _searchController.text.isEmpty ||
             student.name.toLowerCase().contains(
               _searchController.text.toLowerCase(),
             ) ||
             student.college.toLowerCase().contains(
               _searchController.text.toLowerCase(),
             );
-        bool matchesStatus =
-            _selectedStatus == 'All' || student.status == _selectedStatus;
-        return matchesSearch && matchesStatus;
+
+        // College filter
+        bool matchesCollege =
+            _selectedCollege == 'All' ||
+            student.college.contains(_selectedCollege);
+
+        // Branch filter
+        bool matchesBranch =
+            _selectedBranch == 'All' ||
+            student.college.contains(_selectedBranch);
+
+        // Status filter
+        bool matchesStatus = student.status == _selectedStatus;
+
+        return matchesSearch &&
+            matchesCollege &&
+            matchesBranch &&
+            matchesStatus;
       }).toList();
     });
+    _animationController.forward();
   }
 
-  void _showStudentOptions(Student student) {
-    showModalBottomSheet(
-      context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (BuildContext context) {
-        return Container(
-          padding: const EdgeInsets.symmetric(vertical: 20),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              ListTile(
-                leading: const Icon(Icons.person),
-                title: const Text('View Profile'),
-                onTap: () {
-                  Navigator.pop(context);
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) =>
-                          StudentProfilePage(student: student),
-                    ),
-                  );
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.edit),
-                title: const Text('Edit Details'),
-                onTap: () {
-                  Navigator.pop(context);
-                  // Add edit functionality
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Edit ${student.name}')),
-                  );
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.block),
-                title: const Text('Block Student'),
-                onTap: () {
-                  Navigator.pop(context);
-                  // Add block functionality
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Block ${student.name}')),
-                  );
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.flag),
-                title: const Text('Flag Student'),
-                onTap: () {
-                  Navigator.pop(context);
-                  // Add flag functionality
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Flag ${student.name}')),
-                  );
-                },
-              ),
-            ],
-          ),
-        );
-      },
-    );
+  void _clearFilters() {
+    _animationController.reset();
+    setState(() {
+      _selectedCollege = 'All';
+      _selectedBranch = 'All';
+      _selectedStatus = 'Active';
+      _searchController.clear();
+      _applyFilters();
+    });
+    _animationController.forward();
   }
 
   @override
@@ -132,10 +113,14 @@ class _StudentManagementPageState extends State<StudentManagementPage> {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        backgroundColor: AppColors.surface,
+        backgroundColor: AppColors.background,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          icon: const Icon(
+            Icons.arrow_back_ios_new,
+            color: AppColors.textPrimary,
+          ),
+          // Back functionality to go to the admin dashboard
           onPressed: () {
             Navigator.pushAndRemoveUntil(
               context,
@@ -149,101 +134,103 @@ class _StudentManagementPageState extends State<StudentManagementPage> {
           style: TextStyle(
             color: AppColors.textPrimary,
             fontWeight: FontWeight.bold,
-            fontSize: 18,
           ),
         ),
         centerTitle: true,
         actions: [
-          Container(
-            margin: const EdgeInsets.only(right: 16),
-            child: ElevatedButton(
-              onPressed: () {
-                // Export functionality
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Exporting student list...')),
-                );
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.deepBlue,
-                foregroundColor: AppColors.pureWhite,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-              child: const Text('Export List'),
+          IconButton(
+            onPressed: () {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Exporting student list...')),
+              );
+            },
+            icon: const Icon(
+              Icons.file_download_outlined,
+              color: AppColors.primary,
             ),
           ),
         ],
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
+      body: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+            child: _buildFilterSection(),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16.0),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Students (${_filteredStudents.length})',
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                OutlinedButton.icon(
+                  icon: const Icon(Icons.flag_outlined, size: 18),
+                  label: const Text('Flagged Users'),
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const FlaggedUsersPage(),
+                      ),
+                    );
+                  },
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: AppColors.error,
+                    side: BorderSide(color: AppColors.error.withOpacity(0.5)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 10),
+          Expanded(
+            child: _filteredStudents.isEmpty
+                ? _buildEmptyState()
+                : _buildStudentList(),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFilterSection() {
+    return Card(
+      elevation: 0,
+      color: AppColors.surface,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: const BorderSide(color: AppColors.borderLight),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // View Flagged Users Button
-            Container(
-              width: double.infinity,
-              margin: const EdgeInsets.only(bottom: 16),
-              child: ElevatedButton(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const FlaggedUsersPage(),
-                    ),
-                  );
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.lightGray,
-                  foregroundColor: AppColors.textPrimary,
-                  elevation: 0,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
-                child: const Text('View Flagged Users'),
-              ),
-            ),
-
-            // Search Bar
-            Container(
-              margin: const EdgeInsets.only(bottom: 16),
-              child: TextField(
-                controller: _searchController,
-                onChanged: (value) => _applyFilters(),
-                decoration: InputDecoration(
-                  hintText: 'Name, Email, or Student ID',
-                  hintStyle: TextStyle(color: AppColors.textSecondary),
-                  prefixIcon: Icon(
-                    Icons.search,
-                    color: AppColors.textSecondary,
-                  ),
-                  filled: true,
-                  fillColor: AppColors.surface,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                    borderSide: BorderSide.none,
-                  ),
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 12,
-                  ),
+            TextField(
+              controller: _searchController,
+              onChanged: (value) => _applyFilters(),
+              decoration: InputDecoration(
+                hintText: 'Search by name or college...',
+                prefixIcon: const Icon(Icons.search, size: 20),
+                filled: true,
+                fillColor: AppColors.background,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide.none,
                 ),
               ),
             ),
-
-            // Filters Section
-            const Text(
-              'Filters',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                color: AppColors.textPrimary,
-              ),
-            ),
-            const SizedBox(height: 12),
-
-            // College and Branch Dropdowns
+            const SizedBox(height: 16),
             Row(
               children: [
                 Expanded(
@@ -252,9 +239,8 @@ class _StudentManagementPageState extends State<StudentManagementPage> {
                     _selectedCollege,
                     ['All', 'College A', 'College B', 'College C'],
                     (value) {
-                      setState(() {
-                        _selectedCollege = value!;
-                      });
+                      setState(() => _selectedCollege = value!);
+                      _applyFilters();
                     },
                   ),
                 ),
@@ -265,91 +251,23 @@ class _StudentManagementPageState extends State<StudentManagementPage> {
                     _selectedBranch,
                     ['All', 'B.Tech CSE', 'B.Tech IT', 'B.Com', 'BBA', 'B.Sc'],
                     (value) {
-                      setState(() {
-                        _selectedBranch = value!;
-                      });
+                      setState(() => _selectedBranch = value!);
+                      _applyFilters();
                     },
                   ),
                 ),
               ],
             ),
             const SizedBox(height: 16),
-
-            // Status Filter Buttons
-            Row(
-              children: [
-                _buildStatusButton('Active', _selectedStatus == 'Active'),
-                const SizedBox(width: 8),
-                _buildStatusButton('Inactive', _selectedStatus == 'Inactive'),
-                const SizedBox(width: 8),
-                _buildStatusButton('Flagged', _selectedStatus == 'Flagged'),
-              ],
-            ),
-            const SizedBox(height: 16),
-
-            // Filter Action Buttons
-            Row(
-              children: [
-                Expanded(
-                  child: ElevatedButton(
-                    onPressed: () {
-                      setState(() {
-                        _selectedCollege = 'All';
-                        _selectedBranch = 'All';
-                        _selectedStatus = 'Active';
-                        _searchController.clear();
-                        _applyFilters();
-                      });
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.lightGray,
-                      foregroundColor: AppColors.textPrimary,
-                      elevation: 0,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
-                    child: const Text('Clear All'),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: ElevatedButton(
-                    onPressed: _applyFilters,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.deepBlue,
-                      foregroundColor: AppColors.pureWhite,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
-                    child: const Text('Apply Filters'),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 24),
-
-            // Student List
-            Text(
-              'Student List (${_filteredStudents.length} results)',
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                color: AppColors.textPrimary,
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: [
+                  _buildStatusChip('Active'),
+                  _buildStatusChip('Inactive'),
+                  _buildStatusChip('Flagged'),
+                ],
               ),
-            ),
-            const SizedBox(height: 12),
-
-            // Student List Items
-            ListView.builder(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              itemCount: _filteredStudents.length,
-              itemBuilder: (context, index) {
-                final student = _filteredStudents[index];
-                return _buildStudentItem(student);
-              },
             ),
           ],
         ),
@@ -366,124 +284,206 @@ class _StudentManagementPageState extends State<StudentManagementPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          label,
-          style: const TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w500,
-            color: AppColors.textPrimary,
-          ),
-        ),
+        Text(label, style: const TextStyle(fontWeight: FontWeight.w500)),
         const SizedBox(height: 8),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-          decoration: BoxDecoration(
-            color: AppColors.surface,
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: AppColors.borderLight),
-          ),
-          child: DropdownButtonHideUnderline(
-            child: DropdownButton<String>(
-              value: value,
-              isExpanded: true,
-              items: items.map((String item) {
-                return DropdownMenuItem<String>(
-                  value: item,
-                  child: Text(
-                    item,
-                    overflow: TextOverflow.ellipsis,
-                    maxLines: 1,
-                  ),
-                );
-              }).toList(),
-              onChanged: onChanged,
+        DropdownButtonFormField<String>(
+          value: value,
+          items: items
+              .map((item) => DropdownMenuItem(value: item, child: Text(item)))
+              .toList(),
+          onChanged: onChanged,
+          decoration: InputDecoration(
+            filled: true,
+            fillColor: AppColors.background,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide.none,
             ),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 16),
           ),
         ),
       ],
     );
   }
 
-  Widget _buildStatusButton(String status, bool isSelected) {
-    return Expanded(
-      child: ElevatedButton(
-        onPressed: () {
-          setState(() {
-            _selectedStatus = status;
-          });
+  Widget _buildStatusChip(String status) {
+    bool isSelected = _selectedStatus == status;
+    return Padding(
+      padding: const EdgeInsets.only(right: 8.0),
+      child: ChoiceChip(
+        label: Text(status),
+        selected: isSelected,
+        onSelected: (selected) {
+          if (selected) {
+            setState(() => _selectedStatus = status);
+            _applyFilters();
+          }
         },
-        style: ElevatedButton.styleFrom(
-          backgroundColor: isSelected ? AppColors.primary : AppColors.pureWhite,
-          foregroundColor: isSelected
-              ? AppColors.pureWhite
-              : AppColors.textPrimary,
-          elevation: 0,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
-            side: BorderSide(
-              color: AppColors.primary,
-              width: isSelected ? 0 : 1,
-            ),
-          ),
+        selectedColor: AppColors.primary,
+        labelStyle: TextStyle(
+          color: isSelected ? AppColors.pureWhite : AppColors.textPrimary,
+          fontWeight: FontWeight.w600,
         ),
-        child: Text(status),
+        backgroundColor: AppColors.background,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+          side: isSelected
+              ? BorderSide.none
+              : const BorderSide(color: AppColors.borderLight),
+        ),
+        showCheckmark: false,
       ),
     );
   }
 
-  Widget _buildStudentItem(Student student) {
-    return GestureDetector(
-      onTap: () {
-        // Navigate to profile page when card is tapped
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => StudentProfilePage(student: student),
+  Widget _buildStudentList() {
+    return ListView.builder(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      itemCount: _filteredStudents.length,
+      itemBuilder: (context, index) {
+        final student = _filteredStudents[index];
+        final animation = Tween<double>(begin: 0.0, end: 1.0).animate(
+          CurvedAnimation(
+            parent: _animationController,
+            curve: Interval(
+              (1 / _filteredStudents.length) * index,
+              1.0,
+              curve: Curves.easeOutCubic,
+            ),
+          ),
+        );
+        return FadeTransition(
+          opacity: animation,
+          child: SlideTransition(
+            position: Tween<Offset>(
+              begin: const Offset(0, 0.3),
+              end: Offset.zero,
+            ).animate(animation),
+            child: _buildStudentItem(student),
           ),
         );
       },
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 12),
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: AppColors.borderLight),
-        ),
-        child: Row(
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    student.name,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.textPrimary,
-                    ),
+    );
+  }
+
+  Widget _buildStudentItem(Student student) {
+    final color = Colors
+        .primaries[student.name.hashCode % Colors.primaries.length]
+        .withOpacity(0.9);
+
+    Color statusColor;
+    switch (student.status) {
+      case 'Active':
+        statusColor = AppColors.success;
+        break;
+      case 'Inactive':
+        statusColor = AppColors.textSecondary;
+        break;
+      case 'Flagged':
+        statusColor = AppColors.error;
+        break;
+      default:
+        statusColor = AppColors.textSecondary;
+    }
+
+    return Card(
+      margin: const EdgeInsets.only(bottom: 12),
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: const BorderSide(color: AppColors.borderLight),
+      ),
+      child: InkWell(
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => StudentProfilePage(student: student),
+            ),
+          );
+        },
+        borderRadius: BorderRadius.circular(16),
+        child: Padding(
+          padding: const EdgeInsets.all(12.0),
+          child: Row(
+            children: [
+              CircleAvatar(
+                radius: 26,
+                backgroundColor: color,
+                child: Text(
+                  student.name.isNotEmpty ? student.name[0] : 'S',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
                   ),
-                  const SizedBox(height: 4),
-                  Text(
-                    student.college,
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: AppColors.textSecondary,
-                    ),
-                  ),
-                ],
+                ),
               ),
-            ),
-            IconButton(
-              onPressed: () {
-                // Show options menu when three dots are tapped
-                _showStudentOptions(student);
-              },
-              icon: const Icon(Icons.more_vert, color: AppColors.textSecondary),
-            ),
-          ],
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      student.name,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      student.college,
+                      style: const TextStyle(
+                        fontSize: 14,
+                        color: AppColors.textSecondary,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              Chip(
+                label: Text(student.status),
+                backgroundColor: statusColor.withOpacity(0.15),
+                labelStyle: TextStyle(
+                  color: statusColor,
+                  fontWeight: FontWeight.w600,
+                ),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                side: BorderSide.none,
+              ),
+            ],
+          ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildEmptyState() {
+    return const Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.search_off, size: 60, color: AppColors.textSecondary),
+          SizedBox(height: 16),
+          Text(
+            'No Students Found',
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: AppColors.textPrimary,
+            ),
+          ),
+          SizedBox(height: 8),
+          Text(
+            'Try adjusting your search or filter criteria.',
+            style: TextStyle(fontSize: 16, color: AppColors.textSecondary),
+            textAlign: TextAlign.center,
+          ),
+        ],
       ),
     );
   }

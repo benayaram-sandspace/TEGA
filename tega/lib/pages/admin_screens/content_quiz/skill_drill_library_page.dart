@@ -26,6 +26,7 @@ class _SkillDrillLibraryPageState extends State<SkillDrillLibraryPage> {
   String? _selectedDifficulty;
 
   bool _isLoading = true;
+  bool _isFilterExpanded = false;
 
   @override
   void initState() {
@@ -45,30 +46,31 @@ class _SkillDrillLibraryPageState extends State<SkillDrillLibraryPage> {
       final skills = await _contentQuizService.getUniqueSkills();
       final questionTypes = await _contentQuizService.getUniqueQuestionTypes();
 
-      setState(() {
-        _allDrills = drills;
-        _filteredDrills = drills;
-        _skills = skills;
-        _questionTypes = questionTypes;
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _allDrills = drills;
+          _filteredDrills = drills;
+          _skills = ["All Skills", ...skills]; // Add "All" option
+          _questionTypes = ["All Types", ...questionTypes]; // Add "All" option
+          _isLoading = false;
+        });
+      }
     } catch (e) {
-      setState(() {
-        _isLoading = false;
-      });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Failed to load data: $e'),
-          backgroundColor: AppColors.error,
-        ),
-      );
+      if (mounted) {
+        setState(() => _isLoading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to load data: $e'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
     }
   }
 
   void _applyFilters() {
     setState(() {
       _filteredDrills = _allDrills.where((drill) {
-        // Search filter
         final searchQuery = _searchController.text.toLowerCase();
         if (searchQuery.isNotEmpty) {
           final matchesSearch =
@@ -78,21 +80,17 @@ class _SkillDrillLibraryPageState extends State<SkillDrillLibraryPage> {
               drill.tags.any((tag) => tag.toLowerCase().contains(searchQuery));
           if (!matchesSearch) return false;
         }
-
-        // Skill filter
-        if (_selectedSkill != null && drill.skill != _selectedSkill)
+        if (_selectedSkill != null &&
+            _selectedSkill != "All Skills" &&
+            drill.skill != _selectedSkill)
           return false;
-
-        // Question type filter
         if (_selectedQuestionType != null &&
+            _selectedQuestionType != "All Types" &&
             drill.questionType != _selectedQuestionType)
           return false;
-
-        // Difficulty filter
         if (_selectedDifficulty != null &&
             drill.difficulty != _selectedDifficulty)
           return false;
-
         return true;
       }).toList();
     });
@@ -111,357 +109,355 @@ class _SkillDrillLibraryPageState extends State<SkillDrillLibraryPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.pureWhite,
-      appBar: AppBar(
-        title: const Text(
-          'Skill Drill Library',
-          style: TextStyle(
-            color: AppColors.textPrimary,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        backgroundColor: AppColors.pureWhite,
-        elevation: 0,
-        iconTheme: const IconThemeData(color: AppColors.textPrimary),
-        actions: [
-          IconButton(
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const CreateSkillDrillPage(),
-                ),
-              );
-            },
-            icon: const Icon(Icons.add),
-          ),
-        ],
-      ),
+      backgroundColor: AppColors.background,
       body: _isLoading
           ? const Center(
               child: CircularProgressIndicator(color: AppColors.primary),
             )
-          : Column(
-              children: [
-                // Search bar
-                Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: TextField(
-                    controller: _searchController,
-                    onChanged: (_) => _applyFilters(),
-                    decoration: InputDecoration(
-                      hintText: 'Question text or keyword',
-                      prefixIcon: const Icon(
-                        Icons.search,
-                        color: AppColors.textSecondary,
-                      ),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(
-                          color: AppColors.lightGray,
-                        ),
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(
-                          color: AppColors.lightGray,
-                        ),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(color: AppColors.primary),
-                      ),
-                      filled: true,
-                      fillColor: AppColors.lightGray.withOpacity(0.1),
-                    ),
-                  ),
-                ),
-
-                // Filter section
-                _buildFilterSection(),
-
-                // Questions list
-                Expanded(
-                  child: _filteredDrills.isEmpty
-                      ? const Center(
-                          child: Text(
-                            'No questions found',
-                            style: TextStyle(
-                              color: AppColors.textSecondary,
-                              fontSize: 16,
-                            ),
-                          ),
-                        )
-                      : ListView.builder(
-                          padding: const EdgeInsets.all(16),
-                          itemCount: _filteredDrills.length,
-                          itemBuilder: (context, index) {
-                            return _buildQuestionCard(_filteredDrills[index]);
-                          },
-                        ),
-                ),
+          : CustomScrollView(
+              slivers: [
+                _buildSliverAppBar(),
+                SliverToBoxAdapter(child: _buildFilterSection()),
+                _buildContentSliver(),
               ],
             ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => const AddQuestionPage()),
-          );
-        },
-        backgroundColor: AppColors.primary,
-        child: const Icon(Icons.add, color: AppColors.pureWhite),
+    );
+  }
+
+  SliverAppBar _buildSliverAppBar() {
+    return SliverAppBar(
+      title: const Text(
+        'Skill Drill Library',
+        style: TextStyle(
+          fontWeight: FontWeight.bold,
+          color: AppColors.textPrimary,
+        ),
+      ),
+      backgroundColor: AppColors.background,
+      surfaceTintColor: AppColors.background,
+      pinned: true,
+      floating: true,
+      elevation: 1.0,
+      actions: [
+        Padding(
+          padding: const EdgeInsets.only(right: 16.0),
+          child: FilledButton.icon(
+            icon: const Icon(Icons.add, size: 18),
+            label: const Text('Create New'),
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const CreateSkillDrillPage(),
+              ),
+            ),
+            style: FilledButton.styleFrom(
+              backgroundColor: AppColors.primary,
+              foregroundColor: AppColors.pureWhite,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+          ),
+        ),
+      ],
+      bottom: PreferredSize(
+        preferredSize: const Size.fromHeight(70.0),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+          child: _buildSearchBar(),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSearchBar() {
+    return TextField(
+      controller: _searchController,
+      onChanged: (_) => _applyFilters(),
+      decoration: InputDecoration(
+        hintText: 'Search by question, subject, or tag...',
+        prefixIcon: const Icon(Icons.search, color: AppColors.textSecondary),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide.none,
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide.none,
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: AppColors.primary, width: 2),
+        ),
+        filled: true,
+        fillColor: AppColors.surface,
+        contentPadding: const EdgeInsets.symmetric(vertical: 12),
       ),
     );
   }
 
   Widget _buildFilterSection() {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.pureWhite,
+    return Card(
+      elevation: 0,
+      margin: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+      shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.lightGray),
+        side: BorderSide(color: AppColors.borderLight),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      clipBehavior: Clip.antiAlias,
+      child: ExpansionTile(
+        onExpansionChanged: (expanded) =>
+            setState(() => _isFilterExpanded = expanded),
+        title: const Text(
+          'Filters',
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            color: AppColors.textPrimary,
+          ),
+        ),
+        trailing: Icon(
+          _isFilterExpanded ? Icons.expand_less : Icons.filter_list,
+          color: AppColors.primary,
+        ),
         children: [
-          const Text(
-            'Filter Drills',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: AppColors.textPrimary,
-            ),
-          ),
-          const SizedBox(height: 16),
-
-          // Skill dropdown
-          DropdownButtonFormField<String>(
-            value: _selectedSkill,
-            decoration: const InputDecoration(
-              labelText: 'Skill',
-              border: OutlineInputBorder(),
-            ),
-            items: _skills.map((skill) {
-              return DropdownMenuItem(
-                value: skill,
-                child: Text(
-                  skill,
-                  overflow: TextOverflow.ellipsis,
-                  maxLines: 1,
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+            child: Column(
+              children: [
+                _buildDropdown(
+                  _skills,
+                  'Skill',
+                  _selectedSkill,
+                  (val) => _selectedSkill = val,
                 ),
-              );
-            }).toList(),
-            onChanged: (value) {
-              setState(() {
-                _selectedSkill = value;
-              });
-              _applyFilters();
-            },
-          ),
-
-          const SizedBox(height: 16),
-
-          // Question Type dropdown
-          DropdownButtonFormField<String>(
-            value: _selectedQuestionType,
-            decoration: const InputDecoration(
-              labelText: 'Question Type',
-              border: OutlineInputBorder(),
-            ),
-            items: _questionTypes.map((type) {
-              return DropdownMenuItem(
-                value: type,
-                child: Text(type, overflow: TextOverflow.ellipsis, maxLines: 1),
-              );
-            }).toList(),
-            onChanged: (value) {
-              setState(() {
-                _selectedQuestionType = value;
-              });
-              _applyFilters();
-            },
-          ),
-
-          const SizedBox(height: 16),
-
-          // Difficulty levels
-          const Text(
-            'Difficulty Levels',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-              color: AppColors.textPrimary,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              _buildDifficultyChip('Easy'),
-              const SizedBox(width: 8),
-              _buildDifficultyChip('Medium'),
-              const SizedBox(width: 8),
-              _buildDifficultyChip('Hard'),
-            ],
-          ),
-
-          const SizedBox(height: 16),
-
-          // Action buttons
-          Row(
-            children: [
-              Expanded(
-                child: ElevatedButton(
-                  onPressed: _applyFilters,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                    foregroundColor: AppColors.pureWhite,
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
+                const SizedBox(height: 16),
+                _buildDropdown(
+                  _questionTypes,
+                  'Question Type',
+                  _selectedQuestionType,
+                  (val) => _selectedQuestionType = val,
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  children: [
+                    'Easy',
+                    'Medium',
+                    'Hard',
+                  ].map(_buildDifficultyChip).toList(),
+                ),
+                const Divider(height: 24),
+                SizedBox(
+                  width: double.infinity,
+                  child: TextButton.icon(
+                    onPressed: _clearFilters,
+                    icon: const Icon(Icons.clear, size: 18),
+                    label: const Text('Clear All Filters'),
+                    style: TextButton.styleFrom(
+                      foregroundColor: AppColors.error,
                     ),
                   ),
-                  child: const Text('Apply Filters'),
                 ),
-              ),
-              const SizedBox(width: 12),
-              TextButton(
-                onPressed: _clearFilters,
-                child: const Text('Clear All'),
-              ),
-            ],
+              ],
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildDifficultyChip(String difficulty) {
-    final isSelected = _selectedDifficulty == difficulty;
-    return GestureDetector(
-      onTap: () {
-        setState(() {
-          _selectedDifficulty = isSelected ? null : difficulty;
-        });
+  Widget _buildDropdown(
+    List<String> items,
+    String label,
+    String? selectedValue,
+    Function(String?) onSelected,
+  ) {
+    return DropdownButtonFormField<String>(
+      value: selectedValue,
+      decoration: InputDecoration(
+        labelText: label,
+        filled: true,
+        fillColor: AppColors.background,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: BorderSide(color: AppColors.borderLight),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: BorderSide(color: AppColors.borderLight),
+        ),
+      ),
+      items: items
+          .map(
+            (item) => DropdownMenuItem(
+              value: item,
+              child: Text(item, overflow: TextOverflow.ellipsis),
+            ),
+          )
+          .toList(),
+      onChanged: (value) {
+        setState(() => onSelected(value));
         _applyFilters();
       },
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        decoration: BoxDecoration(
-          color: isSelected
-              ? AppColors.primary
-              : AppColors.lightGray.withOpacity(0.3),
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: isSelected ? AppColors.primary : AppColors.lightGray,
+    );
+  }
+
+  Widget _buildDifficultyChip(String difficulty) {
+    final isSelected = _selectedDifficulty == difficulty;
+    return ChoiceChip(
+      label: Text(difficulty),
+      selected: isSelected,
+      onSelected: (selected) {
+        setState(() => _selectedDifficulty = selected ? difficulty : null);
+        _applyFilters();
+      },
+      selectedColor: AppColors.primary,
+      labelStyle: TextStyle(
+        color: isSelected ? AppColors.pureWhite : AppColors.textPrimary,
+        fontWeight: FontWeight.bold,
+      ),
+      backgroundColor: AppColors.background,
+      shape: StadiumBorder(
+        side: BorderSide(
+          color: isSelected ? AppColors.primary : AppColors.borderLight,
+        ),
+      ),
+      showCheckmark: false,
+    );
+  }
+
+  Widget _buildContentSliver() {
+    if (_filteredDrills.isEmpty) {
+      return SliverFillRemaining(
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.search_off,
+                size: 64,
+                color: AppColors.textSecondary.withOpacity(0.5),
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                'No Questions Found',
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'Try adjusting your search or filters.',
+                style: TextStyle(fontSize: 16, color: AppColors.textSecondary),
+              ),
+            ],
           ),
         ),
-        child: Text(
-          difficulty,
-          style: TextStyle(
-            color: isSelected ? AppColors.pureWhite : AppColors.textPrimary,
-            fontWeight: FontWeight.w600,
-          ),
+      );
+    }
+    return SliverPadding(
+      padding: const EdgeInsets.all(16),
+      sliver: SliverList(
+        delegate: SliverChildBuilderDelegate(
+          (context, index) => _buildQuestionCard(_filteredDrills[index]),
+          childCount: _filteredDrills.length,
         ),
       ),
     );
   }
 
   Widget _buildQuestionCard(SkillDrill drill) {
-    return Container(
+    return Card(
       margin: const EdgeInsets.only(bottom: 16),
-      decoration: BoxDecoration(
-        color: AppColors.pureWhite,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.lightGray.withOpacity(0.3),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Image
-          Container(
-            height: 120,
-            width: double.infinity,
-            decoration: BoxDecoration(
-              borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(12),
-                topRight: Radius.circular(12),
-              ),
-              image: DecorationImage(
-                image: NetworkImage(drill.imageUrl),
+      elevation: 2,
+      shadowColor: AppColors.shadowLight,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: () {
+          // TODO: Navigate to a detail or preview page
+        },
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            SizedBox(
+              height: 140,
+              width: double.infinity,
+              child: Image.network(
+                drill.imageUrl,
                 fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) => Container(
+                  color: AppColors.primary.withOpacity(0.1),
+                  child: const Icon(
+                    Icons.image_not_supported_outlined,
+                    color: AppColors.primary,
+                    size: 40,
+                  ),
+                ),
               ),
             ),
-          ),
-
-          // Content
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  drill.question,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.textPrimary,
-                  ),
-                  maxLines: 3,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: 8),
-                Row(
+            ListTile(
+              title: Text(
+                drill.question,
+                style: const TextStyle(fontWeight: FontWeight.bold),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+              subtitle: Padding(
+                padding: const EdgeInsets.only(top: 12.0),
+                child: Row(
                   children: [
-                    Text(
-                      drill.subject,
-                      style: const TextStyle(
-                        color: AppColors.textSecondary,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const Text(', '),
-                    Text(
+                    _buildInfoTag(drill.subject, AppColors.mutedPurple),
+                    const SizedBox(width: 8),
+                    _buildInfoTag(
                       drill.difficulty,
-                      style: TextStyle(
-                        color: _getDifficultyColor(drill.difficulty),
-                        fontWeight: FontWeight.w600,
-                      ),
+                      _getDifficultyColor(drill.difficulty),
                     ),
                   ],
                 ),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    Icon(Icons.edit, size: 16, color: AppColors.textSecondary),
-                    const SizedBox(width: 4),
-                    Text(
-                      'Edit',
-                      style: TextStyle(
-                        color: AppColors.textSecondary,
-                        fontSize: 14,
-                      ),
+              ),
+              trailing: PopupMenuButton<String>(
+                onSelected: (value) {
+                  // Handle menu item selection
+                },
+                itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
+                  const PopupMenuItem<String>(
+                    value: 'edit',
+                    child: Text('Edit'),
+                  ),
+                  const PopupMenuItem<String>(
+                    value: 'duplicate',
+                    child: Text('Duplicate'),
+                  ),
+                  const PopupMenuItem<String>(
+                    value: 'delete',
+                    child: Text(
+                      'Delete',
+                      style: TextStyle(color: AppColors.error),
                     ),
-                    const Spacer(),
-                    Icon(
-                      Icons.arrow_forward_ios,
-                      size: 16,
-                      color: AppColors.textSecondary,
-                    ),
-                  ],
-                ),
-              ],
+                  ),
+                ],
+                icon: const Icon(Icons.more_vert),
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildInfoTag(String text, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Text(
+        text,
+        style: TextStyle(
+          color: color,
+          fontWeight: FontWeight.w600,
+          fontSize: 12,
+        ),
       ),
     );
   }

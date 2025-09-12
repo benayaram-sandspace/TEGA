@@ -49,6 +49,7 @@ dependencies:
   video_player: ^2.8.1
   flutter_native_splash: ^2.4.0
   provider: ^6.1.2
+  intl: ^0.18.1
 
 dev_dependencies:
   flutter_test:
@@ -80,6 +81,7 @@ flutter:
     - assets/images/
     - assets/logo.png
     - assets/splash_logo.png
+    - assets/google_logo.png
     - assets/splash_video.mp4
     - assets/illustration.png
     - assets/centered_splash_logo.png

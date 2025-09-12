@@ -10,106 +10,114 @@ class AnalyticsPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: AppBar(
-        title: const Text(
-          'Module Usage',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            color: AppColors.textPrimary,
+      // Using CustomScrollView with Slivers for a more dynamic scrolling experience.
+      body: CustomScrollView(
+        slivers: [
+          SliverAppBar(
+            title: const Text(
+              'Analytics Dashboard',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                color: AppColors.textPrimary,
+              ),
+            ),
+            backgroundColor: AppColors.background,
+            surfaceTintColor:
+                AppColors.background, // Prevents color change on scroll
+            elevation: 1,
+            pinned: true, // The app bar will remain visible at the top
+            floating:
+                true, // The app bar will become visible as soon as you scroll up
+            leading: IconButton(
+              icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
+              onPressed: () {
+                Navigator.pushAndRemoveUntil(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const AdminDashboard(),
+                  ),
+                  (route) => false,
+                );
+              },
+            ),
           ),
-        ),
-        backgroundColor: AppColors.background,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
-          onPressed: () {
-            Navigator.pushAndRemoveUntil(
-              context,
-              MaterialPageRoute(builder: (context) => const AdminDashboard()),
-              (route) => false,
-            );
-          },
-        ),
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Module Usage Card
-            _buildModuleUsageCard(),
-            const SizedBox(height: 24),
-
-            // Skill Growth Section
-            _buildSectionTitle('Skill Growth'),
-            const SizedBox(height: 16),
-            _buildSkillGrowthCard(),
-            const SizedBox(height: 24),
-
-            // Top Performing Students Section
-            _buildSectionTitle('Top Performing Students'),
-            const SizedBox(height: 16),
-            _buildTopStudentsCard(),
-          ],
-        ),
+          // Using SliverPadding for consistent spacing of the content.
+          SliverPadding(
+            padding: const EdgeInsets.all(20),
+            sliver: SliverList(
+              delegate: SliverChildListDelegate([
+                _buildModuleUsageCard(),
+                const SizedBox(height: 24),
+                _buildSectionHeader('Skill Growth', icon: Icons.trending_up),
+                const SizedBox(height: 16),
+                _buildSkillGrowthCard(),
+                const SizedBox(height: 24),
+                _buildSectionHeader(
+                  'Top Performing Students',
+                  icon: Icons.star_border,
+                ),
+                const SizedBox(height: 16),
+                _buildTopStudentsCard(),
+              ]),
+            ),
+          ),
+        ],
       ),
     );
   }
 
-  Widget _buildSectionTitle(String title) {
-    return Text(
-      title,
-      style: const TextStyle(
-        fontSize: 20,
-        fontWeight: FontWeight.bold,
-        color: AppColors.textPrimary,
-      ),
-    );
-  }
-
-  Widget _buildModuleUsageCard() {
+  /// A generic builder for analytics cards to maintain a consistent UI.
+  Widget _buildAnalyticsCard({
+    required String title,
+    required String metric,
+    required String timeframe,
+    required Widget chart,
+    IconData? headerIcon,
+  }) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: AppColors.surface,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.primary.withOpacity(0.3)),
+        borderRadius: BorderRadius.circular(16), // Softer corners
         boxShadow: [
           BoxShadow(
-            color: AppColors.shadowLight,
-            blurRadius: 4,
-            offset: const Offset(0, 2),
+            color: AppColors.shadowLight.withOpacity(0.5),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header
-          const Text(
-            'Module Usage',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-              color: AppColors.textSecondary,
-            ),
+          Row(
+            children: [
+              if (headerIcon != null) ...[
+                Icon(headerIcon, color: AppColors.textSecondary, size: 18),
+                const SizedBox(width: 8),
+              ],
+              Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textSecondary,
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: 8),
-
-          // Main metric
-          const Text(
-            '100%',
-            style: TextStyle(
-              fontSize: 32,
+          Text(
+            metric,
+            style: const TextStyle(
+              fontSize: 36,
               fontWeight: FontWeight.bold,
               color: AppColors.textPrimary,
             ),
           ),
           const SizedBox(height: 4),
-
-          // Timeframe
           Text(
-            'Last 30 Days',
+            timeframe,
             style: TextStyle(
               fontSize: 14,
               color: AppColors.info,
@@ -117,22 +125,62 @@ class AnalyticsPage extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 20),
-
-          // Bar chart
-          _buildModuleUsageChart(),
+          chart,
         ],
       ),
     );
   }
 
+  /// A more distinct section header with an optional icon.
+  Widget _buildSectionHeader(String title, {required IconData icon}) {
+    return Row(
+      children: [
+        Icon(icon, color: AppColors.textPrimary, size: 22),
+        const SizedBox(width: 8),
+        Text(
+          title,
+          style: const TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+            color: AppColors.textPrimary,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildModuleUsageCard() {
+    return _buildAnalyticsCard(
+      title: 'Module Engagement',
+      metric: '100%',
+      timeframe: 'Last 30 Days',
+      headerIcon: Icons.widgets_outlined,
+      chart: _buildModuleUsageChart(),
+    );
+  }
+
+  /// An enhanced BarChart with gradients and touch interactivity.
   Widget _buildModuleUsageChart() {
-    return Container(
+    return SizedBox(
       height: 120,
       child: BarChart(
         BarChartData(
-          alignment: BarChartAlignment.spaceAround,
           maxY: 100,
-          barTouchData: BarTouchData(enabled: false),
+          // Adding touch data for interactivity
+          barTouchData: BarTouchData(
+            touchTooltipData: BarTouchTooltipData(
+              getTooltipColor: (_) => AppColors.deepBlue,
+              getTooltipItem: (group, groupIndex, rod, rodIndex) {
+                return BarTooltipItem(
+                  '${rod.toY.round()}%',
+                  const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                  ),
+                );
+              },
+            ),
+          ),
           titlesData: FlTitlesData(
             show: true,
             rightTitles: const AxisTitles(
@@ -145,29 +193,32 @@ class AnalyticsPage extends StatelessWidget {
               sideTitles: SideTitles(
                 showTitles: true,
                 getTitlesWidget: (double value, TitleMeta meta) {
-                  const style = TextStyle(
+                  final style = TextStyle(
                     color: AppColors.textSecondary,
                     fontWeight: FontWeight.w500,
                     fontSize: 12,
                   );
-                  Widget text;
+                  String text;
                   switch (value.toInt()) {
                     case 0:
-                      text = const Text('Skill Drill', style: style);
+                      text = 'Skill Drill';
                       break;
                     case 1:
-                      text = const Text('Resume Optimizer', style: style);
+                      text = 'Resume'; // Shortened for better fit
                       break;
                     case 2:
-                      text = const Text('Interviews', style: style);
+                      text = 'Interviews';
                       break;
                     default:
-                      text = const Text('', style: style);
+                      text = '';
                       break;
                   }
-                  return SideTitleWidget(axisSide: meta.axisSide, child: text);
+                  return SideTitleWidget(
+                    axisSide: meta.axisSide,
+                    child: Text(text, style: style),
+                  );
                 },
-                reservedSize: 42,
+                reservedSize: 38,
               ),
             ),
             leftTitles: const AxisTitles(
@@ -175,115 +226,50 @@ class AnalyticsPage extends StatelessWidget {
             ),
           ),
           borderData: FlBorderData(show: false),
+          gridData: FlGridData(show: false),
           barGroups: [
-            BarChartGroupData(
-              x: 0,
-              barRods: [
-                BarChartRodData(
-                  toY: 100,
-                  color: AppColors.mutedPurple,
-                  width: 30,
-                  borderRadius: const BorderRadius.only(
-                    topLeft: Radius.circular(4),
-                    topRight: Radius.circular(4),
-                  ),
-                ),
-              ],
-            ),
-            BarChartGroupData(
-              x: 1,
-              barRods: [
-                BarChartRodData(
-                  toY: 100,
-                  color: AppColors.mutedPurple,
-                  width: 30,
-                  borderRadius: const BorderRadius.only(
-                    topLeft: Radius.circular(4),
-                    topRight: Radius.circular(4),
-                  ),
-                ),
-              ],
-            ),
-            BarChartGroupData(
-              x: 2,
-              barRods: [
-                BarChartRodData(
-                  toY: 100,
-                  color: AppColors.mutedPurple,
-                  width: 30,
-                  borderRadius: const BorderRadius.only(
-                    topLeft: Radius.circular(4),
-                    topRight: Radius.circular(4),
-                  ),
-                ),
-              ],
-            ),
+            _buildBarGroupData(0, 100, AppColors.primary),
+            _buildBarGroupData(1, 100, AppColors.info),
+            _buildBarGroupData(2, 100, AppColors.mutedPurple),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildSkillGrowthCard() {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.primary.withOpacity(0.3)),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.shadowLight,
-            blurRadius: 4,
-            offset: const Offset(0, 2),
+  BarChartGroupData _buildBarGroupData(int x, double y, Color color) {
+    return BarChartGroupData(
+      x: x,
+      barRods: [
+        BarChartRodData(
+          toY: y,
+          width: 25,
+          borderRadius: const BorderRadius.all(Radius.circular(6)),
+          // Using gradients for a more modern look
+          gradient: LinearGradient(
+            colors: [color.withOpacity(0.7), color],
+            begin: Alignment.bottomCenter,
+            end: Alignment.topCenter,
           ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Header
-          const Text(
-            'Skill Growth Report',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-              color: AppColors.textSecondary,
-            ),
-          ),
-          const SizedBox(height: 8),
-
-          // Main metric
-          const Text(
-            '+15%',
-            style: TextStyle(
-              fontSize: 32,
-              fontWeight: FontWeight.bold,
-              color: AppColors.textPrimary,
-            ),
-          ),
-          const SizedBox(height: 4),
-
-          // Timeframe
-          Text(
-            'Last 6 Months',
-            style: TextStyle(
-              fontSize: 14,
-              color: AppColors.info,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-          const SizedBox(height: 20),
-
-          // Line chart
-          _buildSkillGrowthChart(),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
+  Widget _buildSkillGrowthCard() {
+    return _buildAnalyticsCard(
+      title: 'Skill Growth Report',
+      metric: '+15%',
+      timeframe: 'Last 6 Months',
+      headerIcon: Icons.show_chart,
+      chart: _buildSkillGrowthChart(),
+    );
+  }
+
+  /// An enhanced LineChart with a gradient area, visible dots, and interactivity.
   Widget _buildSkillGrowthChart() {
-    return Container(
+    final List<Color> gradientColors = [AppColors.primary, AppColors.info];
+    return SizedBox(
       height: 120,
       child: LineChart(
         LineChartData(
@@ -305,31 +291,34 @@ class AnalyticsPage extends StatelessWidget {
                     fontWeight: FontWeight.w500,
                     fontSize: 12,
                   );
-                  Widget text;
+                  String text;
                   switch (value.toInt()) {
                     case 0:
-                      text = const Text('Jan', style: style);
+                      text = 'Jan';
                       break;
                     case 1:
-                      text = const Text('Feb', style: style);
+                      text = 'Feb';
                       break;
                     case 2:
-                      text = const Text('Mar', style: style);
+                      text = 'Mar';
                       break;
                     case 3:
-                      text = const Text('Apr', style: style);
+                      text = 'Apr';
                       break;
                     case 4:
-                      text = const Text('May', style: style);
+                      text = 'May';
                       break;
                     case 5:
-                      text = const Text('Jun', style: style);
+                      text = 'Jun';
                       break;
                     default:
-                      text = const Text('', style: style);
+                      text = '';
                       break;
                   }
-                  return SideTitleWidget(axisSide: meta.axisSide, child: text);
+                  return SideTitleWidget(
+                    axisSide: meta.axisSide,
+                    child: Text(text, style: style),
+                  );
                 },
                 reservedSize: 30,
               ),
@@ -343,22 +332,47 @@ class AnalyticsPage extends StatelessWidget {
           maxX: 5,
           minY: 0,
           maxY: 6,
+          // Adding touch data for interactivity
+          lineTouchData: LineTouchData(
+            touchTooltipData: LineTouchTooltipData(
+              getTooltipColor: (_) => AppColors.deepBlue,
+              getTooltipItems: (List<LineBarSpot> touchedBarSpots) {
+                return touchedBarSpots.map((barSpot) {
+                  return LineTooltipItem(
+                    '${barSpot.y.toStringAsFixed(1)} score',
+                    const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  );
+                }).toList();
+              },
+            ),
+          ),
           lineBarsData: [
             LineChartBarData(
-              spots: [
-                const FlSpot(0, 3),
-                const FlSpot(1, 4),
-                const FlSpot(2, 3.5),
-                const FlSpot(3, 5),
-                const FlSpot(4, 4.5),
-                const FlSpot(5, 5.5),
+              spots: const [
+                FlSpot(0, 3),
+                FlSpot(1, 4),
+                FlSpot(2, 3.5),
+                FlSpot(3, 5),
+                FlSpot(4, 4.5),
+                FlSpot(5, 5.5),
               ],
               isCurved: true,
-              color: AppColors.info,
-              barWidth: 3,
+              gradient: LinearGradient(colors: gradientColors),
+              barWidth: 4,
               isStrokeCapRound: true,
-              dotData: FlDotData(show: false),
-              belowBarData: BarAreaData(show: false),
+              dotData: FlDotData(show: true), // Show dots on the line
+              // Filling the area below the line with a gradient
+              belowBarData: BarAreaData(
+                show: true,
+                gradient: LinearGradient(
+                  colors: gradientColors
+                      .map((color) => color.withOpacity(0.3))
+                      .toList(),
+                ),
+              ),
             ),
           ],
         ),
@@ -368,95 +382,67 @@ class AnalyticsPage extends StatelessWidget {
 
   Widget _buildTopStudentsCard() {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 10),
       decoration: BoxDecoration(
         color: AppColors.surface,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.primary.withOpacity(0.3)),
+        borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: AppColors.shadowLight,
-            blurRadius: 4,
-            offset: const Offset(0, 2),
+            color: AppColors.shadowLight.withOpacity(0.5),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
       child: Column(
         children: [
-          _buildStudentItem(
-            'David',
-            'Computer Science',
-            AppColors.info,
-            Icons.person,
-          ),
-          const SizedBox(height: 16),
-          _buildStudentItem(
-            'Ruth',
-            'Artificial Intelligence',
-            AppColors.primary,
-            Icons.person,
-          ),
-          const SizedBox(height: 16),
-          _buildStudentItem(
-            'Noah Thompson',
-            'Machine Learning',
-            AppColors.primary,
-            Icons.person,
-          ),
+          _buildStudentTile('David', 'Computer Science', 1),
+          _buildStudentTile('Ruth', 'Artificial Intelligence', 2),
+          _buildStudentTile('Noah Thompson', 'Machine Learning', 3),
         ],
       ),
     );
   }
 
-  Widget _buildStudentItem(
-    String name,
-    String field,
-    Color avatarColor,
-    IconData icon,
-  ) {
-    return Row(
-      children: [
-        // Avatar
-        Container(
-          width: 50,
-          height: 50,
-          decoration: BoxDecoration(color: avatarColor, shape: BoxShape.circle),
-          child: Icon(icon, color: AppColors.pureWhite, size: 24),
-        ),
-        const SizedBox(width: 16),
-
-        // Student info
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                name,
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.textPrimary,
-                ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                softWrap: true,
-              ),
-              const SizedBox(height: 4),
-              Text(
-                field,
-                style: TextStyle(
-                  fontSize: 14,
-                  color: AppColors.info,
-                  fontWeight: FontWeight.w500,
-                ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                softWrap: true,
-              ),
-            ],
+  /// Using ListTile for a more structured and conventional list item.
+  Widget _buildStudentTile(String name, String field, int rank) {
+    return ListTile(
+      leading: CircleAvatar(
+        radius: 25,
+        backgroundColor: AppColors.primary.withOpacity(0.1),
+        child: Text(
+          '#$rank',
+          style: const TextStyle(
+            color: AppColors.primary,
+            fontWeight: FontWeight.bold,
+            fontSize: 16,
           ),
         ),
-      ],
+      ),
+      title: Text(
+        name,
+        style: const TextStyle(
+          fontSize: 16,
+          fontWeight: FontWeight.bold,
+          color: AppColors.textPrimary,
+        ),
+      ),
+      subtitle: Text(
+        field,
+        style: TextStyle(
+          fontSize: 14,
+          color: AppColors.textSecondary,
+          fontWeight: FontWeight.w500,
+        ),
+      ),
+      trailing: const Icon(
+        Icons.arrow_forward_ios,
+        size: 16,
+        color: AppColors.textSecondary,
+      ),
+      onTap: () {
+        // TODO: Navigate to student's profile page
+      },
     );
   }
 }
