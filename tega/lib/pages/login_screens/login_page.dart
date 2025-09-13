@@ -340,7 +340,7 @@ class _LoginPageState extends State<LoginPage> {
               style: const TextStyle(fontSize: 11, color: AppColors.info),
             ),
             Text(
-              _tr('mods :- principal@tega.com / principal123'),
+              _tr('mods :- college@tega.com / college123'),
               style: const TextStyle(fontSize: 11, color: AppColors.info),
             ),
             Text(

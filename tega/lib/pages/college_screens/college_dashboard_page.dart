@@ -1,7 +1,31 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:tega/pages/login_screens/login_page.dart';
+import 'package:tega/services/auth_service.dart';
 
-// A centralized class for styles and colors to ensure UI uniformity.
+void main() {
+  runApp(const MyApp());
+}
+
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'Dashboard Demo',
+      theme: ThemeData(
+        primarySwatch: Colors.blue,
+        scaffoldBackgroundColor: DashboardStyles.background,
+        fontFamily: 'Inter',
+      ),
+      home: const DashboardScreen(),
+      debugShowCheckedModeBanner: false,
+    );
+  }
+}
+
+/// A centralized class for styles and colors to ensure UI uniformity.
 class DashboardStyles {
   // Color Palette
   static const Color background = Color(0xFFF7F8FC);
@@ -36,7 +60,7 @@ class DashboardStyles {
     color: textDark,
   );
   static const TextStyle statValue = TextStyle(
-    fontSize: 18, // Reduced from 20 for better fit
+    fontSize: 18,
     fontWeight: FontWeight.bold,
     color: textDark,
   );
@@ -52,7 +76,6 @@ class DashboardStyles {
   );
 }
 
-// Main dashboard screen widget
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
 
@@ -62,55 +85,114 @@ class DashboardScreen extends StatefulWidget {
 
 class _DashboardScreenState extends State<DashboardScreen> {
   int _selectedIndex = 0;
+  final AuthService _authService = AuthService();
+  late final List<Widget> _pages;
+
+  @override
+  void initState() {
+    super.initState();
+    // Define the pages for the BottomNavigationBar
+    _pages = [
+      _buildDashboardPage(), // Index 0: Dashboard
+      const Center(
+        child: Text('Students Page', style: DashboardStyles.sectionTitle),
+      ), // Index 1: Students
+      const Center(
+        child: Text('Progress Page', style: DashboardStyles.sectionTitle),
+      ), // Index 2: Progress
+      const Center(
+        child: Text('Reports Page', style: DashboardStyles.sectionTitle),
+      ), // Index 3: Reports
+    ];
+  }
 
   void _onItemTapped(int index) {
-    setState(() {
-      _selectedIndex = index;
-    });
+    if (index == 4) {
+      // The 'More' tab shows a bottom sheet without changing the page index.
+      _showMoreOptions(context);
+    } else {
+      setState(() {
+        _selectedIndex = index;
+      });
+    }
+  }
+
+  Future<void> _handleLogout() async {
+    if (!mounted) return;
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) =>
+          const Center(child: CircularProgressIndicator()),
+    );
+
+    try {
+      await _authService.logout();
+      if (mounted) {
+        Navigator.of(context).pop(); // Close loading dialog
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (context) => const LoginPage()),
+          (Route<dynamic> route) => false,
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        Navigator.of(context).pop();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error logging out: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: DashboardStyles.background,
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(20.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const SizedBox(height: 16),
-              _buildWelcomeHeader(),
-              const SizedBox(height: 32),
-              _buildStatsGrid(),
-              const SizedBox(height: 32),
-              _buildProgressChartCard(),
-              const SizedBox(height: 32),
-              _buildActionableInsights(),
-            ],
-          ),
-        ),
-      ),
+      body: _pages[_selectedIndex],
       bottomNavigationBar: _buildBottomNavigationBar(),
     );
   }
 
-  // Welcome Header Widget
+  /// Builds the main dashboard page content.
+  Widget _buildDashboardPage() {
+    return SafeArea(
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(20.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const SizedBox(height: 16),
+            _buildWelcomeHeader(),
+            const SizedBox(height: 32),
+            _buildStatsGrid(),
+            const SizedBox(height: 32),
+            _buildProgressChartCard(),
+            const SizedBox(height: 32),
+            _buildActionableInsights(),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildWelcomeHeader() {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      crossAxisAlignment:
-          CrossAxisAlignment.center, // Vertically center align items
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         const Flexible(
           // Wrap with Flexible to prevent overflow
           child: Text(
             'Welcome, Sarah!',
             style: DashboardStyles.welcomeHeader,
-            overflow: TextOverflow.ellipsis, // Handle long text gracefully
+            overflow: TextOverflow.ellipsis,
           ),
         ),
-        const SizedBox(width: 16), // Add spacing for smaller screens
+        const SizedBox(width: 16),
         Container(
           padding: const EdgeInsets.all(2),
           decoration: BoxDecoration(
@@ -126,7 +208,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  // Statistics Cards Grid - more responsive and uniform
   Widget _buildStatsGrid() {
     return GridView.count(
       crossAxisCount: 3,
@@ -134,7 +215,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       mainAxisSpacing: 16,
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
-      childAspectRatio: 1.0, // Adjusted to 1.0 for better vertical spacing
+      childAspectRatio: 1.0,
       children: [
         _buildStatCard(
           'Enrolled Students',
@@ -149,8 +230,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
           DashboardStyles.accentGreen,
         ),
         _buildStatCard(
-          'Top Course',
-          'Data Science',
+          'AI',
+          'course',
           Icons.school_outlined,
           DashboardStyles.accentOrange,
         ),
@@ -158,7 +239,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  // Reusable card for statistics with a more modern, icon-focused design.
   Widget _buildStatCard(
     String title,
     String value,
@@ -166,7 +246,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     Color color,
   ) {
     return Container(
-      padding: const EdgeInsets.all(12), // Reduced from 16
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: DashboardStyles.cardBackground,
         borderRadius: BorderRadius.circular(16),
@@ -182,12 +262,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
         mainAxisAlignment: MainAxisAlignment.center,
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Icon(icon, color: color, size: 24), // Reduced from 28
-          const SizedBox(height: 8), // Reduced from 12
+          Icon(icon, color: color, size: 24),
+          const SizedBox(height: 8),
           Text(value, style: DashboardStyles.statValue),
           const SizedBox(height: 4),
           Flexible(
-            // Added Flexible to allow text to wrap without overflow
             child: Text(
               title,
               style: DashboardStyles.statTitle,
@@ -199,7 +278,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  // Student Progress Chart Card
   Widget _buildProgressChartCard() {
     return Container(
       padding: const EdgeInsets.all(16),
@@ -228,7 +306,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  // Actionable Insights Section
   Widget _buildActionableInsights() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -237,56 +314,46 @@ class _DashboardScreenState extends State<DashboardScreen> {
         const SizedBox(height: 16),
         _buildInsightCard(
           icon: Icons.school_outlined,
-          iconColor: DashboardStyles.accentRed,
+          iconColor: DashboardStyles.accentOrange,
           title: '5 students require academic advising',
           priority: 'High priority',
+          priorityColor: DashboardStyles.priorityHighBg,
+          priorityTextColor: DashboardStyles.priorityHighText,
         ),
         _buildInsightCard(
           icon: Icons.book_outlined,
-          iconColor: DashboardStyles.accentOrange,
+          iconColor: DashboardStyles.primary,
           title: 'New curriculum update available',
           priority: 'Medium priority',
+          priorityColor: DashboardStyles.priorityMediumBg,
+          priorityTextColor: DashboardStyles.priorityMediumText,
         ),
         _buildInsightCard(
           icon: Icons.trending_up_outlined,
-          iconColor: DashboardStyles.primary,
-          title: 'Enrollment trends for Q4 available',
-          priority: 'Low priority',
+          iconColor: DashboardStyles.accentGreen,
+          title: 'Enrollment trends for Q4 are available',
+          priority: 'Low',
+          priorityColor: DashboardStyles.priorityLowBg,
+          priorityTextColor: DashboardStyles.priorityLowText,
         ),
       ],
     );
   }
 
-  // Reusable card for insights, with priority colors handled internally.
   Widget _buildInsightCard({
     required IconData icon,
     required Color iconColor,
     required String title,
     required String priority,
+    required Color priorityColor,
+    required Color priorityTextColor,
   }) {
-    Color priorityBgColor;
-    Color priorityTextColor;
-
-    switch (priority.toLowerCase()) {
-      case 'high priority':
-        priorityBgColor = DashboardStyles.priorityHighBg;
-        priorityTextColor = DashboardStyles.priorityHighText;
-        break;
-      case 'medium priority':
-        priorityBgColor = DashboardStyles.priorityMediumBg;
-        priorityTextColor = DashboardStyles.priorityMediumText;
-        break;
-      default: // Low priority
-        priorityBgColor = DashboardStyles.priorityLowBg;
-        priorityTextColor = DashboardStyles.priorityLowText;
-    }
-
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
         color: DashboardStyles.cardBackground,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
             color: Colors.grey.withOpacity(0.05),
@@ -315,10 +382,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 Container(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 8,
-                    vertical: 3,
+                    vertical: 4,
                   ),
                   decoration: BoxDecoration(
-                    color: priorityBgColor,
+                    color: priorityColor,
                     borderRadius: BorderRadius.circular(6),
                   ),
                   child: Text(
@@ -337,8 +404,97 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  // Bottom Navigation Bar Widget
-  Widget _buildBottomNavigationBar() {
+  void _showMoreOptions(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: DashboardStyles.cardBackground,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return Padding(
+          padding: const EdgeInsets.symmetric(vertical: 16.0),
+          child: Wrap(
+            children: [
+              ListTile(
+                leading: const Icon(
+                  Icons.local_activity_outlined,
+                  color: DashboardStyles.textDark,
+                ),
+                title: const Text(
+                  'Learning Activity',
+                  style: DashboardStyles.insightTitle,
+                ),
+                onTap: () {
+                  Navigator.pop(context); // Close the bottom sheet first
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const LearningActivityPage(),
+                    ),
+                  );
+                },
+              ),
+              ListTile(
+                leading: const Icon(
+                  Icons.article_outlined,
+                  color: DashboardStyles.textDark,
+                ),
+                title: const Text(
+                  'Resume & Interview',
+                  style: DashboardStyles.insightTitle,
+                ),
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const ResumeInterviewPage(),
+                    ),
+                  );
+                },
+              ),
+              ListTile(
+                leading: const Icon(
+                  Icons.settings_outlined,
+                  color: DashboardStyles.textDark,
+                ),
+                title: const Text(
+                  'Settings & Support',
+                  style: DashboardStyles.insightTitle,
+                ),
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const SettingsSupportPage(),
+                    ),
+                  );
+                },
+              ),
+              const Divider(height: 1, indent: 16, endIndent: 16),
+              ListTile(
+                leading: const Icon(
+                  Icons.logout,
+                  color: DashboardStyles.accentRed,
+                ),
+                title: Text(
+                  'Logout',
+                  style: DashboardStyles.insightTitle.copyWith(
+                    color: DashboardStyles.accentRed,
+                  ),
+                ),
+                onTap: _handleLogout,
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  BottomNavigationBar _buildBottomNavigationBar() {
     return BottomNavigationBar(
       items: const <BottomNavigationBarItem>[
         BottomNavigationBarItem(
@@ -357,14 +513,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
           label: 'Progress',
         ),
         BottomNavigationBarItem(
-          icon: Icon(Icons.local_activity_outlined),
-          activeIcon: Icon(Icons.local_activity),
-          label: 'Activity',
-        ),
-        BottomNavigationBarItem(
           icon: Icon(Icons.bar_chart_outlined),
           activeIcon: Icon(Icons.bar_chart),
           label: 'Reports',
+        ),
+        BottomNavigationBarItem(
+          icon: Icon(Icons.more_horiz_outlined),
+          activeIcon: Icon(Icons.more_horiz),
+          label: 'More',
         ),
       ],
       currentIndex: _selectedIndex,
@@ -378,7 +534,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  // Data and configuration for the bar chart
   BarChartData _mainBarData() {
     return BarChartData(
       maxY: 1200,
@@ -425,7 +580,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  // Groups of bars for the chart using the consistent color palette
   List<BarChartGroupData> _showingGroups() => [
     _makeGroupData(0, 300, DashboardStyles.primary),
     _makeGroupData(1, 800, DashboardStyles.primary),
@@ -453,7 +607,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  // Widget for the bottom titles (labels) of the chart
   Widget _getBottomTitles(double value, TitleMeta meta) {
     const style = TextStyle(
       color: DashboardStyles.textLight,
@@ -488,5 +641,76 @@ class _DashboardScreenState extends State<DashboardScreen> {
         break;
     }
     return SideTitleWidget(axisSide: meta.axisSide, space: 16.0, child: text);
+  }
+}
+
+// --- Placeholder Pages for 'More' Options ---
+
+class LearningActivityPage extends StatelessWidget {
+  const LearningActivityPage({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Learning Activity'),
+        backgroundColor: DashboardStyles.cardBackground,
+        foregroundColor: DashboardStyles.textDark,
+        elevation: 1,
+      ),
+      body: const Center(
+        child: Text(
+          'Learning Activity Page',
+          style: DashboardStyles.sectionTitle,
+        ),
+      ),
+      backgroundColor: DashboardStyles.background,
+    );
+  }
+}
+
+class ResumeInterviewPage extends StatelessWidget {
+  const ResumeInterviewPage({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Resume & Interview'),
+        backgroundColor: DashboardStyles.cardBackground,
+        foregroundColor: DashboardStyles.textDark,
+        elevation: 1,
+      ),
+      body: const Center(
+        child: Text(
+          'Resume & Interview Page',
+          style: DashboardStyles.sectionTitle,
+        ),
+      ),
+      backgroundColor: DashboardStyles.background,
+    );
+  }
+}
+
+class SettingsSupportPage extends StatelessWidget {
+  const SettingsSupportPage({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Settings & Support'),
+        backgroundColor: DashboardStyles.cardBackground,
+        foregroundColor: DashboardStyles.textDark,
+        elevation: 1,
+      ),
+      body: const Center(
+        child: Text(
+          'Settings & Support Page',
+          style: DashboardStyles.sectionTitle,
+        ),
+      ),
+      backgroundColor: DashboardStyles.background,
+    );
   }
 }

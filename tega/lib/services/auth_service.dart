@@ -56,12 +56,12 @@ class AuthService {
           createdAt: DateTime.now().subtract(const Duration(days: 30)),
         ),
       },
-      'principal@college.com': {
-        'password': 'principal123',
+      'college@tega.com': {
+        'password': 'college123',
         'user': User(
           id: '2',
           name: 'College Principal',
-          email: 'principal@college.com',
+          email: 'college@tega.com',
           role: UserRole.moderator,
           createdAt: DateTime.now().subtract(const Duration(days: 15)),
         ),
