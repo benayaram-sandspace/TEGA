@@ -1,6 +1,25 @@
 import 'dart:convert';
 import 'package:flutter/services.dart';
+import 'package:http/http.dart' as http;
+import 'package:tega/constants/api_constants.dart';
 
+// ✨ --- NEW CLASS FOR API DATA --- ✨
+// This simple class matches the data coming from your GET /api/colleges endpoint.
+class CollegeInfo {
+  final String id;
+  final String name;
+
+  CollegeInfo({required this.id, required this.name});
+
+  factory CollegeInfo.fromJson(Map<String, dynamic> json) {
+    return CollegeInfo(
+      id: json['_id'] ?? json['id'] ?? '',
+      name: json['name'] ?? '',
+    );
+  }
+}
+
+// Your existing detailed classes
 class College {
   final String id;
   final String name;
@@ -60,11 +79,7 @@ class PrimaryAdmin {
   final String email;
   final String phone;
 
-  PrimaryAdmin({
-    required this.name,
-    required this.email,
-    required this.phone,
-  });
+  PrimaryAdmin({required this.name, required this.email, required this.phone});
 
   factory PrimaryAdmin.fromJson(Map<String, dynamic> json) {
     return PrimaryAdmin(
@@ -139,9 +154,7 @@ class Student {
   }
 
   get college => null;
-
   get status => null;
-
   static basic(String s, String t, String u) {}
 }
 
@@ -152,16 +165,38 @@ class CollegeService {
 
   List<College> _colleges = [];
 
-  // Load colleges from JSON file
+  // ✨ --- NEW METHOD TO FETCH COLLEGES FROM YOUR BACKEND API --- ✨
+  Future<List<CollegeInfo>> fetchCollegeList() async {
+    try {
+      final response = await http.get(Uri.parse(ApiEndpoints.colleges));
+
+      if (response.statusCode == 200) {
+        List<dynamic> body = json.decode(response.body);
+        List<CollegeInfo> colleges = body
+            .map((dynamic item) => CollegeInfo.fromJson(item))
+            .toList();
+        return colleges;
+      } else {
+        throw Exception('Failed to load colleges from server');
+      }
+    } catch (e) {
+      print('Error fetching colleges: $e');
+      throw Exception('Could not connect to the server');
+    }
+  }
+
+  // Your existing methods for local data management are unchanged below
   Future<List<College>> loadColleges() async {
     try {
-      final String response = await rootBundle.loadString('lib/data/colleges_data.json');
+      final String response = await rootBundle.loadString(
+        'lib/data/colleges_data.json',
+      );
       final data = await json.decode(response);
-      
+
       _colleges = (data['colleges'] as List)
           .map((college) => College.fromJson(college))
           .toList();
-      
+
       return _colleges;
     } catch (e) {
       print('Error loading colleges: $e');
@@ -169,12 +204,10 @@ class CollegeService {
     }
   }
 
-  // Get all colleges
   List<College> getAllColleges() {
     return _colleges;
   }
 
-  // Get college by ID
   College? getCollegeById(String id) {
     try {
       return _colleges.firstWhere((college) => college.id == id);
@@ -183,18 +216,16 @@ class CollegeService {
     }
   }
 
-  // Search colleges
   List<College> searchColleges(String query) {
     if (query.isEmpty) return _colleges;
-    
+
     return _colleges.where((college) {
       return college.name.toLowerCase().contains(query.toLowerCase()) ||
-             college.city.toLowerCase().contains(query.toLowerCase()) ||
-             college.id.toLowerCase().contains(query.toLowerCase());
+          college.city.toLowerCase().contains(query.toLowerCase()) ||
+          college.id.toLowerCase().contains(query.toLowerCase());
     }).toList();
   }
 
-  // Add new college
   Future<bool> addCollege(College college) async {
     try {
       _colleges.add(college);
@@ -205,10 +236,11 @@ class CollegeService {
     }
   }
 
-  // Update college
   Future<bool> updateCollege(College updatedCollege) async {
     try {
-      final index = _colleges.indexWhere((college) => college.id == updatedCollege.id);
+      final index = _colleges.indexWhere(
+        (college) => college.id == updatedCollege.id,
+      );
       if (index != -1) {
         _colleges[index] = updatedCollege;
         return true;
@@ -220,7 +252,6 @@ class CollegeService {
     }
   }
 
-  // Delete college
   Future<bool> deleteCollege(String id) async {
     try {
       _colleges.removeWhere((college) => college.id == id);
@@ -231,25 +262,22 @@ class CollegeService {
     }
   }
 
-  // Get college admins
   List<CollegeAdmin> getCollegeAdmins(String collegeId) {
     final college = getCollegeById(collegeId);
     return college?.admins ?? [];
   }
 
-  // Get college students
   List<Student> getCollegeStudents(String collegeId) {
     final college = getCollegeById(collegeId);
     return college?.students ?? [];
   }
 
-  // Add admin to college
   Future<bool> addAdminToCollege(String collegeId, CollegeAdmin admin) async {
     try {
       final college = getCollegeById(collegeId);
       if (college != null) {
-        // Create updated college with new admin
-        final updatedAdmins = List<CollegeAdmin>.from(college.admins)..add(admin);
+        final updatedAdmins = List<CollegeAdmin>.from(college.admins)
+          ..add(admin);
         final updatedCollege = College(
           id: college.id,
           name: college.name,
@@ -274,13 +302,12 @@ class CollegeService {
     }
   }
 
-  // Add student to college
   Future<bool> addStudentToCollege(String collegeId, Student student) async {
     try {
       final college = getCollegeById(collegeId);
       if (college != null) {
-        // Create updated college with new student
-        final updatedStudents = List<Student>.from(college.students)..add(student);
+        final updatedStudents = List<Student>.from(college.students)
+          ..add(student);
         final updatedCollege = College(
           id: college.id,
           name: college.name,
@@ -288,7 +315,7 @@ class CollegeService {
           state: college.state,
           address: college.address,
           status: college.status,
-          totalStudents: college.totalStudents + 1, // Increment total students
+          totalStudents: college.totalStudents + 1,
           dailyActiveStudents: college.dailyActiveStudents,
           avgSkillScore: college.avgSkillScore,
           avgInterviewPractices: college.avgInterviewPractices,
@@ -305,5 +332,3 @@ class CollegeService {
     }
   }
 }
-
-

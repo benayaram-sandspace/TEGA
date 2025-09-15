@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:tega/services/auth_service.dart';
 import 'package:tega/pages/student_screens/student_ai_interview_page.dart';
 import 'package:tega/pages/student_screens/student_ai_job_search_page.dart';
 import 'package:tega/pages/student_screens/student_avatar_screen.dart';
@@ -12,51 +13,46 @@ import 'package:tega/pages/student_screens/student_skill_graph.dart';
 import 'package:tega/pages/student_screens/student_skills_hub_page.dart';
 import 'package:tega/pages/student_screens/student_upcoming_opps_page.dart';
 
-// FIX: Converted to a StatefulWidget
 class StudentHomePage extends StatefulWidget {
-  final String studentName;
-  final String course;
-  final String year;
-  final String college;
-
-  const StudentHomePage({
-    Key? key,
-    this.studentName = 'Ramesh',
-    this.course = 'B.Tech | CSE',
-    this.year = '3rd Year',
-    this.college = 'AI College',
-  }) : super(key: key);
+  const StudentHomePage({Key? key}) : super(key: key);
 
   @override
   State<StudentHomePage> createState() => _StudentHomePageState();
 }
 
 class _StudentHomePageState extends State<StudentHomePage> {
-  // FIX: State variable to track the selected tab index
   int _selectedIndex = 0;
-
-  // FIX: List of pages that correspond to the BottomNavigationBar tabs
-  late final List<Widget> _pages;
+  bool _isLoading = true;
+  User? _currentUser;
+  late List<Widget> _pages;
 
   @override
   void initState() {
     super.initState();
+    _loadUserData();
+  }
+
+  void _loadUserData() {
+    final authService = AuthService();
+    setState(() {
+      _currentUser = authService.currentUser;
+      _isLoading = false;
+    });
+  }
+
+  void _initializePages() {
     _pages = [
-      // Page 0: Home Content
       _HomePageContent(
-        studentName: widget.studentName,
-        course: widget.course,
-        year: widget.year,
-        college: widget.college,
+        studentName: _currentUser?.name,
+        course: _currentUser?.course,
+        year: _currentUser?.year,
+        college: _currentUser?.college,
       ),
-      // Page 1: Learn Page
-      const MyCoursesScreen(), // Assuming this is your Learn page
-      // Page 2: Profile Page
+      const MyCoursesScreen(),
       StudentProfilePage(),
     ];
   }
 
-  // FIX: Method to handle tab selection
   void _onItemTapped(int index) {
     setState(() {
       _selectedIndex = index;
@@ -65,10 +61,22 @@ class _StudentHomePageState extends State<StudentHomePage> {
 
   @override
   Widget build(BuildContext context) {
+    if (_isLoading) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
+
+    if (_currentUser == null) {
+      return const Scaffold(
+        body: Center(
+          child: Text('Could not load user data. Please try logging in again.'),
+        ),
+      );
+    }
+
+    _initializePages();
+
     return Scaffold(
       backgroundColor: const Color(0xFFF5F5F5),
-      // The body now dynamically shows the selected page from the list
-      // The Header is now part of the _HomePageContent and will only show on the first tab.
       body: IndexedStack(index: _selectedIndex, children: _pages),
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
@@ -96,7 +104,6 @@ class _StudentHomePageState extends State<StudentHomePage> {
               label: 'Profile',
             ),
           ],
-          // FIX: Connect currentIndex and onTap to the state variables
           currentIndex: _selectedIndex,
           onTap: _onItemTapped,
         ),
@@ -105,49 +112,58 @@ class _StudentHomePageState extends State<StudentHomePage> {
   }
 }
 
-// This widget holds the original content of your home page's body
 class _HomePageContent extends StatelessWidget {
-  final String studentName;
-  final String course;
-  final String year;
-  final String college;
+  final String? studentName;
+  final String? course;
+  final String? year;
+  final String? college;
 
   const _HomePageContent({
-    required this.studentName,
-    required this.course,
-    required this.year,
-    required this.college,
+    this.studentName,
+    this.course,
+    this.year,
+    this.college,
   });
 
   @override
   Widget build(BuildContext context) {
+    final bool hasCourseInfo =
+        course != null && course!.isNotEmpty && course != "Not Provided";
+
     return SafeArea(
       child: Column(
         children: [
-          // Header Section
           Container(
             padding: const EdgeInsets.all(20),
             color: Colors.white,
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Hello, $studentName',
-                      style: const TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.black87,
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Hello, ${studentName ?? 'Student'}',
+                        style: const TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black87,
+                        ),
+                        overflow: TextOverflow.ellipsis,
                       ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      '$course | $year | $college',
-                      style: const TextStyle(fontSize: 14, color: Colors.grey),
-                    ),
-                  ],
+                      const SizedBox(height: 4),
+                      if (hasCourseInfo)
+                        Text(
+                          '$course | $year | $college',
+                          style: const TextStyle(
+                            fontSize: 14,
+                            color: Colors.grey,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                    ],
+                  ),
                 ),
                 Row(
                   children: [
@@ -210,14 +226,12 @@ class _HomePageContent extends StatelessWidget {
               ],
             ),
           ),
-          // Scrollable Content
           Expanded(
             child: SingleChildScrollView(
               padding: const EdgeInsets.all(16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Job Readiness Score Card
                   Container(
                     padding: const EdgeInsets.all(20),
                     decoration: BoxDecoration(
@@ -295,7 +309,6 @@ class _HomePageContent extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 16),
-                  // Today's Skill Drill Card
                   Container(
                     decoration: BoxDecoration(
                       gradient: const LinearGradient(
@@ -416,7 +429,6 @@ class _HomePageContent extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 24),
-                  // Quick Access Section
                   const Text(
                     'Quick Access',
                     style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
@@ -517,10 +529,7 @@ class _HomePageContent extends StatelessWidget {
                       ),
                     ],
                   ),
-
                   const SizedBox(height: 24),
-
-                  // Learning Activity Chart
                   Container(
                     padding: const EdgeInsets.all(20),
                     decoration: BoxDecoration(
@@ -564,10 +573,7 @@ class _HomePageContent extends StatelessWidget {
                       ],
                     ),
                   ),
-
                   const SizedBox(height: 24),
-
-                  // Upcoming Opportunities
                   Container(
                     padding: const EdgeInsets.all(20),
                     decoration: BoxDecoration(
@@ -595,7 +601,6 @@ class _HomePageContent extends StatelessWidget {
                             ),
                             TextButton(
                               onPressed: () {
-                                // This is the navigation logic
                                 Navigator.push(
                                   context,
                                   MaterialPageRoute(
@@ -642,7 +647,6 @@ class _HomePageContent extends StatelessWidget {
     );
   }
 
-  // Helper methods from the original class, no changes needed here.
   Widget _buildQuickAccessItem(
     BuildContext context,
     IconData icon,
