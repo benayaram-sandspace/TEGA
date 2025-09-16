@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/gestures.dart';
-import 'package:tega/constants/app_colors.dart';
-import 'package:tega/pages/college_screens/college_dashboard_page.dart';
+import 'package:tega/pages/college_screens/dashboard/dashboard_screen.dart';
 import 'package:tega/pages/home_screens/home_page.dart';
 import 'package:tega/pages/admin_screens/admin_related_pages/admin_dashboard.dart';
 import 'package:tega/pages/signup_screens/signup_page.dart';
@@ -121,6 +119,24 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
     _fadeController.dispose();
     _slideController.dispose();
     super.dispose();
+  }
+
+  // NEW: Helper function to parse and fill demo credentials
+  void _fillDemoCredentials(String credentialLine) {
+    try {
+      // Example: "Admin: admin@tega.com / admin123"
+      final parts = credentialLine.split(' / ');
+      final password = parts.last.trim();
+      final emailPart = parts.first.split(': ').last.trim();
+
+      setState(() {
+        _emailController.text = emailPart;
+        _passwordController.text = password;
+      });
+    } catch (e) {
+      // Fails silently if parsing fails
+      debugPrint("Error parsing demo credentials: $e");
+    }
   }
 
   Future<void> _handleLogin() async {
@@ -742,11 +758,21 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
             ],
           ),
           const SizedBox(height: 12),
-          _buildDemoCredentialItem(_tr('demo_admin')),
+          // MODIFIED: Wrapped items in GestureDetector for tap functionality
+          GestureDetector(
+            onTap: () => _fillDemoCredentials(_tr('demo_admin')),
+            child: _buildDemoCredentialItem(_tr('demo_admin')),
+          ),
           const SizedBox(height: 6),
-          _buildDemoCredentialItem(_tr('demo_moderator')),
+          GestureDetector(
+            onTap: () => _fillDemoCredentials(_tr('demo_moderator')),
+            child: _buildDemoCredentialItem(_tr('demo_moderator')),
+          ),
           const SizedBox(height: 6),
-          _buildDemoCredentialItem(_tr('demo_user')),
+          GestureDetector(
+            onTap: () => _fillDemoCredentials(_tr('demo_user')),
+            child: _buildDemoCredentialItem(_tr('demo_user')),
+          ),
         ],
       ),
     );

@@ -67,7 +67,7 @@ class User {
           : [],
       status: json['status'],
       course: json['course'],
-      year: json['year']?.toString(),
+      year: json['yearOfStudy']?.toString(), // Corrected mapping
       college: json['college'],
     );
   }
@@ -184,7 +184,16 @@ class AuthService {
     }
   }
 
+  // MODIFIED: This version prioritizes checking demo credentials
   Future<Map<String, dynamic>> login(String email, String password) async {
+    // First, check if the email matches one of the demo accounts.
+    const demoEmails = ['admin@tega.com', 'college@tega.com', 'user@tega.com'];
+    if (demoEmails.contains(email.toLowerCase().trim())) {
+      debugPrint("Attempting login with demo credentials for: $email");
+      return _fakeLogin(email, password);
+    }
+
+    // If it's not a demo account, proceed with the real API call.
     try {
       final response = await http.post(
         Uri.parse(ApiEndpoints.login),
@@ -213,8 +222,11 @@ class AuthService {
         };
       }
     } catch (e) {
-      debugPrint('API login failed, falling back to fake login: $e');
-      return _fakeLogin(email, password);
+      debugPrint('API login failed: $e');
+      return {
+        'success': false,
+        'message': 'Could not connect to the server. Please try again later.',
+      };
     }
   }
 
@@ -249,7 +261,7 @@ class AuthService {
         );
       }
     } catch (e) {
-      //
+      // Fail silently
     }
     await _clearSession();
   }
@@ -363,7 +375,7 @@ class AuthService {
   }
 
   Future<Map<String, dynamic>> _fakeLogin(String email, String password) async {
-    await Future.delayed(const Duration(seconds: 2));
+    await Future.delayed(const Duration(seconds: 1));
     final fakeUsers = {
       'admin@tega.com': {
         'password': 'admin123',
@@ -396,11 +408,16 @@ class AuthService {
           email: 'user@tega.com',
           role: UserRole.user,
           createdAt: DateTime.now(),
+          college: 'Aditya Engineering College',
+          course: 'B.Tech | CSE',
+          year: '3rd Year',
         ),
       },
     };
-    if (fakeUsers.containsKey(email)) {
-      final userData = fakeUsers[email]!;
+
+    final cleanEmail = email.toLowerCase().trim();
+    if (fakeUsers.containsKey(cleanEmail)) {
+      final userData = fakeUsers[cleanEmail]!;
       if (userData['password'] == password) {
         _currentUser = userData['user'] as User;
         _isLoggedIn = true;
