@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dart:math' as math;
 
-
-
 // Data model for a Job
 class Job {
   final String title;
@@ -152,7 +150,7 @@ class _JobRecommendationScreenState extends State<JobRecommendationScreen>
                 ),
                 const SizedBox(width: 8),
                 const Text(
-                  'AI Job Recommendations',
+                  'AI Recommendations',
                   style: TextStyle(
                     fontSize: 22,
                     fontWeight: FontWeight.bold,

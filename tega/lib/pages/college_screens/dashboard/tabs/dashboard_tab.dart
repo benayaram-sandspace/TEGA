@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:tega/services/auth_service.dart'; // NEW: Import AuthService
+import 'package:tega/services/auth_service.dart';
 import 'package:tega/pages/college_screens/dashboard/widgets/actionable_insights.dart';
 import 'package:tega/pages/college_screens/dashboard/widgets/performance_metrics.dart';
 import 'package:tega/pages/college_screens/dashboard/widgets/progress_chart.dart';
@@ -20,18 +20,29 @@ class DashboardTab extends StatefulWidget {
 class _DashboardTabState extends State<DashboardTab> {
   final TextEditingController _searchController = TextEditingController();
 
-  // NEW: State variables to hold user data and loading state
   User? _currentUser;
   bool _isLoading = true;
   int _notificationCount = 3;
+  late String _greeting;
 
   @override
   void initState() {
     super.initState();
     _loadUserData();
+    _setGreeting();
   }
 
-  // NEW: Method to get the logged-in user from the AuthService
+  void _setGreeting() {
+    final hour = DateTime.now().hour;
+    if (hour < 12) {
+      _greeting = 'Good Morning';
+    } else if (hour < 17) {
+      _greeting = 'Good Afternoon';
+    } else {
+      _greeting = 'Good Evening';
+    }
+  }
+
   void _loadUserData() {
     final authService = AuthService();
     setState(() {
@@ -46,18 +57,14 @@ class _DashboardTabState extends State<DashboardTab> {
     super.dispose();
   }
 
-  void _showNotifications(BuildContext context) {
-    // Implement your notification dialog logic here if needed
-  }
+  void _showNotifications(BuildContext context) {}
 
   @override
   Widget build(BuildContext context) {
-    // NEW: Show a loading indicator while data is being fetched
     if (_isLoading) {
       return const Center(child: CircularProgressIndicator());
     }
 
-    // NEW: Handle the case where the user might not be found
     if (_currentUser == null) {
       return const Center(child: Text("User not found."));
     }
@@ -68,14 +75,14 @@ class _DashboardTabState extends State<DashboardTab> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const SizedBox(height: 16),
-            // MODIFIED: Pass the dynamic user name to the header
+            // MODIFIED: Removed the profileImageUrl property
             WelcomeHeader(
-              userName: _currentUser!.name, // Using the fetched user's name
+              greeting: _greeting,
+              userName: _currentUser!.name,
               notificationCount: _notificationCount,
               onNotificationTap: () => _showNotifications(context),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 24),
             SearchBarWidget(controller: _searchController),
             const SizedBox(height: 24),
             const QuickActions(),

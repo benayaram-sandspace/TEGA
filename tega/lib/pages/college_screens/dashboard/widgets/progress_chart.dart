@@ -27,7 +27,7 @@ class ProgressChartCard extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               const Text(
-                'Student Progress Overview',
+                'Student Progress',
                 style: DashboardStyles.sectionTitle,
               ),
               Container(

@@ -1,13 +1,15 @@
 import 'package:flutter/material.dart';
-import 'package:tega/pages/college_screens/dashboard/dashboard_styles.dart';
 
 class WelcomeHeader extends StatelessWidget {
+  final String greeting;
   final String userName;
   final int notificationCount;
   final VoidCallback onNotificationTap;
 
+  // MODIFIED: Constructor no longer asks for profileImageUrl
   const WelcomeHeader({
     super.key,
+    required this.greeting,
     required this.userName,
     required this.notificationCount,
     required this.onNotificationTap,
@@ -15,69 +17,83 @@ class WelcomeHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        Flexible(
-          child: Text(
-            'Welcome, $userName!',
-            style: DashboardStyles.welcomeHeader,
-            overflow: TextOverflow.ellipsis,
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                greeting,
+                style: textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black87,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                userName,
+                style: textTheme.titleMedium?.copyWith(color: Colors.black54),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
           ),
         ),
         Row(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Stack(
-              children: [
-                IconButton(
-                  icon: const Icon(Icons.notifications_outlined),
-                  color: DashboardStyles.textDark,
-                  onPressed: onNotificationTap,
-                ),
-                if (notificationCount > 0)
-                  Positioned(
-                    right: 8,
-                    top: 8,
-                    child: Container(
-                      padding: const EdgeInsets.all(4),
-                      decoration: const BoxDecoration(
-                        color: DashboardStyles.accentRed,
-                        shape: BoxShape.circle,
-                      ),
-                      constraints: const BoxConstraints(
-                        minWidth: 16,
-                        minHeight: 16,
-                      ),
-                      child: Text(
-                        '$notificationCount',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 10,
-                          fontWeight: FontWeight.bold,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                    ),
-                  ),
-              ],
-            ),
+            _buildNotificationBell(),
             const SizedBox(width: 8),
-            Container(
-              padding: const EdgeInsets.all(2),
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.all(color: Colors.grey.shade300),
-              ),
-              child: const CircleAvatar(
-                backgroundImage: NetworkImage(
-                  'https://i.pravatar.cc/150?img=1',
-                ),
-                radius: 22,
-              ),
-            ),
+            _buildProfileAvatar(), // The placeholder is back
           ],
         ),
+      ],
+    );
+  }
+
+  // MODIFIED: This now only builds the static placeholder avatar
+  Widget _buildProfileAvatar() {
+    return CircleAvatar(
+      radius: 24,
+      backgroundColor: Colors.grey.shade200,
+      child: Icon(Icons.person_outline, size: 28, color: Colors.grey.shade600),
+    );
+  }
+
+  Widget _buildNotificationBell() {
+    return Stack(
+      alignment: Alignment.topRight,
+      children: [
+        IconButton(
+          icon: const Icon(
+            Icons.notifications_outlined,
+            color: Colors.black54,
+            size: 30,
+          ),
+          onPressed: onNotificationTap,
+        ),
+        if (notificationCount > 0)
+          Container(
+            margin: const EdgeInsets.only(top: 4, right: 6),
+            padding: const EdgeInsets.all(5),
+            decoration: const BoxDecoration(
+              color: Colors.redAccent,
+              shape: BoxShape.circle,
+            ),
+            child: Text(
+              notificationCount.toString(),
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 10,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
       ],
     );
   }
