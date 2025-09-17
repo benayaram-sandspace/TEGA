@@ -5,7 +5,6 @@ import 'package:tega/pages/college_screens/dashboard/widgets/performance_metrics
 import 'package:tega/pages/college_screens/dashboard/widgets/progress_chart.dart';
 import 'package:tega/pages/college_screens/dashboard/widgets/quick_actions.dart';
 import 'package:tega/pages/college_screens/dashboard/widgets/recent_activity.dart';
-import 'package:tega/pages/college_screens/dashboard/widgets/search_bar.dart';
 import 'package:tega/pages/college_screens/dashboard/widgets/stats_grid.dart';
 import 'package:tega/pages/college_screens/dashboard/widgets/upcoming_events.dart';
 import 'package:tega/pages/college_screens/dashboard/widgets/welcome_header.dart';
@@ -82,8 +81,6 @@ class _DashboardTabState extends State<DashboardTab> {
               notificationCount: _notificationCount,
               onNotificationTap: () => _showNotifications(context),
             ),
-            const SizedBox(height: 24),
-            SearchBarWidget(controller: _searchController),
             const SizedBox(height: 24),
             const QuickActions(),
             const SizedBox(height: 32),

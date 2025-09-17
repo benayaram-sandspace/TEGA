@@ -1,105 +1,193 @@
 import 'package:flutter/material.dart';
 import 'package:tega/pages/college_screens/dashboard/dashboard_styles.dart';
+import 'package:visibility_detector/visibility_detector.dart';
+import 'insight_details_page.dart'; // Import the new page
 
+// Helper class for insight data
+class InsightInfo {
+  final IconData icon;
+  final Color iconColor;
+  final String title;
+  final String priority;
+  final Color priorityColor;
+  final Color priorityTextColor;
 
-class ActionableInsights extends StatelessWidget {
+  const InsightInfo({
+    required this.icon,
+    required this.iconColor,
+    required this.title,
+    required this.priority,
+    required this.priorityColor,
+    required this.priorityTextColor,
+  });
+}
+
+class ActionableInsights extends StatefulWidget {
   const ActionableInsights({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text('Actionable Insights', style: DashboardStyles.sectionTitle),
-        const SizedBox(height: 16),
-        _buildInsightCard(
-          icon: Icons.school_outlined,
-          iconColor: DashboardStyles.accentOrange,
-          title: '5 students require academic advising',
-          priority: 'High priority',
-          priorityColor: DashboardStyles.priorityHighBg,
-          priorityTextColor: DashboardStyles.priorityHighText,
-        ),
-        _buildInsightCard(
-          icon: Icons.book_outlined,
-          iconColor: DashboardStyles.primary,
-          title: 'New curriculum update available',
-          priority: 'Medium priority',
-          priorityColor: DashboardStyles.priorityMediumBg,
-          priorityTextColor: DashboardStyles.priorityMediumText,
-        ),
-        _buildInsightCard(
-          icon: Icons.trending_up_outlined,
-          iconColor: DashboardStyles.accentGreen,
-          title: 'Enrollment trends for Q4 are available',
-          priority: 'Low',
-          priorityColor: DashboardStyles.priorityLowBg,
-          priorityTextColor: DashboardStyles.priorityLowText,
-        ),
-      ],
+  State<ActionableInsights> createState() => _ActionableInsightsState();
+}
+
+class _ActionableInsightsState extends State<ActionableInsights>
+    with TickerProviderStateMixin {
+  late AnimationController _animationController;
+  bool _animationStarted = false;
+
+  final List<InsightInfo> _insights = const [
+    InsightInfo(
+      icon: Icons.school_outlined,
+      iconColor: DashboardStyles.accentOrange,
+      title: '5 students require academic advising',
+      priority: 'High priority',
+      priorityColor: DashboardStyles.priorityHighBg,
+      priorityTextColor: DashboardStyles.priorityHighText,
+    ),
+    InsightInfo(
+      icon: Icons.book_outlined,
+      iconColor: DashboardStyles.primary,
+      title: 'New curriculum update available',
+      priority: 'Medium priority',
+      priorityColor: DashboardStyles.priorityMediumBg,
+      priorityTextColor: DashboardStyles.priorityMediumText,
+    ),
+    InsightInfo(
+      icon: Icons.trending_up_outlined,
+      iconColor: DashboardStyles.accentGreen,
+      title: 'Enrollment trends for Q4 are available',
+      priority: 'Low',
+      priorityColor: DashboardStyles.priorityLowBg,
+      priorityTextColor: DashboardStyles.priorityLowText,
+    ),
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    _animationController = AnimationController(
+      duration: const Duration(milliseconds: 800),
+      vsync: this,
     );
   }
 
-   Widget _buildInsightCard({
-    required IconData icon,
-    required Color iconColor,
-    required String title,
-    required String priority,
-    required Color priorityColor,
-    required Color priorityTextColor,
-  }) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
-      margin: const EdgeInsets.only(bottom: 12),
-      decoration: BoxDecoration(
-        color: DashboardStyles.cardBackground,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withOpacity(0.05),
-            spreadRadius: 1,
-            blurRadius: 10,
+  @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return VisibilityDetector(
+      key: const Key('actionable-insights-list'),
+      onVisibilityChanged: (visibilityInfo) {
+        if (visibilityInfo.visibleFraction > 0.1 && !_animationStarted) {
+          setState(() {
+            _animationStarted = true;
+            _animationController.forward();
+          });
+        }
+      },
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Actionable Insights',
+            style: DashboardStyles.sectionTitle,
           ),
+          const SizedBox(height: 16),
+          ...List.generate(_insights.length, (index) {
+            final animation = CurvedAnimation(
+              parent: _animationController,
+              curve: Interval(0.2 * index, 1.0, curve: Curves.easeOutCubic),
+            );
+            return FadeTransition(
+              opacity: animation,
+              child: SlideTransition(
+                position: Tween<Offset>(
+                  begin: const Offset(0, 0.5),
+                  end: Offset.zero,
+                ).animate(animation),
+                child: _buildInsightCard(_insights[index]),
+              ),
+            );
+          }),
         ],
       ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: iconColor.withOpacity(0.1),
-              shape: BoxShape.circle,
+    );
+  }
+
+  Widget _buildInsightCard(InsightInfo insight) {
+    return Card(
+      margin: const EdgeInsets.only(bottom: 12),
+      elevation: 0,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        // MODIFICATION: onTap now navigates to the new details page
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => InsightDetailsPage(insight: insight),
             ),
-            child: Icon(icon, color: iconColor),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(title, style: DashboardStyles.insightTitle),
-                const SizedBox(height: 4),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 4,
-                  ),
-                  decoration: BoxDecoration(
-                    color: priorityColor,
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: Text(
-                    priority,
-                    style: DashboardStyles.priorityTag.copyWith(
-                      color: priorityTextColor,
-                    ),
-                  ),
-                ),
+          );
+        },
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                DashboardStyles.cardBackground,
+                Color.lerp(DashboardStyles.cardBackground, Colors.black, 0.02)!,
               ],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
             ),
+            border: Border.all(color: Colors.grey.shade200),
+            borderRadius: BorderRadius.circular(16),
           ),
-          const Icon(Icons.chevron_right, color: DashboardStyles.iconLight),
-        ],
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: insight.iconColor.withOpacity(0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(insight.icon, color: insight.iconColor),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(insight.title, style: DashboardStyles.insightTitle),
+                    const SizedBox(height: 6),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: insight.priorityColor,
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        insight.priority,
+                        style: DashboardStyles.priorityTag.copyWith(
+                          color: insight.priorityTextColor,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              Icon(Icons.chevron_right, color: Colors.grey.shade400),
+            ],
+          ),
+        ),
       ),
     );
   }

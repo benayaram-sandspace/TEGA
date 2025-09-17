@@ -210,11 +210,13 @@ class _DashboardScreenState extends State<DashboardScreen>
         children: [
           // Main content - ensure all pages are rendered
           AnimatedSwitcher(
-            duration: const Duration(milliseconds: 200),
-            child: IndexedStack(
+            duration: const Duration(milliseconds: 300),
+            transitionBuilder: (Widget child, Animation<double> animation) {
+              return FadeTransition(opacity: animation, child: child);
+            },
+            child: Container(
               key: ValueKey<int>(_selectedIndex),
-              index: _selectedIndex,
-              children: _pages,
+              child: _pages[_selectedIndex],
             ),
           ),
           // Overlay when sidebar is open

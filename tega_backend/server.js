@@ -28,7 +28,8 @@ app.use("/api/colleges", require("./src/routes/collegeRoutes"));
 // app.use('/api/notes', require('./src/routes/noteRoutes'));
 
 const PORT = process.env.PORT || 5000;
+const HOST = process.env.HOST || "localhost";
 
-app.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT}`);
+app.listen(PORT, HOST, () => {
+  console.log(`🚀 Server running on port ${HOST}: ${PORT}`);
 });
