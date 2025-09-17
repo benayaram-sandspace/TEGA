@@ -5,7 +5,6 @@ import 'package:tega/constants/app_colors.dart';
 import 'package:tega/pages/admin_screens/admin_related_pages/tabs/dashboard_home_tab.dart';
 import 'package:tega/pages/login_screens/login_page.dart';
 import 'package:tega/services/auth_service.dart';
-
 import 'package:tega/pages/admin_screens/colleges/colleges_page.dart';
 import 'package:tega/pages/admin_screens/admin_student_pages/students_page.dart';
 import 'package:tega/pages/admin_screens/analysis_report/analytics_page.dart';

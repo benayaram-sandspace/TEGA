@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:tega/constants/app_colors.dart';
-import 'package:tega/pages/admin_screens/admin_related_pages/widgets/admin_analytics_chart';
+import 'package:tega/pages/admin_screens/admin_related_pages/widgets/admin_analytics_chart.dart';
 import 'package:tega/services/auth_service.dart';
 
 class _StatCardInfo {
