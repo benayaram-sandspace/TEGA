@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:tega/pages/college_screens/dashboard/dashboard_styles.dart';
 
-// Helper class to organize the data for each card.
 class _StatInfo {
   final String title;
   final String value;
@@ -11,7 +10,6 @@ class _StatInfo {
   const _StatInfo(this.title, this.value, this.icon, this.color);
 }
 
-// Converted to a StatefulWidget to handle animations.
 class StatsGrid extends StatefulWidget {
   const StatsGrid({super.key});
 
@@ -20,7 +18,6 @@ class StatsGrid extends StatefulWidget {
 }
 
 class _StatsGridState extends State<StatsGrid> with TickerProviderStateMixin {
-  // Lists to hold the controllers and animations for each card.
   late List<AnimationController> _animationControllers;
   late List<Animation<double>> _scaleAnimations;
 
@@ -33,8 +30,8 @@ class _StatsGridState extends State<StatsGrid> with TickerProviderStateMixin {
     ),
     _StatInfo('Engagement', '72%', Icons.timeline, DashboardStyles.accentGreen),
     _StatInfo(
-      'AI',
-      'course',
+      'Top Course',
+      'AI & ML',
       Icons.school_outlined,
       DashboardStyles.accentOrange,
     ),
@@ -44,7 +41,6 @@ class _StatsGridState extends State<StatsGrid> with TickerProviderStateMixin {
   void initState() {
     super.initState();
 
-    // Initialize a controller for each card.
     _animationControllers = List.generate(
       _stats.length,
       (index) => AnimationController(
@@ -53,12 +49,10 @@ class _StatsGridState extends State<StatsGrid> with TickerProviderStateMixin {
       ),
     );
 
-    // Create a curved animation for each controller for the "pop-in" effect.
     _scaleAnimations = _animationControllers.map((controller) {
       return CurvedAnimation(parent: controller, curve: Curves.easeOutBack);
     }).toList();
 
-    // Start the animations with a stagger.
     for (int i = 0; i < _animationControllers.length; i++) {
       Future.delayed(Duration(milliseconds: 100 * i), () {
         if (mounted) {
@@ -70,7 +64,6 @@ class _StatsGridState extends State<StatsGrid> with TickerProviderStateMixin {
 
   @override
   void dispose() {
-    // IMPORTANT: Dispose all controllers to prevent memory leaks.
     for (var controller in _animationControllers) {
       controller.dispose();
     }
@@ -79,28 +72,23 @@ class _StatsGridState extends State<StatsGrid> with TickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) {
-    return GridView.builder(
+    return GridView.count(
+      crossAxisCount: 3,
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
-      itemCount: _stats.length,
-      gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-        maxCrossAxisExtent: 140,
-        mainAxisSpacing: 16,
-        crossAxisSpacing: 16,
-        childAspectRatio: 4 / 5,
-      ),
-      itemBuilder: (context, index) {
+      mainAxisSpacing: 16,
+      crossAxisSpacing: 16,
+      childAspectRatio: 0.9,
+      children: List.generate(_stats.length, (index) {
         final stat = _stats[index];
-        // The card is now wrapped in a ScaleTransition widget.
         return ScaleTransition(
           scale: _scaleAnimations[index],
           child: _buildStatCard(stat.title, stat.value, stat.icon, stat.color),
         );
-      },
+      }),
     );
   }
 
-  // NO CHANGES HERE: This is the fully beautified card from our last step.
   Widget _buildStatCard(
     String title,
     String value,
@@ -131,7 +119,6 @@ class _StatsGridState extends State<StatsGrid> with TickerProviderStateMixin {
       ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
-        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Container(
             padding: const EdgeInsets.all(10),
@@ -142,16 +129,32 @@ class _StatsGridState extends State<StatsGrid> with TickerProviderStateMixin {
             child: Icon(icon, color: color, size: 24),
           ),
           const SizedBox(height: 8),
-          FittedBox(
-            fit: BoxFit.scaleDown,
-            child: Text(value, style: DashboardStyles.statValue),
+          Expanded(
+            flex: 2,
+            child: Center(
+              child: FittedBox(
+                fit: BoxFit.contain,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 4.0),
+                  child: Text(value, style: DashboardStyles.statValue),
+                ),
+              ),
+            ),
           ),
-          const SizedBox(height: 4),
-          Flexible(
-            child: Text(
-              title,
-              style: DashboardStyles.statTitle,
-              textAlign: TextAlign.center,
+          Expanded(
+            flex: 1,
+            child: Center(
+              child: FittedBox(
+                fit: BoxFit.contain,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 4.0),
+                  child: Text(
+                    title,
+                    style: DashboardStyles.statTitle,
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+              ),
             ),
           ),
         ],

@@ -290,7 +290,7 @@ class AuthService {
   String getRoleDisplayName(UserRole role) {
     switch (role) {
       case UserRole.admin:
-        return 'Administrator';
+        return 'Admin';
       case UserRole.moderator:
         return 'Moderator';
       case UserRole.user:
@@ -382,7 +382,7 @@ class AuthService {
         'user': User(
           id: '1',
           firstName: 'Admin',
-          lastName: 'Istrator',
+          lastName: '',
           email: 'admin@tega.com',
           role: UserRole.admin,
           createdAt: DateTime.now(),
