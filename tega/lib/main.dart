@@ -2,8 +2,8 @@ import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:provider/provider.dart';
-import 'package:tega/pages/home_screens/splash_screen.dart';
-import 'package:tega/pages/providers/theme_provider.dart';
+import 'package:tega/core/theme/theme_provider.dart';
+import 'package:tega/features/2_shared_ui/presentation/screens/splash_screen.dart';
 
 /// Store available cameras globally so any page can use them
 late final List<CameraDescription> cameras;
