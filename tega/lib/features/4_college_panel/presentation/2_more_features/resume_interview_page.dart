@@ -1,5 +1,28 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
+import 'package:percent_indicator/percent_indicator.dart';
 import 'package:tega/features/4_college_panel/presentation/0_dashboard/dashboard_styles.dart';
+
+// Model for student data
+class StudentData {
+  final String name;
+  final String rollNumber;
+  final int resumeScore;
+  final int mockInterviews;
+  final double avgInterviewScore;
+  final String interviewRole;
+  final String jobRole;
+
+  StudentData({
+    required this.name,
+    required this.rollNumber,
+    required this.resumeScore,
+    required this.mockInterviews,
+    required this.avgInterviewScore,
+    required this.interviewRole,
+    required this.jobRole,
+  });
+}
 
 class ResumeInterviewPage extends StatefulWidget {
   const ResumeInterviewPage({super.key});
@@ -12,15 +35,39 @@ class _ResumeInterviewPageState extends State<ResumeInterviewPage>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
 
+  // Dummy data for students
+  final List<StudentData> _allStudents = [
+    StudentData(name: 'John Doe', rollNumber: 'CST-101', resumeScore: 85, mockInterviews: 12, avgInterviewScore: 78.0, interviewRole: 'Software Engineer', jobRole: 'Frontend Developer'),
+    StudentData(name: 'Jane Smith', rollNumber: 'ECE-205', resumeScore: 92, mockInterviews: 8, avgInterviewScore: 85.5, interviewRole: 'Data Analyst', jobRole: 'Data Analyst'),
+    StudentData(name: 'Peter Jones', rollNumber: 'MECH-302', resumeScore: 78, mockInterviews: 5, avgInterviewScore: 72.3, interviewRole: 'Mechanical Engineer', jobRole: 'Product Designer'),
+    StudentData(name: 'Mary Johnson', rollNumber: 'IT-410', resumeScore: 88, mockInterviews: 15, avgInterviewScore: 91.0, interviewRole: 'Product Manager', jobRole: 'Product Manager'),
+    StudentData(name: 'David Williams', rollNumber: 'CSE-115', resumeScore: 95, mockInterviews: 10, avgInterviewScore: 88.8, interviewRole: 'DevOps Engineer', jobRole: 'DevOps Engineer'),
+  ];
+
+  List<StudentData> _filteredStudents = [];
+  final TextEditingController _searchController = TextEditingController();
+
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
+    _filteredStudents = _allStudents;
+    _searchController.addListener(_filterStudents);
+  }
+
+  void _filterStudents() {
+    final query = _searchController.text.toLowerCase();
+    setState(() {
+      _filteredStudents = _allStudents.where((student) {
+        return student.name.toLowerCase().contains(query);
+      }).toList();
+    });
   }
 
   @override
   void dispose() {
     _tabController.dispose();
+    _searchController.dispose();
     super.dispose();
   }
 
@@ -28,7 +75,7 @@ class _ResumeInterviewPageState extends State<ResumeInterviewPage>
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Resume & Interview'),
+        title: const Text('Student Analytics'),
         backgroundColor: DashboardStyles.cardBackground,
         foregroundColor: DashboardStyles.textDark,
         elevation: 1,
@@ -38,418 +85,233 @@ class _ResumeInterviewPageState extends State<ResumeInterviewPage>
           unselectedLabelColor: DashboardStyles.textLight,
           indicatorColor: DashboardStyles.primary,
           tabs: const [
-            Tab(text: 'Resume Builder'),
-            Tab(text: 'Interview Prep'),
+            Tab(text: 'Resume Analysis'),
+            Tab(text: 'Interview Analysis'),
           ],
         ),
       ),
-      body: TabBarView(
-        controller: _tabController,
-        children: [_buildResumeTab(), _buildInterviewTab()],
+      body: Column(
+        children: [
+          _buildSearchBar(),
+          Expanded(
+            child: TabBarView(
+              controller: _tabController,
+              children: [
+                _buildResumeTab(),
+                _buildInterviewTab(),
+              ],
+            ),
+          ),
+        ],
       ),
       backgroundColor: DashboardStyles.background,
     );
   }
 
-  Widget _buildResumeTab() {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Resume Score Card
-          Container(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  DashboardStyles.primary,
-                  DashboardStyles.primary.withOpacity(0.8),
-                ],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Row(
-              children: [
-                Container(
-                  width: 80,
-                  height: 80,
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.2),
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Center(
-                    child: Text(
-                      '85',
-                      style: TextStyle(
-                        fontSize: 28,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 20),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Resume Score',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'Your resume is looking good! Add more skills to improve.',
-                        style: TextStyle(
-                          color: Colors.white.withOpacity(0.9),
-                          fontSize: 13,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
+  Widget _buildSearchBar() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+      child: TextField(
+        controller: _searchController,
+        decoration: InputDecoration(
+          hintText: 'Search students...',
+          prefixIcon: const Icon(Icons.search),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide.none,
           ),
-          const SizedBox(height: 24),
-
-          // Resume Sections
-          const Text('Resume Sections', style: DashboardStyles.sectionTitle),
-          const SizedBox(height: 16),
-          _buildResumeSection('Personal Information', Icons.person, true),
-          _buildResumeSection('Education', Icons.school, true),
-          _buildResumeSection('Experience', Icons.work, true),
-          _buildResumeSection('Skills', Icons.psychology, false),
-          _buildResumeSection('Projects', Icons.folder, false),
-          _buildResumeSection('Certifications', Icons.verified, false),
-
-          const SizedBox(height: 24),
-
-          // Action Buttons
-          Row(
-            children: [
-              Expanded(
-                child: ElevatedButton.icon(
-                  onPressed: () {},
-                  icon: const Icon(Icons.download),
-                  label: const Text('Download PDF'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: DashboardStyles.primary,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: () {},
-                  icon: const Icon(Icons.share),
-                  label: const Text('Share'),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: DashboardStyles.primary,
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    side: const BorderSide(color: DashboardStyles.primary),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ],
+          filled: true,
+          fillColor: Colors.white,
+        ),
       ),
     );
   }
 
-  Widget _buildResumeSection(String title, IconData icon, bool isCompleted) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
-            spreadRadius: 1,
-            blurRadius: 5,
-          ),
-        ],
-      ),
-      child: ListTile(
-        leading: Container(
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: isCompleted
-                ? DashboardStyles.accentGreen.withOpacity(0.1)
-                : Colors.grey.withOpacity(0.1),
-            shape: BoxShape.circle,
-          ),
-          child: Icon(
-            icon,
-            color: isCompleted ? DashboardStyles.accentGreen : Colors.grey,
-            size: 20,
-          ),
-        ),
-        title: Text(title),
-        subtitle: Text(
-          isCompleted ? 'Completed' : 'Not completed',
-          style: TextStyle(
-            fontSize: 12,
-            color: isCompleted ? DashboardStyles.accentGreen : Colors.grey,
-          ),
-        ),
-        trailing: Icon(
-          isCompleted ? Icons.check_circle : Icons.arrow_forward_ios,
-          color: isCompleted ? DashboardStyles.accentGreen : Colors.grey,
-          size: 20,
-        ),
+  Widget _buildResumeTab() {
+    return AnimationLimiter(
+      child: ListView.builder(
+        padding: const EdgeInsets.all(16),
+        itemCount: _filteredStudents.length,
+        itemBuilder: (context, index) {
+          final student = _filteredStudents[index];
+          return AnimationConfiguration.staggeredList(
+            position: index,
+            duration: const Duration(milliseconds: 375),
+            child: SlideAnimation(
+              verticalOffset: 50.0,
+              child: FadeInAnimation(
+                child: _buildResumeCard(student),
+              ),
+            ),
+          );
+        },
       ),
     );
   }
 
   Widget _buildInterviewTab() {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Interview Stats
-          Row(
-            children: [
-              Expanded(
-                child: _buildInterviewStatCard(
-                  'Mock Interviews',
-                  '12',
-                  Icons.video_call,
-                  DashboardStyles.primary,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _buildInterviewStatCard(
-                  'Avg Score',
-                  '78%',
-                  Icons.star,
-                  DashboardStyles.accentOrange,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 24),
-
-          // Practice Categories
-          const Text(
-            'Practice Categories',
-            style: DashboardStyles.sectionTitle,
-          ),
-          const SizedBox(height: 16),
-          _buildPracticeCategory(
-            'Behavioral Questions',
-            45,
-            DashboardStyles.primary,
-          ),
-          _buildPracticeCategory(
-            'Technical Questions',
-            32,
-            DashboardStyles.accentGreen,
-          ),
-          _buildPracticeCategory(
-            'Case Studies',
-            18,
-            DashboardStyles.accentOrange,
-          ),
-          _buildPracticeCategory(
-            'Situational Questions',
-            28,
-            DashboardStyles.accentPurple,
-          ),
-
-          const SizedBox(height: 24),
-
-          // Upcoming Interviews
-          const Text(
-            'Upcoming Practice Sessions',
-            style: DashboardStyles.sectionTitle,
-          ),
-          const SizedBox(height: 16),
-          _buildUpcomingInterview(
-            'Mock Interview with AI',
-            'Tomorrow, 3:00 PM',
-          ),
-          _buildUpcomingInterview(
-            'Technical Round Practice',
-            'Dec 15, 10:00 AM',
-          ),
-          _buildUpcomingInterview('HR Round Preparation', 'Dec 18, 2:00 PM'),
-
-          const SizedBox(height: 24),
-
-          // Start Practice Button
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed: () {},
-              style: ElevatedButton.styleFrom(
-                backgroundColor: DashboardStyles.primary,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-              child: const Text(
-                'Start Practice Interview',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+    return AnimationLimiter(
+      child: ListView.builder(
+        padding: const EdgeInsets.all(16),
+        itemCount: _filteredStudents.length,
+        itemBuilder: (context, index) {
+          final student = _filteredStudents[index];
+          return AnimationConfiguration.staggeredList(
+            position: index,
+            duration: const Duration(milliseconds: 375),
+            child: SlideAnimation(
+              verticalOffset: 50.0,
+              child: FadeInAnimation(
+                child: _buildInterviewCard(student),
               ),
             ),
-          ),
-        ],
+          );
+        },
       ),
     );
   }
 
-  Widget _buildInterviewStatCard(
-    String title,
-    String value,
-    IconData icon,
-    Color color,
-  ) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
-            spreadRadius: 1,
-            blurRadius: 5,
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          Icon(icon, color: color, size: 32),
-          const SizedBox(height: 8),
-          Text(
-            value,
-            style: const TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-              color: DashboardStyles.textDark,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            title,
-            style: const TextStyle(
-              fontSize: 12,
-              color: DashboardStyles.textLight,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildPracticeCategory(String title, int count, Color color) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withOpacity(0.3)),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 50,
-            height: 50,
-            decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Center(
-              child: Text(
-                count.toString(),
-                style: TextStyle(
-                  color: color,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 18,
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Text(
-              title,
-              style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
-            ),
-          ),
-          Icon(Icons.arrow_forward, color: color),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildUpcomingInterview(String title, String time) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: DashboardStyles.primary.withOpacity(0.05),
+  Widget _buildResumeCard(StudentData student) {
+    return Card(
+      margin: const EdgeInsets.only(bottom: 16),
+      shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
       ),
-      child: Row(
-        children: [
-          const Icon(
-            Icons.calendar_today,
-            color: DashboardStyles.primary,
-            size: 20,
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: const TextStyle(fontWeight: FontWeight.w600),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  time,
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: DashboardStyles.textLight,
+      elevation: 2,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    student.name,
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
-                ),
-              ],
+                  const SizedBox(height: 4),
+                  Text(
+                    'Roll No: ${student.rollNumber}',
+                    style: const TextStyle(
+                      fontSize: 14,
+                      color: DashboardStyles.textLight,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Job Role: ${student.jobRole}',
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
-          TextButton(
-            onPressed: () {},
-            child: const Text(
-              'Join',
-              style: TextStyle(color: DashboardStyles.primary),
+            TweenAnimationBuilder<double>(
+              tween: Tween<double>(begin: 0.0, end: student.resumeScore.toDouble()),
+              duration: const Duration(milliseconds: 1000),
+              builder: (context, value, child) {
+                return CircularPercentIndicator(
+                  radius: 40.0,
+                  lineWidth: 8.0,
+                  percent: value / 100,
+                  center: Text(
+                    '${value.toStringAsFixed(0)}%',
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16.0,
+                    ),
+                  ),
+                  circularStrokeCap: CircularStrokeCap.round,
+                  progressColor: _getScoreColor(value),
+                );
+              },
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
+  }
+
+  Widget _buildInterviewCard(StudentData student) {
+    return Card(
+      margin: const EdgeInsets.only(bottom: 16),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
+      elevation: 2,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    student.name,
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Roll No: ${student.rollNumber}',
+                    style: const TextStyle(
+                      fontSize: 14,
+                      color: DashboardStyles.textLight,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Interviewed for: ${student.interviewRole}',
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            TweenAnimationBuilder<double>(
+              tween: Tween<double>(begin: 0.0, end: student.avgInterviewScore),
+              duration: const Duration(milliseconds: 1000),
+              builder: (context, value, child) {
+                return CircularPercentIndicator(
+                  radius: 40.0,
+                  lineWidth: 8.0,
+                  percent: value / 100,
+                  center: Text(
+                    '${value.toStringAsFixed(1)}%',
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16.0,
+                    ),
+                  ),
+                  circularStrokeCap: CircularStrokeCap.round,
+                  progressColor: _getScoreColor(value),
+                );
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Color _getScoreColor(double score) {
+    if (score >= 85) {
+      return DashboardStyles.accentGreen;
+    } else if (score >= 75) {
+      return DashboardStyles.accentOrange;
+    } else {
+      return Colors.red;
+    }
   }
 }
