@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+nimport 'package:flutter_animate/flutter_animate.dart';
 import 'package:intl/intl.dart';
 import 'package:tega/core/constants/app_colors.dart';
 import 'package:tega/features/1_authentication/data/auth_repository.dart';
+import 'package:tega/features/3_admin_panel/presentation/0_dashboard/admin_dashboard_styles.dart';
 import 'package:tega/features/3_admin_panel/presentation/0_dashboard/widgets/admin_analytics_chart.dart';
 
 class _StatCardInfo {
@@ -57,25 +59,25 @@ class _DashboardHomeTabState extends State<DashboardHomeTab>
         icon: Icons.school_rounded,
         title: _tr('total_colleges'),
         value: '150',
-        color: const Color(0xFFFFA726),
+        color: AdminDashboardStyles.primary,
       ),
       _StatCardInfo(
         icon: Icons.people_rounded,
         title: _tr('total_students'),
         value: '12,500',
-        color: const Color(0xFF66BB6A),
+        color: AdminDashboardStyles.accentGreen,
       ),
       _StatCardInfo(
         icon: Icons.content_copy_rounded,
         title: _tr('content_modules'),
         value: '85',
-        color: const Color(0xFF29B6F6),
+        color: AdminDashboardStyles.accentBlue,
       ),
       _StatCardInfo(
         icon: Icons.support_agent_rounded,
         title: _tr('support_tickets'),
         value: '25',
-        color: const Color(0xFFEF5350),
+        color: AdminDashboardStyles.accentRed,
       ),
     ];
 
@@ -121,9 +123,9 @@ class _DashboardHomeTabState extends State<DashboardHomeTab>
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _buildHeader(),
-          const SizedBox(height: 24),
+          const SizedBox(height: 32),
           _buildCardsGridView(),
-          const SizedBox(height: 24),
+          const SizedBox(height: 32),
           AdminAnalyticsChart(animationController: _animationControllers.first),
         ],
       ),
@@ -135,30 +137,71 @@ class _DashboardHomeTabState extends State<DashboardHomeTab>
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          '${_tr('welcome_back')} $adminName!',
-          style: const TextStyle(
-            fontSize: 28,
-            fontWeight: FontWeight.bold,
-            color: AppColors.textPrimary,
-          ),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          DateFormat('EEEE, MMMM d, yyyy').format(DateTime.now()),
-          style: const TextStyle(fontSize: 16, color: AppColors.textSecondary),
+        Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    AdminDashboardStyles.primary,
+                    AdminDashboardStyles.primaryLight,
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: AdminDashboardStyles.primary.withValues(alpha: 0.3),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: const Icon(
+                Icons.dashboard_rounded,
+                color: Colors.white,
+                size: 28,
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '${_tr('welcome_back')} $adminName!',
+                    style: const TextStyle(
+                      fontSize: 28,
+                      fontWeight: FontWeight.bold,
+                      color: AdminDashboardStyles.textDark,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    DateFormat('EEEE, MMMM d, yyyy').format(DateTime.now()),
+                    style: const TextStyle(
+                      fontSize: 16, 
+                      color: AdminDashboardStyles.textLight,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
       ],
-    );
+    ).animate().fadeIn(duration: 600.ms).slideX(begin: 0.3);
   }
 
   Widget _buildCardsGridView() {
     return GridView.builder(
       gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-        maxCrossAxisExtent: 200,
-        crossAxisSpacing: 16,
-        mainAxisSpacing: 16,
-        childAspectRatio: 1.2,
+        maxCrossAxisExtent: 220,
+        crossAxisSpacing: 20,
+        mainAxisSpacing: 20,
+        childAspectRatio: 1.1,
       ),
       itemCount: _statItems.length,
       shrinkWrap: true,
@@ -193,8 +236,8 @@ class _DashboardHomeTabState extends State<DashboardHomeTab>
               onTapCancel: () => setState(() => _pressedIndex = null),
               onTap: () {},
               child: AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
-                curve: Curves.easeOut,
+                duration: AdminDashboardStyles.shortAnimation,
+                curve: AdminDashboardStyles.defaultCurve,
                 transform: Matrix4.identity()
                   ..scale(isPressed ? 0.95 : (isHovered ? 1.05 : 1.0)),
                 decoration: BoxDecoration(
@@ -207,16 +250,16 @@ class _DashboardHomeTabState extends State<DashboardHomeTab>
                   boxShadow: [
                     if (isHovered)
                       BoxShadow(
-                        color: item.color.withOpacity(0.3),
-                        blurRadius: 20,
+                        color: item.color.withValues(alpha: 0.4),
+                        blurRadius: 24,
                         spreadRadius: 2,
                         offset: const Offset(0, 8),
                       )
                     else
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.1),
-                        blurRadius: 12,
-                        offset: const Offset(0, 4),
+                        color: Colors.black.withValues(alpha: 0.12),
+                        blurRadius: 16,
+                        offset: const Offset(0, 6),
                       ),
                   ],
                 ),
@@ -225,40 +268,66 @@ class _DashboardHomeTabState extends State<DashboardHomeTab>
                   child: Stack(
                     alignment: Alignment.center,
                     children: [
+                      // Background decoration
                       Positioned(
-                        top: -20,
-                        right: -20,
+                        top: -30,
+                        right: -30,
                         child: Container(
-                          width: 80,
-                          height: 80,
+                          width: 100,
+                          height: 100,
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
-                            color: Colors.white.withOpacity(0.1),
+                            color: Colors.white.withValues(alpha: 0.1),
                           ),
                         ),
                       ),
+                      Positioned(
+                        bottom: -20,
+                        left: -20,
+                        child: Container(
+                          width: 60,
+                          height: 60,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: Colors.white.withValues(alpha: 0.05),
+                          ),
+                        ),
+                      ),
+                      // Content
                       Padding(
-                        padding: const EdgeInsets.all(16.0),
+                        padding: const EdgeInsets.all(20.0),
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Icon(item.icon, size: 28, color: Colors.white),
-                            const SizedBox(height: 8),
+                            Container(
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withValues(alpha: 0.2),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Icon(
+                                item.icon, 
+                                size: 32, 
+                                color: Colors.white,
+                              ),
+                            ),
+                            const SizedBox(height: 16),
                             Text(
                               item.value,
                               style: const TextStyle(
-                                fontSize: 20,
+                                fontSize: 24,
                                 fontWeight: FontWeight.bold,
                                 color: Colors.white,
                               ),
                             ),
-                            const SizedBox(height: 2),
+                            const SizedBox(height: 4),
                             Text(
                               item.title,
                               textAlign: TextAlign.center,
                               style: const TextStyle(
-                                fontSize: 12,
+                                fontSize: 13,
                                 color: Colors.white70,
+                                fontWeight: FontWeight.w500,
                               ),
                             ),
                           ],

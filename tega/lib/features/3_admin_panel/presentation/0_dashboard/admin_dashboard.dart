@@ -1,9 +1,11 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:tega/core/constants/app_colors.dart';
 import 'package:tega/features/1_authentication/data/auth_repository.dart';
 import 'package:tega/features/1_authentication/presentation/screens/login_page.dart';
+import 'package:tega/features/3_admin_panel/presentation/0_dashboard/admin_dashboard_styles.dart';
 import 'package:tega/features/3_admin_panel/presentation/0_dashboard/tabs/dashboard_home_tab.dart';
 import 'package:tega/features/3_admin_panel/presentation/1_management/colleges/admins_management_page.dart';
 import 'package:tega/features/3_admin_panel/presentation/1_management/colleges/colleges_page.dart';
@@ -189,14 +191,25 @@ class _AdminDashboardState extends State<AdminDashboard>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: AdminDashboardStyles.background,
       appBar: _buildAppBar(),
       body: Stack(
         children: [
           AnimatedSwitcher(
-            duration: const Duration(milliseconds: 300),
-            transitionBuilder: (child, animation) =>
-                FadeTransition(opacity: animation, child: child),
+            duration: AdminDashboardStyles.mediumAnimation,
+            transitionBuilder: (child, animation) => FadeTransition(
+              opacity: animation,
+              child: SlideTransition(
+                position: Tween<Offset>(
+                  begin: const Offset(0.1, 0),
+                  end: Offset.zero,
+                ).animate(CurvedAnimation(
+                  parent: animation,
+                  curve: AdminDashboardStyles.defaultCurve,
+                )),
+                child: child,
+              ),
+            ),
             child: KeyedSubtree(
               key: ValueKey<int>(_selectedIndex),
               child: _pages[_selectedIndex],
@@ -208,8 +221,8 @@ class _AdminDashboardState extends State<AdminDashboard>
               child: AnimatedBuilder(
                 animation: _sidebarAnimationController,
                 builder: (context, child) => Container(
-                  color: Colors.black.withOpacity(
-                    0.6 * _sidebarAnimationController.value,
+                  color: Colors.black.withValues(
+                    alpha: 0.6 * _sidebarAnimationController.value,
                   ),
                 ),
               ),
@@ -235,25 +248,39 @@ class _AdminDashboardState extends State<AdminDashboard>
         style: const TextStyle(
           fontWeight: FontWeight.bold,
           color: Colors.white,
+          fontSize: 18,
+        ),
+      ).animate().fadeIn(duration: 300.ms).slideX(begin: 0.2),
+      backgroundColor: AdminDashboardStyles.primary,
+      elevation: 8,
+      shadowColor: AdminDashboardStyles.primary.withValues(alpha: 0.3),
+      flexibleSpace: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              AdminDashboardStyles.primary,
+              AdminDashboardStyles.primaryLight,
+            ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
         ),
       ),
-      backgroundColor: const Color(0xFFFFA726),
-      elevation: 4,
-      shadowColor: const Color(0xFFFFA726).withOpacity(0.3),
     );
   }
 
   Widget _buildSidebar() {
     return AnimatedPositioned(
-      duration: const Duration(milliseconds: 350),
-      curve: Curves.easeInOutCubic,
+      duration: AdminDashboardStyles.mediumAnimation,
+      curve: AdminDashboardStyles.slideCurve,
       left: _isSidebarOpen ? 0 : -300,
       top: 0,
       bottom: 0,
       width: 300,
       child: Material(
         color: Colors.white,
-        elevation: 16,
+        elevation: 20,
+        shadowColor: AdminDashboardStyles.primary.withValues(alpha: 0.2),
         child: Column(
           children: [
             _buildSidebarHeader(),
@@ -329,8 +356,8 @@ class _AdminDashboardState extends State<AdminDashboard>
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            const Color(0xFFFFA726),
-            const Color(0xFFFFA726).withOpacity(0.8),
+            AdminDashboardStyles.primary,
+            AdminDashboardStyles.primaryLight,
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
@@ -344,7 +371,7 @@ class _AdminDashboardState extends State<AdminDashboard>
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               border: Border.all(
-                color: Colors.white.withOpacity(0.3),
+                color: Colors.white.withValues(alpha: 0.3),
                 width: 2,
               ),
             ),
@@ -354,10 +381,10 @@ class _AdminDashboardState extends State<AdminDashboard>
               child: Icon(
                 Icons.shield_rounded,
                 size: 36,
-                color: Color(0xFFFFA726),
+                color: AdminDashboardStyles.primary,
               ),
             ),
-          ),
+          ).animate().scale(duration: 500.ms, curve: AdminDashboardStyles.bounceCurve),
           const SizedBox(height: 16),
           Text(
             _authService.currentUser?.name ?? 'Admin User',
@@ -366,17 +393,17 @@ class _AdminDashboardState extends State<AdminDashboard>
               fontWeight: FontWeight.bold,
               fontSize: 18,
             ),
-          ),
+          ).animate().fadeIn(duration: 300.ms, delay: 200.ms).slideX(begin: 0.3),
           const SizedBox(height: 4),
           Text(
             _authService.currentUserRole != null
                 ? _authService.getRoleDisplayName(_authService.currentUserRole!)
                 : 'Administrator',
             style: TextStyle(
-              color: Colors.white.withOpacity(0.8),
+              color: Colors.white.withValues(alpha: 0.8),
               fontSize: 14,
             ),
-          ),
+          ).animate().fadeIn(duration: 300.ms, delay: 400.ms).slideX(begin: 0.3),
         ],
       ),
     );
@@ -390,7 +417,7 @@ class _AdminDashboardState extends State<AdminDashboard>
     final isSelected = _selectedIndex == index;
     return Material(
       color: isSelected
-          ? const Color(0xFFFFA726).withOpacity(0.1)
+          ? AdminDashboardStyles.primary.withValues(alpha: 0.1)
           : Colors.transparent,
       borderRadius: BorderRadius.circular(12),
       child: InkWell(
@@ -404,38 +431,72 @@ class _AdminDashboardState extends State<AdminDashboard>
           _toggleSidebar();
         },
         borderRadius: BorderRadius.circular(12),
-        splashColor: const Color(0xFFFFA726).withOpacity(0.2),
-        highlightColor: const Color(0xFFFFA726).withOpacity(0.2),
-        child: Padding(
+        splashColor: AdminDashboardStyles.primary.withValues(alpha: 0.2),
+        highlightColor: AdminDashboardStyles.primary.withValues(alpha: 0.2),
+        child: AnimatedContainer(
+          duration: AdminDashboardStyles.shortAnimation,
+          curve: AdminDashboardStyles.defaultCurve,
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(12),
+            color: isSelected 
+                ? AdminDashboardStyles.primary.withValues(alpha: 0.1)
+                : Colors.transparent,
+            border: isSelected 
+                ? Border.all(
+                    color: AdminDashboardStyles.primary.withValues(alpha: 0.3),
+                    width: 1,
+                  )
+                : null,
+          ),
           child: Row(
             children: [
-              Icon(
-                icon,
-                color: isSelected ? const Color(0xFFFFA726) : Colors.grey,
-              ),
-              const SizedBox(width: 20),
-              Text(
-                title,
-                style: TextStyle(
-                  color: isSelected ? const Color(0xFFFFA726) : Colors.black,
-                  fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+              AnimatedContainer(
+                duration: AdminDashboardStyles.shortAnimation,
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: isSelected 
+                      ? AdminDashboardStyles.primary.withValues(alpha: 0.2)
+                      : Colors.grey.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(
+                  icon,
+                  color: isSelected ? AdminDashboardStyles.primary : Colors.grey,
+                  size: 20,
                 ),
               ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Text(
+                  title,
+                  style: TextStyle(
+                    color: isSelected ? AdminDashboardStyles.primary : Colors.black,
+                    fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                    fontSize: 14,
+                  ),
+                ),
+              ),
+              if (isSelected)
+                Icon(
+                  Icons.arrow_forward_ios,
+                  color: AdminDashboardStyles.primary,
+                  size: 16,
+                ),
             ],
           ),
         ),
       ),
-    );
+    ).animate().fadeIn(duration: 300.ms, delay: Duration(milliseconds: index * 50)).slideX(begin: 0.2);
   }
 
   Widget _buildLogoutTile() {
     return Container(
       margin: const EdgeInsets.all(8),
       decoration: BoxDecoration(
-        color: Colors.red.withOpacity(0.05),
+        color: Colors.red.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.red.withOpacity(0.2), width: 1),
+        border: Border.all(color: Colors.red.withValues(alpha: 0.2), width: 1),
       ),
       child: ListTile(
         dense: true,
@@ -444,7 +505,7 @@ class _AdminDashboardState extends State<AdminDashboard>
         leading: Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: Colors.red.withOpacity(0.1),
+            color: Colors.red.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(8),
           ),
           child: const Icon(Icons.logout, color: Colors.red, size: 20),
@@ -463,6 +524,6 @@ class _AdminDashboardState extends State<AdminDashboard>
           size: 16,
         ),
       ),
-    );
+    ).animate().fadeIn(duration: 300.ms, delay: 600.ms).slideX(begin: 0.2);
   }
 }
