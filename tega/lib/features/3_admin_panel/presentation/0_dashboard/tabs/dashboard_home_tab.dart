@@ -57,25 +57,25 @@ class _DashboardHomeTabState extends State<DashboardHomeTab>
         icon: Icons.school_rounded,
         title: _tr('total_colleges'),
         value: '150',
-        color: Colors.blue,
+        color: const Color(0xFFFFA726),
       ),
       _StatCardInfo(
         icon: Icons.people_rounded,
         title: _tr('total_students'),
         value: '12,500',
-        color: Colors.green,
+        color: const Color(0xFF66BB6A),
       ),
       _StatCardInfo(
         icon: Icons.content_copy_rounded,
         title: _tr('content_modules'),
         value: '85',
-        color: Colors.orange,
+        color: const Color(0xFF29B6F6),
       ),
       _StatCardInfo(
         icon: Icons.support_agent_rounded,
         title: _tr('support_tickets'),
         value: '25',
-        color: Colors.red,
+        color: const Color(0xFFEF5350),
       ),
     ];
 
@@ -155,7 +155,7 @@ class _DashboardHomeTabState extends State<DashboardHomeTab>
   Widget _buildCardsGridView() {
     return GridView.builder(
       gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-        maxCrossAxisExtent: 160,
+        maxCrossAxisExtent: 200,
         crossAxisSpacing: 16,
         mainAxisSpacing: 16,
         childAspectRatio: 1.2,

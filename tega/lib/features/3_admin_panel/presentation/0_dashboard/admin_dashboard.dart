@@ -226,7 +226,7 @@ class _AdminDashboardState extends State<AdminDashboard>
         icon: AnimatedIcon(
           icon: AnimatedIcons.menu_close,
           progress: _sidebarAnimationController,
-          color: AppColors.pureWhite,
+          color: Colors.white,
         ),
         onPressed: _toggleSidebar,
       ),
@@ -234,12 +234,12 @@ class _AdminDashboardState extends State<AdminDashboard>
         _pageTitles[_selectedIndex],
         style: const TextStyle(
           fontWeight: FontWeight.bold,
-          color: AppColors.pureWhite,
+          color: Colors.white,
         ),
       ),
-      backgroundColor: AppColors.primary,
+      backgroundColor: const Color(0xFFFFA726),
       elevation: 4,
-      shadowColor: AppColors.primary.withOpacity(0.3),
+      shadowColor: const Color(0xFFFFA726).withOpacity(0.3),
     );
   }
 
@@ -252,7 +252,7 @@ class _AdminDashboardState extends State<AdminDashboard>
       bottom: 0,
       width: 300,
       child: Material(
-        color: AppColors.surface,
+        color: Colors.white,
         elevation: 16,
         child: Column(
           children: [
@@ -328,7 +328,10 @@ class _AdminDashboardState extends State<AdminDashboard>
       padding: const EdgeInsets.fromLTRB(20, 60, 20, 24),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [AppColors.primary, AppColors.primary.withOpacity(0.8)],
+          colors: [
+            const Color(0xFFFFA726),
+            const Color(0xFFFFA726).withOpacity(0.8),
+          ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -345,13 +348,13 @@ class _AdminDashboardState extends State<AdminDashboard>
                 width: 2,
               ),
             ),
-            child: CircleAvatar(
+            child: const CircleAvatar(
               radius: 32,
               backgroundColor: Colors.white,
               child: Icon(
                 Icons.shield_rounded,
                 size: 36,
-                color: AppColors.primary,
+                color: Color(0xFFFFA726),
               ),
             ),
           ),
@@ -387,7 +390,7 @@ class _AdminDashboardState extends State<AdminDashboard>
     final isSelected = _selectedIndex == index;
     return Material(
       color: isSelected
-          ? AppColors.primary.withOpacity(0.1)
+          ? const Color(0xFFFFA726).withOpacity(0.1)
           : Colors.transparent,
       borderRadius: BorderRadius.circular(12),
       child: InkWell(
@@ -401,21 +404,21 @@ class _AdminDashboardState extends State<AdminDashboard>
           _toggleSidebar();
         },
         borderRadius: BorderRadius.circular(12),
-        splashColor: AppColors.primary.withOpacity(0.2),
-        highlightColor: AppColors.primary.withOpacity(0.2),
+        splashColor: const Color(0xFFFFA726).withOpacity(0.2),
+        highlightColor: const Color(0xFFFFA726).withOpacity(0.2),
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           child: Row(
             children: [
               Icon(
                 icon,
-                color: isSelected ? AppColors.primary : AppColors.textSecondary,
+                color: isSelected ? const Color(0xFFFFA726) : Colors.grey,
               ),
               const SizedBox(width: 20),
               Text(
                 title,
                 style: TextStyle(
-                  color: isSelected ? AppColors.primary : AppColors.textPrimary,
+                  color: isSelected ? const Color(0xFFFFA726) : Colors.black,
                   fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
                 ),
               ),

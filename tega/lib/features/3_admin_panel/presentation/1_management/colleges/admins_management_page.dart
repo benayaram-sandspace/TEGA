@@ -30,20 +30,20 @@ class _AdminManagementPageState extends State<AdminManagementPage>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: const Color(0xFFFFF3E0),
       appBar: AppBar(
         title: const Text(
-          'Admin Management',
+          'Principals & Staff',
           style: TextStyle(
             fontSize: 24,
             fontWeight: FontWeight.bold,
-            color: AppColors.textPrimary,
+            color: Colors.white,
           ),
         ),
-        backgroundColor: AppColors.background,
+        backgroundColor: const Color(0xFFFFA726),
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
           onPressed: () {
             Navigator.pushAndRemoveUntil(
               context,
@@ -54,10 +54,10 @@ class _AdminManagementPageState extends State<AdminManagementPage>
         ),
         bottom: TabBar(
           controller: _tabController,
-          indicatorColor: AppColors.primary,
+          indicatorColor: Colors.white,
           indicatorWeight: 3,
-          labelColor: AppColors.primary,
-          unselectedLabelColor: AppColors.textSecondary,
+          labelColor: Colors.white,
+          unselectedLabelColor: Colors.white.withOpacity(0.7),
           labelStyle: const TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w600,
@@ -67,7 +67,7 @@ class _AdminManagementPageState extends State<AdminManagementPage>
             fontWeight: FontWeight.normal,
           ),
           tabs: const [
-            Tab(text: 'Admin Users'),
+            Tab(text: 'All Staff'),
             Tab(text: 'Activity & Audit Logs'),
           ],
         ),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:tega/core/constants/app_colors.dart';
 import 'package:tega/features/4_college_panel/data/repositories/college_repository.dart';
 
@@ -111,19 +112,19 @@ class _AddCollegeAdminPageState extends State<AddCollegeAdminPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: const Color(0xFFFFF3E0),
       appBar: AppBar(
         title: const Text(
           'Add College Admin',
           style: TextStyle(
             fontWeight: FontWeight.bold,
-            color: AppColors.textPrimary,
+            color: Colors.white,
           ),
         ),
-        backgroundColor: AppColors.background,
+        backgroundColor: const Color(0xFFFFA726),
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.close, color: AppColors.textPrimary),
+          icon: const Icon(Icons.close, color: Colors.white),
           onPressed: () => Navigator.of(context).pop(),
         ),
       ),
@@ -139,9 +140,9 @@ class _AddCollegeAdminPageState extends State<AddCollegeAdminPage> {
                 width: double.infinity,
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: AppColors.primary.withOpacity(0.1),
+                  color: const Color(0xFFFFA726).withOpacity(0.1),
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: AppColors.primary.withOpacity(0.3)),
+                  border: Border.all(color: const Color(0xFFFFA726).withOpacity(0.3)),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -150,7 +151,7 @@ class _AddCollegeAdminPageState extends State<AddCollegeAdminPage> {
                       'Adding admin for:',
                       style: TextStyle(
                         fontSize: 14,
-                        color: AppColors.primary,
+                        color: Color(0xFFFFA726),
                         fontWeight: FontWeight.w500,
                       ),
                     ),
@@ -172,7 +173,7 @@ class _AddCollegeAdminPageState extends State<AddCollegeAdminPage> {
                     ),
                   ],
                 ),
-              ),
+              ).animate().fade(duration: 500.ms).slideY(begin: 0.5),
               const SizedBox(height: 24),
 
               // Admin Name
@@ -186,7 +187,7 @@ class _AddCollegeAdminPageState extends State<AddCollegeAdminPage> {
                   }
                   return null;
                 },
-              ),
+              ).animate().fade(duration: 500.ms).slideY(begin: 0.5, delay: 200.ms),
               const SizedBox(height: 16),
 
               // Email
@@ -206,7 +207,7 @@ class _AddCollegeAdminPageState extends State<AddCollegeAdminPage> {
                   }
                   return null;
                 },
-              ),
+              ).animate().fade(duration: 500.ms).slideY(begin: 0.5, delay: 300.ms),
               const SizedBox(height: 16),
 
               // Phone
@@ -221,7 +222,7 @@ class _AddCollegeAdminPageState extends State<AddCollegeAdminPage> {
                   }
                   return null;
                 },
-              ),
+              ).animate().fade(duration: 500.ms).slideY(begin: 0.5, delay: 400.ms),
               const SizedBox(height: 16),
 
               // Role Dropdown
@@ -234,7 +235,7 @@ class _AddCollegeAdminPageState extends State<AddCollegeAdminPage> {
                     _selectedRole = value!;
                   });
                 },
-              ),
+              ).animate().fade(duration: 500.ms).slideY(begin: 0.5, delay: 500.ms),
               const SizedBox(height: 16),
 
               // Status Dropdown
@@ -247,7 +248,7 @@ class _AddCollegeAdminPageState extends State<AddCollegeAdminPage> {
                     _selectedStatus = value!;
                   });
                 },
-              ),
+              ).animate().fade(duration: 500.ms).slideY(begin: 0.5, delay: 600.ms),
               const SizedBox(height: 32),
 
               // Action Buttons
@@ -279,8 +280,8 @@ class _AddCollegeAdminPageState extends State<AddCollegeAdminPage> {
                     child: ElevatedButton(
                       onPressed: _isLoading ? null : _saveAdmin,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primary,
-                        foregroundColor: AppColors.pureWhite,
+                        backgroundColor: const Color(0xFFFFA726),
+                        foregroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
@@ -293,7 +294,7 @@ class _AddCollegeAdminPageState extends State<AddCollegeAdminPage> {
                               child: CircularProgressIndicator(
                                 strokeWidth: 2,
                                 valueColor: AlwaysStoppedAnimation<Color>(
-                                  AppColors.pureWhite,
+                                  Colors.white,
                                 ),
                               ),
                             )
@@ -304,7 +305,7 @@ class _AddCollegeAdminPageState extends State<AddCollegeAdminPage> {
                     ),
                   ),
                 ],
-              ),
+              ).animate().fade(duration: 500.ms).slideY(begin: 0.5, delay: 700.ms),
             ],
           ),
         ),
@@ -339,7 +340,7 @@ class _AddCollegeAdminPageState extends State<AddCollegeAdminPage> {
             hintText: hintText,
             hintStyle: TextStyle(color: AppColors.textSecondary),
             filled: true,
-            fillColor: AppColors.surfaceVariant,
+            fillColor: Colors.white,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
               borderSide: const BorderSide(color: AppColors.borderLight),
@@ -350,7 +351,7 @@ class _AddCollegeAdminPageState extends State<AddCollegeAdminPage> {
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: AppColors.primary),
+              borderSide: const BorderSide(color: Color(0xFFFFA726)),
             ),
             errorBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
@@ -387,7 +388,7 @@ class _AddCollegeAdminPageState extends State<AddCollegeAdminPage> {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
           decoration: BoxDecoration(
-            color: AppColors.surfaceVariant,
+            color: Colors.white,
             borderRadius: BorderRadius.circular(12),
             border: Border.all(color: AppColors.borderLight),
           ),

@@ -87,17 +87,14 @@ class _AdminAnalyticsChartState extends State<AdminAnalyticsChart>
           child: Container(
             padding: const EdgeInsets.all(20.0),
             decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [Colors.white, Colors.grey.shade50],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
+              color: const Color(0xFFFFF3E0),
               borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: const Color(0xFFFFA726).withOpacity(0.5)),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.08),
-                  blurRadius: 20,
-                  offset: const Offset(0, 4),
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 10,
+                  offset: const Offset(0, 5),
                 ),
               ],
             ),
@@ -134,17 +131,25 @@ class _AdminAnalyticsChartState extends State<AdminAnalyticsChart>
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
           decoration: BoxDecoration(
-            color: Colors.grey.withOpacity(0.1),
+            color: const Color(0xFFFFA726).withOpacity(0.1),
             borderRadius: BorderRadius.circular(20),
           ),
           child: const Row(
             children: [
               Text(
                 'This Week',
-                style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFFFFA726),
+                ),
               ),
               SizedBox(width: 4),
-              Icon(Icons.keyboard_arrow_down, size: 16),
+              Icon(
+                Icons.keyboard_arrow_down,
+                size: 16,
+                color: Color(0xFFFFA726),
+              ),
             ],
           ),
         ),
@@ -158,12 +163,15 @@ class _AdminAnalyticsChartState extends State<AdminAnalyticsChart>
       alignment: BarChartAlignment.spaceBetween,
       barTouchData: BarTouchData(
         touchTooltipData: BarTouchTooltipData(
-          getTooltipColor: (group) => AppColors.primary,
+          getTooltipColor: (group) => const Color(0xFFFFA726),
           getTooltipItem: (group, groupIndex, rod, rodIndex) {
             final data = _weekData[group.x.toInt()];
             return BarTooltipItem(
               '${data.day}\n',
-              const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+              const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+              ),
               children: <TextSpan>[
                 TextSpan(
                   text: (rod.toY).round().toString(),
@@ -243,7 +251,10 @@ class _AdminAnalyticsChartState extends State<AdminAnalyticsChart>
         BarChartRodData(
           toY: y,
           gradient: LinearGradient(
-            colors: [AppColors.primary.withOpacity(0.7), AppColors.primary],
+            colors: [
+              const Color(0xFFFFA726).withOpacity(0.7),
+              const Color(0xFFFFA726),
+            ],
             begin: Alignment.bottomCenter,
             end: Alignment.topCenter,
           ),
