@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 class ConfigureCollegeReportPage extends StatefulWidget {
-  const ConfigureCollegeReportPage({Key? key}) : super(key: key);
+  const ConfigureCollegeReportPage({super.key});
 
   @override
   State<ConfigureCollegeReportPage> createState() =>
@@ -179,7 +179,7 @@ class _ConfigureCollegeReportPageState
                   border: InputBorder.none,
                   contentPadding: EdgeInsets.symmetric(horizontal: 16),
                 ),
-                value: _selectedCollege,
+                initialValue: _selectedCollege,
                 items: _colleges.map((college) {
                   return DropdownMenuItem(value: college, child: Text(college));
                 }).toList(),

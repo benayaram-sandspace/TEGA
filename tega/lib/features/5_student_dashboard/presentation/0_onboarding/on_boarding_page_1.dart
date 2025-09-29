@@ -4,8 +4,7 @@ import 'package:tega/features/5_student_dashboard/presentation/0_onboarding/on_b
 class CareerDiscoveryWelcome extends StatelessWidget {
   final String studentName;
 
-  const CareerDiscoveryWelcome({Key? key, this.studentName = 'Ramesh'})
-    : super(key: key);
+  const CareerDiscoveryWelcome({super.key, this.studentName = 'Ramesh'});
 
   @override
   Widget build(BuildContext context) {

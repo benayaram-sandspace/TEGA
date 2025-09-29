@@ -847,8 +847,9 @@ class _SignUpPageState extends State<SignUpPage> with TickerProviderStateMixin {
             ),
             validator: (v) {
               if (v == null || v.isEmpty) return 'Please confirm password';
-              if (v != _passwordController.text)
+              if (v != _passwordController.text) {
                 return 'Passwords do not match';
+              }
               return null;
             },
           ),

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:tega/core/constants/app_colors.dart';
 import 'package:tega/features/3_admin_panel/presentation/0_dashboard/admin_dashboard.dart';
 import 'package:tega/features/3_admin_panel/presentation/1_management/users_and_admins/admin_users_page.dart';
 import 'package:tega/features/3_admin_panel/presentation/4_settings_and_misc/activity_logs_page.dart';

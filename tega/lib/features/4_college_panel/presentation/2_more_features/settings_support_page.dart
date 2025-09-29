@@ -121,7 +121,7 @@ class _SettingsSupportPageState extends State<SettingsSupportPage> {
                         ),
                       );
                     },
-                    activeColor: DashboardStyles.primary,
+                    activeThumbColor: DashboardStyles.primary,
                   ),
                   const Divider(height: 1),
                   SwitchListTile(
@@ -133,7 +133,7 @@ class _SettingsSupportPageState extends State<SettingsSupportPage> {
                         _darkModeEnabled = value;
                       });
                     },
-                    activeColor: DashboardStyles.primary,
+                    activeThumbColor: DashboardStyles.primary,
                   ),
                   const Divider(height: 1),
                   SwitchListTile(
@@ -145,7 +145,7 @@ class _SettingsSupportPageState extends State<SettingsSupportPage> {
                         _autoSaveEnabled = value;
                       });
                     },
-                    activeColor: DashboardStyles.primary,
+                    activeThumbColor: DashboardStyles.primary,
                   ),
                   const Divider(height: 1),
                   ListTile(

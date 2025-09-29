@@ -3,7 +3,7 @@ import 'package:tega/features/5_student_dashboard/presentation/0_onboarding/on_b
 import 'package:tega/features/5_student_dashboard/presentation/0_onboarding/on_boarding_page_4.dart';
 
 class OnboardingScreen3 extends StatefulWidget {
-  const OnboardingScreen3({Key? key}) : super(key: key);
+  const OnboardingScreen3({super.key});
 
   @override
   State<OnboardingScreen3> createState() => _OnboardingScreen3State();
@@ -201,7 +201,7 @@ class _OnboardingScreen3State extends State<OnboardingScreen3> {
                                 ),
                               ),
                               Text(
-                                "(${rating})",
+                                "($rating)",
                                 style: const TextStyle(
                                   fontSize: 14,
                                   color: Colors.grey,

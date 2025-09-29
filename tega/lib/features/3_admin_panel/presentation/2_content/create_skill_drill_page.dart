@@ -21,57 +21,76 @@ class _CreateSkillDrillPageState extends State<CreateSkillDrillPage> {
     _questions.addAll([
       SkillDrill(
         id: 'review_001',
-        question: 'What is the capital of France?',
+        title: 'What is the capital of France?',
+        description: 'Test your knowledge of European capitals',
         subject: 'Geography',
         difficulty: 'Easy',
         skill: 'General Knowledge',
         questionType: 'Multiple Choice',
+        category: 'General Knowledge',
+        questions: ['What is the capital of France?'],
         options: ['London', 'Berlin', 'Paris', 'Madrid'],
-        correctAnswer: 2,
-        explanation: 'Paris is the capital and largest city of France.',
-        imageUrl:
-            'https://images.unsplash.com/photo-1502602898536-47ad22581b52?w=400',
+        correctAnswers: [2],
+        explanations: ['Paris is the capital and largest city of France.'],
+        imageUrls: [
+            'https://images.unsplash.com/photo-1502602898536-47ad22581b52?w=400'
+        ],
         isActive: true,
-        createdAt: '2024-01-15',
+        createdAt: DateTime.parse('2024-01-15'),
+        createdBy: 'admin',
         tags: ['geography', 'capitals', 'europe'],
+        estimatedTime: 60,
       ),
       SkillDrill(
         id: 'review_002',
-        question: 'Solve for x: 2x + 3 = 7',
+        title: 'Solve for x: 2x + 3 = 7',
+        description: 'Basic algebraic equation solving',
         subject: 'Algebra',
         difficulty: 'Medium',
         skill: 'Mathematics',
         questionType: 'Multiple Choice',
+        category: 'Mathematics',
+        questions: ['Solve for x: 2x + 3 = 7'],
         options: ['x = 1', 'x = 2', 'x = 3', 'x = 4'],
-        correctAnswer: 1,
-        explanation: '2x + 3 = 7, so 2x = 4, therefore x = 2',
-        imageUrl:
-            'https://images.unsplash.com/photo-1635070041078-e363dbe005cb?w=400',
+        correctAnswers: [1],
+        explanations: ['2x + 3 = 7, so 2x = 4, therefore x = 2'],
+        imageUrls: [
+            'https://images.unsplash.com/photo-1635070041078-e363dbe005cb?w=400'
+        ],
         isActive: true,
-        createdAt: '2024-01-16',
+        createdAt: DateTime.parse('2024-01-16'),
+        createdBy: 'admin',
         tags: ['algebra', 'equations', 'math'],
+        estimatedTime: 90,
       ),
       SkillDrill(
         id: 'review_003',
-        question: 'Who wrote \'Romeo and Juliet\'?',
+        title: 'Who wrote \'Romeo and Juliet\'?',
+        description: 'Test your knowledge of classic literature',
         subject: 'Literature',
         difficulty: 'Medium',
         skill: 'English Literature',
         questionType: 'Multiple Choice',
+        category: 'Literature',
+        questions: ['Who wrote \'Romeo and Juliet\'?'],
         options: [
           'Charles Dickens',
           'William Shakespeare',
           'Jane Austen',
           'Mark Twain',
         ],
-        correctAnswer: 1,
-        explanation:
-            'William Shakespeare wrote the famous tragedy \'Romeo and Juliet\'.',
-        imageUrl:
+        correctAnswers: [1],
+        explanations: [
+            'William Shakespeare wrote the famous tragedy \'Romeo and Juliet\'.'
+        ],
+        imageUrls: [
             'https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=400',
+        ],
         isActive: true,
-        createdAt: '2024-01-17',
+        createdAt: DateTime.parse('2024-01-17'),
+        createdBy: 'admin',
         tags: ['literature', 'shakespeare', 'drama'],
+        estimatedTime: 75,
       ),
     ]);
   }
@@ -257,7 +276,7 @@ class _CreateSkillDrillPageState extends State<CreateSkillDrillPage> {
           ),
           const SizedBox(height: 8),
           Text(
-            question.question,
+            question.title,
             style: const TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.bold,

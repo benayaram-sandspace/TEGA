@@ -413,7 +413,7 @@ class _AddQuestionPageState extends State<AddQuestionPage> {
         ),
         const SizedBox(height: 8),
         DropdownButtonFormField<String>(
-          value: value,
+          initialValue: value,
           decoration: InputDecoration(
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
@@ -444,30 +444,36 @@ class _AddQuestionPageState extends State<AddQuestionPage> {
       // Create new skill drill
       final newDrill = SkillDrill(
         id: 'drill_${DateTime.now().millisecondsSinceEpoch}',
-        question: _questionController.text,
+        title: _questionController.text,
+        description: 'New skill drill question',
         subject: _selectedSubject,
         difficulty: _selectedDifficulty,
         skill: _selectedSkill,
         questionType: _selectedQuestionType,
+        category: _selectedSubject,
+        questions: [_questionController.text],
         options: [
           _option1Controller.text,
           _option2Controller.text,
           _option3Controller.text,
           _option4Controller.text,
         ],
-        correctAnswer: _correctAnswer,
-        explanation: _explanationController.text,
-        imageUrl:
-            'https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=400',
+        correctAnswers: [_correctAnswer],
+        explanations: [_explanationController.text],
+        imageUrls: [
+            'https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=400'
+        ],
         isActive: true,
-        createdAt: DateTime.now().toIso8601String().split('T')[0],
+        createdAt: DateTime.now(),
+        createdBy: 'admin',
         tags: [_selectedSubject.toLowerCase(), _selectedSkill.toLowerCase()],
+        estimatedTime: 60,
       );
 
       // In a real app, you would save this to the backend
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Question "${newDrill.question}" saved successfully!'),
+          content: Text('Question "${newDrill.title}" saved successfully!'),
           backgroundColor: AppColors.success,
         ),
       );

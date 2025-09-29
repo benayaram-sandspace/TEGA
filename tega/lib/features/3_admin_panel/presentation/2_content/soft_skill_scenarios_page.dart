@@ -11,7 +11,7 @@ class SoftSkillScenariosPage extends StatefulWidget {
 }
 
 class _SoftSkillScenariosPageState extends State<SoftSkillScenariosPage> {
-  final ContentQuizService _contentQuizService = ContentQuizService();
+  final ContentQuizRepository _contentQuizService = ContentQuizRepository();
   final TextEditingController _searchController = TextEditingController();
 
   List<SoftSkillScenario> _allScenarios = [];
@@ -78,12 +78,14 @@ class _SoftSkillScenariosPageState extends State<SoftSkillScenariosPage> {
 
         if (_selectedCategory != null &&
             _selectedCategory != "All Categories" &&
-            scenario.category != _selectedCategory)
+            scenario.category != _selectedCategory) {
           return false;
+        }
 
         if (_selectedDifficulty != null &&
-            scenario.difficulty != _selectedDifficulty)
+            scenario.difficulty != _selectedDifficulty) {
           return false;
+        }
 
         return true;
       }).toList();
@@ -296,7 +298,7 @@ class _SoftSkillScenariosPageState extends State<SoftSkillScenariosPage> {
     Function(String?) onSelected,
   ) {
     return DropdownButtonFormField<String>(
-      value: selectedValue,
+      initialValue: selectedValue,
       decoration: InputDecoration(
         labelText: label,
         filled: true,
@@ -388,7 +390,7 @@ class _SoftSkillScenariosPageState extends State<SoftSkillScenariosPage> {
   }
 
   Widget _buildScenarioCard(SoftSkillScenario scenario) {
-    final cardColor = _getDifficultyColor(scenario.difficulty);
+    final cardColor = _getDifficultyColor(scenario.difficulty.name);
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
       elevation: 0,

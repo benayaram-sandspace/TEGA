@@ -192,7 +192,7 @@ class _CollegeDetailsPageState extends State<CollegeDetailsPage>
                   fontSize: 14,
                 ),
                 dividerColor: Colors.transparent,
-                overlayColor: MaterialStateProperty.all(Colors.transparent),
+                overlayColor: WidgetStateProperty.all(Colors.transparent),
                 splashFactory: NoSplash.splashFactory,
                 tabs: const [
                   Tab(text: 'Overview'),
@@ -204,7 +204,7 @@ class _CollegeDetailsPageState extends State<CollegeDetailsPage>
             ),
 
             // Tab Content - Fixed Height Container
-            Container(
+            SizedBox(
               height:
                   MediaQuery.of(context).size.height *
                   0.6, // 60% of screen height

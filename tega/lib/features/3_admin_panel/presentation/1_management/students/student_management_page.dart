@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:tega/core/constants/app_colors.dart';
 import 'package:tega/features/3_admin_panel/presentation/0_dashboard/admin_dashboard.dart';
+import 'package:tega/features/3_admin_panel/presentation/0_dashboard/admin_dashboard_styles.dart';
 import 'package:tega/features/3_admin_panel/presentation/4_settings_and_misc/flagged_users_page.dart';
 import 'package:tega/features/5_student_dashboard/data/models/student_model.dart';
 import 'student_profile_page.dart';
@@ -111,14 +113,27 @@ class _StudentManagementPageState extends State<StudentManagementPage>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: AdminDashboardStyles.background,
       appBar: AppBar(
-        backgroundColor: AppColors.background,
-        elevation: 0,
+        backgroundColor: AdminDashboardStyles.primary,
+        elevation: 8,
+        shadowColor: AdminDashboardStyles.primary.withValues(alpha: 0.3),
+        flexibleSpace: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                AdminDashboardStyles.primary,
+                AdminDashboardStyles.primaryLight,
+              ],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+        ),
         leading: IconButton(
           icon: const Icon(
             Icons.arrow_back_ios_new,
-            color: AppColors.textPrimary,
+            color: Colors.white,
           ),
           // Back functionality to go to the admin dashboard
           onPressed: () {
@@ -132,8 +147,9 @@ class _StudentManagementPageState extends State<StudentManagementPage>
         title: const Text(
           'Student Management',
           style: TextStyle(
-            color: AppColors.textPrimary,
+            color: Colors.white,
             fontWeight: FontWeight.bold,
+            fontSize: 18,
           ),
         ),
         centerTitle: true,
@@ -146,7 +162,7 @@ class _StudentManagementPageState extends State<StudentManagementPage>
             },
             icon: const Icon(
               Icons.file_download_outlined,
-              color: AppColors.primary,
+              color: Colors.white,
             ),
           ),
         ],
@@ -167,7 +183,7 @@ class _StudentManagementPageState extends State<StudentManagementPage>
                   style: const TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
-                    color: AppColors.textPrimary,
+                    color: AdminDashboardStyles.textDark,
                   ),
                 ),
                 OutlinedButton.icon(
@@ -182,8 +198,8 @@ class _StudentManagementPageState extends State<StudentManagementPage>
                     );
                   },
                   style: OutlinedButton.styleFrom(
-                    foregroundColor: AppColors.error,
-                    side: BorderSide(color: AppColors.error.withOpacity(0.5)),
+                    foregroundColor: AdminDashboardStyles.statusError,
+                    side: BorderSide(color: AdminDashboardStyles.statusError.withValues(alpha: 0.5)),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
@@ -205,11 +221,12 @@ class _StudentManagementPageState extends State<StudentManagementPage>
 
   Widget _buildFilterSection() {
     return Card(
-      elevation: 0,
-      color: AppColors.surface,
+      elevation: 4,
+      color: AdminDashboardStyles.cardBackground,
+      shadowColor: AdminDashboardStyles.primary.withValues(alpha: 0.1),
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: const BorderSide(color: AppColors.borderLight),
+        borderRadius: BorderRadius.circular(20),
+        side: BorderSide(color: AdminDashboardStyles.primary.withValues(alpha: 0.2)),
       ),
       child: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -223,7 +240,7 @@ class _StudentManagementPageState extends State<StudentManagementPage>
                 hintText: 'Search by name or college...',
                 prefixIcon: const Icon(Icons.search, size: 20),
                 filled: true,
-                fillColor: AppColors.background,
+                fillColor: AdminDashboardStyles.background,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                   borderSide: BorderSide.none,
@@ -287,7 +304,7 @@ class _StudentManagementPageState extends State<StudentManagementPage>
         Text(label, style: const TextStyle(fontWeight: FontWeight.w500)),
         const SizedBox(height: 8),
         DropdownButtonFormField<String>(
-          value: value,
+          initialValue: value,
           items: items
               .map((item) => DropdownMenuItem(value: item, child: Text(item)))
               .toList(),

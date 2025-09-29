@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:tega/features/3_admin_panel/presentation/0_dashboard/admin_dashboard.dart';
+import 'package:tega/features/3_admin_panel/presentation/0_dashboard/admin_dashboard_styles.dart';
 
 // Compose Notification Page
 class ComposeNotificationPage extends StatefulWidget {
-  const ComposeNotificationPage({Key? key}) : super(key: key);
+  const ComposeNotificationPage({super.key});
 
   @override
   State<ComposeNotificationPage> createState() =>
@@ -38,7 +40,7 @@ class _ComposeNotificationPageState extends State<ComposeNotificationPage> {
           style: const TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w600, // Bolder label for better hierarchy
-            color: Colors.black87,
+            color: AdminDashboardStyles.textDark,
           ),
         ),
         const SizedBox(height: 12),
@@ -120,7 +122,7 @@ class _ComposeNotificationPageState extends State<ComposeNotificationPage> {
               vertical: 14,
             ),
           ),
-          value: value,
+          initialValue: value,
           items: items,
           onChanged: onChanged,
         ),
@@ -348,7 +350,7 @@ class _ComposeNotificationPageState extends State<ComposeNotificationPage> {
 
 // Notification Manager Page
 class NotificationManagerPage extends StatelessWidget {
-  const NotificationManagerPage({Key? key}) : super(key: key);
+  const NotificationManagerPage({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -440,13 +442,13 @@ class NotificationCard extends StatelessWidget {
   final VoidCallback? onTap;
 
   const NotificationCard({
-    Key? key,
+    super.key,
     required this.iconData,
     required this.title,
     required this.audience,
     required this.sentDate,
     this.onTap,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

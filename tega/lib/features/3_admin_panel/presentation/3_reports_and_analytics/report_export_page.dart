@@ -28,7 +28,7 @@ class ReportInfo {
 
 // Reports & Export Center Page - Now a StatefulWidget for animations
 class ReportsExportCenterPage extends StatefulWidget {
-  const ReportsExportCenterPage({Key? key}) : super(key: key);
+  const ReportsExportCenterPage({super.key});
 
   @override
   State<ReportsExportCenterPage> createState() =>
@@ -163,7 +163,7 @@ class ReportCard extends StatelessWidget {
   final VoidCallback onPressed;
 
   const ReportCard({
-    Key? key,
+    super.key,
     required this.iconData,
     required this.iconColor,
     required this.backgroundColor,
@@ -171,7 +171,7 @@ class ReportCard extends StatelessWidget {
     required this.description,
     required this.buttonText,
     required this.onPressed,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -334,11 +334,11 @@ class AnimatedCard extends StatelessWidget {
   final Widget child;
 
   const AnimatedCard({
-    Key? key,
+    super.key,
     required this.animationController,
     required this.index,
     required this.child,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

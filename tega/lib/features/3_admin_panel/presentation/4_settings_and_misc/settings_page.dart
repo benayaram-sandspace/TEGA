@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:tega/features/3_admin_panel/presentation/0_dashboard/admin_dashboard.dart';
+import 'package:tega/features/3_admin_panel/presentation/0_dashboard/admin_dashboard_styles.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
@@ -17,16 +19,29 @@ class _SettingsPageState extends State<SettingsPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AdminDashboardStyles.background,
       appBar: AppBar(
         title: const Text(
           'Settings',
-          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black87),
+          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white, fontSize: 18),
         ),
-        backgroundColor: Colors.white,
-        elevation: 0,
+        backgroundColor: AdminDashboardStyles.primary,
+        elevation: 8,
+        shadowColor: AdminDashboardStyles.primary.withValues(alpha: 0.3),
+        flexibleSpace: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                AdminDashboardStyles.primary,
+                AdminDashboardStyles.primaryLight,
+              ],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+        ),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
           onPressed: () {
             Navigator.pushAndRemoveUntil(
               context,
@@ -61,7 +76,7 @@ class _SettingsPageState extends State<SettingsPage> {
                                 _notificationsEnabled = value;
                               });
                             },
-                            activeColor: const Color(0xFFFFA726),
+                            activeThumbColor: AdminDashboardStyles.primary,
                           ),
                         ),
                         _buildSettingsTile(
@@ -75,7 +90,7 @@ class _SettingsPageState extends State<SettingsPage> {
                                 _darkModeEnabled = value;
                               });
                             },
-                            activeColor: const Color(0xFFFFA726),
+                            activeThumbColor: AdminDashboardStyles.primary,
                           ),
                         ),
                         _buildSettingsTile(
@@ -145,7 +160,7 @@ class _SettingsPageState extends State<SettingsPage> {
                                 _autoBackupEnabled = value;
                               });
                             },
-                            activeColor: const Color(0xFFFFA726),
+                            activeThumbColor: AdminDashboardStyles.primary,
                           ),
                         ),
                         _buildSettingsTile(
@@ -234,13 +249,13 @@ class _SettingsPageState extends State<SettingsPage> {
   }) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
+        color: AdminDashboardStyles.cardBackground,
+        borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+            color: AdminDashboardStyles.primary.withValues(alpha: 0.1),
+            blurRadius: 12,
+            offset: const Offset(0, 6),
           ),
         ],
       ),
@@ -254,7 +269,7 @@ class _SettingsPageState extends State<SettingsPage> {
               style: const TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
-                color: Colors.black87,
+                color: AdminDashboardStyles.textDark,
               ),
             ),
           ),
@@ -275,10 +290,10 @@ class _SettingsPageState extends State<SettingsPage> {
       leading: Container(
         padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
-          color: const Color(0xFFFFA726).withOpacity(0.1),
+          color: AdminDashboardStyles.primary.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(8),
         ),
-        child: Icon(icon, color: const Color(0xFFFFA726), size: 20),
+        child: Icon(icon, color: AdminDashboardStyles.primary, size: 20),
       ),
       title: Text(
         title,
@@ -286,7 +301,7 @@ class _SettingsPageState extends State<SettingsPage> {
       ),
       subtitle: Text(
         subtitle,
-        style: TextStyle(color: Colors.grey[600], fontSize: 14),
+        style: TextStyle(color: AdminDashboardStyles.textLight, fontSize: 14),
       ),
       trailing: trailing,
       onTap: onTap,

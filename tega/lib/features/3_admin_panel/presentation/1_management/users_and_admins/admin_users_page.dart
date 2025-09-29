@@ -13,7 +13,7 @@ class AdminUsersPage extends StatefulWidget {
 }
 
 class _AdminUsersPageState extends State<AdminUsersPage> {
-  final AdminService _adminService = AdminService.instance;
+  final AdminRepository _adminService = AdminRepository.instance;
   final TextEditingController _searchController = TextEditingController();
 
   List<AdminUser> _allAdmins = [];

@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:tega/core/constants/app_colors.dart';
 import 'package:tega/features/3_admin_panel/data/models/admin_model.dart';
 import 'package:tega/features/3_admin_panel/data/repositories/admin_repository.dart';
+import 'package:tega/features/3_admin_panel/presentation/0_dashboard/admin_dashboard_styles.dart';
 
 class ActivityLogsPage extends StatefulWidget {
   const ActivityLogsPage({super.key});
@@ -11,7 +13,7 @@ class ActivityLogsPage extends StatefulWidget {
 }
 
 class _ActivityLogsPageState extends State<ActivityLogsPage> {
-  final AdminService _adminService = AdminService.instance;
+  final AdminRepository _adminService = AdminRepository.instance;
 
   List<ActivityLog> _allLogs = [];
   List<ActivityLog> _filteredLogs = [];
@@ -79,10 +81,39 @@ class _ActivityLogsPageState extends State<ActivityLogsPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: AdminDashboardStyles.background,
+      appBar: AppBar(
+        title: const Text(
+          'Activity Logs',
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+            fontSize: 18,
+          ),
+        ),
+        backgroundColor: AdminDashboardStyles.primary,
+        elevation: 8,
+        shadowColor: AdminDashboardStyles.primary.withValues(alpha: 0.3),
+        flexibleSpace: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                AdminDashboardStyles.primary,
+                AdminDashboardStyles.primaryLight,
+              ],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+        ),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
+      ),
       body: _isLoading
           ? const Center(
-              child: CircularProgressIndicator(color: AppColors.primary),
+              child: CircularProgressIndicator(color: AdminDashboardStyles.primary),
             )
           : Column(
               children: [
@@ -97,7 +128,7 @@ class _ActivityLogsPageState extends State<ActivityLogsPage> {
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
-                          color: AppColors.textPrimary,
+                          color: AdminDashboardStyles.textDark,
                         ),
                       ),
                       const SizedBox(height: 16),

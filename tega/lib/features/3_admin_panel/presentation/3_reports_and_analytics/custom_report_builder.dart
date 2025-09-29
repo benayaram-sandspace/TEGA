@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 // Custom Report Builder Page
 class CustomReportBuilderPage extends StatefulWidget {
-  const CustomReportBuilderPage({Key? key}) : super(key: key);
+  const CustomReportBuilderPage({super.key});
 
   @override
   State<CustomReportBuilderPage> createState() =>
@@ -415,7 +415,7 @@ class _CustomReportBuilderPageState extends State<CustomReportBuilderPage> {
             vertical: 14,
           ),
         ),
-        value: value,
+        initialValue: value,
         items: items.map((item) {
           return DropdownMenuItem(value: item, child: Text(item));
         }).toList(),

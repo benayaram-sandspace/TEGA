@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:tega/core/constants/app_colors.dart';
 import 'package:tega/features/3_admin_panel/presentation/0_dashboard/admin_dashboard.dart';
+import 'package:tega/features/3_admin_panel/presentation/0_dashboard/admin_dashboard_styles.dart';
 import 'package:tega/features/3_admin_panel/presentation/2_content/onboarding_quiz_manager_page.dart';
 import 'package:tega/features/3_admin_panel/presentation/2_content/skill_drill_library_page.dart';
 import 'package:tega/features/3_admin_panel/presentation/2_content/soft_skill_scenarios_page.dart';
@@ -11,7 +13,7 @@ class ContentPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: AdminDashboardStyles.background,
       body: CustomScrollView(
         slivers: [
           SliverAppBar(
@@ -19,16 +21,30 @@ class ContentPage extends StatelessWidget {
               'Content Hub',
               style: TextStyle(
                 fontWeight: FontWeight.bold,
-                color: AppColors.textPrimary,
+                color: Colors.white,
+                fontSize: 18,
               ),
             ),
-            backgroundColor: AppColors.background,
-            surfaceTintColor: AppColors.background,
-            elevation: 1,
+            backgroundColor: AdminDashboardStyles.primary,
+            surfaceTintColor: AdminDashboardStyles.primary,
+            elevation: 8,
+            shadowColor: AdminDashboardStyles.primary.withValues(alpha: 0.3),
+            flexibleSpace: Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    AdminDashboardStyles.primary,
+                    AdminDashboardStyles.primaryLight,
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+              ),
+            ),
             pinned: true,
             floating: true,
             leading: IconButton(
-              icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
+              icon: const Icon(Icons.arrow_back, color: Colors.white),
               onPressed: () {
                 Navigator.pushAndRemoveUntil(
                   context,
@@ -53,7 +69,7 @@ class ContentPage extends StatelessWidget {
                   icon: Icons.fitness_center,
                   title: 'Skill Drills',
                   subtitle: 'Create and manage coding exercises.',
-                  color: AppColors.primary,
+                  color: AdminDashboardStyles.primary,
                   // TODO: Replace with your actual Skill Drills page
                   destinationPage: const SkillDrillLibraryPage(),
                 ),
@@ -63,7 +79,7 @@ class ContentPage extends StatelessWidget {
                   icon: Icons.account_tree_outlined,
                   title: 'Scenarios',
                   subtitle: 'Develop and edit situational challenges.',
-                  color: AppColors.info,
+                  color: AdminDashboardStyles.primaryLight,
                   // TODO: Replace with your actual Scenarios page
                   destinationPage: const SoftSkillScenariosPage(),
                 ),
@@ -73,7 +89,7 @@ class ContentPage extends StatelessWidget {
                   icon: Icons.quiz_outlined,
                   title: 'Onboarding Quizzes',
                   subtitle: 'Configure assessments for new students.',
-                  color: AppColors.mutedPurple,
+                  color: AdminDashboardStyles.primary,
                   destinationPage: const OnboardingQuizManagerPage(),
                 ),
               ]),
@@ -90,14 +106,14 @@ class ContentPage extends StatelessWidget {
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [AppColors.deepBlue, AppColors.primary],
+          colors: [AdminDashboardStyles.primary, AdminDashboardStyles.primaryLight],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: AppColors.primary.withOpacity(0.3),
+            color: AdminDashboardStyles.primary.withValues(alpha: 0.3),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -108,7 +124,7 @@ class ContentPage extends StatelessWidget {
         children: [
           Icon(
             Icons.dynamic_feed,
-            color: AppColors.pureWhite.withOpacity(0.8),
+            color: Colors.white.withValues(alpha: 0.8),
             size: 40,
           ),
           const SizedBox(height: 16),
@@ -117,7 +133,7 @@ class ContentPage extends StatelessWidget {
             style: TextStyle(
               fontSize: 24,
               fontWeight: FontWeight.bold,
-              color: AppColors.pureWhite,
+              color: Colors.white,
             ),
           ),
           const SizedBox(height: 8),
@@ -125,7 +141,7 @@ class ContentPage extends StatelessWidget {
             'Manage all educational materials, from skill drills to onboarding quizzes, in one centralized place.',
             style: TextStyle(
               fontSize: 16,
-              color: AppColors.pureWhite.withOpacity(0.9),
+              color: Colors.white.withValues(alpha: 0.9),
               height: 1.5,
             ),
           ),
@@ -141,7 +157,7 @@ class ContentPage extends StatelessWidget {
       style: const TextStyle(
         fontSize: 20,
         fontWeight: FontWeight.bold,
-        color: AppColors.textPrimary,
+        color: AdminDashboardStyles.textDark,
       ),
     );
   }
@@ -166,13 +182,13 @@ class ContentPage extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: BorderRadius.circular(16),
+          color: AdminDashboardStyles.cardBackground,
+          borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
-              color: AppColors.shadowLight.withOpacity(0.5),
-              blurRadius: 8,
-              offset: const Offset(0, 4),
+              color: AdminDashboardStyles.primary.withValues(alpha: 0.1),
+              blurRadius: 12,
+              offset: const Offset(0, 6),
             ),
           ],
         ),
@@ -180,7 +196,7 @@ class ContentPage extends StatelessWidget {
           children: [
             CircleAvatar(
               radius: 24,
-              backgroundColor: color.withOpacity(0.1),
+              backgroundColor: color.withValues(alpha: 0.1),
               child: Icon(icon, color: color, size: 24),
             ),
             const SizedBox(width: 16),
@@ -193,7 +209,7 @@ class ContentPage extends StatelessWidget {
                     style: const TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
-                      color: AppColors.textPrimary,
+                      color: AdminDashboardStyles.textDark,
                     ),
                   ),
                   const SizedBox(height: 4),
@@ -201,7 +217,7 @@ class ContentPage extends StatelessWidget {
                     subtitle,
                     style: TextStyle(
                       fontSize: 14,
-                      color: AppColors.textSecondary,
+                      color: AdminDashboardStyles.textLight,
                     ),
                   ),
                 ],

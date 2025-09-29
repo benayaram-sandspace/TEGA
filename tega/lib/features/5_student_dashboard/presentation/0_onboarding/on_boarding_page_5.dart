@@ -4,7 +4,7 @@ import 'on_boarding_page_4.dart';
 import 'on_boarding_page_6.dart'; // <-- Create this screen
 
 class OnboardingScreen5 extends StatelessWidget {
-  const OnboardingScreen5({Key? key}) : super(key: key);
+  const OnboardingScreen5({super.key});
 
   @override
   Widget build(BuildContext context) {

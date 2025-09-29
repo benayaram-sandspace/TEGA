@@ -15,12 +15,12 @@ class StudentProfilePage extends StatelessWidget {
   final AuthService _authService = AuthService();
 
   StudentProfilePage({
-    Key? key,
+    super.key,
     this.studentName = 'Ramesh',
     this.course = 'CSE',
     this.year = '3rd Year',
     this.college = 'AI College',
-  }) : super(key: key);
+  });
 
   Future<void> _handleLogout(BuildContext context) async {
     showDialog(

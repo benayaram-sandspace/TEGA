@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:tega/core/constants/app_colors.dart';
-import 'package:tega/features/3_admin_panel/presentation/0_dashboard/admin_dashboard.dart';
 import 'package:tega/features/3_admin_panel/presentation/0_dashboard/admin_dashboard_styles.dart';
+import 'package:tega/features/3_admin_panel/presentation/0_dashboard/admin_dashboard.dart';
 import 'package:tega/features/4_college_panel/data/repositories/college_repository.dart';
 import 'college_details_page.dart';
 import 'add_college_page.dart';
@@ -104,27 +104,41 @@ class _CollegesListPageState extends State<CollegesListPage>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: AdminDashboardStyles.background,
       appBar: AppBar(
         title: const Text(
           'Manage Colleges',
           style: TextStyle(
             fontWeight: FontWeight.bold,
-            color: AppColors.textPrimary,
+            color: Colors.white,
+            fontSize: 18,
           ),
         ),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
+        backgroundColor: AdminDashboardStyles.primary,
+        elevation: 8,
+        shadowColor: AdminDashboardStyles.primary.withValues(alpha: 0.3),
+        flexibleSpace: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                AdminDashboardStyles.primary,
+                AdminDashboardStyles.primaryLight,
+              ],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+        ),
         // ✨ --- MODIFIED: Back button now navigates to AdminDashboard --- ✨
         leading: IconButton(
           icon: const Icon(
             Icons.arrow_back_ios_new,
-            color: AppColors.textPrimary,
+            color: Colors.white,
           ),
           onPressed: () {
             Navigator.pushAndRemoveUntil(
               context,
-              MaterialPageRoute(builder: (context) => const AdminDashboard()),
+              MaterialPageRoute(builder: (context) => AdminDashboard()),
               (route) => false,
             );
           },
@@ -142,11 +156,11 @@ class _CollegesListPageState extends State<CollegesListPage>
                     )
                     .then((_) => _loadColleges());
               },
-              icon: const Icon(Icons.add, color: AppColors.primary),
+              icon: const Icon(Icons.add, color: Colors.white),
               label: const Text(
                 'Add New',
                 style: TextStyle(
-                  color: AppColors.primary,
+                  color: Colors.white,
                   fontWeight: FontWeight.w600,
                   fontSize: 16,
                 ),
@@ -162,7 +176,7 @@ class _CollegesListPageState extends State<CollegesListPage>
       ),
       body: RefreshIndicator(
         onRefresh: _loadColleges,
-        color: AppColors.primary,
+        color: AdminDashboardStyles.primary,
         child: Column(
           children: [
             _buildSearchBar(),
@@ -171,7 +185,7 @@ class _CollegesListPageState extends State<CollegesListPage>
                   ? const Center(
                       child: CircularProgressIndicator(
                         valueColor: AlwaysStoppedAnimation<Color>(
-                          AppColors.primary,
+                          AdminDashboardStyles.primary,
                         ),
                       ),
                     )
@@ -192,8 +206,8 @@ class _CollegesListPageState extends State<CollegesListPage>
               )
               .then((_) => _loadColleges());
         },
-        backgroundColor: AppColors.primary,
-        foregroundColor: AppColors.pureWhite,
+        backgroundColor: AdminDashboardStyles.primary,
+        foregroundColor: Colors.white,
         icon: const Icon(Icons.upload_file),
         label: const Text('Bulk Import'),
         elevation: 4,
@@ -210,14 +224,14 @@ class _CollegesListPageState extends State<CollegesListPage>
         onChanged: _filterColleges,
         decoration: InputDecoration(
           hintText: 'Search by name, city, or ID...',
-          hintStyle: TextStyle(color: AppColors.textSecondary.withOpacity(0.8)),
+          hintStyle: TextStyle(color: AdminDashboardStyles.textLight.withValues(alpha: 0.8)),
           prefixIcon: const Icon(
             Icons.search,
-            color: AppColors.textSecondary,
+            color: AdminDashboardStyles.textLight,
             size: 22,
           ),
           filled: true,
-          fillColor: AppColors.surface,
+          fillColor: AdminDashboardStyles.cardBackground,
           contentPadding: const EdgeInsets.symmetric(
             horizontal: 16,
             vertical: 14,
@@ -228,7 +242,7 @@ class _CollegesListPageState extends State<CollegesListPage>
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(16),
-            borderSide: const BorderSide(color: AppColors.primary, width: 2),
+            borderSide: const BorderSide(color: AdminDashboardStyles.primary, width: 2),
           ),
         ),
       ),
@@ -274,9 +288,9 @@ class _CollegesListPageState extends State<CollegesListPage>
 
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
-      elevation: 2,
-      shadowColor: AppColors.shadowLight,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      elevation: 4,
+      shadowColor: AdminDashboardStyles.primary.withValues(alpha: 0.1),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       clipBehavior:
           Clip.antiAlias, // Ensures content respects the border radius
       child: InkWell(
@@ -287,8 +301,8 @@ class _CollegesListPageState extends State<CollegesListPage>
             ),
           );
         },
-        splashColor: AppColors.primary.withOpacity(0.1),
-        highlightColor: AppColors.primary.withOpacity(0.05),
+        splashColor: AdminDashboardStyles.primary.withValues(alpha: 0.1),
+        highlightColor: AdminDashboardStyles.primary.withValues(alpha: 0.05),
         child: Padding(
           padding: const EdgeInsets.all(12.0),
           child: Row(
@@ -301,7 +315,7 @@ class _CollegesListPageState extends State<CollegesListPage>
                   style: const TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
-                    color: AppColors.pureWhite,
+                    color: Colors.white,
                   ),
                 ),
               ),
@@ -315,7 +329,7 @@ class _CollegesListPageState extends State<CollegesListPage>
                       style: const TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 17,
-                        color: AppColors.textPrimary,
+                        color: AdminDashboardStyles.textDark,
                       ),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
@@ -326,13 +340,13 @@ class _CollegesListPageState extends State<CollegesListPage>
                         const Icon(
                           Icons.location_city,
                           size: 14,
-                          color: AppColors.info,
+                          color: AdminDashboardStyles.primary,
                         ),
                         const SizedBox(width: 4),
                         Text(
                           college.city,
                           style: const TextStyle(
-                            color: AppColors.info,
+                            color: AdminDashboardStyles.primary,
                             fontSize: 14,
                           ),
                           maxLines: 1,
@@ -344,7 +358,7 @@ class _CollegesListPageState extends State<CollegesListPage>
                     Text(
                       'ID: ${college.id} • ${college.totalStudents} students',
                       style: TextStyle(
-                        color: AppColors.textSecondary,
+                        color: AdminDashboardStyles.textLight,
                         fontSize: 12,
                       ),
                       maxLines: 1,
@@ -354,7 +368,7 @@ class _CollegesListPageState extends State<CollegesListPage>
                 ),
               ),
               PopupMenuButton<String>(
-                icon: Icon(Icons.more_vert, color: AppColors.textSecondary),
+                icon: Icon(Icons.more_vert, color: AdminDashboardStyles.textLight),
                 onSelected: (value) {
                   // Existing logic...
                 },
@@ -381,7 +395,7 @@ class _CollegesListPageState extends State<CollegesListPage>
               Icon(
                 Icons.school_outlined,
                 size: 80,
-                color: AppColors.textSecondary.withOpacity(0.5),
+                color: AdminDashboardStyles.textLight.withValues(alpha: 0.5),
               ),
               const SizedBox(height: 24),
               const Text(
@@ -389,7 +403,7 @@ class _CollegesListPageState extends State<CollegesListPage>
                 style: TextStyle(
                   fontSize: 22,
                   fontWeight: FontWeight.bold,
-                  color: AppColors.textPrimary,
+                  color: AdminDashboardStyles.textDark,
                 ),
               ),
               const SizedBox(height: 8),
@@ -400,7 +414,7 @@ class _CollegesListPageState extends State<CollegesListPage>
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 16,
-                  color: AppColors.textSecondary,
+                  color: AdminDashboardStyles.textLight,
                   height: 1.5,
                 ),
               ),

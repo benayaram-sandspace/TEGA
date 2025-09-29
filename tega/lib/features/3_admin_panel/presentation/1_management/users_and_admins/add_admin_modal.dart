@@ -15,7 +15,7 @@ class _AddAdminModalState extends State<AddAdminModal> {
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
 
-  final AdminService _adminService = AdminService.instance;
+  final AdminRepository _adminService = AdminRepository.instance;
 
   String _selectedRole = '';
   bool _manageUsers = false;
@@ -372,10 +372,17 @@ class _AddAdminModalState extends State<AddAdminModal> {
       if (_manageAdmins) permissions.add('manage_admins');
 
       final invite = AdminInvite(
+        id: 'invite_${DateTime.now().millisecondsSinceEpoch}',
         name: _nameController.text.trim(),
         email: _emailController.text.trim(),
         role: _selectedRole,
         permissions: permissions,
+        status: 'pending',
+        createdAt: DateTime.now(),
+        expiresAt: DateTime.now().add(const Duration(days: 7)),
+        invitedBy: 'current_admin', // TODO: Get from current session
+        invitationToken: 'token_${DateTime.now().millisecondsSinceEpoch}',
+        managedColleges: [],
       );
 
       final success = await _adminService.sendAdminInvite(invite);

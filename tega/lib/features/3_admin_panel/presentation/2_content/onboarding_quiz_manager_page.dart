@@ -12,7 +12,7 @@ class OnboardingQuizManagerPage extends StatefulWidget {
 }
 
 class _OnboardingQuizManagerPageState extends State<OnboardingQuizManagerPage> {
-  final ContentQuizService _contentQuizService = ContentQuizService();
+  final ContentQuizRepository _contentQuizService = ContentQuizRepository();
   OnboardingQuiz? _onboardingQuiz;
   bool _isLoading = true;
 
@@ -232,7 +232,7 @@ class _OnboardingQuizManagerPageState extends State<OnboardingQuizManagerPage> {
                   ),
                 ),
               ),
-              Container(
+              SizedBox(
                 width: 80,
                 child: TextFormField(
                   initialValue: _onboardingQuiz!.timeLimit.toString(),
@@ -287,7 +287,7 @@ class _OnboardingQuizManagerPageState extends State<OnboardingQuizManagerPage> {
                     );
                   });
                 },
-                activeColor: AppColors.success,
+                activeThumbColor: AppColors.success,
               ),
             ],
           ),
@@ -340,7 +340,7 @@ class _OnboardingQuizManagerPageState extends State<OnboardingQuizManagerPage> {
             final index = entry.key;
             final question = entry.value;
             return _buildQuestionCard(question, index + 1);
-          }).toList(),
+          }),
         ],
       ),
     );

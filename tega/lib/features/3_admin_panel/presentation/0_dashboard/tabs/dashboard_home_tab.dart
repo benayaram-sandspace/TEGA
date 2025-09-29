@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
-nimport 'package:flutter_animate/flutter_animate.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:intl/intl.dart';
-import 'package:tega/core/constants/app_colors.dart';
 import 'package:tega/features/1_authentication/data/auth_repository.dart';
 import 'package:tega/features/3_admin_panel/presentation/0_dashboard/admin_dashboard_styles.dart';
 import 'package:tega/features/3_admin_panel/presentation/0_dashboard/widgets/admin_analytics_chart.dart';
@@ -32,7 +31,6 @@ class DashboardHomeTab extends StatefulWidget {
 class _DashboardHomeTabState extends State<DashboardHomeTab>
     with TickerProviderStateMixin {
   int? _hoveredIndex;
-  int? _pressedIndex;
   late List<AnimationController> _animationControllers;
   late List<Animation<double>> _scaleAnimations;
 
@@ -213,12 +211,11 @@ class _DashboardHomeTabState extends State<DashboardHomeTab>
   }
 
   List<Color> _getGradientColors(Color baseColor) {
-    return [baseColor.withOpacity(0.8), baseColor];
+    return [baseColor.withValues(alpha: 0.8), baseColor];
   }
 
   Widget _buildStatCard({required _StatCardInfo item, required int index}) {
     final isHovered = _hoveredIndex == index;
-    final isPressed = _pressedIndex == index;
     final gradientColors = _getGradientColors(item.color);
 
     return AnimatedBuilder(
@@ -230,16 +227,12 @@ class _DashboardHomeTabState extends State<DashboardHomeTab>
             onEnter: (_) => setState(() => _hoveredIndex = index),
             onExit: (_) => setState(() => _hoveredIndex = null),
             cursor: SystemMouseCursors.click,
-            child: GestureDetector(
-              onTapDown: (_) => setState(() => _pressedIndex = index),
-              onTapUp: (_) => setState(() => _pressedIndex = null),
-              onTapCancel: () => setState(() => _pressedIndex = null),
-              onTap: () {},
+              child: GestureDetector(
+                onTap: () {},
               child: AnimatedContainer(
                 duration: AdminDashboardStyles.shortAnimation,
                 curve: AdminDashboardStyles.defaultCurve,
-                transform: Matrix4.identity()
-                  ..scale(isPressed ? 0.95 : (isHovered ? 1.05 : 1.0)),
+                transform: Matrix4.identity(),
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     colors: gradientColors,
