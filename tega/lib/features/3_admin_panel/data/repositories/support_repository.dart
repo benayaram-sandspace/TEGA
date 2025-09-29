@@ -327,6 +327,8 @@ class SupportRepository {
         priority: _tickets[index].priority,
         category: _tickets[index].category,
         userId: _tickets[index].userId,
+        ticketNumber: _tickets[index].ticketNumber,
+        history: _tickets[index].history,
         userName: _tickets[index].userName,
         userEmail: _tickets[index].userEmail,
         createdAt: _tickets[index].createdAt,
