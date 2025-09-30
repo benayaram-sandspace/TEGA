@@ -1,6 +1,5 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:tega/features/1_authentication/data/auth_repository.dart';
 import 'package:tega/features/4_college_panel/data/repositories/college_repository.dart';
 import 'package:tega/features/5_student_dashboard/presentation/0_onboarding/on_boarding_page_1.dart';

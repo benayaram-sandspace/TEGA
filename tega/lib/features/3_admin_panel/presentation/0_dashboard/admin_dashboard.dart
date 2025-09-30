@@ -9,6 +9,7 @@ import 'package:tega/features/3_admin_panel/presentation/0_dashboard/admin_dashb
 import 'package:tega/features/3_admin_panel/presentation/0_dashboard/tabs/dashboard_home_tab.dart';
 import 'package:tega/features/3_admin_panel/presentation/1_management/colleges/admins_management_page.dart';
 import 'package:tega/features/3_admin_panel/presentation/1_management/colleges/colleges_page.dart';
+import 'package:tega/features/3_admin_panel/presentation/1_management/colleges/add_college_page.dart';
 import 'package:tega/features/3_admin_panel/presentation/1_management/students/students_page.dart';
 import 'package:tega/features/3_admin_panel/presentation/2_content/content_page.dart';
 import 'package:tega/features/3_admin_panel/presentation/3_reports_and_analytics/analytics_page.dart';
@@ -266,6 +267,42 @@ class _AdminDashboardState extends State<AdminDashboard>
           ),
         ),
       ),
+      actions: _selectedIndex == 1 ? [
+        // Show Add New College button only when on Colleges page
+        Padding(
+          padding: const EdgeInsets.only(right: 8.0),
+          child: TextButton.icon(
+            onPressed: () {
+              Navigator.of(context)
+                  .push(
+                    MaterialPageRoute(
+                      builder: (context) => const AddCollegePage(),
+                    ),
+                  )
+                  .then((_) {
+                    // Refresh colleges list if needed
+                    if (mounted) {
+                      setState(() {});
+                    }
+                  });
+            },
+            icon: const Icon(Icons.add, color: Colors.white),
+            label: const Text(
+              'Add New College',
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w600,
+                fontSize: 14,
+              ),
+            ),
+            style: TextButton.styleFrom(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+          ),
+        ),
+      ] : null,
     );
   }
 

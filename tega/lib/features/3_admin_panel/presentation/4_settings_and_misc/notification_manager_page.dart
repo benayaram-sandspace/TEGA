@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:tega/features/3_admin_panel/presentation/0_dashboard/admin_dashboard.dart';
 import 'package:tega/features/3_admin_panel/presentation/0_dashboard/admin_dashboard_styles.dart';
 
@@ -348,52 +349,52 @@ class _ComposeNotificationPageState extends State<ComposeNotificationPage> {
 }
 
 // Notification Manager Page
-class NotificationManagerPage extends StatelessWidget {
+class NotificationManagerPage extends StatefulWidget {
   const NotificationManagerPage({super.key});
 
   @override
+  State<NotificationManagerPage> createState() => _NotificationManagerPageState();
+}
+
+class _NotificationManagerPageState extends State<NotificationManagerPage>
+    with TickerProviderStateMixin {
+  late AnimationController _animationController;
+  late Animation<double> _fadeAnimation;
+  late Animation<Offset> _slideAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _animationController = AnimationController(
+      duration: const Duration(milliseconds: 800),
+      vsync: this,
+    );
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
+    );
+    _slideAnimation = Tween<Offset>(
+      begin: const Offset(0, 0.3),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(parent: _animationController, curve: Curves.easeOutCubic));
+    
+    _animationController.forward();
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.white, // Cleaner background
-      appBar: AppBar(
-        // Themed AppBar for a more branded look
-        backgroundColor: const Color.fromARGB(255, 249, 249, 249),
-        elevation: 4,
-        shadowColor: const Color(0xFF4B3FB5).withOpacity(0.3),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.black),
-          onPressed: () {
-            Navigator.pushAndRemoveUntil(
-              context,
-              MaterialPageRoute(builder: (context) => const AdminDashboard()),
-              (route) => false,
-            );
-          },
-        ),
-        title: const Text(
-          'Notification Manager',
-          style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
-        ),
-        actions: [
-          IconButton(
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const ComposeNotificationPage(),
-                ),
-              );
-            },
-            icon: const Icon(
-              Icons.add_circle_outline,
-              color: Colors.black,
-              size: 28,
-            ),
-          ),
-          const SizedBox(width: 10),
-        ],
-      ),
-      body: ListView(
+    return Container(
+      color: AdminDashboardStyles.background,
+      child: FadeTransition(
+        opacity: _fadeAnimation,
+        child: SlideTransition(
+          position: _slideAnimation,
+          child: ListView(
         padding: const EdgeInsets.all(16),
         children: [
           NotificationCard(
@@ -421,6 +422,8 @@ class NotificationManagerPage extends StatelessWidget {
             onTap: () => _handleNotificationTap(context, 'Sale Notification'),
           ),
         ],
+      ),
+        ),
       ),
     );
   }
@@ -539,5 +542,5 @@ class NotificationCard extends StatelessWidget {
         ),
       ),
     );
-  }
 }
+  }

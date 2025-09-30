@@ -10,7 +10,7 @@ class SupportRepository {
 
   List<SupportTicket> _tickets = [];
   List<Feedback> _feedback = [];
-  List<TicketEvent> _ticketEvents = [];
+  final List<TicketEvent> _ticketEvents = [];
   SupportStatistics? _statistics;
   bool _isLoaded = false;
   String? _currentUserId;
@@ -546,7 +546,7 @@ class SupportRepository {
 
     final totalTickets = agentTickets.length;
     final avgResolutionTime = completedTickets.isNotEmpty 
-        ? completedTickets.map((t) => t.updatedAt?.difference(t.createdAt)?.inHours ?? 0)
+        ? completedTickets.map((t) => t.updatedAt?.difference(t.createdAt).inHours ?? 0)
             .fold(0, (sum, hours) => sum + hours) / completedTickets.length
         : 0;
 

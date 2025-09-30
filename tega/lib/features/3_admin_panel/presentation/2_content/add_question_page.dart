@@ -524,7 +524,8 @@ class _AddQuestionPageState extends State<AddQuestionPage>
         ),
       );
 
-      Navigator.pop(context);
+      // Return the created question to the previous page
+      Navigator.pop(context, newDrill);
     }
   }
 }

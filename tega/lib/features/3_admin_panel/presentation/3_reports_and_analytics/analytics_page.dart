@@ -1,61 +1,59 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:tega/core/constants/app_colors.dart';
 import 'package:tega/features/3_admin_panel/presentation/0_dashboard/admin_dashboard.dart';
 import 'package:tega/features/3_admin_panel/presentation/0_dashboard/admin_dashboard_styles.dart';
 
-class AnalyticsPage extends StatelessWidget {
+class AnalyticsPage extends StatefulWidget {
   const AnalyticsPage({super.key});
 
   @override
+  State<AnalyticsPage> createState() => _AnalyticsPageState();
+}
+
+class _AnalyticsPageState extends State<AnalyticsPage>
+    with TickerProviderStateMixin {
+  late AnimationController _animationController;
+  late Animation<double> _fadeAnimation;
+  late Animation<Offset> _slideAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _animationController = AnimationController(
+      duration: const Duration(milliseconds: 800),
+      vsync: this,
+    );
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
+    );
+    _slideAnimation = Tween<Offset>(
+      begin: const Offset(0, 0.3),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(parent: _animationController, curve: Curves.easeOutCubic));
+    
+    _animationController.forward();
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AdminDashboardStyles.background,
-      // Using CustomScrollView with Slivers for a more dynamic scrolling experience.
-      body: CustomScrollView(
-        slivers: [
-          SliverAppBar(
-            title: const Text(
-              'Analytics Dashboard',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-                fontSize: 18,
-              ),
-            ),
-            backgroundColor: AdminDashboardStyles.primary,
-            surfaceTintColor: AdminDashboardStyles.primary,
-            elevation: 8,
-            shadowColor: AdminDashboardStyles.primary.withValues(alpha: 0.3),
-            flexibleSpace: Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    AdminDashboardStyles.primary,
-                    AdminDashboardStyles.primaryLight,
-                  ],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-              ),
-            ),
-            pinned: true, // The app bar will remain visible at the top
-            floating: true, // The app bar will become visible as soon as you scroll up
-            leading: IconButton(
-              icon: const Icon(Icons.arrow_back, color: Colors.white),
-              onPressed: () {
-                Navigator.pushAndRemoveUntil(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const AdminDashboard(),
-                  ),
-                  (route) => false,
-                );
-              },
-            ),
-          ),
-          // Using SliverPadding for consistent spacing of the content.
-          SliverPadding(
+    return Container(
+      color: AdminDashboardStyles.background,
+      child: FadeTransition(
+        opacity: _fadeAnimation,
+        child: SlideTransition(
+          position: _slideAnimation,
+          child: CustomScrollView(
+            slivers: [
+              // Using SliverPadding for consistent spacing of the content.
+              SliverPadding(
             padding: const EdgeInsets.all(20),
             sliver: SliverList(
               delegate: SliverChildListDelegate([
@@ -76,10 +74,10 @@ class AnalyticsPage extends StatelessWidget {
           ),
         ],
       ),
+        ),
+      ),
     );
   }
-
-  /// A generic builder for analytics cards to maintain a consistent UI.
   Widget _buildAnalyticsCard({
     required String title,
     required String metric,
@@ -457,5 +455,5 @@ class AnalyticsPage extends StatelessWidget {
         // TODO: Navigate to student's profile page
       },
     );
-  }
 }
+  }

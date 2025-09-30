@@ -8,7 +8,7 @@ class ContentQuizRepository {
   ContentQuizRepository._internal();
 
   ContentQuizData? _data;
-  List<QuizAttempt> _quizAttempts = [];
+  final List<QuizAttempt> _quizAttempts = [];
   List<SkillDrill> _skillDrills = [];
   List<SoftSkillScenario> _scenarios = [];
   OnboardingQuiz? _onboardingQuiz;

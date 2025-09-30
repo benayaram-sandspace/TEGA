@@ -39,55 +39,46 @@ class _AdminManagementPageState extends State<AdminManagementPage>
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFFFF3E0),
-      appBar: AppBar(
-        title: const Text(
-          'Principals & Staff',
-          style: TextStyle(
-            fontSize: 24,
-            fontWeight: FontWeight.bold,
-            color: Colors.white,
+    return Container(
+      color: const Color(0xFFFFF3E0),
+      child: Column(
+        children: [
+          // Custom Tab Bar
+          Container(
+            decoration: const BoxDecoration(
+              color: Color(0xFFFFA726),
+            ),
+            child: TabBar(
+              controller: _tabController,
+              indicatorColor: Colors.white,
+              indicatorWeight: 3,
+              labelColor: Colors.white,
+              unselectedLabelColor: Colors.white.withValues(alpha: 0.7),
+              labelStyle: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+              ),
+              unselectedLabelStyle: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.normal,
+              ),
+              tabs: const [
+                Tab(text: 'All Staff'),
+                Tab(text: 'Activity & Audit Logs'),
+              ],
+            ),
           ),
-        ),
-        backgroundColor: const Color(0xFFFFA726),
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () {
-            Navigator.pushAndRemoveUntil(
-              context,
-              MaterialPageRoute(builder: (context) => const AdminDashboard()),
-              (route) => false,
-            );
-          },
-        ),
-        bottom: TabBar(
-          controller: _tabController,
-          indicatorColor: Colors.white,
-          indicatorWeight: 3,
-          labelColor: Colors.white,
-          unselectedLabelColor: Colors.white.withOpacity(0.7),
-          labelStyle: const TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
+          // Tab Content
+          Expanded(
+            child: FadeTransition(
+              opacity: _fadeAnimation,
+              child: TabBarView(
+                controller: _tabController,
+                children: const [AdminUsersPage(), ActivityLogsPage()],
+              ),
+            ),
           ),
-          unselectedLabelStyle: const TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.normal,
-          ),
-          tabs: const [
-            Tab(text: 'All Staff'),
-            Tab(text: 'Activity & Audit Logs'),
-          ],
-        ),
-      ),
-      body: FadeTransition(
-        opacity: _fadeAnimation,
-        child: TabBarView(
-          controller: _tabController,
-          children: const [AdminUsersPage(), ActivityLogsPage()],
-        ),
+        ],
       ),
     );
   }

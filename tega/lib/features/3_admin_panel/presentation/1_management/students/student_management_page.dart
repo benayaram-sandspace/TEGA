@@ -159,62 +159,9 @@ class _StudentManagementPageState extends State<StudentManagementPage>
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AdminDashboardStyles.background,
-      appBar: AppBar(
-        backgroundColor: AdminDashboardStyles.primary,
-        elevation: 8,
-        shadowColor: AdminDashboardStyles.primary.withValues(alpha: 0.3),
-        flexibleSpace: Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [
-                AdminDashboardStyles.primary,
-                AdminDashboardStyles.primaryLight,
-              ],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-          ),
-        ),
-        leading: IconButton(
-          icon: const Icon(
-            Icons.arrow_back_ios_new,
-            color: Colors.white,
-          ),
-          // Back functionality to go to the admin dashboard
-          onPressed: () {
-            Navigator.pushAndRemoveUntil(
-              context,
-              MaterialPageRoute(builder: (context) => const AdminDashboard()),
-              (route) => false,
-            );
-          },
-        ),
-        title: const Text(
-          'Student Management',
-          style: TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-            fontSize: 18,
-          ),
-        ),
-        centerTitle: true,
-        actions: [
-          IconButton(
-            onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Exporting student list...')),
-              );
-            },
-            icon: const Icon(
-              Icons.file_download_outlined,
-              color: Colors.white,
-            ),
-          ),
-        ],
-      ),
-      body: Column(
+    return Container(
+      color: AdminDashboardStyles.background,
+      child: Column(
         children: [
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
@@ -544,5 +491,5 @@ class _StudentManagementPageState extends State<StudentManagementPage>
         ],
       ),
     ).animate().fadeIn(duration: 600.ms).slideY(begin: 0.3);
-  }
 }
+  }

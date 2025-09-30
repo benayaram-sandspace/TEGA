@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'dart:math' as math;
 
 // Enhanced data model for an opportunity
 class Opportunity {

@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 
 import 'package:tega/core/constants/app_colors.dart';
 import 'package:tega/features/3_admin_panel/presentation/0_dashboard/admin_dashboard.dart';
+import 'package:tega/features/3_admin_panel/presentation/0_dashboard/admin_dashboard_styles.dart';
 import 'package:tega/features/6_support_system/data/models/support_ticket_model.dart'
     as support_models;
 import 'package:tega/features/6_support_system/data/repositories/support_repository.dart';
@@ -15,16 +17,40 @@ class SupportMainPage extends StatefulWidget {
   State<SupportMainPage> createState() => _SupportMainPageState();
 }
 
-class _SupportMainPageState extends State<SupportMainPage> {
+class _SupportMainPageState extends State<SupportMainPage>
+    with TickerProviderStateMixin {
   final SupportService _supportService = SupportService.instance;
   support_models.SupportStatistics? _statistics;
   List<support_models.Feedback> _recentFeedback = [];
   bool _isLoading = true;
+  
+  late AnimationController _animationController;
+  late Animation<double> _fadeAnimation;
+  late Animation<Offset> _slideAnimation;
 
   @override
   void initState() {
     super.initState();
+    _animationController = AnimationController(
+      duration: const Duration(milliseconds: 800),
+      vsync: this,
+    );
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
+    );
+    _slideAnimation = Tween<Offset>(
+      begin: const Offset(0, 0.3),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(parent: _animationController, curve: Curves.easeOutCubic));
+    
+    _animationController.forward();
     _loadData();
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadData() async {
@@ -52,46 +78,31 @@ class _SupportMainPageState extends State<SupportMainPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.pureWhite,
-      appBar: AppBar(
-        title: const Text(
-          'Support & Feedback',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            color: AppColors.textPrimary,
-          ),
-        ),
-        backgroundColor: AppColors.pureWhite,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
-          onPressed: () {
-            Navigator.pushAndRemoveUntil(
-              context,
-              MaterialPageRoute(builder: (context) => const AdminDashboard()),
-              (route) => false,
-            );
-          },
+    return Container(
+      color: AdminDashboardStyles.background,
+      child: FadeTransition(
+        opacity: _fadeAnimation,
+        child: SlideTransition(
+          position: _slideAnimation,
+          child: _isLoading
+              ? const Center(
+                  child: CircularProgressIndicator(color: AppColors.primary),
+                )
+              : SingleChildScrollView(
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const SizedBox(height: 20),
+                      _buildOverviewSection(),
+                      const SizedBox(height: 32),
+                      _buildRecentFeedbackSection(),
+                      const SizedBox(height: 40),
+                    ],
+                  ),
+                ),
         ),
       ),
-      body: _isLoading
-          ? const Center(
-              child: CircularProgressIndicator(color: AppColors.primary),
-            )
-          : SingleChildScrollView(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const SizedBox(height: 20),
-                  _buildOverviewSection(),
-                  const SizedBox(height: 32),
-                  _buildRecentFeedbackSection(),
-                  const SizedBox(height: 40),
-                ],
-              ),
-            ),
     );
   }
 

@@ -9,9 +9,9 @@ class AdminRepository {
 
   List<AdminUser> _adminUsers = [];
   List<ActivityLog> _activityLogs = [];
-  List<AdminSession> _activeSessions = [];
-  List<AdminInvite> _pendingInvites = [];
-  List<AdminDashboardWidget> _dashboardWidgets = [];
+  final List<AdminSession> _activeSessions = [];
+  final List<AdminInvite> _pendingInvites = [];
+  final List<AdminDashboardWidget> _dashboardWidgets = [];
   AdminStatistics? _statistics;
   bool _isLoaded = false;
   String? _currentAdminId;

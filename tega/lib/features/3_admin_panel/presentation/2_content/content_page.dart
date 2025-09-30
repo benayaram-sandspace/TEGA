@@ -12,50 +12,10 @@ class ContentPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AdminDashboardStyles.background,
-      body: CustomScrollView(
+    return Container(
+      color: AdminDashboardStyles.background,
+      child: CustomScrollView(
         slivers: [
-          SliverAppBar(
-            title: const Text(
-              'Content Hub',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-                fontSize: 18,
-              ),
-            ),
-            backgroundColor: AdminDashboardStyles.primary,
-            surfaceTintColor: AdminDashboardStyles.primary,
-            elevation: 8,
-            shadowColor: AdminDashboardStyles.primary.withValues(alpha: 0.3),
-            flexibleSpace: Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    AdminDashboardStyles.primary,
-                    AdminDashboardStyles.primaryLight,
-                  ],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-              ),
-            ),
-            pinned: true,
-            floating: true,
-            leading: IconButton(
-              icon: const Icon(Icons.arrow_back, color: Colors.white),
-              onPressed: () {
-                Navigator.pushAndRemoveUntil(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const AdminDashboard(),
-                  ),
-                  (route) => false,
-                );
-              },
-            ),
-          ),
           SliverPadding(
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
             sliver: SliverList(
