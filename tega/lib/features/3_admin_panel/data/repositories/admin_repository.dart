@@ -519,9 +519,6 @@ class AdminRepository {
         .where((log) => log.timestamp.isAfter(last24Hours))
         .toList();
 
-    final recentLogins = recentActivities
-        .where((log) => log.action == 'Login' && log.isSuccess)
-        .length;
 
     return AdminStatistics(
       totalAdmins: _adminUsers.length,
@@ -613,15 +610,6 @@ class AdminRepository {
     return responseTimes.reduce((a, b) => a + b) / responseTimes.length;
   }
 
-  double _calculateAverageSessionDuration() {
-    final completedSessions = _activeSessions
-        .where((s) => s.logoutTime != null)
-        .map((s) => s.logoutTime!.difference(s.loginTime).inMinutes)
-        .toList();
-    
-    if (completedSessions.isEmpty) return 0.0;
-    return completedSessions.reduce((a, b) => a + b) / completedSessions.length;
-  }
 
   Map<String, double> _calculatePerformanceMetrics() {
     final totalActivities = _activityLogs.length;
@@ -679,8 +667,4 @@ class AdminRepository {
   //   _updateStatistics();
   // }
 
-  void _updateStatistics() {
-    // Update statistics when activities are logged
-    _statistics = calculateAdvancedStatistics();
-  }
 }

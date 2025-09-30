@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:tega/core/constants/app_colors.dart';
 import 'package:tega/features/3_admin_panel/data/models/content_quiz_model.dart';
+import 'package:tega/features/3_admin_panel/presentation/0_dashboard/admin_dashboard_styles.dart';
 
 class AddQuestionPage extends StatefulWidget {
   const AddQuestionPage({super.key});
@@ -9,7 +11,8 @@ class AddQuestionPage extends StatefulWidget {
   State<AddQuestionPage> createState() => _AddQuestionPageState();
 }
 
-class _AddQuestionPageState extends State<AddQuestionPage> {
+class _AddQuestionPageState extends State<AddQuestionPage>
+    with TickerProviderStateMixin {
   final _formKey = GlobalKey<FormState>();
   final _questionController = TextEditingController();
   final _option1Controller = TextEditingController();
@@ -23,6 +26,11 @@ class _AddQuestionPageState extends State<AddQuestionPage> {
   String _selectedDifficulty = 'Easy';
   String _selectedQuestionType = 'Multiple Choice';
   int _correctAnswer = 0;
+
+  // Animation controllers
+  late AnimationController _animationController;
+  late Animation<double> _fadeAnimation;
+  late Animation<Offset> _slideAnimation;
 
   final List<String> _subjects = [
     'General Knowledge',
@@ -56,7 +64,26 @@ class _AddQuestionPageState extends State<AddQuestionPage> {
   ];
 
   @override
+  void initState() {
+    super.initState();
+    _animationController = AnimationController(
+      duration: const Duration(milliseconds: 800),
+      vsync: this,
+    );
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _animationController, curve: Curves.easeOutCubic),
+    );
+    _slideAnimation = Tween<Offset>(
+      begin: const Offset(0, 0.3),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(parent: _animationController, curve: Curves.easeOutCubic));
+    
+    _animationController.forward();
+  }
+
+  @override
   void dispose() {
+    _animationController.dispose();
     _questionController.dispose();
     _option1Controller.dispose();
     _option2Controller.dispose();
@@ -69,39 +96,56 @@ class _AddQuestionPageState extends State<AddQuestionPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.pureWhite,
+      backgroundColor: AdminDashboardStyles.background,
       appBar: AppBar(
         title: const Text(
           'Add Question',
           style: TextStyle(
-            color: AppColors.textPrimary,
+            color: Colors.white,
             fontWeight: FontWeight.bold,
+            fontSize: 18,
           ),
         ),
-        backgroundColor: AppColors.pureWhite,
-        elevation: 0,
-        iconTheme: const IconThemeData(color: AppColors.textPrimary),
+        backgroundColor: AdminDashboardStyles.primary,
+        elevation: 8,
+        shadowColor: AdminDashboardStyles.primary.withValues(alpha: 0.3),
+        flexibleSpace: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                AdminDashboardStyles.primary,
+                AdminDashboardStyles.primaryLight,
+              ],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+        ),
         leading: IconButton(
           onPressed: () => Navigator.pop(context),
-          icon: const Icon(Icons.close),
+          icon: const Icon(Icons.close, color: Colors.white),
         ),
       ),
-      body: Form(
-        key: _formKey,
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Question field
-              const Text(
+      body: FadeTransition(
+        opacity: _fadeAnimation,
+        child: SlideTransition(
+          position: _slideAnimation,
+          child: Form(
+            key: _formKey,
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Question field
+                  const Text(
                 'Question',
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
-                  color: AppColors.textPrimary,
+                  color: AdminDashboardStyles.textDark,
                 ),
-              ),
+              ).animate().fade(duration: 500.ms).slideY(begin: 0.3, delay: 100.ms),
               const SizedBox(height: 8),
               TextFormField(
                 controller: _questionController,
@@ -110,18 +154,18 @@ class _AddQuestionPageState extends State<AddQuestionPage> {
                   hintText: 'What is the Capital of France?',
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: AppColors.lightGray),
+                    borderSide: BorderSide(color: AdminDashboardStyles.textLight.withValues(alpha: 0.3)),
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: AppColors.lightGray),
+                    borderSide: BorderSide(color: AdminDashboardStyles.textLight.withValues(alpha: 0.3)),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: AppColors.primary),
+                    borderSide: BorderSide(color: AdminDashboardStyles.primary, width: 2),
                   ),
                   filled: true,
-                  fillColor: AppColors.lightGray.withOpacity(0.1),
+                  fillColor: AdminDashboardStyles.cardBackground,
                 ),
                 validator: (value) {
                   if (value == null || value.isEmpty) {
@@ -129,7 +173,7 @@ class _AddQuestionPageState extends State<AddQuestionPage> {
                   }
                   return null;
                 },
-              ),
+              ).animate().fade(duration: 500.ms).slideY(begin: 0.3, delay: 200.ms),
 
               const SizedBox(height: 24),
 
@@ -358,7 +402,9 @@ class _AddQuestionPageState extends State<AddQuestionPage> {
           ),
         ),
       ),
-    );
+    ),
+    ),
+  );
   }
 
   Widget _buildOptionField(

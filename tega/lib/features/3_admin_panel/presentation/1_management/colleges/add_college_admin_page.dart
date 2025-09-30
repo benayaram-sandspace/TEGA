@@ -13,9 +13,15 @@ class AddCollegeAdminPage extends StatefulWidget {
   State<AddCollegeAdminPage> createState() => _AddCollegeAdminPageState();
 }
 
-class _AddCollegeAdminPageState extends State<AddCollegeAdminPage> {
+class _AddCollegeAdminPageState extends State<AddCollegeAdminPage>
+    with TickerProviderStateMixin {
   final _formKey = GlobalKey<FormState>();
   final CollegeService _collegeService = CollegeService();
+  
+  // Animation controllers
+  late AnimationController _animationController;
+  late Animation<double> _fadeAnimation;
+  late Animation<Offset> _slideAnimation;
 
   // Form controllers
   final _nameController = TextEditingController();
@@ -36,10 +42,29 @@ class _AddCollegeAdminPageState extends State<AddCollegeAdminPage> {
   final List<String> _statuses = ['Active', 'Inactive'];
 
   @override
+  void initState() {
+    super.initState();
+    _animationController = AnimationController(
+      duration: const Duration(milliseconds: 800),
+      vsync: this,
+    );
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _animationController, curve: Curves.easeOutCubic),
+    );
+    _slideAnimation = Tween<Offset>(
+      begin: const Offset(0, 0.3),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(parent: _animationController, curve: Curves.easeOutCubic));
+    
+    _animationController.forward();
+  }
+
+  @override
   void dispose() {
     _nameController.dispose();
     _emailController.dispose();
     _phoneController.dispose();
+    _animationController.dispose();
     super.dispose();
   }
 
@@ -143,15 +168,19 @@ class _AddCollegeAdminPageState extends State<AddCollegeAdminPage> {
           onPressed: () => Navigator.of(context).pop(),
         ),
       ),
-      body: Form(
-        key: _formKey,
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // College Info Card
-              Container(
+      body: FadeTransition(
+        opacity: _fadeAnimation,
+        child: SlideTransition(
+          position: _slideAnimation,
+          child: Form(
+            key: _formKey,
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // College Info Card
+                  Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(20),
                 decoration: AdminDashboardStyles.getCardDecoration(
@@ -338,7 +367,9 @@ class _AddCollegeAdminPageState extends State<AddCollegeAdminPage> {
           ),
         ),
       ),
-    );
+    ),
+    ),
+  );
   }
 
   Widget _buildFormField({

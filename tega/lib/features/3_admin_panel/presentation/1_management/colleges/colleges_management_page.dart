@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:tega/features/3_admin_panel/presentation/0_dashboard/admin_dashboard_styles.dart';
 import 'package:tega/features/3_admin_panel/presentation/0_dashboard/admin_dashboard.dart';
 import 'package:tega/features/4_college_panel/data/repositories/college_repository.dart';
@@ -14,35 +15,62 @@ class CollegesListPage extends StatefulWidget {
 }
 
 class _CollegesListPageState extends State<CollegesListPage>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
   final CollegeService _collegeService = CollegeService();
   final TextEditingController _searchController = TextEditingController();
   List<College> _colleges = [];
   List<College> _filteredColleges = [];
   bool _isLoading = true;
 
-  // Animation controller for list items
-  late AnimationController _animationController;
-  late Animation<double> _fadeAnimation;
+  // Animation controllers for enhanced animations
+  late List<AnimationController> _animationControllers;
+  late List<Animation<double>> _scaleAnimations;
+  late List<Animation<Offset>> _slideAnimations;
 
   @override
   void initState() {
     super.initState();
-    _animationController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 700),
-    );
-    _fadeAnimation = Tween<double>(
-      begin: 0.0,
-      end: 1.0,
-    ).animate(_animationController);
+    _initializeAnimations();
     _loadColleges();
+  }
+
+  void _initializeAnimations() {
+    _animationControllers = List.generate(
+      20, // Maximum expected colleges
+      (index) => AnimationController(
+        duration: Duration(milliseconds: 400 + (index * 50)),
+        vsync: this,
+      ),
+    );
+
+    _scaleAnimations = _animationControllers
+        .map(
+          (controller) => CurvedAnimation(
+            parent: controller,
+            curve: Curves.easeOutBack,
+          ),
+        )
+        .toList();
+
+    _slideAnimations = _animationControllers
+        .map(
+          (controller) => Tween<Offset>(
+            begin: const Offset(0, 0.3),
+            end: Offset.zero,
+          ).animate(CurvedAnimation(
+            parent: controller,
+            curve: Curves.easeOutCubic,
+          )),
+        )
+        .toList();
   }
 
   @override
   void dispose() {
     _searchController.dispose();
-    _animationController.dispose();
+    for (var controller in _animationControllers) {
+      controller.dispose();
+    }
     super.dispose();
   }
 
@@ -58,8 +86,8 @@ class _CollegesListPageState extends State<CollegesListPage>
         _filteredColleges = colleges;
         _isLoading = false;
       });
-      // Start the animation once data is loaded
-      _animationController.forward();
+      // Start staggered animations once data is loaded
+      _startStaggeredAnimations();
     } catch (e) {
       setState(() {
         _isLoading = false;
@@ -70,8 +98,21 @@ class _CollegesListPageState extends State<CollegesListPage>
     }
   }
 
+  void _startStaggeredAnimations() {
+    for (int i = 0; i < _filteredColleges.length && i < _animationControllers.length; i++) {
+      Future.delayed(Duration(milliseconds: i * 100), () {
+        if (mounted) {
+          _animationControllers[i].forward();
+        }
+      });
+    }
+  }
+
   void _filterColleges(String query) {
-    _animationController.reset(); // Reset animation for new filter results
+    // Reset all animations
+    for (var controller in _animationControllers) {
+      controller.reset();
+    }
     setState(() {
       if (query.isEmpty) {
         _filteredColleges = _colleges;
@@ -79,7 +120,7 @@ class _CollegesListPageState extends State<CollegesListPage>
         _filteredColleges = _collegeService.searchColleges(query);
       }
     });
-    _animationController.forward(); // Animate filtered list
+    _startStaggeredAnimations(); // Animate filtered list
   }
 
   void _showErrorDialog(String message) {
@@ -244,7 +285,7 @@ class _CollegesListPageState extends State<CollegesListPage>
           ),
         ),
       ),
-    );
+    ).animate().fadeIn(duration: 600.ms).slideY(begin: 0.3);
   }
 
   Widget _buildCollegesList() {
@@ -253,26 +294,19 @@ class _CollegesListPageState extends State<CollegesListPage>
       itemCount: _filteredColleges.length,
       itemBuilder: (context, index) {
         final college = _filteredColleges[index];
-        // Staggered animation for each item
-        final animation = Tween<double>(begin: 0.0, end: 1.0).animate(
-          CurvedAnimation(
-            parent: _animationController,
-            curve: Interval(
-              (1 / _filteredColleges.length) * index,
-              1.0,
-              curve: Curves.easeOutCubic,
-            ),
-          ),
-        );
-        return FadeTransition(
-          opacity: animation,
-          child: SlideTransition(
-            position: Tween<Offset>(
-              begin: const Offset(0, 0.2),
-              end: Offset.zero,
-            ).animate(animation),
-            child: _buildCollegeCard(college, index),
-          ),
+        if (index >= _animationControllers.length) return _buildCollegeCard(college, index);
+        
+        return AnimatedBuilder(
+          animation: _scaleAnimations[index],
+          builder: (context, child) {
+            return Transform.scale(
+              scale: _scaleAnimations[index].value,
+              child: SlideTransition(
+                position: _slideAnimations[index],
+                child: _buildCollegeCard(college, index),
+              ),
+            );
+          },
         );
       },
     );
@@ -382,45 +416,41 @@ class _CollegesListPageState extends State<CollegesListPage>
   }
 
   Widget _buildEmptyState() {
-    return FadeTransition(
-      opacity: _fadeAnimation,
-      child: Center(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                Icons.school_outlined,
-                size: 80,
-                color: AdminDashboardStyles.textLight.withValues(alpha: 0.5),
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 24.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.school_outlined,
+              size: 80,
+              color: AdminDashboardStyles.textLight.withValues(alpha: 0.5),
+            ),
+            const SizedBox(height: 24),
+            const Text(
+              'No Colleges Found',
+              style: TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+                color: AdminDashboardStyles.textDark,
               ),
-              const SizedBox(height: 24),
-              const Text(
-                'No Colleges Found',
-                style: TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
-                  color: AdminDashboardStyles.textDark,
-                ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              _searchController.text.isEmpty
+                  ? 'Your college list is empty. Add a new college to get started.'
+                  : 'Try adjusting your search terms to find what you\'re looking for.',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 16,
+                color: AdminDashboardStyles.textLight,
+                height: 1.5,
               ),
-              const SizedBox(height: 8),
-              Text(
-                _searchController.text.isEmpty
-                    ? 'Your college list is empty. Add a new college to get started.'
-                    : 'Try adjusting your search terms to find what you\'re looking for.',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 16,
-                  color: AdminDashboardStyles.textLight,
-                  height: 1.5,
-                ),
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
   }
-
 }

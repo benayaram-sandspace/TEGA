@@ -10,9 +10,15 @@ class AddCollegePage extends StatefulWidget {
   State<AddCollegePage> createState() => _AddCollegePageState();
 }
 
-class _AddCollegePageState extends State<AddCollegePage> {
+class _AddCollegePageState extends State<AddCollegePage>
+    with TickerProviderStateMixin {
   final _formKey = GlobalKey<FormState>();
   final CollegeService _collegeService = CollegeService();
+  
+  // Animation controllers
+  late AnimationController _animationController;
+  late Animation<double> _fadeAnimation;
+  late Animation<Offset> _slideAnimation;
 
   // Form controllers
   final _collegeNameController = TextEditingController();
@@ -32,6 +38,24 @@ class _AddCollegePageState extends State<AddCollegePage> {
   ];
 
   @override
+  void initState() {
+    super.initState();
+    _animationController = AnimationController(
+      duration: const Duration(milliseconds: 800),
+      vsync: this,
+    );
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _animationController, curve: Curves.easeOutCubic),
+    );
+    _slideAnimation = Tween<Offset>(
+      begin: const Offset(0, 0.3),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(parent: _animationController, curve: Curves.easeOutCubic));
+    
+    _animationController.forward();
+  }
+
+  @override
   void dispose() {
     _collegeNameController.dispose();
     _collegeIdController.dispose();
@@ -41,6 +65,7 @@ class _AddCollegePageState extends State<AddCollegePage> {
     _contactNameController.dispose();
     _contactEmailController.dispose();
     _contactPhoneController.dispose();
+    _animationController.dispose();
     super.dispose();
   }
 
@@ -138,10 +163,14 @@ class _AddCollegePageState extends State<AddCollegePage> {
           onPressed: () => Navigator.of(context).pop(),
         ),
       ),
-      body: Form(
-        key: _formKey,
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(20),
+      body: FadeTransition(
+        opacity: _fadeAnimation,
+        child: SlideTransition(
+          position: _slideAnimation,
+          child: Form(
+            key: _formKey,
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(20),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -315,7 +344,9 @@ class _AddCollegePageState extends State<AddCollegePage> {
           ),
         ),
       ),
-    );
+    ),
+    ),
+  );
   }
 
   Widget _buildFormField({

@@ -14,19 +14,39 @@ class CollegeStudentsPage extends StatefulWidget {
   State<CollegeStudentsPage> createState() => _CollegeStudentsPageState();
 }
 
-class _CollegeStudentsPageState extends State<CollegeStudentsPage> {
+class _CollegeStudentsPageState extends State<CollegeStudentsPage>
+    with TickerProviderStateMixin {
   final TextEditingController _searchController = TextEditingController();
   List<college_service.Student> _filteredStudents = [];
+  
+  // Animation controllers
+  late AnimationController _animationController;
+  late Animation<double> _fadeAnimation;
+  late Animation<Offset> _slideAnimation;
 
   @override
   void initState() {
     super.initState();
     _filteredStudents = widget.college.students;
+    _animationController = AnimationController(
+      duration: const Duration(milliseconds: 800),
+      vsync: this,
+    );
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _animationController, curve: Curves.easeOutCubic),
+    );
+    _slideAnimation = Tween<Offset>(
+      begin: const Offset(0, 0.3),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(parent: _animationController, curve: Curves.easeOutCubic));
+    
+    _animationController.forward();
   }
 
   @override
   void dispose() {
     _searchController.dispose();
+    _animationController.dispose();
     super.dispose();
   }
 
@@ -48,9 +68,13 @@ class _CollegeStudentsPageState extends State<CollegeStudentsPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
-      body: Column(
-        children: [
-          // Search Bar
+      body: FadeTransition(
+        opacity: _fadeAnimation,
+        child: SlideTransition(
+          position: _slideAnimation,
+          child: Column(
+            children: [
+              // Search Bar
           Container(
             padding: const EdgeInsets.all(20),
             child: Container(
@@ -126,7 +150,9 @@ class _CollegeStudentsPageState extends State<CollegeStudentsPage> {
           ),
         ],
       ),
-    );
+    ),
+    ),
+  );
   }
 
   Widget _buildStudentCard(college_service.Student student) {

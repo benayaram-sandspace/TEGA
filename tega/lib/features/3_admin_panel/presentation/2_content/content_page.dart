@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:tega/core/constants/app_colors.dart';
 import 'package:tega/features/3_admin_panel/presentation/0_dashboard/admin_dashboard.dart';
 import 'package:tega/features/3_admin_panel/presentation/0_dashboard/admin_dashboard_styles.dart';
@@ -96,7 +97,7 @@ class ContentPage extends StatelessWidget {
           ),
         ],
       ),
-    );
+    ).animate().fadeIn(duration: 600.ms).slideY(begin: 0.3);
   }
 
   /// A visually engaging header to introduce the page.
@@ -158,7 +159,7 @@ class ContentPage extends StatelessWidget {
         fontWeight: FontWeight.bold,
         color: AdminDashboardStyles.textDark,
       ),
-    );
+    ).animate().fadeIn(duration: 400.ms, delay: 200.ms).slideX(begin: 0.3);
   }
 
   /// A tappable card for each management option.
@@ -230,6 +231,6 @@ class ContentPage extends StatelessWidget {
           ],
         ),
       ),
-    );
+    ).animate().fadeIn(duration: 400.ms, delay: 300.ms).slideX(begin: 0.3);
   }
 }

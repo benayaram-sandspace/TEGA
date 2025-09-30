@@ -15,19 +15,32 @@ class CollegeDetailsPage extends StatefulWidget {
 }
 
 class _CollegeDetailsPageState extends State<CollegeDetailsPage>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
   late TabController _tabController;
   // final CollegeService _collegeService = CollegeService(); // Unused for now
+  
+  // Animation controllers
+  late AnimationController _animationController;
+  late Animation<double> _fadeAnimation;
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 4, vsync: this);
+    _animationController = AnimationController(
+      duration: const Duration(milliseconds: 800),
+      vsync: this,
+    );
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _animationController, curve: Curves.easeOutCubic),
+    );
+    _animationController.forward();
   }
 
   @override
   void dispose() {
     _tabController.dispose();
+    _animationController.dispose();
     super.dispose();
   }
 
@@ -204,18 +217,21 @@ class _CollegeDetailsPageState extends State<CollegeDetailsPage>
             ),
 
             // Tab Content - Fixed Height Container
-            SizedBox(
-              height:
-                  MediaQuery.of(context).size.height *
-                  0.6, // 60% of screen height
-              child: TabBarView(
-                controller: _tabController,
-                children: [
-                  _buildOverviewTab(),
-                  CollegeStudentsPage(college: widget.college),
-                  CollegeAdminsPage(college: widget.college),
-                  CollegeAnalyticsPage(college: widget.college),
-                ],
+            FadeTransition(
+              opacity: _fadeAnimation,
+              child: SizedBox(
+                height:
+                    MediaQuery.of(context).size.height *
+                    0.6, // 60% of screen height
+                child: TabBarView(
+                  controller: _tabController,
+                  children: [
+                    _buildOverviewTab(),
+                    CollegeStudentsPage(college: widget.college),
+                    CollegeAdminsPage(college: widget.college),
+                    CollegeAnalyticsPage(college: widget.college),
+                  ],
+                ),
               ),
             ),
           ],

@@ -31,6 +31,7 @@ class DashboardHomeTab extends StatefulWidget {
 class _DashboardHomeTabState extends State<DashboardHomeTab>
     with TickerProviderStateMixin {
   int? _hoveredIndex;
+  int? _pressedIndex;
   late List<AnimationController> _animationControllers;
   late List<Animation<double>> _scaleAnimations;
 
@@ -216,23 +217,26 @@ class _DashboardHomeTabState extends State<DashboardHomeTab>
 
   Widget _buildStatCard({required _StatCardInfo item, required int index}) {
     final isHovered = _hoveredIndex == index;
+    final isPressed = _pressedIndex == index;
     final gradientColors = _getGradientColors(item.color);
 
     return AnimatedBuilder(
       animation: _scaleAnimations[index],
       builder: (context, child) {
         return Transform.scale(
-          scale: _scaleAnimations[index].value,
+          scale: _scaleAnimations[index].value * (isPressed ? 0.95 : (isHovered ? 1.05 : 1.0)),
           child: MouseRegion(
             onEnter: (_) => setState(() => _hoveredIndex = index),
             onExit: (_) => setState(() => _hoveredIndex = null),
             cursor: SystemMouseCursors.click,
-              child: GestureDetector(
-                onTap: () {},
+            child: GestureDetector(
+              onTapDown: (_) => setState(() => _pressedIndex = index),
+              onTapUp: (_) => setState(() => _pressedIndex = null),
+              onTapCancel: () => setState(() => _pressedIndex = null),
+              onTap: () {},
               child: AnimatedContainer(
                 duration: AdminDashboardStyles.shortAnimation,
                 curve: AdminDashboardStyles.defaultCurve,
-                transform: Matrix4.identity(),
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     colors: gradientColors,
@@ -241,19 +245,26 @@ class _DashboardHomeTabState extends State<DashboardHomeTab>
                   ),
                   borderRadius: BorderRadius.circular(isHovered ? 24 : 20),
                   boxShadow: [
-                    if (isHovered)
+                    if (isHovered) ...[
                       BoxShadow(
-                        color: item.color.withValues(alpha: 0.4),
-                        blurRadius: 24,
-                        spreadRadius: 2,
+                        color: item.color.withValues(alpha: 0.25),
+                        blurRadius: 20,
                         offset: const Offset(0, 8),
-                      )
-                    else
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.12),
-                        blurRadius: 16,
-                        offset: const Offset(0, 6),
+                        spreadRadius: 2,
                       ),
+                      BoxShadow(
+                        color: item.color.withValues(alpha: 0.15),
+                        blurRadius: 30,
+                        offset: const Offset(0, 12),
+                        spreadRadius: 4,
+                      ),
+                    ] else ...[
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.08),
+                        blurRadius: 12,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
                   ],
                 ),
                 child: ClipRRect(
@@ -261,13 +272,13 @@ class _DashboardHomeTabState extends State<DashboardHomeTab>
                   child: Stack(
                     alignment: Alignment.center,
                     children: [
-                      // Background decoration
+                      // Decorative circles
                       Positioned(
-                        top: -30,
-                        right: -30,
+                        top: -20,
+                        right: -20,
                         child: Container(
-                          width: 100,
-                          height: 100,
+                          width: 80,
+                          height: 80,
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
                             color: Colors.white.withValues(alpha: 0.1),
@@ -275,11 +286,11 @@ class _DashboardHomeTabState extends State<DashboardHomeTab>
                         ),
                       ),
                       Positioned(
-                        bottom: -20,
-                        left: -20,
+                        bottom: -30,
+                        left: -30,
                         child: Container(
-                          width: 60,
-                          height: 60,
+                          width: 100,
+                          height: 100,
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
                             color: Colors.white.withValues(alpha: 0.05),
