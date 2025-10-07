@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:tega/features/4_college_panel/presentation/0_dashboard/dashboard_styles.dart';
 import 'package:tega/features/4_college_panel/presentation/1_student_management/add_college_students.dart';
+import 'package:tega/features/4_college_panel/presentation/3_test_creation/create_test_screen.dart';
 
 class QuickActions extends StatefulWidget {
   const QuickActions({super.key});
@@ -322,11 +323,9 @@ class _QuickActionsState extends State<QuickActions>
         'label': 'Create Test',
         'color': DashboardStyles.accentGreen,
         'onTap': () {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Create Test feature coming soon!'),
-              behavior: SnackBarBehavior.floating,
-            ),
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const CreateTestScreen()),
           );
         },
       },
