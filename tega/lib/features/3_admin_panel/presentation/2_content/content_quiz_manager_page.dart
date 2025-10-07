@@ -14,7 +14,7 @@ class ContentQuizManagerPage extends StatefulWidget {
 }
 
 class _ContentQuizManagerPageState extends State<ContentQuizManagerPage> {
-  final ContentQuizService _contentQuizService = ContentQuizService();
+  final ContentQuizRepository _contentQuizService = ContentQuizRepository();
   ContentQuizStatistics? _statistics;
   bool _isLoading = true;
 

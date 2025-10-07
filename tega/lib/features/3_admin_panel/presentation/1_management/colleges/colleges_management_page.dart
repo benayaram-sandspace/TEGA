@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:tega/core/constants/app_colors.dart';
+import 'package:flutter_animate/flutter_animate.dart';
+import 'package:tega/features/3_admin_panel/presentation/0_dashboard/admin_dashboard_styles.dart';
 import 'package:tega/features/3_admin_panel/presentation/0_dashboard/admin_dashboard.dart';
 import 'package:tega/features/4_college_panel/data/repositories/college_repository.dart';
 import 'college_details_page.dart';
@@ -14,35 +15,62 @@ class CollegesListPage extends StatefulWidget {
 }
 
 class _CollegesListPageState extends State<CollegesListPage>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
   final CollegeService _collegeService = CollegeService();
   final TextEditingController _searchController = TextEditingController();
   List<College> _colleges = [];
   List<College> _filteredColleges = [];
   bool _isLoading = true;
 
-  // Animation controller for list items
-  late AnimationController _animationController;
-  late Animation<double> _fadeAnimation;
+  // Animation controllers for enhanced animations
+  late List<AnimationController> _animationControllers;
+  late List<Animation<double>> _scaleAnimations;
+  late List<Animation<Offset>> _slideAnimations;
 
   @override
   void initState() {
     super.initState();
-    _animationController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 700),
-    );
-    _fadeAnimation = Tween<double>(
-      begin: 0.0,
-      end: 1.0,
-    ).animate(_animationController);
+    _initializeAnimations();
     _loadColleges();
+  }
+
+  void _initializeAnimations() {
+    _animationControllers = List.generate(
+      20, // Maximum expected colleges
+      (index) => AnimationController(
+        duration: Duration(milliseconds: 400 + (index * 50)),
+        vsync: this,
+      ),
+    );
+
+    _scaleAnimations = _animationControllers
+        .map(
+          (controller) => CurvedAnimation(
+            parent: controller,
+            curve: Curves.easeOutBack,
+          ),
+        )
+        .toList();
+
+    _slideAnimations = _animationControllers
+        .map(
+          (controller) => Tween<Offset>(
+            begin: const Offset(0, 0.3),
+            end: Offset.zero,
+          ).animate(CurvedAnimation(
+            parent: controller,
+            curve: Curves.easeOutCubic,
+          )),
+        )
+        .toList();
   }
 
   @override
   void dispose() {
     _searchController.dispose();
-    _animationController.dispose();
+    for (var controller in _animationControllers) {
+      controller.dispose();
+    }
     super.dispose();
   }
 
@@ -58,8 +86,8 @@ class _CollegesListPageState extends State<CollegesListPage>
         _filteredColleges = colleges;
         _isLoading = false;
       });
-      // Start the animation once data is loaded
-      _animationController.forward();
+      // Start staggered animations once data is loaded
+      _startStaggeredAnimations();
     } catch (e) {
       setState(() {
         _isLoading = false;
@@ -70,8 +98,21 @@ class _CollegesListPageState extends State<CollegesListPage>
     }
   }
 
+  void _startStaggeredAnimations() {
+    for (int i = 0; i < _filteredColleges.length && i < _animationControllers.length; i++) {
+      Future.delayed(Duration(milliseconds: i * 100), () {
+        if (mounted) {
+          _animationControllers[i].forward();
+        }
+      });
+    }
+  }
+
   void _filterColleges(String query) {
-    _animationController.reset(); // Reset animation for new filter results
+    // Reset all animations
+    for (var controller in _animationControllers) {
+      controller.reset();
+    }
     setState(() {
       if (query.isEmpty) {
         _filteredColleges = _colleges;
@@ -79,7 +120,7 @@ class _CollegesListPageState extends State<CollegesListPage>
         _filteredColleges = _collegeService.searchColleges(query);
       }
     });
-    _animationController.forward(); // Animate filtered list
+    _startStaggeredAnimations(); // Animate filtered list
   }
 
   void _showErrorDialog(String message) {
@@ -102,65 +143,10 @@ class _CollegesListPageState extends State<CollegesListPage>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(
-        title: const Text(
-          'Manage Colleges',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            color: AppColors.textPrimary,
-          ),
-        ),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        // ✨ --- MODIFIED: Back button now navigates to AdminDashboard --- ✨
-        leading: IconButton(
-          icon: const Icon(
-            Icons.arrow_back_ios_new,
-            color: AppColors.textPrimary,
-          ),
-          onPressed: () {
-            Navigator.pushAndRemoveUntil(
-              context,
-              MaterialPageRoute(builder: (context) => const AdminDashboard()),
-              (route) => false,
-            );
-          },
-        ),
-        actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 8.0),
-            child: TextButton.icon(
-              onPressed: () {
-                Navigator.of(context)
-                    .push(
-                      MaterialPageRoute(
-                        builder: (context) => const AddCollegePage(),
-                      ),
-                    )
-                    .then((_) => _loadColleges());
-              },
-              icon: const Icon(Icons.add, color: AppColors.primary),
-              label: const Text(
-                'Add New',
-                style: TextStyle(
-                  color: AppColors.primary,
-                  fontWeight: FontWeight.w600,
-                  fontSize: 16,
-                ),
-              ),
-              style: TextButton.styleFrom(
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
+      backgroundColor: AdminDashboardStyles.background,
       body: RefreshIndicator(
         onRefresh: _loadColleges,
-        color: AppColors.primary,
+        color: AdminDashboardStyles.primary,
         child: Column(
           children: [
             _buildSearchBar(),
@@ -169,7 +155,7 @@ class _CollegesListPageState extends State<CollegesListPage>
                   ? const Center(
                       child: CircularProgressIndicator(
                         valueColor: AlwaysStoppedAnimation<Color>(
-                          AppColors.primary,
+                          AdminDashboardStyles.primary,
                         ),
                       ),
                     )
@@ -190,8 +176,8 @@ class _CollegesListPageState extends State<CollegesListPage>
               )
               .then((_) => _loadColleges());
         },
-        backgroundColor: AppColors.primary,
-        foregroundColor: AppColors.pureWhite,
+        backgroundColor: AdminDashboardStyles.primary,
+        foregroundColor: Colors.white,
         icon: const Icon(Icons.upload_file),
         label: const Text('Bulk Import'),
         elevation: 4,
@@ -208,14 +194,14 @@ class _CollegesListPageState extends State<CollegesListPage>
         onChanged: _filterColleges,
         decoration: InputDecoration(
           hintText: 'Search by name, city, or ID...',
-          hintStyle: TextStyle(color: AppColors.textSecondary.withOpacity(0.8)),
+          hintStyle: TextStyle(color: AdminDashboardStyles.textLight.withValues(alpha: 0.8)),
           prefixIcon: const Icon(
             Icons.search,
-            color: AppColors.textSecondary,
+            color: AdminDashboardStyles.textLight,
             size: 22,
           ),
           filled: true,
-          fillColor: AppColors.surface,
+          fillColor: AdminDashboardStyles.cardBackground,
           contentPadding: const EdgeInsets.symmetric(
             horizontal: 16,
             vertical: 14,
@@ -226,11 +212,11 @@ class _CollegesListPageState extends State<CollegesListPage>
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(16),
-            borderSide: const BorderSide(color: AppColors.primary, width: 2),
+            borderSide: const BorderSide(color: AdminDashboardStyles.primary, width: 2),
           ),
         ),
       ),
-    );
+    ).animate().fadeIn(duration: 600.ms).slideY(begin: 0.3);
   }
 
   Widget _buildCollegesList() {
@@ -239,26 +225,19 @@ class _CollegesListPageState extends State<CollegesListPage>
       itemCount: _filteredColleges.length,
       itemBuilder: (context, index) {
         final college = _filteredColleges[index];
-        // Staggered animation for each item
-        final animation = Tween<double>(begin: 0.0, end: 1.0).animate(
-          CurvedAnimation(
-            parent: _animationController,
-            curve: Interval(
-              (1 / _filteredColleges.length) * index,
-              1.0,
-              curve: Curves.easeOutCubic,
-            ),
-          ),
-        );
-        return FadeTransition(
-          opacity: animation,
-          child: SlideTransition(
-            position: Tween<Offset>(
-              begin: const Offset(0, 0.2),
-              end: Offset.zero,
-            ).animate(animation),
-            child: _buildCollegeCard(college, index),
-          ),
+        if (index >= _animationControllers.length) return _buildCollegeCard(college, index);
+        
+        return AnimatedBuilder(
+          animation: _scaleAnimations[index],
+          builder: (context, child) {
+            return Transform.scale(
+              scale: _scaleAnimations[index].value,
+              child: SlideTransition(
+                position: _slideAnimations[index],
+                child: _buildCollegeCard(college, index),
+              ),
+            );
+          },
         );
       },
     );
@@ -272,9 +251,9 @@ class _CollegesListPageState extends State<CollegesListPage>
 
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
-      elevation: 2,
-      shadowColor: AppColors.shadowLight,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      elevation: 4,
+      shadowColor: AdminDashboardStyles.primary.withValues(alpha: 0.1),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       clipBehavior:
           Clip.antiAlias, // Ensures content respects the border radius
       child: InkWell(
@@ -285,8 +264,8 @@ class _CollegesListPageState extends State<CollegesListPage>
             ),
           );
         },
-        splashColor: AppColors.primary.withOpacity(0.1),
-        highlightColor: AppColors.primary.withOpacity(0.05),
+        splashColor: AdminDashboardStyles.primary.withValues(alpha: 0.1),
+        highlightColor: AdminDashboardStyles.primary.withValues(alpha: 0.05),
         child: Padding(
           padding: const EdgeInsets.all(12.0),
           child: Row(
@@ -299,7 +278,7 @@ class _CollegesListPageState extends State<CollegesListPage>
                   style: const TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
-                    color: AppColors.pureWhite,
+                    color: Colors.white,
                   ),
                 ),
               ),
@@ -313,7 +292,7 @@ class _CollegesListPageState extends State<CollegesListPage>
                       style: const TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 17,
-                        color: AppColors.textPrimary,
+                        color: AdminDashboardStyles.textDark,
                       ),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
@@ -324,13 +303,13 @@ class _CollegesListPageState extends State<CollegesListPage>
                         const Icon(
                           Icons.location_city,
                           size: 14,
-                          color: AppColors.info,
+                          color: AdminDashboardStyles.primary,
                         ),
                         const SizedBox(width: 4),
                         Text(
                           college.city,
                           style: const TextStyle(
-                            color: AppColors.info,
+                            color: AdminDashboardStyles.primary,
                             fontSize: 14,
                           ),
                           maxLines: 1,
@@ -342,7 +321,7 @@ class _CollegesListPageState extends State<CollegesListPage>
                     Text(
                       'ID: ${college.id} • ${college.totalStudents} students',
                       style: TextStyle(
-                        color: AppColors.textSecondary,
+                        color: AdminDashboardStyles.textLight,
                         fontSize: 12,
                       ),
                       maxLines: 1,
@@ -352,7 +331,7 @@ class _CollegesListPageState extends State<CollegesListPage>
                 ),
               ),
               PopupMenuButton<String>(
-                icon: Icon(Icons.more_vert, color: AppColors.textSecondary),
+                icon: Icon(Icons.more_vert, color: AdminDashboardStyles.textLight),
                 onSelected: (value) {
                   // Existing logic...
                 },
@@ -368,95 +347,40 @@ class _CollegesListPageState extends State<CollegesListPage>
   }
 
   Widget _buildEmptyState() {
-    return FadeTransition(
-      opacity: _fadeAnimation,
-      child: Center(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                Icons.school_outlined,
-                size: 80,
-                color: AppColors.textSecondary.withOpacity(0.5),
-              ),
-              const SizedBox(height: 24),
-              const Text(
-                'No Colleges Found',
-                style: TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.textPrimary,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                _searchController.text.isEmpty
-                    ? 'Your college list is empty. Add a new college to get started.'
-                    : 'Try adjusting your search terms to find what you\'re looking for.',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 16,
-                  color: AppColors.textSecondary,
-                  height: 1.5,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  // The delete dialog remains unchanged as its functionality is core to the app
-  void _showDeleteDialog(College college) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text('Delete College'),
-        content: Text(
-          'Are you sure you want to delete ${college.name}? '
-          'This action cannot be undone.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              Navigator.of(context).pop();
-              final success = await _collegeService.deleteCollege(college.id);
-              if (mounted) {
-                if (success) {
-                  _loadColleges();
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('${college.name} deleted successfully'),
-                      backgroundColor: AppColors.success,
-                      behavior: SnackBarBehavior.floating,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                  );
-                } else {
-                  _showErrorDialog('Failed to delete college');
-                }
-              }
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.error,
-              foregroundColor: AppColors.pureWhite,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 24.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.school_outlined,
+              size: 80,
+              color: AdminDashboardStyles.textLight.withValues(alpha: 0.5),
+            ),
+            const SizedBox(height: 24),
+            const Text(
+              'No Colleges Found',
+              style: TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+                color: AdminDashboardStyles.textDark,
               ),
             ),
-            child: const Text('Delete'),
-          ),
-        ],
+            const SizedBox(height: 8),
+            Text(
+              _searchController.text.isEmpty
+                  ? 'Your college list is empty. Add a new college to get started.'
+                  : 'Try adjusting your search terms to find what you\'re looking for.',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 16,
+                color: AdminDashboardStyles.textLight,
+                height: 1.5,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

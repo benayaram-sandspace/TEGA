@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:tega/core/constants/app_colors.dart';
 import 'package:tega/features/3_admin_panel/data/models/admin_model.dart';
 import 'package:tega/features/3_admin_panel/data/repositories/admin_repository.dart';
+import 'package:tega/features/3_admin_panel/presentation/0_dashboard/admin_dashboard_styles.dart';
 
 import 'add_admin_modal.dart';
 
@@ -12,8 +13,9 @@ class AdminUsersPage extends StatefulWidget {
   State<AdminUsersPage> createState() => _AdminUsersPageState();
 }
 
-class _AdminUsersPageState extends State<AdminUsersPage> {
-  final AdminService _adminService = AdminService.instance;
+class _AdminUsersPageState extends State<AdminUsersPage>
+    with TickerProviderStateMixin {
+  final AdminRepository _adminService = AdminRepository.instance;
   final TextEditingController _searchController = TextEditingController();
 
   List<AdminUser> _allAdmins = [];
@@ -22,14 +24,71 @@ class _AdminUsersPageState extends State<AdminUsersPage> {
   String _selectedStatus = '';
   bool _isLoading = true;
 
+  // Animation controllers
+  late AnimationController _animationController;
+  late Animation<double> _fadeAnimation;
+  late List<AnimationController> _itemAnimationControllers;
+  late List<Animation<double>> _scaleAnimations;
+  late List<Animation<Offset>> _slideAnimations;
+
   @override
   void initState() {
     super.initState();
+    _initializeAnimations();
     _loadAdmins();
+  }
+
+  void _initializeAnimations() {
+    _animationController = AnimationController(
+      duration: const Duration(milliseconds: 800),
+      vsync: this,
+    );
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _animationController, curve: Curves.easeOutCubic),
+    );
+
+    _itemAnimationControllers = List.generate(
+      20, // Max items to animate
+      (index) => AnimationController(
+        vsync: this,
+        duration: AdminDashboardStyles.mediumAnimation,
+      ),
+    );
+
+    _scaleAnimations = _itemAnimationControllers
+        .map((controller) => Tween<double>(begin: 0.95, end: 1.0).animate(
+              CurvedAnimation(parent: controller, curve: Curves.easeOutBack),
+            ))
+        .toList();
+
+    _slideAnimations = _itemAnimationControllers
+        .map((controller) => Tween<Offset>(
+              begin: const Offset(0, 0.2),
+              end: Offset.zero,
+            ).animate(
+              CurvedAnimation(parent: controller, curve: Curves.easeOutCubic),
+            ))
+        .toList();
+
+    _animationController.forward();
+  }
+
+  void _startStaggeredAnimations() {
+    for (int i = 0; i < _itemAnimationControllers.length && i < _filteredAdmins.length; i++) {
+      Future.delayed(Duration(milliseconds: i * 100), () {
+        if (mounted) {
+          _itemAnimationControllers[i].forward();
+        }
+      });
+    }
   }
 
   @override
   void dispose() {
+    _animationController.dispose();
+    for (var controller in _itemAnimationControllers) {
+      controller.dispose();
+    }
     _searchController.dispose();
     super.dispose();
   }
@@ -42,6 +101,7 @@ class _AdminUsersPageState extends State<AdminUsersPage> {
     _filteredAdmins = _allAdmins;
 
     setState(() => _isLoading = false);
+    _startStaggeredAnimations();
   }
 
   void _applyFilters() {
@@ -67,6 +127,7 @@ class _AdminUsersPageState extends State<AdminUsersPage> {
             .toList();
       }
     });
+    _startStaggeredAnimations();
   }
 
   // ignore: unused_element
@@ -82,10 +143,12 @@ class _AdminUsersPageState extends State<AdminUsersPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
-      body: _isLoading
+      backgroundColor: AdminDashboardStyles.background,
+      body: FadeTransition(
+        opacity: _fadeAnimation,
+        child: _isLoading
           ? const Center(
-              child: CircularProgressIndicator(color: AppColors.primary),
+              child: CircularProgressIndicator(color: AdminDashboardStyles.primary),
             )
           : Column(
               children: [
@@ -100,13 +163,13 @@ class _AdminUsersPageState extends State<AdminUsersPage> {
                         onChanged: (_) => _applyFilters(),
                         decoration: InputDecoration(
                           hintText: 'Search by name or email...',
-                          hintStyle: TextStyle(color: AppColors.textSecondary),
+                          hintStyle: TextStyle(color: AdminDashboardStyles.textLight),
                           prefixIcon: Icon(
                             Icons.search,
-                            color: AppColors.textSecondary,
+                            color: AdminDashboardStyles.textLight,
                           ),
                           filled: true,
-                          fillColor: AppColors.surface,
+                          fillColor: AdminDashboardStyles.cardBackground,
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
                             borderSide: BorderSide.none,
@@ -159,14 +222,14 @@ class _AdminUsersPageState extends State<AdminUsersPage> {
                               Icon(
                                 Icons.admin_panel_settings_outlined,
                                 size: 64,
-                                color: AppColors.textSecondary,
+                                color: AdminDashboardStyles.textLight,
                               ),
                               const SizedBox(height: 16),
                               Text(
                                 'No admins found',
                                 style: TextStyle(
                                   fontSize: 18,
-                                  color: AppColors.textSecondary,
+                                  color: AdminDashboardStyles.textLight,
                                 ),
                               ),
                             ],
@@ -177,20 +240,35 @@ class _AdminUsersPageState extends State<AdminUsersPage> {
                           itemCount: _filteredAdmins.length,
                           itemBuilder: (context, index) {
                             final admin = _filteredAdmins[index];
+                            if (index < _itemAnimationControllers.length) {
+                              return AnimatedBuilder(
+                                animation: Listenable.merge([_scaleAnimations[index], _slideAnimations[index]]),
+                                builder: (context, child) {
+                                  return Transform.scale(
+                                    scale: _scaleAnimations[index].value,
+                                    child: SlideTransition(
+                                      position: _slideAnimations[index],
+                                      child: _buildAdminCard(admin),
+                                    ),
+                                  );
+                                },
+                              );
+                            }
                             return _buildAdminCard(admin);
                           },
                         ),
                 ),
               ],
             ),
+      ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _showAddAdminModal(),
-        backgroundColor: AppColors.primary,
-        icon: const Icon(Icons.add, color: AppColors.pureWhite),
+        backgroundColor: AdminDashboardStyles.primary,
+        icon: const Icon(Icons.add, color: Colors.white),
         label: const Text(
           'Add New Admin',
           style: TextStyle(
-            color: AppColors.pureWhite,
+            color: Colors.white,
             fontWeight: FontWeight.w600,
           ),
         ),

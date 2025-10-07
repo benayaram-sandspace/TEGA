@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:tega/core/constants/app_colors.dart';
 import 'package:tega/features/3_admin_panel/presentation/0_dashboard/admin_dashboard.dart';
 import 'package:tega/features/3_admin_panel/presentation/1_management/users_and_admins/admin_users_page.dart';
 import 'package:tega/features/3_admin_panel/presentation/4_settings_and_misc/activity_logs_page.dart';
@@ -12,69 +11,74 @@ class AdminManagementPage extends StatefulWidget {
 }
 
 class _AdminManagementPageState extends State<AdminManagementPage>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
   late TabController _tabController;
+  late AnimationController _animationController;
+  late Animation<double> _fadeAnimation;
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
+    _animationController = AnimationController(
+      duration: const Duration(milliseconds: 800),
+      vsync: this,
+    );
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _animationController, curve: Curves.easeOutCubic),
+    );
+    _animationController.forward();
   }
 
   @override
   void dispose() {
     _tabController.dispose();
+    _animationController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(
-        title: const Text(
-          'Admin Management',
-          style: TextStyle(
-            fontSize: 24,
-            fontWeight: FontWeight.bold,
-            color: AppColors.textPrimary,
+    return Container(
+      color: const Color(0xFFFFF3E0),
+      child: Column(
+        children: [
+          // Custom Tab Bar
+          Container(
+            decoration: const BoxDecoration(
+              color: Color(0xFFFFA726),
+            ),
+            child: TabBar(
+              controller: _tabController,
+              indicatorColor: Colors.white,
+              indicatorWeight: 3,
+              labelColor: Colors.white,
+              unselectedLabelColor: Colors.white.withValues(alpha: 0.7),
+              labelStyle: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+              ),
+              unselectedLabelStyle: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.normal,
+              ),
+              tabs: const [
+                Tab(text: 'All Staff'),
+                Tab(text: 'Activity & Audit Logs'),
+              ],
+            ),
           ),
-        ),
-        backgroundColor: AppColors.background,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
-          onPressed: () {
-            Navigator.pushAndRemoveUntil(
-              context,
-              MaterialPageRoute(builder: (context) => const AdminDashboard()),
-              (route) => false,
-            );
-          },
-        ),
-        bottom: TabBar(
-          controller: _tabController,
-          indicatorColor: AppColors.primary,
-          indicatorWeight: 3,
-          labelColor: AppColors.primary,
-          unselectedLabelColor: AppColors.textSecondary,
-          labelStyle: const TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
+          // Tab Content
+          Expanded(
+            child: FadeTransition(
+              opacity: _fadeAnimation,
+              child: TabBarView(
+                controller: _tabController,
+                children: const [AdminUsersPage(), ActivityLogsPage()],
+              ),
+            ),
           ),
-          unselectedLabelStyle: const TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.normal,
-          ),
-          tabs: const [
-            Tab(text: 'Admin Users'),
-            Tab(text: 'Activity & Audit Logs'),
-          ],
-        ),
-      ),
-      body: TabBarView(
-        controller: _tabController,
-        children: const [AdminUsersPage(), ActivityLogsPage()],
+        ],
       ),
     );
   }

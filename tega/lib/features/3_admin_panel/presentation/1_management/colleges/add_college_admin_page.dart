@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:tega/core/constants/app_colors.dart';
+import 'package:tega/features/3_admin_panel/presentation/0_dashboard/admin_dashboard_styles.dart';
 import 'package:tega/features/4_college_panel/data/repositories/college_repository.dart';
 
 class AddCollegeAdminPage extends StatefulWidget {
@@ -11,9 +13,15 @@ class AddCollegeAdminPage extends StatefulWidget {
   State<AddCollegeAdminPage> createState() => _AddCollegeAdminPageState();
 }
 
-class _AddCollegeAdminPageState extends State<AddCollegeAdminPage> {
+class _AddCollegeAdminPageState extends State<AddCollegeAdminPage>
+    with TickerProviderStateMixin {
   final _formKey = GlobalKey<FormState>();
   final CollegeService _collegeService = CollegeService();
+  
+  // Animation controllers
+  late AnimationController _animationController;
+  late Animation<double> _fadeAnimation;
+  late Animation<Offset> _slideAnimation;
 
   // Form controllers
   final _nameController = TextEditingController();
@@ -34,10 +42,29 @@ class _AddCollegeAdminPageState extends State<AddCollegeAdminPage> {
   final List<String> _statuses = ['Active', 'Inactive'];
 
   @override
+  void initState() {
+    super.initState();
+    _animationController = AnimationController(
+      duration: const Duration(milliseconds: 800),
+      vsync: this,
+    );
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _animationController, curve: Curves.easeOutCubic),
+    );
+    _slideAnimation = Tween<Offset>(
+      begin: const Offset(0, 0.3),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(parent: _animationController, curve: Curves.easeOutCubic));
+    
+    _animationController.forward();
+  }
+
+  @override
   void dispose() {
     _nameController.dispose();
     _emailController.dispose();
     _phoneController.dispose();
+    _animationController.dispose();
     super.dispose();
   }
 
@@ -111,68 +138,108 @@ class _AddCollegeAdminPageState extends State<AddCollegeAdminPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: AdminDashboardStyles.background,
       appBar: AppBar(
         title: const Text(
           'Add College Admin',
           style: TextStyle(
             fontWeight: FontWeight.bold,
-            color: AppColors.textPrimary,
+            color: Colors.white,
+            fontSize: 18,
           ),
         ),
-        backgroundColor: AppColors.background,
-        elevation: 0,
+        backgroundColor: AdminDashboardStyles.primary,
+        elevation: 8,
+        shadowColor: AdminDashboardStyles.primary.withValues(alpha: 0.3),
+        flexibleSpace: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                AdminDashboardStyles.primary,
+                AdminDashboardStyles.primaryLight,
+              ],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+        ),
         leading: IconButton(
-          icon: const Icon(Icons.close, color: AppColors.textPrimary),
+          icon: const Icon(Icons.close, color: Colors.white),
           onPressed: () => Navigator.of(context).pop(),
         ),
       ),
-      body: Form(
-        key: _formKey,
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // College Info
-              Container(
+      body: FadeTransition(
+        opacity: _fadeAnimation,
+        child: SlideTransition(
+          position: _slideAnimation,
+          child: Form(
+            key: _formKey,
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // College Info Card
+                  Container(
                 width: double.infinity,
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: AppColors.primary.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: AppColors.primary.withOpacity(0.3)),
+                padding: const EdgeInsets.all(20),
+                decoration: AdminDashboardStyles.getCardDecoration(
+                  borderColor: AdminDashboardStyles.primary,
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      'Adding admin for:',
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: AppColors.primary,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      widget.college.name,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.textPrimary,
-                      ),
-                    ),
-                    Text(
-                      '${widget.college.city}, ${widget.college.state}',
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: AppColors.textSecondary,
-                      ),
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: AdminDashboardStyles.primary.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Icon(
+                            Icons.school_rounded,
+                            color: AdminDashboardStyles.primary,
+                            size: 24,
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                'Adding admin for:',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: AdminDashboardStyles.textLight,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                widget.college.name,
+                                style: const TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                  color: AdminDashboardStyles.textDark,
+                                ),
+                              ),
+                              Text(
+                                '${widget.college.city}, ${widget.college.state}',
+                                style: const TextStyle(
+                                  fontSize: 14,
+                                  color: AdminDashboardStyles.textLight,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
-              ),
+              ).animate().fade(duration: 500.ms).slideY(begin: 0.3),
               const SizedBox(height: 24),
 
               // Admin Name
@@ -180,20 +247,22 @@ class _AddCollegeAdminPageState extends State<AddCollegeAdminPage> {
                 label: 'Admin Name',
                 controller: _nameController,
                 hintText: 'Enter admin full name',
+                icon: Icons.person_outline,
                 validator: (value) {
                   if (value == null || value.isEmpty) {
                     return 'Please enter admin name';
                   }
                   return null;
                 },
-              ),
-              const SizedBox(height: 16),
+              ).animate().fade(duration: 500.ms).slideY(begin: 0.3, delay: 200.ms),
+              const SizedBox(height: 20),
 
               // Email
               _buildFormField(
                 label: 'Email Address',
                 controller: _emailController,
                 hintText: 'admin@college.edu',
+                icon: Icons.email_outlined,
                 keyboardType: TextInputType.emailAddress,
                 validator: (value) {
                   if (value == null || value.isEmpty) {
@@ -206,14 +275,15 @@ class _AddCollegeAdminPageState extends State<AddCollegeAdminPage> {
                   }
                   return null;
                 },
-              ),
-              const SizedBox(height: 16),
+              ).animate().fade(duration: 500.ms).slideY(begin: 0.3, delay: 300.ms),
+              const SizedBox(height: 20),
 
               // Phone
               _buildFormField(
                 label: 'Phone Number',
                 controller: _phoneController,
                 hintText: '+91 9876543210',
+                icon: Icons.phone_outlined,
                 keyboardType: TextInputType.phone,
                 validator: (value) {
                   if (value == null || value.isEmpty) {
@@ -221,33 +291,35 @@ class _AddCollegeAdminPageState extends State<AddCollegeAdminPage> {
                   }
                   return null;
                 },
-              ),
-              const SizedBox(height: 16),
+              ).animate().fade(duration: 500.ms).slideY(begin: 0.3, delay: 400.ms),
+              const SizedBox(height: 20),
 
               // Role Dropdown
               _buildDropdownField(
                 label: 'Role',
                 value: _selectedRole,
                 items: _roles,
+                icon: Icons.admin_panel_settings_outlined,
                 onChanged: (value) {
                   setState(() {
                     _selectedRole = value!;
                   });
                 },
-              ),
-              const SizedBox(height: 16),
+              ).animate().fade(duration: 500.ms).slideY(begin: 0.3, delay: 500.ms),
+              const SizedBox(height: 20),
 
               // Status Dropdown
               _buildDropdownField(
                 label: 'Status',
                 value: _selectedStatus,
                 items: _statuses,
+                icon: Icons.toggle_on_outlined,
                 onChanged: (value) {
                   setState(() {
                     _selectedStatus = value!;
                   });
                 },
-              ),
+              ).animate().fade(duration: 500.ms).slideY(begin: 0.3, delay: 600.ms),
               const SizedBox(height: 32),
 
               // Action Buttons
@@ -258,17 +330,10 @@ class _AddCollegeAdminPageState extends State<AddCollegeAdminPage> {
                       onPressed: _isLoading
                           ? null
                           : () => Navigator.of(context).pop(),
-                      style: OutlinedButton.styleFrom(
-                        side: const BorderSide(color: AppColors.borderMedium),
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
+                      style: AdminDashboardStyles.getSecondaryButtonStyle(),
                       child: const Text(
                         'Cancel',
                         style: TextStyle(
-                          color: AppColors.textPrimary,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
@@ -278,14 +343,7 @@ class _AddCollegeAdminPageState extends State<AddCollegeAdminPage> {
                   Expanded(
                     child: ElevatedButton(
                       onPressed: _isLoading ? null : _saveAdmin,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primary,
-                        foregroundColor: AppColors.pureWhite,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
+                      style: AdminDashboardStyles.getPrimaryButtonStyle(),
                       child: _isLoading
                           ? const SizedBox(
                               width: 20,
@@ -293,7 +351,7 @@ class _AddCollegeAdminPageState extends State<AddCollegeAdminPage> {
                               child: CircularProgressIndicator(
                                 strokeWidth: 2,
                                 valueColor: AlwaysStoppedAnimation<Color>(
-                                  AppColors.pureWhite,
+                                  Colors.white,
                                 ),
                               ),
                             )
@@ -304,18 +362,21 @@ class _AddCollegeAdminPageState extends State<AddCollegeAdminPage> {
                     ),
                   ),
                 ],
-              ),
+              ).animate().fade(duration: 500.ms).slideY(begin: 0.3, delay: 700.ms),
             ],
           ),
         ),
       ),
-    );
+    ),
+    ),
+  );
   }
 
   Widget _buildFormField({
     required String label,
     required TextEditingController controller,
     required String hintText,
+    required IconData icon,
     TextInputType? keyboardType,
     String? Function(String?)? validator,
   }) {
@@ -327,38 +388,52 @@ class _AddCollegeAdminPageState extends State<AddCollegeAdminPage> {
           style: const TextStyle(
             fontSize: 14,
             fontWeight: FontWeight.w600,
-            color: AppColors.textPrimary,
+            color: AdminDashboardStyles.textDark,
           ),
         ),
         const SizedBox(height: 8),
-        TextFormField(
-          controller: controller,
-          keyboardType: keyboardType,
-          validator: validator,
-          decoration: InputDecoration(
-            hintText: hintText,
-            hintStyle: TextStyle(color: AppColors.textSecondary),
-            filled: true,
-            fillColor: AppColors.surfaceVariant,
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: AppColors.borderLight),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: AppColors.borderLight),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: AppColors.primary),
-            ),
-            errorBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: AppColors.error),
-            ),
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: 16,
-              vertical: 12,
+        Container(
+          decoration: AdminDashboardStyles.getCardDecoration(),
+          child: TextFormField(
+            controller: controller,
+            keyboardType: keyboardType,
+            validator: validator,
+            decoration: InputDecoration(
+              hintText: hintText,
+              hintStyle: const TextStyle(color: AdminDashboardStyles.textLight),
+              prefixIcon: Icon(
+                icon,
+                color: AdminDashboardStyles.primary,
+                size: 20,
+              ),
+              filled: true,
+              fillColor: Colors.white,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(16),
+                borderSide: BorderSide.none,
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(16),
+                borderSide: BorderSide.none,
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(16),
+                borderSide: BorderSide(
+                  color: AdminDashboardStyles.primary,
+                  width: 2,
+                ),
+              ),
+              errorBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(16),
+                borderSide: const BorderSide(
+                  color: AdminDashboardStyles.statusError,
+                  width: 2,
+                ),
+              ),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 16,
+              ),
             ),
           ),
         ),
@@ -370,6 +445,7 @@ class _AddCollegeAdminPageState extends State<AddCollegeAdminPage> {
     required String label,
     required String value,
     required List<String> items,
+    required IconData icon,
     required void Function(String?) onChanged,
   }) {
     return Column(
@@ -380,28 +456,39 @@ class _AddCollegeAdminPageState extends State<AddCollegeAdminPage> {
           style: const TextStyle(
             fontSize: 14,
             fontWeight: FontWeight.w600,
-            color: AppColors.textPrimary,
+            color: AdminDashboardStyles.textDark,
           ),
         ),
         const SizedBox(height: 8),
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-          decoration: BoxDecoration(
-            color: AppColors.surfaceVariant,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: AppColors.borderLight),
-          ),
+          decoration: AdminDashboardStyles.getCardDecoration(),
           child: DropdownButtonHideUnderline(
             child: DropdownButton<String>(
               value: value,
               isExpanded: true,
               onChanged: onChanged,
+              icon: Icon(
+                Icons.keyboard_arrow_down,
+                color: AdminDashboardStyles.primary,
+              ),
               items: items.map((String item) {
                 return DropdownMenuItem<String>(
                   value: item,
-                  child: Text(
-                    item,
-                    style: const TextStyle(color: AppColors.textPrimary),
+                  child: Row(
+                    children: [
+                      Icon(
+                        icon,
+                        color: AdminDashboardStyles.primary,
+                        size: 20,
+                      ),
+                      const SizedBox(width: 12),
+                      Text(
+                        item,
+                        style: const TextStyle(
+                          color: AdminDashboardStyles.textDark,
+                        ),
+                      ),
+                    ],
                   ),
                 );
               }).toList(),

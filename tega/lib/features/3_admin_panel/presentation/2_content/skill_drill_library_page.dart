@@ -12,7 +12,7 @@ class SkillDrillLibraryPage extends StatefulWidget {
 }
 
 class _SkillDrillLibraryPageState extends State<SkillDrillLibraryPage> {
-  final ContentQuizService _contentQuizService = ContentQuizService();
+  final ContentQuizRepository _contentQuizService = ContentQuizRepository();
   final TextEditingController _searchController = TextEditingController();
 
   List<SkillDrill> _allDrills = [];
@@ -73,7 +73,7 @@ class _SkillDrillLibraryPageState extends State<SkillDrillLibraryPage> {
         final searchQuery = _searchController.text.toLowerCase();
         if (searchQuery.isNotEmpty) {
           final matchesSearch =
-              drill.question.toLowerCase().contains(searchQuery) ||
+              drill.title.toLowerCase().contains(searchQuery) ||
               drill.subject.toLowerCase().contains(searchQuery) ||
               drill.skill.toLowerCase().contains(searchQuery) ||
               drill.tags.any((tag) => tag.toLowerCase().contains(searchQuery));
@@ -81,15 +81,18 @@ class _SkillDrillLibraryPageState extends State<SkillDrillLibraryPage> {
         }
         if (_selectedSkill != null &&
             _selectedSkill != "All Skills" &&
-            drill.skill != _selectedSkill)
+            drill.skill != _selectedSkill) {
           return false;
+        }
         if (_selectedQuestionType != null &&
             _selectedQuestionType != "All Types" &&
-            drill.questionType != _selectedQuestionType)
+            drill.questionType != _selectedQuestionType) {
           return false;
+        }
         if (_selectedDifficulty != null &&
-            drill.difficulty != _selectedDifficulty)
+            drill.difficulty != _selectedDifficulty) {
           return false;
+        }
         return true;
       }).toList();
     });
@@ -272,7 +275,7 @@ class _SkillDrillLibraryPageState extends State<SkillDrillLibraryPage> {
     Function(String?) onSelected,
   ) {
     return DropdownButtonFormField<String>(
-      value: selectedValue,
+      initialValue: selectedValue,
       decoration: InputDecoration(
         labelText: label,
         filled: true,
@@ -381,7 +384,7 @@ class _SkillDrillLibraryPageState extends State<SkillDrillLibraryPage> {
               height: 140,
               width: double.infinity,
               child: Image.network(
-                drill.imageUrl,
+                drill.imageUrls.isNotEmpty ? drill.imageUrls.first : '',
                 fit: BoxFit.cover,
                 errorBuilder: (context, error, stackTrace) => Container(
                   color: AppColors.primary.withOpacity(0.1),
@@ -395,7 +398,7 @@ class _SkillDrillLibraryPageState extends State<SkillDrillLibraryPage> {
             ),
             ListTile(
               title: Text(
-                drill.question,
+                drill.title,
                 style: const TextStyle(fontWeight: FontWeight.bold),
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,

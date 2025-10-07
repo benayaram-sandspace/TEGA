@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:tega/core/constants/app_colors.dart';
 import 'package:tega/features/3_admin_panel/data/models/content_quiz_model.dart';
 import 'package:tega/features/3_admin_panel/data/repositories/content_quiz_repository.dart';
+import 'package:tega/features/3_admin_panel/presentation/0_dashboard/admin_dashboard_styles.dart';
 
 class SoftSkillScenariosPage extends StatefulWidget {
   const SoftSkillScenariosPage({super.key});
@@ -10,8 +12,9 @@ class SoftSkillScenariosPage extends StatefulWidget {
   State<SoftSkillScenariosPage> createState() => _SoftSkillScenariosPageState();
 }
 
-class _SoftSkillScenariosPageState extends State<SoftSkillScenariosPage> {
-  final ContentQuizService _contentQuizService = ContentQuizService();
+class _SoftSkillScenariosPageState extends State<SoftSkillScenariosPage>
+    with TickerProviderStateMixin {
+  final ContentQuizRepository _contentQuizService = ContentQuizRepository();
   final TextEditingController _searchController = TextEditingController();
 
   List<SoftSkillScenario> _allScenarios = [];
@@ -23,15 +26,33 @@ class _SoftSkillScenariosPageState extends State<SoftSkillScenariosPage> {
 
   bool _isLoading = true;
   bool _isFilterExpanded = false;
+  
+  late AnimationController _animationController;
+  late Animation<double> _fadeAnimation;
+  late Animation<Offset> _slideAnimation;
 
   @override
   void initState() {
     super.initState();
+    _animationController = AnimationController(
+      duration: const Duration(milliseconds: 800),
+      vsync: this,
+    );
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
+    );
+    _slideAnimation = Tween<Offset>(
+      begin: const Offset(0, 0.3),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(parent: _animationController, curve: Curves.easeOutCubic));
+    
+    _animationController.forward();
     _loadData();
   }
 
   @override
   void dispose() {
+    _animationController.dispose();
     _searchController.dispose();
     super.dispose();
   }
@@ -78,12 +99,14 @@ class _SoftSkillScenariosPageState extends State<SoftSkillScenariosPage> {
 
         if (_selectedCategory != null &&
             _selectedCategory != "All Categories" &&
-            scenario.category != _selectedCategory)
+            scenario.category != _selectedCategory) {
           return false;
+        }
 
         if (_selectedDifficulty != null &&
-            scenario.difficulty != _selectedDifficulty)
+            scenario.difficulty != _selectedDifficulty) {
           return false;
+        }
 
         return true;
       }).toList();
@@ -120,19 +143,24 @@ class _SoftSkillScenariosPageState extends State<SoftSkillScenariosPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      body: _isLoading
-          ? const Center(
-              child: CircularProgressIndicator(color: AppColors.primary),
-            )
-          : CustomScrollView(
-              slivers: [
-                _buildSliverAppBar(),
-                SliverToBoxAdapter(child: _buildFilterSection()),
-                _buildContentSliver(),
-              ],
-            ),
+    return Container(
+      color: AdminDashboardStyles.background,
+      child: FadeTransition(
+        opacity: _fadeAnimation,
+        child: SlideTransition(
+          position: _slideAnimation,
+          child: _isLoading
+              ? const Center(
+                  child: CircularProgressIndicator(color: AppColors.primary),
+                )
+              : CustomScrollView(
+                  slivers: [
+                    SliverToBoxAdapter(child: _buildFilterSection()),
+                    _buildContentSliver(),
+                  ],
+                ),
+        ),
+      ),
     );
   }
 
@@ -296,7 +324,7 @@ class _SoftSkillScenariosPageState extends State<SoftSkillScenariosPage> {
     Function(String?) onSelected,
   ) {
     return DropdownButtonFormField<String>(
-      value: selectedValue,
+      initialValue: selectedValue,
       decoration: InputDecoration(
         labelText: label,
         filled: true,
@@ -388,7 +416,7 @@ class _SoftSkillScenariosPageState extends State<SoftSkillScenariosPage> {
   }
 
   Widget _buildScenarioCard(SoftSkillScenario scenario) {
-    final cardColor = _getDifficultyColor(scenario.difficulty);
+    final cardColor = _getDifficultyColor(scenario.difficulty.name);
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
       elevation: 0,

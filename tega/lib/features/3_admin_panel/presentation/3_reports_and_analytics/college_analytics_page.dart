@@ -114,7 +114,7 @@ class _CollegeAnalyticsPageState extends State<CollegeAnalyticsPage> {
   }
 
   Widget _buildModuleUsageChart() {
-    return Container(
+    return SizedBox(
       height: 120,
       child: BarChart(
         BarChartData(
@@ -271,7 +271,7 @@ class _CollegeAnalyticsPageState extends State<CollegeAnalyticsPage> {
   }
 
   Widget _buildSkillGrowthChart() {
-    return Container(
+    return SizedBox(
       height: 120,
       child: LineChart(
         LineChartData(

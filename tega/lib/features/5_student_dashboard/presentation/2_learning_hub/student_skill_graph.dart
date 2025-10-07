@@ -210,7 +210,7 @@ class SkillGraphPage extends StatelessWidget {
                   ),
                   const SizedBox(height: 10),
                   DropdownButtonFormField<String>(
-                    value: "SQL (Advanced)",
+                    initialValue: "SQL (Advanced)",
                     decoration: InputDecoration(
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(10),

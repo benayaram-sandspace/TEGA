@@ -4,7 +4,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:tega/features/5_student_dashboard/presentation/1_home/student_home_page.dart';
 
 class OnboardingScreen6 extends StatelessWidget {
-  const OnboardingScreen6({Key? key}) : super(key: key);
+  const OnboardingScreen6({super.key});
 
   @override
   Widget build(BuildContext context) {

@@ -1173,14 +1173,18 @@ class _ProgressReportGeneratorPageState
       csvData.add(['Student Name', widget.student.name]);
       csvData.add(['College', widget.student.college]);
       csvData.add(['Status', widget.student.status]);
-      if (widget.student.email != null)
+      if (widget.student.email != null) {
         csvData.add(['Email', widget.student.email!]);
-      if (widget.student.studentId != null)
+      }
+      if (widget.student.studentId != null) {
         csvData.add(['Student ID', widget.student.studentId!]);
-      if (widget.student.branch != null)
+      }
+      if (widget.student.branch != null) {
         csvData.add(['Course', widget.student.branch!]);
-      if (widget.student.yearOfStudy != null)
+      }
+      if (widget.student.yearOfStudy != null) {
         csvData.add(['Year', widget.student.yearOfStudy!]);
+      }
       csvData.add(['Date Range', _selectedDateRange]);
       csvData.add(['Generated On', DateTime.now().toString()]);
       csvData.add(['', '']); // Empty row

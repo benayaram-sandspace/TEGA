@@ -1,48 +1,59 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:tega/core/constants/app_colors.dart';
 import 'package:tega/features/3_admin_panel/presentation/0_dashboard/admin_dashboard.dart';
+import 'package:tega/features/3_admin_panel/presentation/0_dashboard/admin_dashboard_styles.dart';
 
-class AnalyticsPage extends StatelessWidget {
+class AnalyticsPage extends StatefulWidget {
   const AnalyticsPage({super.key});
 
   @override
+  State<AnalyticsPage> createState() => _AnalyticsPageState();
+}
+
+class _AnalyticsPageState extends State<AnalyticsPage>
+    with TickerProviderStateMixin {
+  late AnimationController _animationController;
+  late Animation<double> _fadeAnimation;
+  late Animation<Offset> _slideAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _animationController = AnimationController(
+      duration: const Duration(milliseconds: 800),
+      vsync: this,
+    );
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
+    );
+    _slideAnimation = Tween<Offset>(
+      begin: const Offset(0, 0.3),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(parent: _animationController, curve: Curves.easeOutCubic));
+    
+    _animationController.forward();
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      // Using CustomScrollView with Slivers for a more dynamic scrolling experience.
-      body: CustomScrollView(
-        slivers: [
-          SliverAppBar(
-            title: const Text(
-              'Analytics Dashboard',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                color: AppColors.textPrimary,
-              ),
-            ),
-            backgroundColor: AppColors.background,
-            surfaceTintColor:
-                AppColors.background, // Prevents color change on scroll
-            elevation: 1,
-            pinned: true, // The app bar will remain visible at the top
-            floating:
-                true, // The app bar will become visible as soon as you scroll up
-            leading: IconButton(
-              icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
-              onPressed: () {
-                Navigator.pushAndRemoveUntil(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const AdminDashboard(),
-                  ),
-                  (route) => false,
-                );
-              },
-            ),
-          ),
-          // Using SliverPadding for consistent spacing of the content.
-          SliverPadding(
+    return Container(
+      color: AdminDashboardStyles.background,
+      child: FadeTransition(
+        opacity: _fadeAnimation,
+        child: SlideTransition(
+          position: _slideAnimation,
+          child: CustomScrollView(
+            slivers: [
+              // Using SliverPadding for consistent spacing of the content.
+              SliverPadding(
             padding: const EdgeInsets.all(20),
             sliver: SliverList(
               delegate: SliverChildListDelegate([
@@ -63,10 +74,10 @@ class AnalyticsPage extends StatelessWidget {
           ),
         ],
       ),
+        ),
+      ),
     );
   }
-
-  /// A generic builder for analytics cards to maintain a consistent UI.
   Widget _buildAnalyticsCard({
     required String title,
     required String metric,
@@ -77,13 +88,13 @@ class AnalyticsPage extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(16), // Softer corners
+        color: AdminDashboardStyles.cardBackground,
+        borderRadius: BorderRadius.circular(20), // Softer corners
         boxShadow: [
           BoxShadow(
-            color: AppColors.shadowLight.withOpacity(0.5),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+            color: AdminDashboardStyles.primary.withValues(alpha: 0.1),
+            blurRadius: 12,
+            offset: const Offset(0, 6),
           ),
         ],
       ),
@@ -93,7 +104,7 @@ class AnalyticsPage extends StatelessWidget {
           Row(
             children: [
               if (headerIcon != null) ...[
-                Icon(headerIcon, color: AppColors.textSecondary, size: 18),
+                Icon(headerIcon, color: AdminDashboardStyles.textLight, size: 18),
                 const SizedBox(width: 8),
               ],
               Text(
@@ -101,7 +112,7 @@ class AnalyticsPage extends StatelessWidget {
                 style: const TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
-                  color: AppColors.textSecondary,
+                  color: AdminDashboardStyles.textLight,
                 ),
               ),
             ],
@@ -112,7 +123,7 @@ class AnalyticsPage extends StatelessWidget {
             style: const TextStyle(
               fontSize: 36,
               fontWeight: FontWeight.bold,
-              color: AppColors.textPrimary,
+              color: AdminDashboardStyles.textDark,
             ),
           ),
           const SizedBox(height: 4),
@@ -120,7 +131,7 @@ class AnalyticsPage extends StatelessWidget {
             timeframe,
             style: TextStyle(
               fontSize: 14,
-              color: AppColors.info,
+              color: AdminDashboardStyles.primary,
               fontWeight: FontWeight.w500,
             ),
           ),
@@ -135,14 +146,14 @@ class AnalyticsPage extends StatelessWidget {
   Widget _buildSectionHeader(String title, {required IconData icon}) {
     return Row(
       children: [
-        Icon(icon, color: AppColors.textPrimary, size: 22),
+        Icon(icon, color: AdminDashboardStyles.textDark, size: 22),
         const SizedBox(width: 8),
         Text(
           title,
           style: const TextStyle(
             fontSize: 20,
             fontWeight: FontWeight.bold,
-            color: AppColors.textPrimary,
+            color: AdminDashboardStyles.textDark,
           ),
         ),
       ],
@@ -444,5 +455,5 @@ class AnalyticsPage extends StatelessWidget {
         // TODO: Navigate to student's profile page
       },
     );
-  }
 }
+  }

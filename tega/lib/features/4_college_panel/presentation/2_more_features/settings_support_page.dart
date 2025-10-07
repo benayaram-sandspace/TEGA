@@ -110,8 +110,18 @@ class _SettingsSupportPageState extends State<SettingsSupportPage> {
                       setState(() {
                         _notificationsEnabled = value;
                       });
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            _notificationsEnabled
+                                ? 'Notifications Enabled'
+                                : 'Notifications Disabled',
+                          ),
+                          duration: const Duration(seconds: 2),
+                        ),
+                      );
                     },
-                    activeColor: DashboardStyles.primary,
+                    activeThumbColor: DashboardStyles.primary,
                   ),
                   const Divider(height: 1),
                   SwitchListTile(
@@ -123,7 +133,7 @@ class _SettingsSupportPageState extends State<SettingsSupportPage> {
                         _darkModeEnabled = value;
                       });
                     },
-                    activeColor: DashboardStyles.primary,
+                    activeThumbColor: DashboardStyles.primary,
                   ),
                   const Divider(height: 1),
                   SwitchListTile(
@@ -135,7 +145,7 @@ class _SettingsSupportPageState extends State<SettingsSupportPage> {
                         _autoSaveEnabled = value;
                       });
                     },
-                    activeColor: DashboardStyles.primary,
+                    activeThumbColor: DashboardStyles.primary,
                   ),
                   const Divider(height: 1),
                   ListTile(

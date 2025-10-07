@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:tega/core/constants/app_colors.dart';
 import 'package:tega/features/3_admin_panel/presentation/0_dashboard/admin_dashboard.dart';
+import 'package:tega/features/3_admin_panel/presentation/0_dashboard/admin_dashboard_styles.dart';
 import 'package:tega/features/3_admin_panel/presentation/4_settings_and_misc/flagged_users_page.dart';
 import 'package:tega/features/5_student_dashboard/data/models/student_model.dart';
 import 'student_profile_page.dart';
@@ -13,7 +15,7 @@ class StudentManagementPage extends StatefulWidget {
 }
 
 class _StudentManagementPageState extends State<StudentManagementPage>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
   final TextEditingController _searchController = TextEditingController();
   String _selectedCollege = 'All';
   String _selectedBranch = 'All';
@@ -21,23 +23,66 @@ class _StudentManagementPageState extends State<StudentManagementPage>
   List<Student> _students = [];
   List<Student> _filteredStudents = [];
 
-  late AnimationController _animationController;
+  // Enhanced animation controllers
+  late List<AnimationController> _animationControllers;
+  late List<Animation<double>> _scaleAnimations;
+  late List<Animation<Offset>> _slideAnimations;
 
   @override
   void initState() {
     super.initState();
-    _animationController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 500),
-    );
+    _initializeAnimations();
     _loadStudents();
-    _animationController.forward();
+    _startStaggeredAnimations();
+  }
+
+  void _initializeAnimations() {
+    _animationControllers = List.generate(
+      50, // Maximum expected students
+      (index) => AnimationController(
+        duration: Duration(milliseconds: 400 + (index * 30)),
+        vsync: this,
+      ),
+    );
+
+    _scaleAnimations = _animationControllers
+        .map(
+          (controller) => CurvedAnimation(
+            parent: controller,
+            curve: Curves.easeOutBack,
+          ),
+        )
+        .toList();
+
+    _slideAnimations = _animationControllers
+        .map(
+          (controller) => Tween<Offset>(
+            begin: const Offset(0, 0.3),
+            end: Offset.zero,
+          ).animate(CurvedAnimation(
+            parent: controller,
+            curve: Curves.easeOutCubic,
+          )),
+        )
+        .toList();
+  }
+
+  void _startStaggeredAnimations() {
+    for (int i = 0; i < _filteredStudents.length && i < _animationControllers.length; i++) {
+      Future.delayed(Duration(milliseconds: i * 80), () {
+        if (mounted) {
+          _animationControllers[i].forward();
+        }
+      });
+    }
   }
 
   @override
   void dispose() {
     _searchController.dispose();
-    _animationController.dispose();
+    for (var controller in _animationControllers) {
+      controller.dispose();
+    }
     super.dispose();
   }
 
@@ -61,7 +106,9 @@ class _StudentManagementPageState extends State<StudentManagementPage>
   }
 
   void _applyFilters() {
-    _animationController.reset();
+    for (var controller in _animationControllers) {
+      controller.reset();
+    }
     setState(() {
       _filteredStudents = _students.where((student) {
         // Search filter
@@ -93,11 +140,14 @@ class _StudentManagementPageState extends State<StudentManagementPage>
             matchesStatus;
       }).toList();
     });
-    _animationController.forward();
+    _startStaggeredAnimations();
   }
 
   void _clearFilters() {
-    _animationController.reset();
+    // Reset all animations
+    for (var controller in _animationControllers) {
+      controller.reset();
+    }
     setState(() {
       _selectedCollege = 'All';
       _selectedBranch = 'All';
@@ -105,53 +155,13 @@ class _StudentManagementPageState extends State<StudentManagementPage>
       _searchController.clear();
       _applyFilters();
     });
-    _animationController.forward();
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(
-        backgroundColor: AppColors.background,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(
-            Icons.arrow_back_ios_new,
-            color: AppColors.textPrimary,
-          ),
-          // Back functionality to go to the admin dashboard
-          onPressed: () {
-            Navigator.pushAndRemoveUntil(
-              context,
-              MaterialPageRoute(builder: (context) => const AdminDashboard()),
-              (route) => false,
-            );
-          },
-        ),
-        title: const Text(
-          'Student Management',
-          style: TextStyle(
-            color: AppColors.textPrimary,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        centerTitle: true,
-        actions: [
-          IconButton(
-            onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Exporting student list...')),
-              );
-            },
-            icon: const Icon(
-              Icons.file_download_outlined,
-              color: AppColors.primary,
-            ),
-          ),
-        ],
-      ),
-      body: Column(
+    return Container(
+      color: AdminDashboardStyles.background,
+      child: Column(
         children: [
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
@@ -167,7 +177,7 @@ class _StudentManagementPageState extends State<StudentManagementPage>
                   style: const TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
-                    color: AppColors.textPrimary,
+                    color: AdminDashboardStyles.textDark,
                   ),
                 ),
                 OutlinedButton.icon(
@@ -182,8 +192,8 @@ class _StudentManagementPageState extends State<StudentManagementPage>
                     );
                   },
                   style: OutlinedButton.styleFrom(
-                    foregroundColor: AppColors.error,
-                    side: BorderSide(color: AppColors.error.withOpacity(0.5)),
+                    foregroundColor: AdminDashboardStyles.statusError,
+                    side: BorderSide(color: AdminDashboardStyles.statusError.withValues(alpha: 0.5)),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
@@ -205,11 +215,12 @@ class _StudentManagementPageState extends State<StudentManagementPage>
 
   Widget _buildFilterSection() {
     return Card(
-      elevation: 0,
-      color: AppColors.surface,
+      elevation: 4,
+      color: AdminDashboardStyles.cardBackground,
+      shadowColor: AdminDashboardStyles.primary.withValues(alpha: 0.1),
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: const BorderSide(color: AppColors.borderLight),
+        borderRadius: BorderRadius.circular(20),
+        side: BorderSide(color: AdminDashboardStyles.primary.withValues(alpha: 0.2)),
       ),
       child: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -223,7 +234,7 @@ class _StudentManagementPageState extends State<StudentManagementPage>
                 hintText: 'Search by name or college...',
                 prefixIcon: const Icon(Icons.search, size: 20),
                 filled: true,
-                fillColor: AppColors.background,
+                fillColor: AdminDashboardStyles.background,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                   borderSide: BorderSide.none,
@@ -272,7 +283,7 @@ class _StudentManagementPageState extends State<StudentManagementPage>
           ],
         ),
       ),
-    );
+    ).animate().fadeIn(duration: 600.ms).slideY(begin: 0.3);
   }
 
   Widget _buildDropdown(
@@ -287,7 +298,7 @@ class _StudentManagementPageState extends State<StudentManagementPage>
         Text(label, style: const TextStyle(fontWeight: FontWeight.w500)),
         const SizedBox(height: 8),
         DropdownButtonFormField<String>(
-          value: value,
+          initialValue: value,
           items: items
               .map((item) => DropdownMenuItem(value: item, child: Text(item)))
               .toList(),
@@ -342,25 +353,19 @@ class _StudentManagementPageState extends State<StudentManagementPage>
       itemCount: _filteredStudents.length,
       itemBuilder: (context, index) {
         final student = _filteredStudents[index];
-        final animation = Tween<double>(begin: 0.0, end: 1.0).animate(
-          CurvedAnimation(
-            parent: _animationController,
-            curve: Interval(
-              (1 / _filteredStudents.length) * index,
-              1.0,
-              curve: Curves.easeOutCubic,
-            ),
-          ),
-        );
-        return FadeTransition(
-          opacity: animation,
-          child: SlideTransition(
-            position: Tween<Offset>(
-              begin: const Offset(0, 0.3),
-              end: Offset.zero,
-            ).animate(animation),
-            child: _buildStudentItem(student),
-          ),
+        if (index >= _animationControllers.length) return _buildStudentItem(student);
+        
+        return AnimatedBuilder(
+          animation: _scaleAnimations[index],
+          builder: (context, child) {
+            return Transform.scale(
+              scale: _scaleAnimations[index].value,
+              child: SlideTransition(
+                position: _slideAnimations[index],
+                child: _buildStudentItem(student),
+              ),
+            );
+          },
         );
       },
     );
@@ -463,7 +468,7 @@ class _StudentManagementPageState extends State<StudentManagementPage>
   }
 
   Widget _buildEmptyState() {
-    return const Center(
+    return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
@@ -485,6 +490,6 @@ class _StudentManagementPageState extends State<StudentManagementPage>
           ),
         ],
       ),
-    );
-  }
+    ).animate().fadeIn(duration: 600.ms).slideY(begin: 0.3);
 }
+  }

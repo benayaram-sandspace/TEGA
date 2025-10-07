@@ -3,7 +3,7 @@ import 'package:tega/features/5_student_dashboard/presentation/0_onboarding/on_b
 import 'package:tega/features/5_student_dashboard/presentation/0_onboarding/on_boarding_page_3.dart';
 
 class OnboardingScreen2 extends StatefulWidget {
-  const OnboardingScreen2({Key? key}) : super(key: key);
+  const OnboardingScreen2({super.key});
 
   @override
   State<OnboardingScreen2> createState() => _OnboardingScreen2State();

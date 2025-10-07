@@ -3,7 +3,7 @@ import 'on_boarding_page_3.dart';
 import 'on_boarding_page_5.dart';
 
 class OnboardingScreen4 extends StatefulWidget {
-  const OnboardingScreen4({Key? key}) : super(key: key);
+  const OnboardingScreen4({super.key});
 
   @override
   State<OnboardingScreen4> createState() => _OnboardingScreen4State();

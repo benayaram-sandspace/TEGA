@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:intl/intl.dart';
-import 'package:tega/core/constants/app_colors.dart';
 import 'package:tega/features/1_authentication/data/auth_repository.dart';
+import 'package:tega/features/3_admin_panel/presentation/0_dashboard/admin_dashboard_styles.dart';
 import 'package:tega/features/3_admin_panel/presentation/0_dashboard/widgets/admin_analytics_chart.dart';
 
 class _StatCardInfo {
@@ -57,25 +58,25 @@ class _DashboardHomeTabState extends State<DashboardHomeTab>
         icon: Icons.school_rounded,
         title: _tr('total_colleges'),
         value: '150',
-        color: Colors.blue,
+        color: AdminDashboardStyles.primary,
       ),
       _StatCardInfo(
         icon: Icons.people_rounded,
         title: _tr('total_students'),
         value: '12,500',
-        color: Colors.green,
+        color: AdminDashboardStyles.accentGreen,
       ),
       _StatCardInfo(
         icon: Icons.content_copy_rounded,
         title: _tr('content_modules'),
         value: '85',
-        color: Colors.orange,
+        color: AdminDashboardStyles.accentBlue,
       ),
       _StatCardInfo(
         icon: Icons.support_agent_rounded,
         title: _tr('support_tickets'),
         value: '25',
-        color: Colors.red,
+        color: AdminDashboardStyles.accentRed,
       ),
     ];
 
@@ -121,9 +122,9 @@ class _DashboardHomeTabState extends State<DashboardHomeTab>
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _buildHeader(),
-          const SizedBox(height: 24),
+          const SizedBox(height: 32),
           _buildCardsGridView(),
-          const SizedBox(height: 24),
+          const SizedBox(height: 32),
           AdminAnalyticsChart(animationController: _animationControllers.first),
         ],
       ),
@@ -135,30 +136,71 @@ class _DashboardHomeTabState extends State<DashboardHomeTab>
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          '${_tr('welcome_back')} $adminName!',
-          style: const TextStyle(
-            fontSize: 28,
-            fontWeight: FontWeight.bold,
-            color: AppColors.textPrimary,
-          ),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          DateFormat('EEEE, MMMM d, yyyy').format(DateTime.now()),
-          style: const TextStyle(fontSize: 16, color: AppColors.textSecondary),
+        Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    AdminDashboardStyles.primary,
+                    AdminDashboardStyles.primaryLight,
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: AdminDashboardStyles.primary.withValues(alpha: 0.3),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: const Icon(
+                Icons.dashboard_rounded,
+                color: Colors.white,
+                size: 28,
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '${_tr('welcome_back')} $adminName!',
+                    style: const TextStyle(
+                      fontSize: 28,
+                      fontWeight: FontWeight.bold,
+                      color: AdminDashboardStyles.textDark,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    DateFormat('EEEE, MMMM d, yyyy').format(DateTime.now()),
+                    style: const TextStyle(
+                      fontSize: 16, 
+                      color: AdminDashboardStyles.textLight,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
       ],
-    );
+    ).animate().fadeIn(duration: 600.ms).slideX(begin: 0.3);
   }
 
   Widget _buildCardsGridView() {
     return GridView.builder(
       gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-        maxCrossAxisExtent: 160,
-        crossAxisSpacing: 16,
-        mainAxisSpacing: 16,
-        childAspectRatio: 1.2,
+        maxCrossAxisExtent: 220,
+        crossAxisSpacing: 20,
+        mainAxisSpacing: 20,
+        childAspectRatio: 1.1,
       ),
       itemCount: _statItems.length,
       shrinkWrap: true,
@@ -170,7 +212,7 @@ class _DashboardHomeTabState extends State<DashboardHomeTab>
   }
 
   List<Color> _getGradientColors(Color baseColor) {
-    return [baseColor.withOpacity(0.8), baseColor];
+    return [baseColor.withValues(alpha: 0.8), baseColor];
   }
 
   Widget _buildStatCard({required _StatCardInfo item, required int index}) {
@@ -182,7 +224,7 @@ class _DashboardHomeTabState extends State<DashboardHomeTab>
       animation: _scaleAnimations[index],
       builder: (context, child) {
         return Transform.scale(
-          scale: _scaleAnimations[index].value,
+          scale: _scaleAnimations[index].value * (isPressed ? 0.95 : (isHovered ? 1.05 : 1.0)),
           child: MouseRegion(
             onEnter: (_) => setState(() => _hoveredIndex = index),
             onExit: (_) => setState(() => _hoveredIndex = null),
@@ -193,10 +235,8 @@ class _DashboardHomeTabState extends State<DashboardHomeTab>
               onTapCancel: () => setState(() => _pressedIndex = null),
               onTap: () {},
               child: AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
-                curve: Curves.easeOut,
-                transform: Matrix4.identity()
-                  ..scale(isPressed ? 0.95 : (isHovered ? 1.05 : 1.0)),
+                duration: AdminDashboardStyles.shortAnimation,
+                curve: AdminDashboardStyles.defaultCurve,
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     colors: gradientColors,
@@ -205,19 +245,26 @@ class _DashboardHomeTabState extends State<DashboardHomeTab>
                   ),
                   borderRadius: BorderRadius.circular(isHovered ? 24 : 20),
                   boxShadow: [
-                    if (isHovered)
+                    if (isHovered) ...[
                       BoxShadow(
-                        color: item.color.withOpacity(0.3),
+                        color: item.color.withValues(alpha: 0.25),
                         blurRadius: 20,
-                        spreadRadius: 2,
                         offset: const Offset(0, 8),
-                      )
-                    else
+                        spreadRadius: 2,
+                      ),
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.1),
+                        color: item.color.withValues(alpha: 0.15),
+                        blurRadius: 30,
+                        offset: const Offset(0, 12),
+                        spreadRadius: 4,
+                      ),
+                    ] else ...[
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.08),
                         blurRadius: 12,
                         offset: const Offset(0, 4),
                       ),
+                    ],
                   ],
                 ),
                 child: ClipRRect(
@@ -225,6 +272,7 @@ class _DashboardHomeTabState extends State<DashboardHomeTab>
                   child: Stack(
                     alignment: Alignment.center,
                     children: [
+                      // Decorative circles
                       Positioned(
                         top: -20,
                         right: -20,
@@ -233,32 +281,57 @@ class _DashboardHomeTabState extends State<DashboardHomeTab>
                           height: 80,
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
-                            color: Colors.white.withOpacity(0.1),
+                            color: Colors.white.withValues(alpha: 0.1),
                           ),
                         ),
                       ),
+                      Positioned(
+                        bottom: -30,
+                        left: -30,
+                        child: Container(
+                          width: 100,
+                          height: 100,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: Colors.white.withValues(alpha: 0.05),
+                          ),
+                        ),
+                      ),
+                      // Content
                       Padding(
-                        padding: const EdgeInsets.all(16.0),
+                        padding: const EdgeInsets.all(20.0),
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Icon(item.icon, size: 28, color: Colors.white),
-                            const SizedBox(height: 8),
+                            Container(
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withValues(alpha: 0.2),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Icon(
+                                item.icon, 
+                                size: 32, 
+                                color: Colors.white,
+                              ),
+                            ),
+                            const SizedBox(height: 16),
                             Text(
                               item.value,
                               style: const TextStyle(
-                                fontSize: 20,
+                                fontSize: 24,
                                 fontWeight: FontWeight.bold,
                                 color: Colors.white,
                               ),
                             ),
-                            const SizedBox(height: 2),
+                            const SizedBox(height: 4),
                             Text(
                               item.title,
                               textAlign: TextAlign.center,
                               style: const TextStyle(
-                                fontSize: 12,
+                                fontSize: 13,
                                 color: Colors.white70,
+                                fontWeight: FontWeight.w500,
                               ),
                             ),
                           ],

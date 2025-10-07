@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:tega/core/constants/app_colors.dart';
 import 'package:tega/features/4_college_panel/data/repositories/college_repository.dart';
 
@@ -9,9 +10,15 @@ class AddCollegePage extends StatefulWidget {
   State<AddCollegePage> createState() => _AddCollegePageState();
 }
 
-class _AddCollegePageState extends State<AddCollegePage> {
+class _AddCollegePageState extends State<AddCollegePage>
+    with TickerProviderStateMixin {
   final _formKey = GlobalKey<FormState>();
   final CollegeService _collegeService = CollegeService();
+  
+  // Animation controllers
+  late AnimationController _animationController;
+  late Animation<double> _fadeAnimation;
+  late Animation<Offset> _slideAnimation;
 
   // Form controllers
   final _collegeNameController = TextEditingController();
@@ -27,43 +34,26 @@ class _AddCollegePageState extends State<AddCollegePage> {
   bool _isLoading = false;
 
   final List<String> _states = [
-    'Andhra Pradesh',
-    'Arunachal Pradesh',
-    'Assam',
-    'Bihar',
-    'Chhattisgarh',
-    'Goa',
-    'Gujarat',
-    'Haryana',
-    'Himachal Pradesh',
-    'Jharkhand',
-    'Karnataka',
-    'Kerala',
-    'Madhya Pradesh',
-    'Maharashtra',
-    'Manipur',
-    'Meghalaya',
-    'Mizoram',
-    'Nagaland',
-    'Odisha',
-    'Punjab',
-    'Rajasthan',
-    'Sikkim',
-    'Tamil Nadu',
-    'Telangana',
-    'Tripura',
-    'Uttar Pradesh',
-    'Uttarakhand',
-    'West Bengal',
-    'Delhi',
-    'Jammu and Kashmir',
-    'Ladakh',
-    'Chandigarh',
-    'Puducherry',
-    'Andaman and Nicobar Islands',
-    'Dadra and Nagar Haveli and Daman and Diu',
-    'Lakshadweep',
+    'Andhra Pradesh', 'Arunachal Pradesh', 'Assam', 'Bihar', 'Chhattisgarh', 'Goa', 'Gujarat', 'Haryana', 'Himachal Pradesh', 'Jharkhand', 'Karnataka', 'Kerala', 'Madhya Pradesh', 'Maharashtra', 'Manipur', 'Meghalaya', 'Mizoram', 'Nagaland', 'Odisha', 'Punjab', 'Rajasthan', 'Sikkim', 'Tamil Nadu', 'Telangana', 'Tripura', 'Uttar Pradesh', 'Uttarakhand', 'West Bengal', 'Delhi', 'Jammu and Kashmir', 'Ladakh', 'Chandigarh', 'Puducherry', 'Andaman and Nicobar Islands', 'Dadra and Nagar Haveli and Daman and Diu', 'Lakshadweep',
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    _animationController = AnimationController(
+      duration: const Duration(milliseconds: 800),
+      vsync: this,
+    );
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _animationController, curve: Curves.easeOutCubic),
+    );
+    _slideAnimation = Tween<Offset>(
+      begin: const Offset(0, 0.3),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(parent: _animationController, curve: Curves.easeOutCubic));
+    
+    _animationController.forward();
+  }
 
   @override
   void dispose() {
@@ -75,6 +65,7 @@ class _AddCollegePageState extends State<AddCollegePage> {
     _contactNameController.dispose();
     _contactEmailController.dispose();
     _contactPhoneController.dispose();
+    _animationController.dispose();
     super.dispose();
   }
 
@@ -156,30 +147,33 @@ class _AddCollegePageState extends State<AddCollegePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: const Color(0xFFFFF3E0),
       appBar: AppBar(
         title: const Text(
           'Add New College',
           style: TextStyle(
             fontWeight: FontWeight.bold,
-            color: AppColors.textPrimary,
+            color: Colors.white,
           ),
         ),
-        backgroundColor: AppColors.background,
+        backgroundColor: const Color(0xFFFFA726),
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.close, color: AppColors.textPrimary),
+          icon: const Icon(Icons.close, color: Colors.white),
           onPressed: () => Navigator.of(context).pop(),
         ),
       ),
-      body: Form(
-        key: _formKey,
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(20),
+      body: FadeTransition(
+        opacity: _fadeAnimation,
+        child: SlideTransition(
+          position: _slideAnimation,
+          child: Form(
+            key: _formKey,
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(20),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // College Name
               _buildFormField(
                 label: 'College Name',
                 controller: _collegeNameController,
@@ -190,10 +184,8 @@ class _AddCollegePageState extends State<AddCollegePage> {
                   }
                   return null;
                 },
-              ),
+              ).animate().fade(duration: 500.ms).slideY(begin: 0.5, delay: 200.ms),
               const SizedBox(height: 16),
-
-              // College ID
               _buildFormField(
                 label: 'College ID / Code',
                 controller: _collegeIdController,
@@ -204,10 +196,8 @@ class _AddCollegePageState extends State<AddCollegePage> {
                   }
                   return null;
                 },
-              ),
+              ).animate().fade(duration: 500.ms).slideY(begin: 0.5, delay: 300.ms),
               const SizedBox(height: 16),
-
-              // Address
               _buildFormField(
                 label: 'Address',
                 controller: _addressController,
@@ -219,10 +209,8 @@ class _AddCollegePageState extends State<AddCollegePage> {
                   }
                   return null;
                 },
-              ),
+              ).animate().fade(duration: 500.ms).slideY(begin: 0.5, delay: 400.ms),
               const SizedBox(height: 16),
-
-              // City
               _buildFormField(
                 label: 'City',
                 controller: _cityController,
@@ -233,10 +221,8 @@ class _AddCollegePageState extends State<AddCollegePage> {
                   }
                   return null;
                 },
-              ),
+              ).animate().fade(duration: 500.ms).slideY(begin: 0.5, delay: 500.ms),
               const SizedBox(height: 16),
-
-              // State Dropdown
               _buildDropdownField(
                 label: 'State',
                 value: _selectedState,
@@ -246,10 +232,8 @@ class _AddCollegePageState extends State<AddCollegePage> {
                     _selectedState = value!;
                   });
                 },
-              ),
+              ).animate().fade(duration: 500.ms).slideY(begin: 0.5, delay: 600.ms),
               const SizedBox(height: 24),
-
-              // Primary Admin Contact Section
               const Text(
                 'Primary Admin Contact',
                 style: TextStyle(
@@ -257,10 +241,8 @@ class _AddCollegePageState extends State<AddCollegePage> {
                   fontWeight: FontWeight.bold,
                   color: AppColors.textPrimary,
                 ),
-              ),
+              ).animate().fade(duration: 500.ms).slideY(begin: 0.5, delay: 700.ms),
               const SizedBox(height: 16),
-
-              // Contact Name
               _buildFormField(
                 label: 'Contact Name',
                 controller: _contactNameController,
@@ -271,10 +253,8 @@ class _AddCollegePageState extends State<AddCollegePage> {
                   }
                   return null;
                 },
-              ),
+              ).animate().fade(duration: 500.ms).slideY(begin: 0.5, delay: 800.ms),
               const SizedBox(height: 16),
-
-              // Contact Email
               _buildFormField(
                 label: 'Contact Email',
                 controller: _contactEmailController,
@@ -291,10 +271,8 @@ class _AddCollegePageState extends State<AddCollegePage> {
                   }
                   return null;
                 },
-              ),
+              ).animate().fade(duration: 500.ms).slideY(begin: 0.5, delay: 900.ms),
               const SizedBox(height: 16),
-
-              // Contact Phone
               _buildFormField(
                 label: 'Contact Phone',
                 controller: _contactPhoneController,
@@ -306,10 +284,8 @@ class _AddCollegePageState extends State<AddCollegePage> {
                   }
                   return null;
                 },
-              ),
+              ).animate().fade(duration: 500.ms).slideY(begin: 0.5, delay: 1000.ms),
               const SizedBox(height: 32),
-
-              // Action Buttons
               Row(
                 children: [
                   Expanded(
@@ -338,8 +314,8 @@ class _AddCollegePageState extends State<AddCollegePage> {
                     child: ElevatedButton(
                       onPressed: _isLoading ? null : _saveCollege,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primary,
-                        foregroundColor: AppColors.pureWhite,
+                        backgroundColor: const Color(0xFFFFA726),
+                        foregroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
@@ -352,7 +328,7 @@ class _AddCollegePageState extends State<AddCollegePage> {
                               child: CircularProgressIndicator(
                                 strokeWidth: 2,
                                 valueColor: AlwaysStoppedAnimation<Color>(
-                                  AppColors.pureWhite,
+                                  Colors.white,
                                 ),
                               ),
                             )
@@ -363,12 +339,14 @@ class _AddCollegePageState extends State<AddCollegePage> {
                     ),
                   ),
                 ],
-              ),
+              ).animate().fade(duration: 500.ms).slideY(begin: 0.5, delay: 1100.ms),
             ],
           ),
         ),
       ),
-    );
+    ),
+    ),
+  );
   }
 
   Widget _buildFormField({
@@ -400,7 +378,7 @@ class _AddCollegePageState extends State<AddCollegePage> {
             hintText: hintText,
             hintStyle: TextStyle(color: AppColors.textSecondary),
             filled: true,
-            fillColor: AppColors.surfaceVariant,
+            fillColor: Colors.white,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
               borderSide: const BorderSide(color: AppColors.borderLight),
@@ -411,7 +389,7 @@ class _AddCollegePageState extends State<AddCollegePage> {
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: AppColors.primary),
+              borderSide: const BorderSide(color: Color(0xFFFFA726)),
             ),
             errorBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
@@ -448,7 +426,7 @@ class _AddCollegePageState extends State<AddCollegePage> {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
           decoration: BoxDecoration(
-            color: AppColors.surfaceVariant,
+            color: Colors.white,
             borderRadius: BorderRadius.circular(12),
             border: Border.all(color: AppColors.borderLight),
           ),

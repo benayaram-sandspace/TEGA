@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:tega/features/3_admin_panel/presentation/0_dashboard/admin_dashboard.dart';
+import 'package:tega/features/3_admin_panel/presentation/0_dashboard/admin_dashboard_styles.dart';
 import 'package:tega/features/3_admin_panel/presentation/3_reports_and_analytics/college_report_page.dart';
 import 'package:tega/features/3_admin_panel/presentation/3_reports_and_analytics/custom_report_builder.dart';
 import 'package:tega/features/3_admin_panel/presentation/3_reports_and_analytics/student_report_builder.dart';
@@ -28,7 +28,7 @@ class ReportInfo {
 
 // Reports & Export Center Page - Now a StatefulWidget for animations
 class ReportsExportCenterPage extends StatefulWidget {
-  const ReportsExportCenterPage({Key? key}) : super(key: key);
+  const ReportsExportCenterPage({super.key});
 
   @override
   State<ReportsExportCenterPage> createState() =>
@@ -36,17 +36,27 @@ class ReportsExportCenterPage extends StatefulWidget {
 }
 
 class _ReportsExportCenterPageState extends State<ReportsExportCenterPage>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
   late AnimationController _animationController;
+  late Animation<double> _fadeAnimation;
+  late Animation<Offset> _slideAnimation;
   late List<ReportInfo> _reports;
 
   @override
   void initState() {
     super.initState();
     _animationController = AnimationController(
+      duration: const Duration(milliseconds: 800),
       vsync: this,
-      duration: const Duration(milliseconds: 1000),
     );
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
+    );
+    _slideAnimation = Tween<Offset>(
+      begin: const Offset(0, 0.3),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(parent: _animationController, curve: Curves.easeOutCubic));
+    
     _animationController.forward();
   }
 
@@ -100,33 +110,13 @@ class _ReportsExportCenterPageState extends State<ReportsExportCenterPage>
   @override
   Widget build(BuildContext context) {
     _buildReports(context); // Build the list
-    return Scaffold(
-      backgroundColor: const Color(0xFFF9F9F9), // A slightly warmer white
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 1,
-        shadowColor: Colors.grey.withOpacity(0.1),
-        centerTitle: true,
-        title: const Text(
-          'Reports & Export',
-          style: TextStyle(
-            color: Colors.black,
-            fontSize: 22,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.black),
-          onPressed: () {
-            Navigator.pushAndRemoveUntil(
-              context,
-              MaterialPageRoute(builder: (context) => const AdminDashboard()),
-              (route) => false,
-            );
-          },
-        ),
-      ),
-      body: ListView.builder(
+    return Container(
+      color: AdminDashboardStyles.background,
+      child: FadeTransition(
+        opacity: _fadeAnimation,
+        child: SlideTransition(
+          position: _slideAnimation,
+          child: ListView.builder(
         padding: const EdgeInsets.all(16.0),
         itemCount: _reports.length,
         itemBuilder: (context, index) {
@@ -147,6 +137,8 @@ class _ReportsExportCenterPageState extends State<ReportsExportCenterPage>
           );
         },
       ),
+        ),
+      ),
     );
   }
 }
@@ -163,7 +155,7 @@ class ReportCard extends StatelessWidget {
   final VoidCallback onPressed;
 
   const ReportCard({
-    Key? key,
+    super.key,
     required this.iconData,
     required this.iconColor,
     required this.backgroundColor,
@@ -171,7 +163,7 @@ class ReportCard extends StatelessWidget {
     required this.description,
     required this.buttonText,
     required this.onPressed,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -334,11 +326,11 @@ class AnimatedCard extends StatelessWidget {
   final Widget child;
 
   const AnimatedCard({
-    Key? key,
+    super.key,
     required this.animationController,
     required this.index,
     required this.child,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

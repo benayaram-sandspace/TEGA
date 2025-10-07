@@ -21,7 +21,7 @@ class _DashboardTabState extends State<DashboardTab> {
 
   User? _currentUser;
   bool _isLoading = true;
-  int _notificationCount = 3;
+  final int _notificationCount = 3;
   late String _greeting;
 
   @override

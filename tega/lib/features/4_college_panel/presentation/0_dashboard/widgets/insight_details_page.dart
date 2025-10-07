@@ -284,7 +284,6 @@ class _InsightDetailsPageState extends State<InsightDetailsPage>
               const SizedBox(width: 8),
               TextButton(
                 onPressed: () {},
-                child: const Text('Contact'),
                 style: TextButton.styleFrom(
                   // MODIFICATION: Using themeColor for the button text
                   foregroundColor: themeColor,
@@ -293,6 +292,7 @@ class _InsightDetailsPageState extends State<InsightDetailsPage>
                     borderRadius: BorderRadius.circular(20),
                   ),
                 ),
+                child: const Text('Contact'),
               ),
             ],
           ),

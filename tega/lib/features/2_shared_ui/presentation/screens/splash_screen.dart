@@ -103,8 +103,9 @@ class _SplashScreenState extends State<SplashScreen> {
       final collegeService = CollegeService();
       final colleges = await collegeService.loadColleges();
 
-      if (!mounted)
+      if (!mounted) {
         return; // Always check if the widget is mounted before async navigation.
+      }
 
       if (colleges.isNotEmpty) {
         Navigator.of(

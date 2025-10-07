@@ -12,16 +12,50 @@ class CollegeAdminsPage extends StatefulWidget {
   State<CollegeAdminsPage> createState() => _CollegeAdminsPageState();
 }
 
-class _CollegeAdminsPageState extends State<CollegeAdminsPage> {
+class _CollegeAdminsPageState extends State<CollegeAdminsPage>
+    with TickerProviderStateMixin {
   // final CollegeService _collegeService = CollegeService(); // Unused for now
+  
+  // Animation controllers
+  late AnimationController _animationController;
+  late Animation<double> _fadeAnimation;
+  late Animation<Offset> _slideAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _animationController = AnimationController(
+      duration: const Duration(milliseconds: 800),
+      vsync: this,
+    );
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _animationController, curve: Curves.easeOutCubic),
+    );
+    _slideAnimation = Tween<Offset>(
+      begin: const Offset(0, 0.3),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(parent: _animationController, curve: Curves.easeOutCubic));
+    
+    _animationController.forward();
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
-      body: Column(
-        children: [
-          // Header
+      body: FadeTransition(
+        opacity: _fadeAnimation,
+        child: SlideTransition(
+          position: _slideAnimation,
+          child: Column(
+            children: [
+              // Header
           Container(
             padding: const EdgeInsets.all(20),
             child: Row(
@@ -133,7 +167,9 @@ class _CollegeAdminsPageState extends State<CollegeAdminsPage> {
           ),
         ],
       ),
-    );
+    ),
+    ),
+  );
   }
 
   Widget _buildAdminCard(CollegeAdmin admin) {

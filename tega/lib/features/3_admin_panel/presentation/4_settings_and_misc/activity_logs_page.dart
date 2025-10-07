@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:tega/core/constants/app_colors.dart';
 import 'package:tega/features/3_admin_panel/data/models/admin_model.dart';
 import 'package:tega/features/3_admin_panel/data/repositories/admin_repository.dart';
+import 'package:tega/features/3_admin_panel/presentation/0_dashboard/admin_dashboard_styles.dart';
 
 class ActivityLogsPage extends StatefulWidget {
   const ActivityLogsPage({super.key});
@@ -10,8 +12,13 @@ class ActivityLogsPage extends StatefulWidget {
   State<ActivityLogsPage> createState() => _ActivityLogsPageState();
 }
 
-class _ActivityLogsPageState extends State<ActivityLogsPage> {
-  final AdminService _adminService = AdminService.instance;
+class _ActivityLogsPageState extends State<ActivityLogsPage>
+    with TickerProviderStateMixin {
+  final AdminRepository _adminService = AdminRepository.instance;
+  
+  late AnimationController _animationController;
+  late Animation<double> _fadeAnimation;
+  late Animation<Offset> _slideAnimation;
 
   List<ActivityLog> _allLogs = [];
   List<ActivityLog> _filteredLogs = [];
@@ -25,7 +32,26 @@ class _ActivityLogsPageState extends State<ActivityLogsPage> {
   @override
   void initState() {
     super.initState();
+    _animationController = AnimationController(
+      duration: const Duration(milliseconds: 800),
+      vsync: this,
+    );
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
+    );
+    _slideAnimation = Tween<Offset>(
+      begin: const Offset(0, 0.3),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(parent: _animationController, curve: Curves.easeOutCubic));
+    
+    _animationController.forward();
     _loadActivityLogs();
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadActivityLogs() async {
@@ -78,11 +104,15 @@ class _ActivityLogsPageState extends State<ActivityLogsPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      body: _isLoading
+    return Container(
+      color: AdminDashboardStyles.background,
+      child: FadeTransition(
+        opacity: _fadeAnimation,
+        child: SlideTransition(
+          position: _slideAnimation,
+          child: _isLoading
           ? const Center(
-              child: CircularProgressIndicator(color: AppColors.primary),
+              child: CircularProgressIndicator(color: AdminDashboardStyles.primary),
             )
           : Column(
               children: [
@@ -97,7 +127,7 @@ class _ActivityLogsPageState extends State<ActivityLogsPage> {
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
-                          color: AppColors.textPrimary,
+                          color: AdminDashboardStyles.textDark,
                         ),
                       ),
                       const SizedBox(height: 16),
@@ -229,6 +259,8 @@ class _ActivityLogsPageState extends State<ActivityLogsPage> {
                 ),
               ],
             ),
+        ),
+      ),
     );
   }
 
@@ -461,5 +493,5 @@ class _ActivityLogsPageState extends State<ActivityLogsPage> {
       default:
         return AppColors.textSecondary;
     }
-  }
 }
+  }

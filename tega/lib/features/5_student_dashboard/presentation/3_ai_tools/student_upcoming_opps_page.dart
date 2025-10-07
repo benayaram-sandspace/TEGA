@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'dart:math' as math;
 
 // Enhanced data model for an opportunity
 class Opportunity {
@@ -1339,7 +1338,7 @@ class _AllOpportunitiesScreenState extends State<AllOpportunitiesScreen>
                               'Show only verified companies',
                             ),
                             value: _showOnlyVerified,
-                            activeColor: Colors.deepPurple,
+                            activeThumbColor: Colors.deepPurple,
                             onChanged: (value) {
                               setModalState(() {
                                 _showOnlyVerified = value;
