@@ -6,6 +6,7 @@ import 'package:tega/features/3_admin_panel/presentation/0_dashboard/admin_dashb
 
 import 'add_admin_modal.dart';
 import 'edit_admin_modal.dart';
+import 'admin_profile_page.dart';
 
 class AdminUsersPage extends StatefulWidget {
   const AdminUsersPage({super.key});
@@ -524,30 +525,10 @@ class _AdminUsersPageState extends State<AdminUsersPage>
   }
 
   void _showAdminDetails(AdminUser admin) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(admin.name),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildDetailRow('Email', admin.email),
-            _buildDetailRow('Phone', admin.phoneNumber.isNotEmpty ? admin.phoneNumber : 'Not provided'),
-            _buildDetailRow('Role', admin.role),
-            _buildDetailRow('Status', admin.status),
-            _buildDetailRow('Department', admin.department.isNotEmpty ? admin.department : 'Not specified'),
-            _buildDetailRow('Designation', admin.designation.isNotEmpty ? admin.designation : 'Not specified'),
-            _buildDetailRow('Created', _formatDate(admin.createdAt)),
-            _buildDetailRow('Last Login', _formatDate(admin.lastLogin)),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Close'),
-          ),
-        ],
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => AdminProfilePage(admin: admin),
       ),
     );
   }

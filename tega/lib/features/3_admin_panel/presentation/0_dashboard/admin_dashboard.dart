@@ -194,42 +194,44 @@ class _AdminDashboardState extends State<AdminDashboard>
     return Scaffold(
       backgroundColor: AdminDashboardStyles.background,
       appBar: _buildAppBar(),
-      body: Stack(
-        children: [
-          AnimatedSwitcher(
-            duration: AdminDashboardStyles.mediumAnimation,
-            transitionBuilder: (child, animation) => FadeTransition(
-              opacity: animation,
-              child: SlideTransition(
-                position: Tween<Offset>(
-                  begin: const Offset(0.1, 0),
-                  end: Offset.zero,
-                ).animate(CurvedAnimation(
-                  parent: animation,
-                  curve: AdminDashboardStyles.defaultCurve,
-                )),
-                child: child,
+      body: SafeArea(
+        child: Stack(
+          children: [
+            AnimatedSwitcher(
+              duration: AdminDashboardStyles.mediumAnimation,
+              transitionBuilder: (child, animation) => FadeTransition(
+                opacity: animation,
+                child: SlideTransition(
+                  position: Tween<Offset>(
+                    begin: const Offset(0.1, 0),
+                    end: Offset.zero,
+                  ).animate(CurvedAnimation(
+                    parent: animation,
+                    curve: AdminDashboardStyles.defaultCurve,
+                  )),
+                  child: child,
+                ),
+              ),
+              child: KeyedSubtree(
+                key: ValueKey<int>(_selectedIndex),
+                child: _pages[_selectedIndex],
               ),
             ),
-            child: KeyedSubtree(
-              key: ValueKey<int>(_selectedIndex),
-              child: _pages[_selectedIndex],
-            ),
-          ),
-          if (_isSidebarOpen)
-            GestureDetector(
-              onTap: _toggleSidebar,
-              child: AnimatedBuilder(
-                animation: _sidebarAnimationController,
-                builder: (context, child) => Container(
-                  color: Colors.black.withValues(
-                    alpha: 0.6 * _sidebarAnimationController.value,
+            if (_isSidebarOpen)
+              GestureDetector(
+                onTap: _toggleSidebar,
+                child: AnimatedBuilder(
+                  animation: _sidebarAnimationController,
+                  builder: (context, child) => Container(
+                    color: Colors.black.withValues(
+                      alpha: 0.6 * _sidebarAnimationController.value,
+                    ),
                   ),
                 ),
               ),
-            ),
-          _buildSidebar(),
-        ],
+            _buildSidebar(),
+          ],
+        ),
       ),
     );
   }
@@ -251,6 +253,8 @@ class _AdminDashboardState extends State<AdminDashboard>
           color: Colors.white,
           fontSize: 18,
         ),
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
       ).animate().fadeIn(duration: 300.ms).slideX(begin: 0.2),
       backgroundColor: AdminDashboardStyles.primary,
       elevation: 8,
@@ -294,6 +298,8 @@ class _AdminDashboardState extends State<AdminDashboard>
                 fontWeight: FontWeight.w600,
                 fontSize: 14,
               ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
             style: TextButton.styleFrom(
               shape: RoundedRectangleBorder(
@@ -322,61 +328,63 @@ class _AdminDashboardState extends State<AdminDashboard>
           children: [
             _buildSidebarHeader(),
             Expanded(
-              child: ListView(
+              child: SingleChildScrollView(
                 padding: const EdgeInsets.all(8.0),
-                children: [
-                  _buildNavItem(
-                    icon: Icons.dashboard_rounded,
-                    title: _tr('dashboard'),
-                    index: 0,
-                  ),
-                  _buildNavItem(
-                    icon: Icons.school_rounded,
-                    title: _tr('colleges'),
-                    index: 1,
-                  ),
-                  _buildNavItem(
-                    icon: Icons.people_rounded,
-                    title: _tr('students'),
-                    index: 2,
-                  ),
-                  _buildNavItem(
-                    icon: Icons.analytics_rounded,
-                    title: _tr('analytics'),
-                    index: 3,
-                  ),
-                  _buildNavItem(
-                    icon: Icons.content_copy_rounded,
-                    title: _tr('content'),
-                    index: 4,
-                  ),
-                  _buildNavItem(
-                    icon: Icons.support_agent_rounded,
-                    title: _tr('support'),
-                    index: 5,
-                  ),
-                  const Divider(height: 24),
-                  _buildNavItem(
-                    icon: Icons.admin_panel_settings_rounded,
-                    title: _tr('admin_management'),
-                    index: 6,
-                  ),
-                  _buildNavItem(
-                    icon: Icons.settings_rounded,
-                    title: _tr('settings'),
-                    index: 7,
-                  ),
-                  _buildNavItem(
-                    icon: Icons.notifications_rounded,
-                    title: _tr('notification_manager'),
-                    index: 8,
-                  ),
-                  _buildNavItem(
-                    icon: Icons.assessment_rounded,
-                    title: _tr('reports'),
-                    index: 9,
-                  ),
-                ],
+                child: Column(
+                  children: [
+                    _buildNavItem(
+                      icon: Icons.dashboard_rounded,
+                      title: _tr('dashboard'),
+                      index: 0,
+                    ),
+                    _buildNavItem(
+                      icon: Icons.school_rounded,
+                      title: _tr('colleges'),
+                      index: 1,
+                    ),
+                    _buildNavItem(
+                      icon: Icons.people_rounded,
+                      title: _tr('students'),
+                      index: 2,
+                    ),
+                    _buildNavItem(
+                      icon: Icons.analytics_rounded,
+                      title: _tr('analytics'),
+                      index: 3,
+                    ),
+                    _buildNavItem(
+                      icon: Icons.content_copy_rounded,
+                      title: _tr('content'),
+                      index: 4,
+                    ),
+                    _buildNavItem(
+                      icon: Icons.support_agent_rounded,
+                      title: _tr('support'),
+                      index: 5,
+                    ),
+                    const Divider(height: 24),
+                    _buildNavItem(
+                      icon: Icons.admin_panel_settings_rounded,
+                      title: _tr('admin_management'),
+                      index: 6,
+                    ),
+                    _buildNavItem(
+                      icon: Icons.settings_rounded,
+                      title: _tr('settings'),
+                      index: 7,
+                    ),
+                    _buildNavItem(
+                      icon: Icons.notifications_rounded,
+                      title: _tr('notification_manager'),
+                      index: 8,
+                    ),
+                    _buildNavItem(
+                      icon: Icons.assessment_rounded,
+                      title: _tr('reports'),
+                      index: 9,
+                    ),
+                  ],
+                ),
               ),
             ),
             _buildLogoutTile(),
@@ -389,7 +397,7 @@ class _AdminDashboardState extends State<AdminDashboard>
   Widget _buildSidebarHeader() {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(20, 60, 20, 24),
+      padding: const EdgeInsets.fromLTRB(20, 40, 20, 24),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
@@ -413,23 +421,25 @@ class _AdminDashboardState extends State<AdminDashboard>
               ),
             ),
             child: const CircleAvatar(
-              radius: 32,
+              radius: 28,
               backgroundColor: Colors.white,
               child: Icon(
                 Icons.shield_rounded,
-                size: 36,
+                size: 32,
                 color: AdminDashboardStyles.primary,
               ),
             ),
           ).animate().scale(duration: 500.ms, curve: AdminDashboardStyles.bounceCurve),
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
           Text(
             _authService.currentUser?.name ?? 'Admin User',
             style: const TextStyle(
               color: Colors.white,
               fontWeight: FontWeight.bold,
-              fontSize: 18,
+              fontSize: 16,
             ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ).animate().fadeIn(duration: 300.ms, delay: 200.ms).slideX(begin: 0.3),
           const SizedBox(height: 4),
           Text(
@@ -438,8 +448,10 @@ class _AdminDashboardState extends State<AdminDashboard>
                 : 'Administrator',
             style: TextStyle(
               color: Colors.white.withValues(alpha: 0.8),
-              fontSize: 14,
+              fontSize: 12,
             ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ).animate().fadeIn(duration: 300.ms, delay: 400.ms).slideX(begin: 0.3),
         ],
       ),
@@ -473,7 +485,7 @@ class _AdminDashboardState extends State<AdminDashboard>
         child: AnimatedContainer(
           duration: AdminDashboardStyles.shortAnimation,
           curve: AdminDashboardStyles.defaultCurve,
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(12),
             color: isSelected 
@@ -490,7 +502,7 @@ class _AdminDashboardState extends State<AdminDashboard>
             children: [
               AnimatedContainer(
                 duration: AdminDashboardStyles.shortAnimation,
-                padding: const EdgeInsets.all(8),
+                padding: const EdgeInsets.all(6),
                 decoration: BoxDecoration(
                   color: isSelected 
                       ? AdminDashboardStyles.primary.withValues(alpha: 0.2)
@@ -500,25 +512,27 @@ class _AdminDashboardState extends State<AdminDashboard>
                 child: Icon(
                   icon,
                   color: isSelected ? AdminDashboardStyles.primary : Colors.grey,
-                  size: 20,
+                  size: 18,
                 ),
               ),
-              const SizedBox(width: 16),
+              const SizedBox(width: 12),
               Expanded(
                 child: Text(
                   title,
                   style: TextStyle(
                     color: isSelected ? AdminDashboardStyles.primary : Colors.black,
                     fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-                    fontSize: 14,
+                    fontSize: 13,
                   ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
               if (isSelected)
                 Icon(
                   Icons.arrow_forward_ios,
                   color: AdminDashboardStyles.primary,
-                  size: 16,
+                  size: 14,
                 ),
             ],
           ),
@@ -540,25 +554,27 @@ class _AdminDashboardState extends State<AdminDashboard>
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         onTap: _showLogoutConfirmation,
         leading: Container(
-          padding: const EdgeInsets.all(8),
+          padding: const EdgeInsets.all(6),
           decoration: BoxDecoration(
             color: Colors.red.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(8),
           ),
-          child: const Icon(Icons.logout, color: Colors.red, size: 20),
+          child: const Icon(Icons.logout, color: Colors.red, size: 18),
         ),
         title: Text(
           _tr('logout'),
           style: const TextStyle(
             color: Colors.red,
             fontWeight: FontWeight.w600,
-            fontSize: 14,
+            fontSize: 13,
           ),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
         ),
         trailing: const Icon(
           Icons.arrow_forward_ios,
           color: Colors.red,
-          size: 16,
+          size: 14,
         ),
       ),
     ).animate().fadeIn(duration: 300.ms, delay: 600.ms).slideX(begin: 0.2);

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:tega/core/constants/app_colors.dart';
 import 'package:tega/features/3_admin_panel/presentation/0_dashboard/admin_dashboard.dart';
 import 'package:tega/features/3_admin_panel/presentation/0_dashboard/admin_dashboard_styles.dart';
 
@@ -361,28 +362,118 @@ class _NotificationManagerPageState extends State<NotificationManagerPage>
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
   late Animation<Offset> _slideAnimation;
+  late List<AnimationController> _cardAnimations;
+  late List<Animation<double>> _cardScaleAnimations;
+  late List<Animation<Offset>> _cardSlideAnimations;
+
+  final List<Map<String, dynamic>> _notifications = [
+    {
+      'id': '1',
+      'icon': Icons.campaign_rounded,
+      'title': 'Welcome to the Team!',
+      'message': 'We are excited to have you join our platform. Start exploring all the amazing features.',
+      'audience': 'All Users',
+      'sentDate': '2023-09-15',
+      'status': 'sent',
+      'type': 'welcome',
+    },
+    {
+      'id': '2',
+      'icon': Icons.system_update_alt_rounded,
+      'title': 'App Update v2.5 Available',
+      'message': 'New features and bug fixes are now available. Update your app to get the latest improvements.',
+      'audience': 'Specific Group',
+      'sentDate': '2023-09-10',
+      'status': 'sent',
+      'type': 'update',
+    },
+    {
+      'id': '3',
+      'icon': Icons.local_offer_rounded,
+      'title': 'Flash Sale: 50% Off!',
+      'message': 'Limited time offer! Get 50% off on all premium courses. Don\'t miss out!',
+      'audience': 'All Users',
+      'sentDate': '2023-09-05',
+      'status': 'sent',
+      'type': 'promotion',
+    },
+    {
+      'id': '4',
+      'icon': Icons.school_rounded,
+      'title': 'New Course Available',
+      'message': 'Check out our new Machine Learning course with hands-on projects and expert guidance.',
+      'audience': 'Students',
+      'sentDate': '2023-09-01',
+      'status': 'draft',
+      'type': 'course',
+    },
+  ];
 
   @override
   void initState() {
     super.initState();
+    _initializeAnimations();
+  }
+
+  void _initializeAnimations() {
     _animationController = AnimationController(
-      duration: const Duration(milliseconds: 800),
+      duration: const Duration(milliseconds: 600),
       vsync: this,
     );
     _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
+      CurvedAnimation(parent: _animationController, curve: Curves.easeOutCubic),
     );
     _slideAnimation = Tween<Offset>(
       begin: const Offset(0, 0.3),
       end: Offset.zero,
     ).animate(CurvedAnimation(parent: _animationController, curve: Curves.easeOutCubic));
-    
+
+    // Initialize card animations
+    _cardAnimations = List.generate(
+      _notifications.length,
+      (index) => AnimationController(
+        duration: Duration(milliseconds: 400 + (index * 100)),
+        vsync: this,
+      ),
+    );
+
+    _cardScaleAnimations = _cardAnimations
+        .map((controller) => CurvedAnimation(
+              parent: controller,
+              curve: Curves.easeOutBack,
+            ))
+        .toList();
+
+    _cardSlideAnimations = _cardAnimations
+        .map((controller) => Tween<Offset>(
+              begin: const Offset(0, 0.5),
+              end: Offset.zero,
+            ).animate(CurvedAnimation(
+              parent: controller,
+              curve: Curves.easeOutCubic,
+            )))
+        .toList();
+
     _animationController.forward();
+    _startCardAnimations();
+  }
+
+  void _startCardAnimations() {
+    for (int i = 0; i < _cardAnimations.length; i++) {
+      Future.delayed(Duration(milliseconds: i * 150), () {
+        if (mounted) {
+          _cardAnimations[i].forward();
+        }
+      });
+    }
   }
 
   @override
   void dispose() {
     _animationController.dispose();
+    for (var controller in _cardAnimations) {
+      controller.dispose();
+    }
     super.dispose();
   }
 
@@ -394,44 +485,325 @@ class _NotificationManagerPageState extends State<NotificationManagerPage>
         opacity: _fadeAnimation,
         child: SlideTransition(
           position: _slideAnimation,
-          child: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          NotificationCard(
-            iconData: Icons.campaign_rounded, // Using icons
-            title: 'Welcome to the Team!',
-            audience: 'All Users',
-            sentDate: '2023-09-15',
-            onTap: () =>
-                _handleNotificationTap(context, 'Welcome Notification'),
+          child: Column(
+            children: [
+              // Header Section
+              Container(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Notification Manager',
+                              style: const TextStyle(
+                                fontSize: 24,
+                                fontWeight: FontWeight.bold,
+                                color: AdminDashboardStyles.textDark,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              'Manage and track all notifications',
+                              style: const TextStyle(
+                                fontSize: 14,
+                                color: AdminDashboardStyles.textLight,
+                              ),
+                            ),
+                          ],
+                        ),
+                        ElevatedButton.icon(
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const ComposeNotificationPage(),
+                              ),
+                            );
+                          },
+                          icon: const Icon(Icons.add, size: 18),
+                          label: const Text('Compose'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AdminDashboardStyles.primary,
+                            foregroundColor: AdminDashboardStyles.pureWhite,
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 20),
+                    // Stats Cards
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _buildStatCard(
+                            'Total Sent',
+                            '${_notifications.where((n) => n['status'] == 'sent').length}',
+                            Icons.send,
+                            AdminDashboardStyles.primary,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: _buildStatCard(
+                            'Drafts',
+                            '${_notifications.where((n) => n['status'] == 'draft').length}',
+                            Icons.drafts,
+                            AppColors.warning,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: _buildStatCard(
+                            'This Month',
+                            '12',
+                            Icons.calendar_month,
+                            AppColors.success,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+
+              // Notifications List
+              Expanded(
+                child: ListView.builder(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  itemCount: _notifications.length,
+                  itemBuilder: (context, index) {
+                    final notification = _notifications[index];
+                    return AnimatedBuilder(
+                      animation: _cardAnimations[index],
+                      builder: (context, child) {
+                        return Transform.scale(
+                          scale: _cardScaleAnimations[index].value,
+                          child: SlideTransition(
+                            position: _cardSlideAnimations[index],
+                            child: _buildNotificationCard(notification, index),
+                          ),
+                        );
+                      },
+                    );
+                  },
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: 16),
-          NotificationCard(
-            iconData: Icons.system_update_alt_rounded,
-            title: 'App Update v2.5 Available',
-            audience: 'Specific Group',
-            sentDate: '2023-09-10',
-            onTap: () => _handleNotificationTap(context, 'Update Notification'),
-          ),
-          const SizedBox(height: 16),
-          NotificationCard(
-            iconData: Icons.local_offer_rounded,
-            title: 'Flash Sale: 50% Off!',
-            audience: 'All Users',
-            sentDate: '2023-09-05',
-            onTap: () => _handleNotificationTap(context, 'Sale Notification'),
-          ),
-        ],
-      ),
         ),
       ),
     );
   }
 
+  Widget _buildStatCard(String title, String value, IconData icon, Color color) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AdminDashboardStyles.surface,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AdminDashboardStyles.borderLight),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: color.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(icon, color: color, size: 20),
+              ),
+              const Spacer(),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Text(
+            value,
+            style: const TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: AdminDashboardStyles.textDark,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            title,
+            style: const TextStyle(
+              fontSize: 12,
+              color: AdminDashboardStyles.textLight,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildNotificationCard(Map<String, dynamic> notification, int index) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      decoration: BoxDecoration(
+        color: AdminDashboardStyles.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AdminDashboardStyles.borderLight),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: InkWell(
+        onTap: () => _handleNotificationTap(context, notification['title']),
+        borderRadius: BorderRadius.circular(16),
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: _getTypeColor(notification['type']).withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Icon(
+                      notification['icon'],
+                      color: _getTypeColor(notification['type']),
+                      size: 24,
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          notification['title'],
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: AdminDashboardStyles.textDark,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          notification['message'],
+                          style: const TextStyle(
+                            fontSize: 14,
+                            color: AdminDashboardStyles.textLight,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: _getStatusColor(notification['status']).withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      notification['status'].toUpperCase(),
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                        color: _getStatusColor(notification['status']),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  Icon(
+                    Icons.people,
+                    size: 16,
+                    color: AdminDashboardStyles.textLight,
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    notification['audience'],
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: AdminDashboardStyles.textLight,
+                    ),
+                  ),
+                  const Spacer(),
+                  Icon(
+                    Icons.schedule,
+                    size: 16,
+                    color: AdminDashboardStyles.textLight,
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    notification['sentDate'],
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: AdminDashboardStyles.textLight,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Color _getTypeColor(String type) {
+    switch (type) {
+      case 'welcome':
+        return AppColors.success;
+      case 'update':
+        return AppColors.info;
+      case 'promotion':
+        return AppColors.warning;
+      case 'course':
+        return AdminDashboardStyles.primary;
+      default:
+        return AdminDashboardStyles.textLight;
+    }
+  }
+
+  Color _getStatusColor(String status) {
+    switch (status) {
+      case 'sent':
+        return AppColors.success;
+      case 'draft':
+        return AppColors.warning;
+      case 'failed':
+        return AppColors.error;
+      default:
+        return AdminDashboardStyles.textLight;
+    }
+  }
+
   void _handleNotificationTap(BuildContext context, String notificationId) {
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text('Tapped on $notificationId')));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Tapped on $notificationId'),
+        backgroundColor: AdminDashboardStyles.primary,
+      ),
+    );
   }
 }
 

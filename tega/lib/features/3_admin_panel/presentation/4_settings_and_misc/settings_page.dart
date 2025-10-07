@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:provider/provider.dart';
+import 'package:tega/core/theme/theme_provider.dart';
 import 'package:tega/features/3_admin_panel/presentation/0_dashboard/admin_dashboard_styles.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -12,9 +14,7 @@ class SettingsPage extends StatefulWidget {
 
 class _SettingsPageState extends State<SettingsPage>
     with TickerProviderStateMixin {
-  // final AuthService _authService = AuthService(); // Unused for now
   bool _notificationsEnabled = true;
-  bool _darkModeEnabled = false;
   bool _autoBackupEnabled = true;
   
   late AnimationController _animationController;
@@ -89,7 +89,6 @@ class _SettingsPageState extends State<SettingsPage>
   Future<void> _loadSettings() async {
     final prefs = await SharedPreferences.getInstance();
     setState(() {
-      _darkModeEnabled = prefs.getBool('darkModeEnabled') ?? false;
       _notificationsEnabled = prefs.getBool('notificationsEnabled') ?? true;
       _autoBackupEnabled = prefs.getBool('autoBackupEnabled') ?? true;
     });
@@ -97,7 +96,6 @@ class _SettingsPageState extends State<SettingsPage>
   
   Future<void> _saveSettings() async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool('darkModeEnabled', _darkModeEnabled);
     await prefs.setBool('notificationsEnabled', _notificationsEnabled);
     await prefs.setBool('autoBackupEnabled', _autoBackupEnabled);
   }
@@ -120,211 +118,250 @@ class _SettingsPageState extends State<SettingsPage>
         child: SlideTransition(
           position: _slideAnimation,
           child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Expanded(
-              child: SingleChildScrollView(
-                child: Column(
-                  children: [
-                    //General Settings
-                    _buildAnimatedSettingsSection(
-                      title: 'General Settings',
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: SingleChildScrollView(
+                    child: Column(
                       children: [
-                        _buildAnimatedSettingsTile(
-                          icon: Icons.notifications,
-                          title: 'Push Notifications',
-                          subtitle:
-                              'Receive notifications for important updates',
-                          trailing: Switch(
-                            value: _notificationsEnabled,
-                            onChanged: (value) {
-                              setState(() {
-                                _notificationsEnabled = value;
-                              });
-                              _saveSettings();
-                            },
-                            activeThumbColor: AdminDashboardStyles.primary,
-                          ),
-                          index: 0,
+                        // General Settings
+                        _buildAnimatedSettingsSection(
+                          title: 'General Settings',
+                          children: [
+                            _buildAnimatedSettingsTile(
+                              icon: Icons.notifications,
+                              title: 'Push Notifications',
+                              subtitle: 'Receive notifications for important updates',
+                              trailing: Switch(
+                                value: _notificationsEnabled,
+                                onChanged: (value) {
+                                  setState(() {
+                                    _notificationsEnabled = value;
+                                  });
+                                  _saveSettings();
+                                },
+                                activeThumbColor: AdminDashboardStyles.primary,
+                              ),
+                              index: 0,
+                            ),
+                            _buildAnimatedSettingsTile(
+                              icon: Icons.palette,
+                              title: 'Theme',
+                              subtitle: 'Choose your preferred theme',
+                              trailing: Consumer<ThemeProvider>(
+                                builder: (context, themeProvider, child) {
+                                  return PopupMenuButton<String>(
+                                    icon: Icon(
+                                      _getThemeIcon(themeProvider.themePreference),
+                                      color: AdminDashboardStyles.primary,
+                                    ),
+                                    onSelected: (value) {
+                                      themeProvider.setThemePreference(value);
+                                    },
+                                    itemBuilder: (context) => [
+                                      PopupMenuItem(
+                                        value: 'light',
+                                        child: Row(
+                                          children: [
+                                            Icon(Icons.light_mode, size: 18),
+                                            SizedBox(width: 8),
+                                            Text('Light'),
+                                            if (themeProvider.themePreference == 'light')
+                                              Icon(Icons.check, size: 18, color: AdminDashboardStyles.primary),
+                                          ],
+                                        ),
+                                      ),
+                                      PopupMenuItem(
+                                        value: 'dark',
+                                        child: Row(
+                                          children: [
+                                            Icon(Icons.dark_mode, size: 18),
+                                            SizedBox(width: 8),
+                                            Text('Dark'),
+                                            if (themeProvider.themePreference == 'dark')
+                                              Icon(Icons.check, size: 18, color: AdminDashboardStyles.primary),
+                                          ],
+                                        ),
+                                      ),
+                                      PopupMenuItem(
+                                        value: 'system',
+                                        child: Row(
+                                          children: [
+                                            Icon(Icons.settings_system_daydream, size: 18),
+                                            SizedBox(width: 8),
+                                            Text('System'),
+                                            if (themeProvider.themePreference == 'system')
+                                              Icon(Icons.check, size: 18, color: AdminDashboardStyles.primary),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                  );
+                                },
+                              ),
+                              index: 1,
+                            ),
+                            _buildAnimatedSettingsTile(
+                              icon: Icons.language,
+                              title: 'Language',
+                              subtitle: 'English (US)',
+                              trailing: const Icon(
+                                Icons.arrow_forward_ios,
+                                size: 16,
+                              ),
+                              onTap: () => _showLanguageDialog(),
+                              index: 2,
+                            ),
+                          ],
                         ),
-                        _buildAnimatedSettingsTile(
-                          icon: Icons.dark_mode,
-                          title: 'Dark Mode',
-                          subtitle: 'Switch to dark theme',
-                          trailing: Switch(
-                            value: _darkModeEnabled,
-                            onChanged: (value) {
-                              setState(() {
-                                _darkModeEnabled = value;
-                              });
-                              _saveSettings();
-                              _showThemeChangeDialog();
-                            },
-                            activeThumbColor: AdminDashboardStyles.primary,
-                          ),
-                          index: 1,
-                        ),
-                        _buildAnimatedSettingsTile(
-                          icon: Icons.language,
-                          title: 'Language',
-                          subtitle: 'English (US)',
-                          trailing: const Icon(
-                            Icons.arrow_forward_ios,
-                            size: 16,
-                          ),
-                          onTap: () => _showLanguageDialog(),
-                          index: 2,
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 24),
+                        const SizedBox(height: 24),
 
-                    //Security Settings
-                    _buildAnimatedSettingsSection(
-                      title: 'Security',
-                      children: [
-                        _buildAnimatedSettingsTile(
-                          icon: Icons.lock,
-                          title: 'Change Password',
-                          subtitle: 'Update your account password',
-                          trailing: const Icon(
-                            Icons.arrow_forward_ios,
-                            size: 16,
-                          ),
-                          onTap: () => _showChangePasswordDialog(),
-                          index: 3,
+                        // Security Settings
+                        _buildAnimatedSettingsSection(
+                          title: 'Security',
+                          children: [
+                            _buildAnimatedSettingsTile(
+                              icon: Icons.lock,
+                              title: 'Change Password',
+                              subtitle: 'Update your account password',
+                              trailing: const Icon(
+                                Icons.arrow_forward_ios,
+                                size: 16,
+                              ),
+                              onTap: () => _showChangePasswordDialog(),
+                              index: 3,
+                            ),
+                            _buildAnimatedSettingsTile(
+                              icon: Icons.security,
+                              title: 'Two-Factor Authentication',
+                              subtitle: 'Add an extra layer of security',
+                              trailing: const Icon(
+                                Icons.arrow_forward_ios,
+                                size: 16,
+                              ),
+                              onTap: () => _show2FADialog(),
+                              index: 4,
+                            ),
+                            _buildAnimatedSettingsTile(
+                              icon: Icons.login,
+                              title: 'Login Sessions',
+                              subtitle: 'Manage active login sessions',
+                              trailing: const Icon(
+                                Icons.arrow_forward_ios,
+                                size: 16,
+                              ),
+                              onTap: () => _showSessionsDialog(),
+                              index: 5,
+                            ),
+                          ],
                         ),
-                        _buildAnimatedSettingsTile(
-                          icon: Icons.security,
-                          title: 'Two-Factor Authentication',
-                          subtitle: 'Add an extra layer of security',
-                          trailing: const Icon(
-                            Icons.arrow_forward_ios,
-                            size: 16,
-                          ),
-                          onTap: () => _show2FADialog(),
-                          index: 4,
-                        ),
-                        _buildAnimatedSettingsTile(
-                          icon: Icons.login,
-                          title: 'Login Sessions',
-                          subtitle: 'Manage active login sessions',
-                          trailing: const Icon(
-                            Icons.arrow_forward_ios,
-                            size: 16,
-                          ),
-                          onTap: () => _showSessionsDialog(),
-                          index: 5,
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 24),
+                        const SizedBox(height: 24),
 
-                    //Data & Privacy
-                    _buildAnimatedSettingsSection(
-                      title: 'Data & Privacy',
-                      children: [
-                        _buildAnimatedSettingsTile(
-                          icon: Icons.backup,
-                          title: 'Auto Backup',
-                          subtitle: 'Automatically backup your data',
-                          trailing: Switch(
-                            value: _autoBackupEnabled,
-                            onChanged: (value) {
-                              setState(() {
-                                _autoBackupEnabled = value;
-                              });
-                              _saveSettings();
-                            },
-                            activeThumbColor: AdminDashboardStyles.primary,
-                          ),
-                          index: 6,
+                        // Data & Privacy
+                        _buildAnimatedSettingsSection(
+                          title: 'Data & Privacy',
+                          children: [
+                            _buildAnimatedSettingsTile(
+                              icon: Icons.backup,
+                              title: 'Auto Backup',
+                              subtitle: 'Automatically backup your data',
+                              trailing: Switch(
+                                value: _autoBackupEnabled,
+                                onChanged: (value) {
+                                  setState(() {
+                                    _autoBackupEnabled = value;
+                                  });
+                                  _saveSettings();
+                                },
+                                activeThumbColor: AdminDashboardStyles.primary,
+                              ),
+                              index: 6,
+                            ),
+                            _buildAnimatedSettingsTile(
+                              icon: Icons.download,
+                              title: 'Export Data',
+                              subtitle: 'Download your account data',
+                              trailing: const Icon(
+                                Icons.arrow_forward_ios,
+                                size: 16,
+                              ),
+                              onTap: () => _exportData(),
+                              index: 7,
+                            ),
+                            _buildAnimatedSettingsTile(
+                              icon: Icons.delete_forever,
+                              title: 'Delete Account',
+                              subtitle: 'Permanently delete your account',
+                              trailing: const Icon(
+                                Icons.arrow_forward_ios,
+                                size: 16,
+                              ),
+                              onTap: () => _showDeleteAccountDialog(),
+                              index: 8,
+                            ),
+                          ],
                         ),
-                        _buildAnimatedSettingsTile(
-                          icon: Icons.download,
-                          title: 'Export Data',
-                          subtitle: 'Download your account data',
-                          trailing: const Icon(
-                            Icons.arrow_forward_ios,
-                            size: 16,
-                          ),
-                          onTap: () => _exportData(),
-                          index: 7,
-                        ),
-                        _buildAnimatedSettingsTile(
-                          icon: Icons.delete_forever,
-                          title: 'Delete Account',
-                          subtitle: 'Permanently delete your account',
-                          trailing: const Icon(
-                            Icons.arrow_forward_ios,
-                            size: 16,
-                          ),
-                          onTap: () => _showDeleteAccountDialog(),
-                          index: 8,
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 24),
+                        const SizedBox(height: 24),
 
-                    //System Information
-                    _buildAnimatedSettingsSection(
-                      title: 'System Information',
-                      children: [
-                        _buildAnimatedSettingsTile(
-                          icon: Icons.info,
-                          title: 'App Version',
-                          subtitle: '1.0.0 (Build 1)',
-                          trailing: const Icon(
-                            Icons.arrow_forward_ios,
-                            size: 16,
-                          ),
-                          onTap: () => _showVersionInfo(),
-                          index: 9,
-                        ),
-                        _buildAnimatedSettingsTile(
-                          icon: Icons.help,
-                          title: 'Help & Support',
-                          subtitle: 'Get help and contact support',
-                          trailing: const Icon(
-                            Icons.arrow_forward_ios,
-                            size: 16,
-                          ),
-                          onTap: () => _showHelpDialog(),
-                          index: 10,
-                        ),
-                        _buildAnimatedSettingsTile(
-                          icon: Icons.privacy_tip,
-                          title: 'Privacy Policy',
-                          subtitle: 'Read our privacy policy',
-                          trailing: const Icon(
-                            Icons.arrow_forward_ios,
-                            size: 16,
-                          ),
-                          onTap: () => _showPrivacyPolicy(),
-                          index: 11,
-                        ),
-                        _buildAnimatedSettingsTile(
-                          icon: Icons.description,
-                          title: 'Terms of Service',
-                          subtitle: 'Read our terms of service',
-                          trailing: const Icon(
-                            Icons.arrow_forward_ios,
-                            size: 16,
-                          ),
-                          onTap: () => _showTermsOfService(),
-                          index: 12,
+                        // System Information
+                        _buildAnimatedSettingsSection(
+                          title: 'System Information',
+                          children: [
+                            _buildAnimatedSettingsTile(
+                              icon: Icons.info,
+                              title: 'App Version',
+                              subtitle: '1.0.0 (Build 1)',
+                              trailing: const Icon(
+                                Icons.arrow_forward_ios,
+                                size: 16,
+                              ),
+                              onTap: () => _showVersionInfo(),
+                              index: 9,
+                            ),
+                            _buildAnimatedSettingsTile(
+                              icon: Icons.help,
+                              title: 'Help & Support',
+                              subtitle: 'Get help and contact support',
+                              trailing: const Icon(
+                                Icons.arrow_forward_ios,
+                                size: 16,
+                              ),
+                              onTap: () => _showHelpDialog(),
+                              index: 10,
+                            ),
+                            _buildAnimatedSettingsTile(
+                              icon: Icons.privacy_tip,
+                              title: 'Privacy Policy',
+                              subtitle: 'Read our privacy policy',
+                              trailing: const Icon(
+                                Icons.arrow_forward_ios,
+                                size: 16,
+                              ),
+                              onTap: () => _showPrivacyPolicy(),
+                              index: 11,
+                            ),
+                            _buildAnimatedSettingsTile(
+                              icon: Icons.description,
+                              title: 'Terms of Service',
+                              subtitle: 'Read our terms of service',
+                              trailing: const Icon(
+                                Icons.arrow_forward_ios,
+                                size: 16,
+                              ),
+                              onTap: () => _showTermsOfService(),
+                              index: 12,
+                            ),
+                          ],
                         ),
                       ],
                     ),
-                  ],
+                  ),
                 ),
-              ),
+              ],
             ),
-          ],
-        ),
-      ),
+          ),
         ),
       ),
     );
@@ -433,22 +470,16 @@ class _SettingsPageState extends State<SettingsPage>
     );
   }
   
-  void _showThemeChangeDialog() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Theme Changed'),
-        content: const Text(
-          'Dark mode preference has been saved. The theme change will take effect after app restart.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('OK'),
-          ),
-        ],
-      ),
-    );
+  IconData _getThemeIcon(String themePreference) {
+    switch (themePreference) {
+      case 'light':
+        return Icons.light_mode;
+      case 'dark':
+        return Icons.dark_mode;
+      case 'system':
+      default:
+        return Icons.settings_system_daydream;
+    }
   }
 
   void _showLanguageDialog() {

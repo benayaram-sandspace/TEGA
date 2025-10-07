@@ -176,6 +176,8 @@ class _DashboardHomeTabState extends State<DashboardHomeTab>
                       fontWeight: FontWeight.bold,
                       color: AdminDashboardStyles.textDark,
                     ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: 4),
                   Text(
@@ -184,6 +186,8 @@ class _DashboardHomeTabState extends State<DashboardHomeTab>
                       fontSize: 16, 
                       color: AdminDashboardStyles.textLight,
                     ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ],
               ),
@@ -195,18 +199,26 @@ class _DashboardHomeTabState extends State<DashboardHomeTab>
   }
 
   Widget _buildCardsGridView() {
-    return GridView.builder(
-      gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-        maxCrossAxisExtent: 220,
-        crossAxisSpacing: 20,
-        mainAxisSpacing: 20,
-        childAspectRatio: 1.1,
-      ),
-      itemCount: _statItems.length,
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      itemBuilder: (context, index) {
-        return _buildStatCard(item: _statItems[index], index: index);
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // Calculate responsive grid based on screen width
+        final crossAxisCount = constraints.maxWidth > 600 ? 4 : 2;
+        final childAspectRatio = constraints.maxWidth > 600 ? 1.0 : 1.1;
+        
+        return GridView.builder(
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: crossAxisCount,
+            crossAxisSpacing: 12,
+            mainAxisSpacing: 12,
+            childAspectRatio: childAspectRatio,
+          ),
+          itemCount: _statItems.length,
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          itemBuilder: (context, index) {
+            return _buildStatCard(item: _statItems[index], index: index);
+          },
+        );
       },
     );
   }
@@ -274,11 +286,11 @@ class _DashboardHomeTabState extends State<DashboardHomeTab>
                     children: [
                       // Decorative circles
                       Positioned(
-                        top: -20,
-                        right: -20,
+                        top: -10,
+                        right: -10,
                         child: Container(
-                          width: 80,
-                          height: 80,
+                          width: 60,
+                          height: 60,
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
                             color: Colors.white.withValues(alpha: 0.1),
@@ -286,11 +298,11 @@ class _DashboardHomeTabState extends State<DashboardHomeTab>
                         ),
                       ),
                       Positioned(
-                        bottom: -30,
-                        left: -30,
+                        bottom: -15,
+                        left: -15,
                         child: Container(
-                          width: 100,
-                          height: 100,
+                          width: 70,
+                          height: 70,
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
                             color: Colors.white.withValues(alpha: 0.05),
@@ -299,39 +311,47 @@ class _DashboardHomeTabState extends State<DashboardHomeTab>
                       ),
                       // Content
                       Padding(
-                        padding: const EdgeInsets.all(20.0),
+                        padding: const EdgeInsets.all(16.0),
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             Container(
-                              padding: const EdgeInsets.all(12),
+                              padding: const EdgeInsets.all(10),
                               decoration: BoxDecoration(
                                 color: Colors.white.withValues(alpha: 0.2),
-                                borderRadius: BorderRadius.circular(12),
+                                borderRadius: BorderRadius.circular(10),
                               ),
                               child: Icon(
                                 item.icon, 
-                                size: 32, 
+                                size: 28, 
                                 color: Colors.white,
                               ),
                             ),
-                            const SizedBox(height: 16),
-                            Text(
-                              item.value,
-                              style: const TextStyle(
-                                fontSize: 24,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
+                            const SizedBox(height: 12),
+                            Flexible(
+                              child: Text(
+                                item.value,
+                                style: const TextStyle(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
                               ),
                             ),
                             const SizedBox(height: 4),
-                            Text(
-                              item.title,
-                              textAlign: TextAlign.center,
-                              style: const TextStyle(
-                                fontSize: 13,
-                                color: Colors.white70,
-                                fontWeight: FontWeight.w500,
+                            Flexible(
+                              child: Text(
+                                item.title,
+                                textAlign: TextAlign.center,
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.white70,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
                               ),
                             ),
                           ],

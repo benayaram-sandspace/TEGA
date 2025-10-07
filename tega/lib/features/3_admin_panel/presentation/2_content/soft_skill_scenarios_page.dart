@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:tega/core/constants/app_colors.dart';
 import 'package:tega/features/3_admin_panel/data/models/content_quiz_model.dart';
 import 'package:tega/features/3_admin_panel/data/repositories/content_quiz_repository.dart';
@@ -164,50 +163,6 @@ class _SoftSkillScenariosPageState extends State<SoftSkillScenariosPage>
     );
   }
 
-  SliverAppBar _buildSliverAppBar() {
-    return SliverAppBar(
-      leading: IconButton(
-        icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
-        onPressed: () => Navigator.pop(context),
-      ),
-      title: const Text(
-        'Soft Skill Scenarios',
-        style: TextStyle(
-          fontWeight: FontWeight.bold,
-          color: AppColors.textPrimary,
-        ),
-      ),
-      backgroundColor: AppColors.background,
-      surfaceTintColor: AppColors.background,
-      pinned: true,
-      floating: true,
-      elevation: 1.0,
-      actions: [
-        Padding(
-          padding: const EdgeInsets.only(right: 16.0),
-          child: FilledButton.icon(
-            icon: const Icon(Icons.add, size: 18),
-            label: const Text('Create New'),
-            onPressed: _addNewScenario,
-            style: FilledButton.styleFrom(
-              backgroundColor: AppColors.primary,
-              foregroundColor: AppColors.pureWhite,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-            ),
-          ),
-        ),
-      ],
-      bottom: PreferredSize(
-        preferredSize: const Size.fromHeight(70.0),
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-          child: _buildSearchBar(),
-        ),
-      ),
-    );
-  }
 
   Widget _buildSearchBar() {
     return TextField(
