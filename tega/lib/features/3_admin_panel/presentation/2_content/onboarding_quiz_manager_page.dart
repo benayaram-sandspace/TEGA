@@ -55,15 +55,17 @@ class _OnboardingQuizManagerPageState extends State<OnboardingQuizManagerPage>
         _isLoading = false;
       });
     } catch (e) {
-      setState(() {
-        _isLoading = false;
-      });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Failed to load onboarding quiz: $e'),
-          backgroundColor: AppColors.error,
-        ),
-      );
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to load onboarding quiz: $e'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
     }
   }
 
@@ -118,9 +120,9 @@ class _OnboardingQuizManagerPageState extends State<OnboardingQuizManagerPage>
       width: double.infinity,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: AppColors.primary.withOpacity(0.1),
+        color: AppColors.primary.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.primary.withOpacity(0.3)),
+        border: Border.all(color: AppColors.primary.withValues(alpha: 0.3)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -178,7 +180,7 @@ class _OnboardingQuizManagerPageState extends State<OnboardingQuizManagerPage>
           borderRadius: BorderRadius.circular(12),
           boxShadow: [
             BoxShadow(
-              color: AppColors.lightGray.withOpacity(0.3),
+              color: AppColors.lightGray.withValues(alpha: 0.3),
               blurRadius: 4,
               offset: const Offset(0, 2),
             ),
@@ -219,7 +221,7 @@ class _OnboardingQuizManagerPageState extends State<OnboardingQuizManagerPage>
         border: Border.all(color: AppColors.lightGray),
         boxShadow: [
           BoxShadow(
-            color: AppColors.lightGray.withOpacity(0.3),
+            color: AppColors.lightGray.withValues(alpha: 0.3),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -325,7 +327,7 @@ class _OnboardingQuizManagerPageState extends State<OnboardingQuizManagerPage>
         border: Border.all(color: AppColors.lightGray),
         boxShadow: [
           BoxShadow(
-            color: AppColors.lightGray.withOpacity(0.3),
+            color: AppColors.lightGray.withValues(alpha: 0.3),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -370,7 +372,7 @@ class _OnboardingQuizManagerPageState extends State<OnboardingQuizManagerPage>
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.lightGray.withOpacity(0.1),
+        color: AppColors.lightGray.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: AppColors.lightGray),
       ),
@@ -433,7 +435,7 @@ class _OnboardingQuizManagerPageState extends State<OnboardingQuizManagerPage>
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: AppColors.info.withOpacity(0.2),
+                  color: AppColors.info.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
@@ -453,7 +455,7 @@ class _OnboardingQuizManagerPageState extends State<OnboardingQuizManagerPage>
                     vertical: 4,
                   ),
                   decoration: BoxDecoration(
-                    color: AppColors.warning.withOpacity(0.2),
+                    color: AppColors.warning.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: const Text(

@@ -210,7 +210,7 @@ class _CreateSkillDrillPageState extends State<CreateSkillDrillPage> {
           Icon(
             Icons.list_alt_outlined,
             size: 64,
-            color: AppColors.textSecondary.withOpacity(0.5),
+            color: AppColors.textSecondary.withValues(alpha: 0.5),
           ),
           const SizedBox(height: 16),
           const Text(
@@ -257,7 +257,7 @@ class _CreateSkillDrillPageState extends State<CreateSkillDrillPage> {
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: AppColors.shadowLight.withOpacity(0.5),
+            color: AppColors.shadowLight.withValues(alpha: 0.5),
             blurRadius: 8,
             offset: const Offset(0, 4),
           ),
@@ -316,7 +316,7 @@ class _CreateSkillDrillPageState extends State<CreateSkillDrillPage> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Text(

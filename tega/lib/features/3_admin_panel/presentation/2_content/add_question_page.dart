@@ -344,7 +344,7 @@ class _AddQuestionPageState extends State<AddQuestionPage>
                     borderSide: const BorderSide(color: AppColors.primary),
                   ),
                   filled: true,
-                  fillColor: AppColors.lightGray.withOpacity(0.1),
+                  fillColor: AppColors.lightGray.withValues(alpha: 0.1),
                 ),
               ),
 
@@ -429,7 +429,7 @@ class _AddQuestionPageState extends State<AddQuestionPage>
           borderSide: const BorderSide(color: AppColors.primary),
         ),
         filled: true,
-        fillColor: AppColors.lightGray.withOpacity(0.1),
+        fillColor: AppColors.lightGray.withValues(alpha: 0.1),
       ),
       validator: (value) {
         if (value == null || value.isEmpty) {
@@ -474,7 +474,7 @@ class _AddQuestionPageState extends State<AddQuestionPage>
               borderSide: const BorderSide(color: AppColors.primary),
             ),
             filled: true,
-            fillColor: AppColors.lightGray.withOpacity(0.1),
+            fillColor: AppColors.lightGray.withValues(alpha: 0.1),
           ),
           items: items.map((item) {
             return DropdownMenuItem(value: item, child: Text(item));
