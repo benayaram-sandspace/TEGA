@@ -11,6 +11,10 @@ class AdminDashboardStyles {
   static const Color textDark = AppColors.textPrimary;
   static const Color textLight = AppColors.textSecondary;
   static const Color iconLight = Color(0xFFB0B8C8);
+  static const Color surface = Colors.white;
+  static const Color borderLight = Color(0xFFE0E0E0);
+  static const Color pureWhite = Colors.white;
+  static const Color shadowLight = Color(0xFFE0E0E0);
 
   // Admin-specific accent colors
   static const Color accentGreen = Color(0xFF8BC34A);
@@ -18,6 +22,7 @@ class AdminDashboardStyles {
   static const Color accentRed = Color(0xFFF4511E);
   static const Color accentPurple = Color(0xFF9C27B0);
   static const Color accentTeal = Color(0xFF00BCD4);
+  static const Color accentOrange = Color(0xFFFF9800);
 
   // Status colors for admin panel
   static const Color statusActive = Color(0xFF4CAF50);

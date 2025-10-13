@@ -38,7 +38,7 @@ class _CollegesListPageState extends State<CollegesListPage>
     _animationControllers = List.generate(
       20, // Maximum expected colleges
       (index) => AnimationController(
-        duration: Duration(milliseconds: 400 + (index * 50)),
+        duration: Duration(milliseconds: 200 + (index * 20)),
         vsync: this,
       ),
     );

@@ -3,48 +3,59 @@ import 'package:tega/core/constants/app_colors.dart';
 import 'package:tega/features/3_admin_panel/data/models/admin_model.dart';
 import 'package:tega/features/3_admin_panel/data/repositories/admin_repository.dart';
 
-class AddAdminModal extends StatefulWidget {
-  const AddAdminModal({super.key});
+class EditAdminModal extends StatefulWidget {
+  final AdminUser admin;
+
+  const EditAdminModal({super.key, required this.admin});
 
   @override
-  State<AddAdminModal> createState() => _AddAdminModalState();
+  State<EditAdminModal> createState() => _EditAdminModalState();
 }
 
-class _AddAdminModalState extends State<AddAdminModal> {
+class _EditAdminModalState extends State<EditAdminModal> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
+  final _phoneController = TextEditingController();
+  final _departmentController = TextEditingController();
+  final _designationController = TextEditingController();
 
   final AdminRepository _adminService = AdminRepository.instance;
 
   String _selectedRole = '';
-  String _selectedStatus = 'active';
-  String _phoneNumber = '';
-  String _department = '';
-  String _designation = '';
+  String _selectedStatus = '';
   bool _isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _initializeForm();
+  }
+
+  void _initializeForm() {
+    _nameController.text = widget.admin.name;
+    _emailController.text = widget.admin.email;
+    _phoneController.text = widget.admin.phoneNumber;
+    _departmentController.text = widget.admin.department;
+    _designationController.text = widget.admin.designation;
+    _selectedRole = widget.admin.role;
+    _selectedStatus = widget.admin.status;
+  }
 
   @override
   void dispose() {
     _nameController.dispose();
     _emailController.dispose();
+    _phoneController.dispose();
+    _departmentController.dispose();
+    _designationController.dispose();
     super.dispose();
-  }
-
-  void _clearForm() {
-    _nameController.clear();
-    _emailController.clear();
-    _selectedRole = '';
-    _selectedStatus = 'active';
-    _phoneNumber = '';
-    _department = '';
-    _designation = '';
   }
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: MediaQuery.of(context).size.height * 0.85,
+      height: MediaQuery.of(context).size.height * 0.9,
       decoration: const BoxDecoration(
         color: AppColors.pureWhite,
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
@@ -67,7 +78,7 @@ class _AddAdminModalState extends State<AddAdminModal> {
             child: Row(
               children: [
                 const Text(
-                  'Invite a New Admin',
+                  'Edit Admin Details',
                   style: TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
@@ -178,7 +189,7 @@ class _AddAdminModalState extends State<AddAdminModal> {
                     ),
                     const SizedBox(height: 8),
                     TextFormField(
-                      onChanged: (value) => _phoneNumber = value,
+                      controller: _phoneController,
                       keyboardType: TextInputType.phone,
                       decoration: InputDecoration(
                         hintText: 'Enter phone number',
@@ -208,7 +219,7 @@ class _AddAdminModalState extends State<AddAdminModal> {
                     ),
                     const SizedBox(height: 8),
                     TextFormField(
-                      onChanged: (value) => _department = value,
+                      controller: _departmentController,
                       decoration: InputDecoration(
                         hintText: 'Enter department',
                         hintStyle: TextStyle(color: AppColors.textSecondary),
@@ -237,7 +248,7 @@ class _AddAdminModalState extends State<AddAdminModal> {
                     ),
                     const SizedBox(height: 8),
                     TextFormField(
-                      onChanged: (value) => _designation = value,
+                      controller: _designationController,
                       decoration: InputDecoration(
                         hintText: 'Enter designation',
                         hintStyle: TextStyle(color: AppColors.textSecondary),
@@ -392,7 +403,7 @@ class _AddAdminModalState extends State<AddAdminModal> {
                 const SizedBox(width: 16),
                 Expanded(
                   child: ElevatedButton(
-                    onPressed: _isLoading ? null : _sendInvitation,
+                    onPressed: _isLoading ? null : _updateAdmin,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.warmOrange,
                       padding: const EdgeInsets.symmetric(vertical: 16),
@@ -413,7 +424,7 @@ class _AddAdminModalState extends State<AddAdminModal> {
                             ),
                           )
                         : const Text(
-                            'Send Invitation',
+                            'Update Admin',
                             style: TextStyle(
                               color: AppColors.pureWhite,
                               fontWeight: FontWeight.w600,
@@ -429,8 +440,7 @@ class _AddAdminModalState extends State<AddAdminModal> {
     );
   }
 
-
-  Future<void> _sendInvitation() async {
+  Future<void> _updateAdmin() async {
     if (!_formKey.currentState!.validate()) return;
 
     if (_selectedRole.isEmpty) {
@@ -443,38 +453,42 @@ class _AddAdminModalState extends State<AddAdminModal> {
     setState(() => _isLoading = true);
 
     try {
-      // Create new admin directly instead of invitation
-      final newAdmin = AdminUser(
-        id: 'admin_${DateTime.now().millisecondsSinceEpoch}',
+      // Create updated admin object
+      final updatedAdmin = AdminUser(
+        id: widget.admin.id,
         name: _nameController.text.trim(),
         email: _emailController.text.trim(),
-        phoneNumber: _phoneNumber,
+        phoneNumber: _phoneController.text.trim(),
         role: _selectedRole,
         status: _selectedStatus,
-        profileImage: '',
-        createdAt: DateTime.now(),
-        lastLogin: DateTime.now(),
-        permissions: [], // No permissions system
-        managedColleges: [],
-        department: _department,
-        designation: _designation,
+        profileImage: widget.admin.profileImage,
+        createdAt: widget.admin.createdAt,
+        lastLogin: widget.admin.lastLogin,
+        emailVerifiedAt: widget.admin.emailVerifiedAt,
+        permissions: widget.admin.permissions,
+        managedColleges: widget.admin.managedColleges,
+        department: _departmentController.text.trim(),
+        designation: _designationController.text.trim(),
+        activityStats: widget.admin.activityStats,
+        isSuperAdmin: widget.admin.isSuperAdmin,
+        lastPasswordChange: widget.admin.lastPasswordChange,
+        requiresPasswordChange: widget.admin.requiresPasswordChange,
       );
 
-      final success = await _adminService.addAdmin(newAdmin);
+      final success = await _adminService.updateAdmin(updatedAdmin);
 
       if (success) {
-        Navigator.of(context).pop();
-        _clearForm();
+        Navigator.of(context).pop(updatedAdmin);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Admin ${newAdmin.name} added successfully'),
+            content: Text('Admin ${updatedAdmin.name} updated successfully'),
             backgroundColor: AppColors.success,
           ),
         );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Failed to add admin'),
+            content: Text('Failed to update admin'),
             backgroundColor: AppColors.error,
           ),
         );

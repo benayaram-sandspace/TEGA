@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:tega/core/constants/app_colors.dart';
+import 'package:tega/features/3_admin_panel/data/models/admin_model.dart';
 import 'package:tega/features/3_admin_panel/presentation/0_dashboard/admin_dashboard_styles.dart';
-import 'package:tega/features/5_student_dashboard/data/models/student_model.dart';
 
 class _ActivityItem {
   final IconData icon;
@@ -16,16 +17,16 @@ class _ActivityItem {
   });
 }
 
-class StudentProfilePage extends StatefulWidget {
-  final Student student;
+class AdminProfilePage extends StatefulWidget {
+  final AdminUser admin;
 
-  const StudentProfilePage({super.key, required this.student});
+  const AdminProfilePage({super.key, required this.admin});
 
   @override
-  State<StudentProfilePage> createState() => _StudentProfilePageState();
+  State<AdminProfilePage> createState() => _AdminProfilePageState();
 }
 
-class _StudentProfilePageState extends State<StudentProfilePage>
+class _AdminProfilePageState extends State<AdminProfilePage>
     with TickerProviderStateMixin {
   late AnimationController _animationController;
   final ScrollController _scrollController = ScrollController();
@@ -75,7 +76,7 @@ class _StudentProfilePageState extends State<StudentProfilePage>
                 const SizedBox(height: 20),
                 _buildAnimatedCard(
                   index: 1,
-                  child: _buildAcademicCard(),
+                  child: _buildPermissionsCard(),
                 ),
                 const SizedBox(height: 20),
                 _buildAnimatedCard(index: 2, child: _buildRecentActivityCard()),
@@ -106,7 +107,7 @@ class _StudentProfilePageState extends State<StudentProfilePage>
         IconButton(
           icon: const Icon(Icons.edit, color: AdminDashboardStyles.textDark),
           onPressed: () {
-            // TODO: Navigate to edit student page
+            // TODO: Navigate to edit admin page
           },
         ),
       ],
@@ -119,7 +120,7 @@ class _StudentProfilePageState extends State<StudentProfilePage>
               radius: 18,
               backgroundColor: AdminDashboardStyles.primary,
               child: Text(
-                widget.student.name.isNotEmpty ? widget.student.name[0].toUpperCase() : 'S',
+                widget.admin.name.isNotEmpty ? widget.admin.name[0].toUpperCase() : 'A',
                 style: const TextStyle(
                   color: Colors.white,
                   fontWeight: FontWeight.bold,
@@ -129,7 +130,7 @@ class _StudentProfilePageState extends State<StudentProfilePage>
             ),
             const SizedBox(width: 12),
             Text(
-              widget.student.name,
+              widget.admin.name,
               style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
             ),
           ],
@@ -161,7 +162,7 @@ class _StudentProfilePageState extends State<StudentProfilePage>
                     radius: 42,
                     backgroundColor: AdminDashboardStyles.primary,
                     child: Text(
-                      widget.student.name.isNotEmpty ? widget.student.name[0].toUpperCase() : 'S',
+                      widget.admin.name.isNotEmpty ? widget.admin.name[0].toUpperCase() : 'A',
                       style: const TextStyle(
                         color: Colors.white,
                         fontWeight: FontWeight.bold,
@@ -172,7 +173,7 @@ class _StudentProfilePageState extends State<StudentProfilePage>
                 ),
                 const SizedBox(height: 12),
                 Text(
-                  widget.student.name,
+                  widget.admin.name,
                   style: const TextStyle(
                     color: AdminDashboardStyles.textDark,
                     fontWeight: FontWeight.bold,
@@ -181,7 +182,7 @@ class _StudentProfilePageState extends State<StudentProfilePage>
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  widget.student.college ?? 'Student',
+                  widget.admin.role,
                   style: const TextStyle(
                     color: AdminDashboardStyles.textLight,
                     fontSize: 14,
@@ -229,19 +230,19 @@ class _StudentProfilePageState extends State<StudentProfilePage>
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
           _buildStatItem(
-            Icons.trending_up,
-            'Job Readiness',
-            '${(widget.student.jobReadiness ?? 0).toInt()}%',
+            Icons.admin_panel_settings,
+            'Role Level',
+            _getRoleLevel(widget.admin.role),
           ),
           _buildStatItem(
-            Icons.school,
-            'CGPA',
-            widget.student.cgpa?.toStringAsFixed(1) ?? 'N/A',
+            Icons.business,
+            'Department',
+            widget.admin.department.isNotEmpty ? widget.admin.department : 'General',
           ),
           _buildStatItem(
-            Icons.percent,
-            'Percentage',
-            '${(widget.student.percentage ?? 0).toInt()}%',
+            Icons.work,
+            'Designation',
+            widget.admin.designation.isNotEmpty ? widget.admin.designation : 'Admin',
           ),
         ],
       ),
@@ -270,7 +271,7 @@ class _StudentProfilePageState extends State<StudentProfilePage>
     );
   }
 
-  Widget _buildAcademicCard() {
+  Widget _buildPermissionsCard() {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -284,15 +285,15 @@ class _StudentProfilePageState extends State<StudentProfilePage>
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
-            'Academic Information',
+            'Role Permissions',
             style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 16),
-          _buildInfoRow('Student ID', widget.student.studentId ?? widget.student.id ?? 'N/A'),
-          _buildInfoRow('College', widget.student.college ?? 'Not specified'),
-          _buildInfoRow('Branch', widget.student.branch ?? 'Not specified'),
-          _buildInfoRow('Year', widget.student.year ?? widget.student.yearOfStudy ?? 'Not specified'),
-          _buildInfoRow('CGPA', widget.student.cgpa?.toStringAsFixed(2) ?? 'Not available'),
+          _buildPermissionItem('User Management', _hasPermission('user_management'), Icons.people),
+          _buildPermissionItem('Content Management', _hasPermission('content_management'), Icons.content_copy),
+          _buildPermissionItem('College Management', _hasPermission('college_management'), Icons.school),
+          _buildPermissionItem('Analytics Access', _hasPermission('analytics'), Icons.analytics),
+          _buildPermissionItem('System Settings', _hasPermission('system_settings'), Icons.settings),
         ],
       ),
     );
@@ -301,28 +302,28 @@ class _StudentProfilePageState extends State<StudentProfilePage>
   Widget _buildRecentActivityCard() {
     final activities = [
       _ActivityItem(
-        icon: Icons.assignment_turned_in,
-        color: AdminDashboardStyles.accentGreen,
-        title: 'Completed "Data Structures" assignment',
-        time: 'Yesterday',
-      ),
-      _ActivityItem(
-        icon: Icons.quiz,
+        icon: Icons.security,
         color: AdminDashboardStyles.primary,
-        title: 'Attended "Algorithms" quiz',
-        time: '2 days ago',
+        title: 'Updated user permissions',
+        time: '2 hours ago',
       ),
       _ActivityItem(
         icon: Icons.school,
-        color: AdminDashboardStyles.accentBlue,
-        title: 'Enrolled in "Machine Learning" course',
-        time: '1 week ago',
+        color: AdminDashboardStyles.accentGreen,
+        title: 'Created new college',
+        time: '1 day ago',
       ),
       _ActivityItem(
         icon: Icons.analytics,
+        color: AdminDashboardStyles.accentBlue,
+        title: 'Generated analytics report',
+        time: '2 days ago',
+      ),
+      _ActivityItem(
+        icon: Icons.settings,
         color: AdminDashboardStyles.accentOrange,
-        title: 'Updated skill assessment',
-        time: '2 weeks ago',
+        title: 'Modified content settings',
+        time: '3 days ago',
       ),
     ];
 
@@ -377,55 +378,24 @@ class _StudentProfilePageState extends State<StudentProfilePage>
           ListTile(
             leading: const Icon(Icons.email_outlined),
             title: const Text('Email'),
-            subtitle: Text(widget.student.email ?? '${widget.student.name.toLowerCase().replaceAll(' ', '.')}@example.com'),
+            subtitle: Text(widget.admin.email),
             trailing: const Icon(Icons.copy, size: 20),
             onTap: () {},
           ),
+          if (widget.admin.phoneNumber.isNotEmpty)
+            ListTile(
+              leading: const Icon(Icons.phone_outlined),
+              title: const Text('Phone'),
+              subtitle: Text(widget.admin.phoneNumber),
+              trailing: const Icon(Icons.copy, size: 20),
+              onTap: () {},
+            ),
           ListTile(
-            leading: const Icon(Icons.phone_outlined),
-            title: const Text('Phone'),
-            subtitle: const Text('+91 98765 43210'),
-            trailing: const Icon(Icons.copy, size: 20),
-            onTap: () {},
-          ),
-          ListTile(
-            leading: const Icon(Icons.school_outlined),
-            title: const Text('College'),
-            subtitle: Text(widget.student.college ?? 'Not specified'),
+            leading: const Icon(Icons.calendar_today_outlined),
+            title: const Text('Member Since'),
+            subtitle: Text(_formatDate(widget.admin.createdAt)),
             trailing: const Icon(Icons.info_outline, size: 20),
             onTap: () {},
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildInfoRow(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-            width: 100,
-            child: Text(
-              label,
-              style: const TextStyle(
-                fontSize: 14,
-                color: AdminDashboardStyles.textLight,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ),
-          Expanded(
-            child: Text(
-              value,
-              style: const TextStyle(
-                fontSize: 14,
-                color: AdminDashboardStyles.textDark,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
           ),
         ],
       ),
@@ -478,5 +448,86 @@ class _StudentProfilePageState extends State<StudentProfilePage>
         ],
       ),
     );
+  }
+
+  Widget _buildPermissionItem(String permission, bool hasPermission, IconData icon) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Row(
+        children: [
+          Icon(
+            icon,
+            color: hasPermission ? AppColors.success : AppColors.textSecondary,
+            size: 20,
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              permission,
+              style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: AdminDashboardStyles.textDark,
+              ),
+            ),
+          ),
+          Icon(
+            hasPermission ? Icons.check_circle : Icons.cancel,
+            color: hasPermission ? AppColors.success : AppColors.error,
+            size: 20,
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _getRoleLevel(String role) {
+    switch (role.toLowerCase()) {
+      case 'super admin':
+        return 'Level 5';
+      case 'content manager':
+        return 'Level 4';
+      case 'user manager':
+        return 'Level 3';
+      case 'college manager':
+        return 'Level 3';
+      case 'analytics manager':
+        return 'Level 2';
+      default:
+        return 'Level 1';
+    }
+  }
+
+  bool _hasPermission(String permission) {
+    switch (widget.admin.role.toLowerCase()) {
+      case 'super admin':
+        return true;
+      case 'content manager':
+        return permission == 'content_management';
+      case 'user manager':
+        return permission == 'user_management';
+      case 'college manager':
+        return permission == 'college_management';
+      case 'analytics manager':
+        return permission == 'analytics';
+      default:
+        return false;
+    }
+  }
+
+  String _formatDate(DateTime? date) {
+    if (date == null) return 'Never';
+    final now = DateTime.now();
+    final difference = now.difference(date);
+    
+    if (difference.inDays > 0) {
+      return '${difference.inDays} days ago';
+    } else if (difference.inHours > 0) {
+      return '${difference.inHours} hours ago';
+    } else if (difference.inMinutes > 0) {
+      return '${difference.inMinutes} minutes ago';
+    } else {
+      return 'Just now';
+    }
   }
 }

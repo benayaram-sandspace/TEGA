@@ -5,6 +5,8 @@ import 'package:tega/features/3_admin_panel/data/repositories/admin_repository.d
 import 'package:tega/features/3_admin_panel/presentation/0_dashboard/admin_dashboard_styles.dart';
 
 import 'add_admin_modal.dart';
+import 'edit_admin_modal.dart';
+import 'admin_profile_page.dart';
 
 class AdminUsersPage extends StatefulWidget {
   const AdminUsersPage({super.key});
@@ -369,6 +371,26 @@ class _AdminUsersPageState extends State<AdminUsersPage>
                     color: AppColors.textSecondary,
                   ),
                 ),
+                if (admin.phoneNumber.isNotEmpty) ...[
+                  const SizedBox(height: 2),
+                  Text(
+                    admin.phoneNumber,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                ],
+                if (admin.department.isNotEmpty) ...[
+                  const SizedBox(height: 2),
+                  Text(
+                    admin.department,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                ],
                 const SizedBox(height: 8),
                 Row(
                   children: [
@@ -436,17 +458,17 @@ class _AdminUsersPageState extends State<AdminUsersPage>
                   children: [
                     Icon(Icons.edit, size: 18),
                     SizedBox(width: 8),
-                    Text('Edit'),
+                    Text('Edit Details'),
                   ],
                 ),
               ),
               const PopupMenuItem(
-                value: 'deactivate',
+                value: 'delete',
                 child: Row(
                   children: [
-                    Icon(Icons.block, size: 18),
+                    Icon(Icons.delete, size: 18, color: Colors.red),
                     SizedBox(width: 8),
-                    Text('Deactivate'),
+                    Text('Delete Admin', style: TextStyle(color: Colors.red)),
                   ],
                 ),
               ),
@@ -496,40 +518,17 @@ class _AdminUsersPageState extends State<AdminUsersPage>
       case 'edit':
         _showEditAdminModal(admin);
         break;
-      case 'deactivate':
-        _showDeactivateDialog(admin);
+      case 'delete':
+        _showDeleteDialog(admin);
         break;
     }
   }
 
   void _showAdminDetails(AdminUser admin) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(admin.name),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildDetailRow('Email', admin.email),
-            _buildDetailRow('Role', admin.role),
-            _buildDetailRow('Status', admin.status),
-            _buildDetailRow('Created', _formatDate(admin.createdAt)),
-            _buildDetailRow('Last Login', _formatDate(admin.lastLogin)),
-            const SizedBox(height: 8),
-            const Text(
-              'Permissions:',
-              style: TextStyle(fontWeight: FontWeight.bold),
-            ),
-            ...admin.permissions.map((permission) => Text('• $permission')),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Close'),
-          ),
-        ],
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => AdminProfilePage(admin: admin),
       ),
     );
   }
@@ -567,39 +566,72 @@ class _AdminUsersPageState extends State<AdminUsersPage>
   }
 
   void _showEditAdminModal(AdminUser admin) {
-    // TODO: Implement edit admin modal
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text('Edit ${admin.name} - Coming Soon')));
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => EditAdminModal(admin: admin),
+    ).then((updatedAdmin) {
+      if (updatedAdmin != null) {
+        _loadAdmins(); // Refresh the list
+      }
+    });
   }
 
-  void _showDeactivateDialog(AdminUser admin) {
+  void _showDeleteDialog(AdminUser admin) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Deactivate Admin'),
-        content: Text('Are you sure you want to deactivate ${admin.name}?'),
+        title: const Text('Delete Admin'),
+        content: Text('Are you sure you want to permanently delete ${admin.name}? This action cannot be undone.'),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
             child: const Text('Cancel'),
           ),
           ElevatedButton(
-            onPressed: () {
+            onPressed: () async {
               Navigator.of(context).pop();
-              // TODO: Implement deactivation
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('${admin.name} deactivated')),
-              );
+              await _deleteAdmin(admin);
             },
             style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
             child: const Text(
-              'Deactivate',
+              'Delete',
               style: TextStyle(color: AppColors.pureWhite),
             ),
           ),
         ],
       ),
     );
+  }
+
+  Future<void> _deleteAdmin(AdminUser admin) async {
+    try {
+      final success = await _adminService.deleteAdmin(admin.id);
+      
+      if (success) {
+        _loadAdmins(); // Refresh the list
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('${admin.name} deleted successfully'),
+            backgroundColor: AppColors.success,
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Failed to delete admin'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error deleting admin: $e'),
+          backgroundColor: AppColors.error,
+        ),
+      );
+    }
   }
 }

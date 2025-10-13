@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:tega/core/constants/app_colors.dart';
 import 'package:tega/features/3_admin_panel/presentation/0_dashboard/admin_dashboard_styles.dart';
 import 'package:tega/features/3_admin_panel/presentation/3_reports_and_analytics/college_report_page.dart';
 import 'package:tega/features/3_admin_panel/presentation/3_reports_and_analytics/custom_report_builder.dart';
@@ -116,39 +117,328 @@ class _ReportsExportCenterPageState extends State<ReportsExportCenterPage>
         opacity: _fadeAnimation,
         child: SlideTransition(
           position: _slideAnimation,
-          child: ListView.builder(
-        padding: const EdgeInsets.all(16.0),
-        itemCount: _reports.length,
-        itemBuilder: (context, index) {
-          final report = _reports[index];
-          // Each card will animate with a delay
-          return AnimatedCard(
-            animationController: _animationController,
-            index: index,
-            child: ReportCard(
-              iconData: report.iconData,
-              iconColor: report.iconColor,
-              backgroundColor: report.backgroundColor,
-              title: report.title,
-              description: report.description,
-              buttonText: report.buttonText,
-              onPressed: report.onPressed,
-            ),
-          );
-        },
+          child: Column(
+            children: [
+              // Header Section
+              Container(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Reports & Analytics',
+                      style: const TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                        color: AdminDashboardStyles.textDark,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Generate comprehensive reports and export data',
+                      style: const TextStyle(
+                        fontSize: 14,
+                        color: AdminDashboardStyles.textLight,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 20),
+                    // Quick Stats - Made responsive
+                    LayoutBuilder(
+                      builder: (context, constraints) {
+                        final isSmallScreen = constraints.maxWidth < 600;
+                        return isSmallScreen
+                            ? Column(
+                                children: [
+                                  Row(
+                                    children: [
+                                      Expanded(
+                                        child: _buildQuickStatCard(
+                                          'Total Reports',
+                                          '24',
+                                          Icons.assessment,
+                                          AdminDashboardStyles.primary,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 12),
+                                      Expanded(
+                                        child: _buildQuickStatCard(
+                                          'This Month',
+                                          '8',
+                                          Icons.calendar_month,
+                                          AppColors.success,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 12),
+                                  Row(
+                                    children: [
+                                      Expanded(
+                                        child: _buildQuickStatCard(
+                                          'Exports',
+                                          '156',
+                                          Icons.download,
+                                          AppColors.info,
+                                        ),
+                                      ),
+                                      const Expanded(child: SizedBox()), // Empty space
+                                    ],
+                                  ),
+                                ],
+                              )
+                            : Row(
+                                children: [
+                                  Expanded(
+                                    child: _buildQuickStatCard(
+                                      'Total Reports',
+                                      '24',
+                                      Icons.assessment,
+                                      AdminDashboardStyles.primary,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: _buildQuickStatCard(
+                                      'This Month',
+                                      '8',
+                                      Icons.calendar_month,
+                                      AppColors.success,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: _buildQuickStatCard(
+                                      'Exports',
+                                      '156',
+                                      Icons.download,
+                                      AppColors.info,
+                                    ),
+                                  ),
+                                ],
+                              );
+                      },
+                    ),
+                  ],
+                ),
+              ),
+
+              // Reports Grid - Made responsive
+              Expanded(
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    final crossAxisCount = constraints.maxWidth > 600 ? 2 : 1;
+                    final childAspectRatio = constraints.maxWidth > 600 ? 0.8 : 1.2;
+                    
+                    return GridView.builder(
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: crossAxisCount,
+                        crossAxisSpacing: 16,
+                        mainAxisSpacing: 16,
+                        childAspectRatio: childAspectRatio,
+                      ),
+                      itemCount: _reports.length,
+                      itemBuilder: (context, index) {
+                        final report = _reports[index];
+                        return AnimatedCard(
+                          animationController: _animationController,
+                          index: index,
+                          child: ModernReportCard(
+                            iconData: report.iconData,
+                            iconColor: report.iconColor,
+                            backgroundColor: report.backgroundColor,
+                            title: report.title,
+                            description: report.description,
+                            buttonText: report.buttonText,
+                            onPressed: report.onPressed,
+                          ),
+                        );
+                      },
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
+    );
+  }
+
+  Widget _buildQuickStatCard(String title, String value, IconData icon, Color color) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AdminDashboardStyles.surface,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AdminDashboardStyles.borderLight),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: color.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(icon, color: color, size: 20),
+              ),
+              const Spacer(),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Text(
+            value,
+            style: const TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: AdminDashboardStyles.textDark,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            title,
+            style: const TextStyle(
+              fontSize: 12,
+              color: AdminDashboardStyles.textLight,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// Modern Report Card with enhanced design
+class ModernReportCard extends StatelessWidget {
+  final IconData iconData;
+  final Color iconColor;
+  final Color backgroundColor;
+  final String title;
+  final String description;
+  final String buttonText;
+  final VoidCallback onPressed;
+
+  const ModernReportCard({
+    super.key,
+    required this.iconData,
+    required this.iconColor,
+    required this.backgroundColor,
+    required this.title,
+    required this.description,
+    required this.buttonText,
+    required this.onPressed,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: AdminDashboardStyles.surface,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AdminDashboardStyles.borderLight),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 15,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: InkWell(
+        onTap: onPressed,
+        borderRadius: BorderRadius.circular(20),
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Icon Section
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: backgroundColor,
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Icon(
+                  iconData,
+                  color: iconColor,
+                  size: 32,
+                ),
+              ),
+              const SizedBox(height: 16),
+              
+              // Title
+              Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: AdminDashboardStyles.textDark,
+                ),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+              const SizedBox(height: 8),
+              
+              // Description
+              Expanded(
+                child: Text(
+                  description,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: AdminDashboardStyles.textLight,
+                    height: 1.4,
+                  ),
+                  maxLines: 3,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              const SizedBox(height: 16),
+              
+              // Action Button
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: onPressed,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AdminDashboardStyles.primary,
+                    foregroundColor: AdminDashboardStyles.pureWhite,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    elevation: 0,
+                  ),
+                  child: Text(
+                    buttonText,
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 }
 
-// Reusable Report Card with more visual polish
+// Legacy Report Card (keeping for compatibility)
 class ReportCard extends StatelessWidget {
   final IconData iconData;
   final Color iconColor;
-  final Color
-  backgroundColor; // This is the accent background for the icon part
+  final Color backgroundColor;
   final String title;
   final String description;
   final String buttonText;
@@ -180,11 +470,11 @@ class ReportCard extends StatelessWidget {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        border: Border.all(color: Colors.white.withOpacity(0.2), width: 1),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.2), width: 1),
         boxShadow: [
           BoxShadow(
-            color: primaryDarkTeal.withOpacity(
-              0.4,
+            color: primaryDarkTeal.withValues(
+              alpha: 0.4,
             ), // Shadow reflecting new color
             blurRadius: 20,
             offset: const Offset(0, 10),
@@ -202,7 +492,7 @@ class ReportCard extends StatelessWidget {
               width: double.infinity,
               decoration: BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [backgroundColor.withOpacity(0.9), backgroundColor],
+                  colors: [backgroundColor.withValues(alpha: 0.9), backgroundColor],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
@@ -211,11 +501,11 @@ class ReportCard extends StatelessWidget {
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: Colors.white.withOpacity(
-                    0.2,
+                  color: Colors.white.withValues(
+                    alpha: 0.2,
                   ), // Slightly more opaque white accent
                   border: Border.all(
-                    color: Colors.white.withOpacity(0.4),
+                    color: Colors.white.withValues(alpha: 0.4),
                     width: 1.5,
                   ),
                 ),
@@ -241,8 +531,8 @@ class ReportCard extends StatelessWidget {
                   Text(
                     description,
                     style: TextStyle(
-                      color: Colors.white.withOpacity(
-                        0.9,
+                      color: Colors.white.withValues(
+                        alpha: 0.9,
                       ), // Slightly more prominent white text
                       fontSize: 16,
                       height: 1.5,
@@ -251,7 +541,7 @@ class ReportCard extends StatelessWidget {
                   Padding(
                     padding: const EdgeInsets.symmetric(vertical: 24.0),
                     child: Divider(
-                      color: Colors.white.withOpacity(0.3),
+                      color: Colors.white.withValues(alpha: 0.3),
                     ), // Divider for visual break
                   ),
                   // Button with gradient
@@ -270,7 +560,7 @@ class ReportCard extends StatelessWidget {
                         BoxShadow(
                           color: const Color(
                             0xFFFFC107,
-                          ).withOpacity(0.4), // Gold shadow
+                          ).withValues(alpha: 0.4), // Gold shadow
                           blurRadius: 10,
                           offset: const Offset(0, 4),
                         ),

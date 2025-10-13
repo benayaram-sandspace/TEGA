@@ -338,7 +338,7 @@ class _SkillDrillLibraryPageState extends State<SkillDrillLibraryPage> {
               Icon(
                 Icons.search_off,
                 size: 64,
-                color: AppColors.textSecondary.withOpacity(0.5),
+                color: AppColors.textSecondary.withValues(alpha: 0.5),
               ),
               const SizedBox(height: 16),
               const Text(
@@ -387,7 +387,7 @@ class _SkillDrillLibraryPageState extends State<SkillDrillLibraryPage> {
                 drill.imageUrls.isNotEmpty ? drill.imageUrls.first : '',
                 fit: BoxFit.cover,
                 errorBuilder: (context, error, stackTrace) => Container(
-                  color: AppColors.primary.withOpacity(0.1),
+                  color: AppColors.primary.withValues(alpha: 0.1),
                   child: const Icon(
                     Icons.image_not_supported_outlined,
                     color: AppColors.primary,
@@ -450,7 +450,7 @@ class _SkillDrillLibraryPageState extends State<SkillDrillLibraryPage> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Text(
