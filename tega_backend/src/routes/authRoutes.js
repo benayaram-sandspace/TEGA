@@ -1,23 +1,48 @@
-const express = require("express");
+import express from "express";
+import { 
+  register, 
+  login, 
+  forgotPassword, 
+  verifyOTP, 
+  resetPassword, 
+  sendRegistrationOTP, 
+  verifyRegistrationOTP,
+  refreshToken,
+  checkEmailAvailability 
+} from "../controllers/authController.js";
+
 const router = express.Router();
-const { check } = require("express-validator");
-const { registerUser, loginUser } = require("../controllers/authController");
 
-const registerValidation = [
-  check("firstName", "First name is required").not().isEmpty(),
-  check("lastName", "Last name is required").not().isEmpty(),
-  check("email", "Please include a valid email").isEmail(),
-  check("password", "Password must be at least 6 characters").isLength({
-    min: 6,
-  }),
-];
+// POST /api/auth/register
+router.post("/register", register);
 
-const loginValidation = [
-  check("email", "Please include a valid email").isEmail(),
-  check("password", "Password is required").exists(),
-];
+// POST /api/auth/check-email
+router.post("/check-email", checkEmailAvailability);
 
-router.post("/register", registerValidation, registerUser);
-router.post("/login", loginValidation, loginUser);
+// POST /api/auth/register/send-otp
+router.post("/register/send-otp", sendRegistrationOTP);
 
-module.exports = router;
+// POST /api/auth/register/verify-otp
+router.post("/register/verify-otp", verifyRegistrationOTP);
+
+// POST /api/auth/login
+router.post("/login", login);
+
+// POST /api/auth/forgot-password
+router.post("/forgot-password", forgotPassword);
+
+// POST /api/auth/verify-otp
+router.post("/verify-otp", verifyOTP);
+
+// POST /api/auth/reset-password
+router.post("/reset-password", resetPassword);
+
+// POST /api/auth/refresh-token
+router.post("/refresh-token", refreshToken);
+
+// GET /api/auth/test
+router.get("/test", (req, res) => {
+  res.send("Auth routes working 🚀");
+});
+
+export default router;

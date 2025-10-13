@@ -22,18 +22,18 @@ class _UserManagementPageState extends State<UserManagementPage> {
     },
     {
       'id': '2',
-      'name': 'Moderator User',
-      'email': 'moderator@tega.com',
-      'role': UserRole.moderator,
+      'name': 'Principal User',
+      'email': 'principal@tega.com',
+      'role': UserRole.principal,
       'status': 'Active',
       'lastLogin': '2024-01-15 09:15',
       'createdAt': '2024-01-05',
     },
     {
       'id': '3',
-      'name': 'Regular User',
-      'email': 'user@tega.com',
-      'role': UserRole.user,
+      'name': 'Student User',
+      'email': 'student@tega.com',
+      'role': UserRole.student,
       'status': 'Active',
       'lastLogin': '2024-01-15 08:45',
       'createdAt': '2024-01-10',
@@ -42,7 +42,7 @@ class _UserManagementPageState extends State<UserManagementPage> {
       'id': '4',
       'name': 'John Doe',
       'email': 'john.doe@example.com',
-      'role': UserRole.user,
+      'role': UserRole.student,
       'status': 'Inactive',
       'lastLogin': '2024-01-10 14:20',
       'createdAt': '2024-01-12',
@@ -51,7 +51,7 @@ class _UserManagementPageState extends State<UserManagementPage> {
       'id': '5',
       'name': 'Jane Smith',
       'email': 'jane.smith@example.com',
-      'role': UserRole.user,
+      'role': UserRole.student,
       'status': 'Active',
       'lastLogin': '2024-01-15 11:00',
       'createdAt': '2024-01-13',
@@ -126,9 +126,9 @@ class _UserManagementPageState extends State<UserManagementPage> {
               const SizedBox(width: 16),
               Expanded(
                 child: _buildUserStatCard(
-                  title: 'Moderators',
+                  title: 'Principals',
                   value: _fakeUsers
-                      .where((user) => user['role'] == UserRole.moderator)
+                      .where((user) => user['role'] == UserRole.principal)
                       .length
                       .toString(),
                   icon: Icons.shield,

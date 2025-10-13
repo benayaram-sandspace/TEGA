@@ -12,7 +12,7 @@ class UserManagementPage extends StatefulWidget {
 class _UserManagementPageState extends State<UserManagementPage>
     with TickerProviderStateMixin {
   final AuthService _authService = AuthService();
-  
+
   // Animation controllers
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
@@ -29,18 +29,18 @@ class _UserManagementPageState extends State<UserManagementPage>
     },
     {
       'id': '2',
-      'name': 'Moderator User',
-      'email': 'moderator@tega.com',
-      'role': UserRole.moderator,
+      'name': 'Principal User',
+      'email': 'principal@tega.com',
+      'role': UserRole.principal,
       'status': 'Active',
       'lastLogin': '2024-01-15 09:15',
       'createdAt': '2024-01-05',
     },
     {
       'id': '3',
-      'name': 'Regular User',
-      'email': 'user@tega.com',
-      'role': UserRole.user,
+      'name': 'Student User',
+      'email': 'student@tega.com',
+      'role': UserRole.student,
       'status': 'Active',
       'lastLogin': '2024-01-15 08:45',
       'createdAt': '2024-01-10',
@@ -49,7 +49,7 @@ class _UserManagementPageState extends State<UserManagementPage>
       'id': '4',
       'name': 'John Doe',
       'email': 'john.doe@example.com',
-      'role': UserRole.user,
+      'role': UserRole.student,
       'status': 'Inactive',
       'lastLogin': '2024-01-10 14:20',
       'createdAt': '2024-01-12',
@@ -58,7 +58,7 @@ class _UserManagementPageState extends State<UserManagementPage>
       'id': '5',
       'name': 'Jane Smith',
       'email': 'jane.smith@example.com',
-      'role': UserRole.user,
+      'role': UserRole.student,
       'status': 'Active',
       'lastLogin': '2024-01-15 11:00',
       'createdAt': '2024-01-13',
@@ -75,11 +75,14 @@ class _UserManagementPageState extends State<UserManagementPage>
     _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(parent: _animationController, curve: Curves.easeOutCubic),
     );
-    _slideAnimation = Tween<Offset>(
-      begin: const Offset(0, 0.3),
-      end: Offset.zero,
-    ).animate(CurvedAnimation(parent: _animationController, curve: Curves.easeOutCubic));
-    
+    _slideAnimation =
+        Tween<Offset>(begin: const Offset(0, 0.3), end: Offset.zero).animate(
+          CurvedAnimation(
+            parent: _animationController,
+            curve: Curves.easeOutCubic,
+          ),
+        );
+
     _animationController.forward();
   }
 
@@ -161,9 +164,9 @@ class _UserManagementPageState extends State<UserManagementPage>
                   const SizedBox(width: 16),
                   Expanded(
                     child: _buildUserStatCard(
-                      title: 'Moderators',
+                      title: 'Principals',
                       value: _fakeUsers
-                          .where((user) => user['role'] == UserRole.moderator)
+                          .where((user) => user['role'] == UserRole.principal)
                           .length
                           .toString(),
                       icon: Icons.shield,
@@ -345,16 +348,20 @@ class _UserManagementPageState extends State<UserManagementPage>
                                       ),
                                       decoration: BoxDecoration(
                                         color: user['status'] == 'Active'
-                                            ? AdminDashboardStyles.statusActive.withValues(alpha: 0.1)
-                                            : AdminDashboardStyles.statusError.withValues(alpha: 0.1),
+                                            ? AdminDashboardStyles.statusActive
+                                                  .withValues(alpha: 0.1)
+                                            : AdminDashboardStyles.statusError
+                                                  .withValues(alpha: 0.1),
                                         borderRadius: BorderRadius.circular(12),
                                       ),
                                       child: Text(
                                         user['status'],
                                         style: TextStyle(
                                           color: user['status'] == 'Active'
-                                              ? AdminDashboardStyles.statusActive
-                                              : AdminDashboardStyles.statusError,
+                                              ? AdminDashboardStyles
+                                                    .statusActive
+                                              : AdminDashboardStyles
+                                                    .statusError,
                                           fontSize: 11,
                                           fontWeight: FontWeight.bold,
                                         ),
@@ -376,13 +383,20 @@ class _UserManagementPageState extends State<UserManagementPage>
                                       children: [
                                         IconButton(
                                           onPressed: () => _editUser(user),
-                                          icon: const Icon(Icons.edit, size: 18),
+                                          icon: const Icon(
+                                            Icons.edit,
+                                            size: 18,
+                                          ),
                                           color: AdminDashboardStyles.primary,
                                         ),
                                         IconButton(
                                           onPressed: () => _deleteUser(user),
-                                          icon: const Icon(Icons.delete, size: 18),
-                                          color: AdminDashboardStyles.statusError,
+                                          icon: const Icon(
+                                            Icons.delete,
+                                            size: 18,
+                                          ),
+                                          color:
+                                              AdminDashboardStyles.statusError,
                                         ),
                                       ],
                                     ),

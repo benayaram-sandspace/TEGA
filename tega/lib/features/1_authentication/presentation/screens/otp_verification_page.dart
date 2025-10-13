@@ -2,12 +2,28 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:tega/core/constants/app_colors.dart';
-import 'package:tega/features/2_shared_ui/presentation/screens/home_page.dart';
+import 'package:tega/features/1_authentication/data/auth_repository.dart';
+import 'package:tega/features/3_admin_panel/presentation/0_dashboard/admin_dashboard.dart';
+import 'package:tega/features/4_college_panel/presentation/0_dashboard/dashboard_screen.dart';
+import 'package:tega/features/5_student_dashboard/presentation/1_home/student_home_page.dart';
 
 class OTPVerificationPage extends StatefulWidget {
   final String email;
+  final String? firstName;
+  final String? lastName;
+  final String? password;
+  final String? college;
+  final bool isRegistration; // true for registration, false for password reset
 
-  const OTPVerificationPage({super.key, required this.email});
+  const OTPVerificationPage({
+    super.key,
+    required this.email,
+    this.firstName,
+    this.lastName,
+    this.password,
+    this.college,
+    this.isRegistration = false,
+  });
 
   @override
   State<OTPVerificationPage> createState() => _OTPVerificationPageState();
@@ -19,6 +35,8 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
     (_) => TextEditingController(),
   );
   final List<FocusNode> _focusNodes = List.generate(6, (_) => FocusNode());
+  final AuthService _authService = AuthService();
+
   int _resendCountdown = 30;
   bool _canResend = false;
   Timer? _timer;
@@ -97,39 +115,220 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
     }
   }
 
-  void _verifyOTP() {
+  /// Verify OTP and complete registration/password reset
+  Future<void> _verifyOTP() async {
     String otp = _otpControllers.map((controller) => controller.text).join();
-    if (otp.length == 6 && !_isVerifying) {
-      setState(() => _isVerifying = true);
 
-      // Simulate OTP verification
-      Future.delayed(const Duration(seconds: 2), () {
-        if (mounted) {
-          setState(() => _isVerifying = false);
-          Navigator.of(context).pushAndRemoveUntil(
-            MaterialPageRoute(
-              builder: (context) => const HomePage(title: 'TEGA'),
-            ),
-            (route) => false,
-          );
-        }
-      });
+    if (otp.length != 6) {
+      _showErrorMessage('Please enter complete 6-digit code');
+      return;
+    }
+
+    if (_isVerifying) return;
+
+    setState(() => _isVerifying = true);
+    debugPrint('🔐 [OTP] Verifying OTP: $otp for ${widget.email}');
+
+    try {
+      if (widget.isRegistration) {
+        // Registration flow: Verify OTP then complete signup
+        await _handleRegistrationVerification(otp);
+      } else {
+        // Password reset flow: Just verify OTP
+        await _handlePasswordResetVerification(otp);
+      }
+    } catch (e) {
+      debugPrint('❌ [OTP] Error: $e');
+      if (mounted) {
+        _showErrorMessage('An unexpected error occurred. Please try again.');
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isVerifying = false);
+      }
     }
   }
 
-  void _resendOTP() {
+  /// Handle registration OTP verification and account creation
+  Future<void> _handleRegistrationVerification(String otp) async {
+    debugPrint('📝 [REGISTRATION] Verifying OTP and creating account...');
+
+    // Step 1: Verify OTP
+    final verifyResult = await _authService.verifyRegistrationOTP(
+      widget.email,
+      otp,
+    );
+
+    if (!mounted) return;
+
+    if (verifyResult['success'] == true && verifyResult['verified'] == true) {
+      debugPrint('✅ [REGISTRATION] OTP verified, creating account...');
+
+      // Step 2: Complete registration
+      final signupResult = await _authService.signup(
+        firstName: widget.firstName!,
+        lastName: widget.lastName!,
+        email: widget.email,
+        password: widget.password!,
+        college: widget.college,
+      );
+
+      if (!mounted) return;
+
+      if (signupResult['success'] == true) {
+        debugPrint('✅ [REGISTRATION] Account created successfully!');
+
+        // Show success message
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text(
+              'Account created successfully! Welcome to TEGA 🎉',
+            ),
+            backgroundColor: const Color(0xFF27AE60),
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+            duration: const Duration(seconds: 2),
+          ),
+        );
+
+        await Future.delayed(const Duration(milliseconds: 400));
+
+        // Navigate to concerned dashboard based on role
+        if (!mounted) return;
+        if (_authService.isAdmin) {
+          Navigator.pushAndRemoveUntil(
+            context,
+            MaterialPageRoute(builder: (_) => const AdminDashboard()),
+            (route) => false,
+          );
+        } else if (_authService.isPrincipal) {
+          Navigator.pushAndRemoveUntil(
+            context,
+            MaterialPageRoute(builder: (_) => const DashboardScreen()),
+            (route) => false,
+          );
+        } else {
+          Navigator.pushAndRemoveUntil(
+            context,
+            MaterialPageRoute(builder: (_) => const StudentHomePage()),
+            (route) => false,
+          );
+        }
+      } else {
+        debugPrint(
+          '❌ [REGISTRATION] Failed to create account: ${signupResult['message']}',
+        );
+        _showErrorMessage(
+          signupResult['message'] ??
+              'Failed to create account. Please try again.',
+        );
+      }
+    } else {
+      debugPrint('❌ [REGISTRATION] Invalid OTP');
+      _showErrorMessage(
+        verifyResult['message'] ??
+            'Invalid verification code. Please try again.',
+      );
+      _clearOTPFields();
+    }
+  }
+
+  /// Handle password reset OTP verification
+  Future<void> _handlePasswordResetVerification(String otp) async {
+    debugPrint('🔑 [PASSWORD RESET] Verifying OTP...');
+
+    final result = await _authService.verifyOTP(widget.email, otp);
+
+    if (!mounted) return;
+
+    if (result['success'] == true && result['verified'] == true) {
+      debugPrint('✅ [PASSWORD RESET] OTP verified');
+
+      // Navigate to reset password page
+      // TODO: Navigate to reset password screen
+      _showSuccessMessage('OTP verified successfully!');
+    } else {
+      debugPrint('❌ [PASSWORD RESET] Invalid OTP');
+      _showErrorMessage(
+        result['message'] ?? 'Invalid verification code. Please try again.',
+      );
+      _clearOTPFields();
+    }
+  }
+
+  /// Resend OTP
+  Future<void> _resendOTP() async {
     if (!_canResend) return;
 
-    setState(() {
-      _resendCountdown = 30;
-    });
-    _startCountdown();
+    debugPrint('📧 [OTP] Resending OTP to ${widget.email}');
 
+    try {
+      final result = widget.isRegistration
+          ? await _authService.sendRegistrationOTP(widget.email)
+          : await _authService.forgotPassword(widget.email);
+
+      if (!mounted) return;
+
+      if (result['success'] == true) {
+        debugPrint('✅ [OTP] OTP resent successfully');
+
+        setState(() {
+          _resendCountdown = 30;
+        });
+        _startCountdown();
+
+        _clearOTPFields();
+        _focusNodes[0].requestFocus();
+
+        _showSuccessMessage('Verification code sent to your email!');
+      } else {
+        _showErrorMessage(
+          result['message'] ?? 'Failed to resend code. Please try again.',
+        );
+      }
+    } catch (e) {
+      debugPrint('❌ [OTP] Resend error: $e');
+      if (mounted) {
+        _showErrorMessage(
+          'Failed to resend code. Please check your connection.',
+        );
+      }
+    }
+  }
+
+  /// Clear all OTP input fields
+  void _clearOTPFields() {
     for (var controller in _otpControllers) {
       controller.clear();
     }
-    _focusNodes[0].requestFocus();
-    // TODO: Add actual resend OTP logic here
+  }
+
+  /// Show error message
+  void _showErrorMessage(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: const Color(0xFFE74C3C),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        duration: const Duration(seconds: 3),
+      ),
+    );
+  }
+
+  /// Show success message
+  void _showSuccessMessage(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: const Color(0xFF27AE60),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        duration: const Duration(seconds: 2),
+      ),
+    );
   }
 
   String _maskEmail(String email) {

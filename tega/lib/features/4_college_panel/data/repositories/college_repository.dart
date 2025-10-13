@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'package:tega/core/constants/api_constants.dart';
+import 'package:tega/data/colleges_fallback.dart';
 
 class CollegeInfo {
   final String id;
@@ -176,7 +177,12 @@ class CollegeService {
         throw Exception('Failed to load colleges from server');
       }
     } catch (e) {
+      // Fallback to local static list extracted from backend src/data/colleges.js
       print('Error fetching colleges: $e');
+      final fallback = fallbackColleges
+          .map((name) => CollegeInfo(id: name, name: name))
+          .toList();
+      if (fallback.isNotEmpty) return fallback;
       throw Exception('Could not connect to the server');
     }
   }
