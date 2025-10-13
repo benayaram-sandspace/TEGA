@@ -658,6 +658,29 @@ class AuthService {
       _handleResponseErrors(response, 'Forgot password');
       final responseData = json.decode(response.body);
 
+      // Respect backend success flag when present (backend may return 200 with success:false)
+      if (responseData is Map && responseData.containsKey('success')) {
+        final bool ok = responseData['success'] == true;
+        final result = {
+          'success': ok,
+          'message':
+              responseData['message'] ??
+              (ok
+                  ? 'Password reset instructions sent to your email'
+                  : 'Failed to send reset email.'),
+        };
+        if (!ok) {
+          if (responseData.containsKey('emailError')) {
+            result['emailError'] = responseData['emailError'];
+          }
+          if (responseData.containsKey('otp')) {
+            result['otp'] = responseData['otp'];
+          }
+        }
+        if (ok) debugPrint('✅ Password reset email sent to: $email');
+        return result;
+      }
+
       debugPrint('✅ Password reset email sent to: $email');
 
       return {

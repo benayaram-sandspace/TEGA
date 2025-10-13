@@ -1,17 +1,25 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:tega/features/1_authentication/data/auth_repository.dart';
+import 'package:tega/features/1_authentication/presentation/screens/login_page.dart';
 import 'package:tega/features/5_student_dashboard/presentation/1_home/student_notification_page.dart';
-import 'package:tega/features/5_student_dashboard/presentation/2_learning_hub/student_career_pathways_page.dart';
-import 'package:tega/features/5_student_dashboard/presentation/2_learning_hub/student_learn_page.dart';
-import 'package:tega/features/5_student_dashboard/presentation/2_learning_hub/student_skill_drill_page.dart';
-import 'package:tega/features/5_student_dashboard/presentation/2_learning_hub/student_skill_graph.dart';
-import 'package:tega/features/5_student_dashboard/presentation/2_learning_hub/student_skills_hub_page.dart';
-import 'package:tega/features/5_student_dashboard/presentation/3_ai_tools/student_ai_interview_page.dart';
+import 'package:tega/features/5_student_dashboard/presentation/1_home/widgets/student_dashboard_header.dart';
+import 'package:tega/features/5_student_dashboard/presentation/1_home/widgets/student_stats_grid.dart';
+import 'package:tega/features/5_student_dashboard/presentation/1_home/widgets/weekly_progress_widget.dart';
+import 'package:tega/features/5_student_dashboard/presentation/1_home/widgets/upcoming_events_widget.dart';
+import 'package:tega/features/5_student_dashboard/presentation/1_home/widgets/recent_activity_widget.dart';
+import 'package:tega/features/5_student_dashboard/presentation/1_home/widgets/achievements_widget.dart';
+import 'package:tega/features/5_student_dashboard/presentation/1_home/widgets/quick_actions_widget.dart';
+import 'package:tega/features/5_student_dashboard/presentation/1_home/widgets/recommended_courses_widget.dart';
+import 'package:tega/features/5_student_dashboard/presentation/2_learning_hub/courses_page.dart';
 import 'package:tega/features/5_student_dashboard/presentation/3_ai_tools/student_ai_job_search_page.dart';
 import 'package:tega/features/5_student_dashboard/presentation/3_ai_tools/student_resume_optimizer.dart';
-import 'package:tega/features/5_student_dashboard/presentation/3_ai_tools/student_upcoming_opps_page.dart';
-import 'package:tega/features/5_student_dashboard/presentation/4_profile_and_settings/student_avatar_screen.dart';
+import 'package:tega/features/5_student_dashboard/data/student_dashboard_service.dart';
 import 'package:tega/features/5_student_dashboard/presentation/4_profile_and_settings/student_profile_page.dart';
+import 'package:tega/features/5_student_dashboard/presentation/4_profile_and_settings/student_setting_page.dart';
+import 'package:tega/features/5_student_dashboard/presentation/4_profile_and_settings/student_help_page.dart';
+import 'package:tega/features/5_student_dashboard/presentation/5_placement_prep/placement_prep_page.dart';
+import 'package:tega/features/5_student_dashboard/presentation/6_exams/exams_page.dart';
 
 class StudentHomePage extends StatefulWidget {
   const StudentHomePage({super.key});
@@ -20,43 +28,152 @@ class StudentHomePage extends StatefulWidget {
   State<StudentHomePage> createState() => _StudentHomePageState();
 }
 
-class _StudentHomePageState extends State<StudentHomePage> {
+class _StudentHomePageState extends State<StudentHomePage>
+    with SingleTickerProviderStateMixin {
   int _selectedIndex = 0;
   bool _isLoading = true;
+  bool _isSidebarOpen = false;
   User? _currentUser;
   late List<Widget> _pages;
+  Map<String, dynamic> _sidebarCounts = {};
+  Map<String, dynamic> _profile = {};
+  Map<String, dynamic> _dashboardData = {};
+  late AnimationController _sidebarAnimationController;
+  final AuthService _authService = AuthService();
+
+  final List<String> _pageTitles = [
+    'Dashboard',
+    'Explore Courses',
+    'Placement Prep',
+    'Exams',
+    'My Results',
+    'Jobs',
+    'Internships',
+    'Resume Builder',
+    'AI Assistant',
+    'Notifications',
+    'Learning History',
+    'Transaction History',
+    'Start Payment',
+    'Help & Support',
+    'Settings',
+    'Profile',
+  ];
 
   @override
   void initState() {
     super.initState();
+    _sidebarAnimationController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 300),
+    );
     _loadUserData();
+    _loadDashboardData();
+    _initializePages();
+  }
+
+  @override
+  void dispose() {
+    _sidebarAnimationController.dispose();
+    super.dispose();
   }
 
   void _loadUserData() {
     final authService = AuthService();
     setState(() {
       _currentUser = authService.currentUser;
-      _isLoading = false;
     });
+  }
+
+  Future<void> _loadDashboardData() async {
+    try {
+      final auth = AuthService();
+      final headers = auth.getAuthHeaders();
+      final api = StudentDashboardService();
+      final sidebar = await api.getSidebarCounts(headers);
+      final dash = await api.getDashboard(headers);
+      final prof = await api.getProfile(headers);
+      setState(() {
+        _sidebarCounts = sidebar;
+        _dashboardData = dash;
+        _profile = prof;
+        _isLoading = false;
+      });
+      // Reinitialize pages with new data
+      _initializePages();
+    } catch (_) {
+      setState(() {
+        _isLoading = false;
+      });
+    }
   }
 
   void _initializePages() {
     _pages = [
       _HomePageContent(
-        studentName: _currentUser?.name,
-        course: _currentUser?.course,
-        year: _currentUser?.year,
-        college: _currentUser?.college,
+        sidebarCounts: _sidebarCounts,
+        dashboardData: _dashboardData,
       ),
-      const MyCoursesScreen(),
-      StudentProfilePage(),
+      CoursesPage(key: const PageStorageKey('courses_page')), // Explore Courses
+      const PlacementPrepPage(), // Placement Prep
+      ExamsPage(key: const PageStorageKey('exams_page')), // Exams
+      const _ResultsPage(), // My Results
+      const JobRecommendationScreen(), // Jobs
+      const _InternshipsPage(), // Internships
+      const ResumeOptimizerPage(), // Resume Builder
+      const _AIAssistantPage(), // AI Assistant
+      const NotificationPage(), // Notifications
+      const _LearningHistoryPage(), // Learning History
+      const _TransactionHistoryPage(), // Transaction History
+      const _StartPaymentPage(), // Start Payment
+      const HelpPage(), // Help & Support
+      const SettingsPage(), // Settings
+      StudentProfilePage(), // Profile
     ];
   }
 
-  void _onItemTapped(int index) {
+  void _toggleSidebar() {
     setState(() {
-      _selectedIndex = index;
+      _isSidebarOpen = !_isSidebarOpen;
     });
+
+    if (_isSidebarOpen) {
+      _sidebarAnimationController.forward();
+    } else {
+      _sidebarAnimationController.reverse();
+    }
+  }
+
+  void _showLogoutConfirmation() {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Logout'),
+          content: const Text('Are you sure you want to logout?'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () async {
+                Navigator.pop(context);
+                await _authService.logout();
+                if (mounted) {
+                  Navigator.pushAndRemoveUntil(
+                    context,
+                    MaterialPageRoute(builder: (_) => const LoginPage()),
+                    (route) => false,
+                  );
+                }
+              },
+              child: const Text('Logout', style: TextStyle(color: Colors.red)),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
@@ -73,686 +190,725 @@ class _StudentHomePageState extends State<StudentHomePage> {
       );
     }
 
-    _initializePages();
-
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F5F5),
-      body: IndexedStack(index: _selectedIndex, children: _pages),
-      bottomNavigationBar: Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.grey.withOpacity(0.2),
-              spreadRadius: 1,
-              blurRadius: 10,
-              offset: const Offset(0, -2),
+      backgroundColor: const Color(0xFFF7F8FC),
+      body: SafeArea(
+        child: Stack(
+          children: [
+            Column(
+              children: [
+                // Header that stays visible for all pages
+                StudentDashboardHeader(
+                  onMenuTap: _toggleSidebar,
+                  notificationCount: _sidebarCounts['notifications'] ?? 0,
+                  title: _pageTitles[_selectedIndex],
+                ),
+                // Page content area
+                Expanded(
+                  child: AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 300),
+                    transitionBuilder: (child, animation) => FadeTransition(
+                      opacity: animation,
+                      child: SlideTransition(
+                        position:
+                            Tween<Offset>(
+                              begin: const Offset(0.1, 0),
+                              end: Offset.zero,
+                            ).animate(
+                              CurvedAnimation(
+                                parent: animation,
+                                curve: Curves.easeOutCubic,
+                              ),
+                            ),
+                        child: child,
+                      ),
+                    ),
+                    child: KeyedSubtree(
+                      key: ValueKey<int>(_selectedIndex),
+                      child: _pages[_selectedIndex],
+                    ),
+                  ),
+                ),
+              ],
             ),
+            if (_isSidebarOpen)
+              GestureDetector(
+                onTap: _toggleSidebar,
+                child: AnimatedBuilder(
+                  animation: _sidebarAnimationController,
+                  builder: (context, child) => Container(
+                    color: Colors.black.withOpacity(
+                      0.6 * _sidebarAnimationController.value,
+                    ),
+                  ),
+                ),
+              ),
+            _buildSidebar(),
           ],
         ),
-        child: BottomNavigationBar(
-          type: BottomNavigationBarType.fixed,
-          backgroundColor: Colors.white,
-          selectedItemColor: const Color(0xFF6B5FFF),
-          unselectedItemColor: Colors.grey,
-          elevation: 0,
-          items: const [
-            BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-            BottomNavigationBarItem(icon: Icon(Icons.school), label: 'Learn'),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.person_outline),
-              label: 'Profile',
+      ),
+    );
+  }
+
+  Widget _buildSidebar() {
+    return AnimatedPositioned(
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeInOut,
+      left: _isSidebarOpen ? 0 : -300,
+      top: 0,
+      bottom: 0,
+      width: 300,
+      child: Material(
+        color: Colors.white,
+        elevation: 20,
+        shadowColor: const Color(0xFF6B5FFF).withOpacity(0.2),
+        child: Column(
+          children: [
+            _buildSidebarHeader(),
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(8.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildSectionHeader('MAIN MENU'),
+                    _buildNavItem(
+                      icon: Icons.home_rounded,
+                      title: 'Home',
+                      index: 0,
+                    ),
+                    _buildNavItem(
+                      icon: Icons.school_rounded,
+                      title: 'Explore Courses',
+                      index: 1,
+                    ),
+                    _buildNavItem(
+                      icon: Icons.business_center_rounded,
+                      title: 'Placement Prep',
+                      index: 2,
+                    ),
+                    _buildNavItem(
+                      icon: Icons.assignment_rounded,
+                      title: 'Exams',
+                      index: 3,
+                    ),
+                    _buildNavItem(
+                      icon: Icons.assessment_rounded,
+                      title: 'My Results',
+                      index: 4,
+                    ),
+                    _buildNavItem(
+                      icon: Icons.work_rounded,
+                      title: 'Jobs',
+                      index: 5,
+                    ),
+                    _buildNavItem(
+                      icon: Icons.work_outline_rounded,
+                      title: 'Internships',
+                      index: 6,
+                    ),
+                    _buildNavItem(
+                      icon: Icons.description_rounded,
+                      title: 'Resume Builder',
+                      index: 7,
+                    ),
+                    _buildNavItem(
+                      icon: Icons.psychology_rounded,
+                      title: 'AI Assistant',
+                      index: 8,
+                    ),
+                    _buildNavItem(
+                      icon: Icons.notifications_rounded,
+                      title: 'Notifications',
+                      index: 9,
+                      badge: (_sidebarCounts['notifications'] ?? 0) > 0
+                          ? _sidebarCounts['notifications'].toString()
+                          : null,
+                    ),
+                    _buildNavItem(
+                      icon: Icons.history_rounded,
+                      title: 'Learning History',
+                      index: 10,
+                    ),
+                    _buildNavItem(
+                      icon: Icons.receipt_long_rounded,
+                      title: 'Transaction History',
+                      index: 11,
+                    ),
+                    const Divider(height: 24),
+                    _buildSectionHeader('QUICK ACTIONS'),
+                    _buildNavItem(
+                      icon: Icons.payment_rounded,
+                      title: 'Start Payment',
+                      index: 12,
+                    ),
+                    _buildNavItem(
+                      icon: Icons.help_rounded,
+                      title: 'Help & Support',
+                      index: 13,
+                    ),
+                    _buildNavItem(
+                      icon: Icons.settings_rounded,
+                      title: 'Settings',
+                      index: 14,
+                    ),
+                    _buildNavItem(
+                      icon: Icons.person_rounded,
+                      title: 'Profile',
+                      index: 15,
+                    ),
+                  ],
+                ),
+              ),
             ),
+            _buildLogoutTile(),
           ],
-          currentIndex: _selectedIndex,
-          onTap: _onItemTapped,
         ),
+      ),
+    );
+  }
+
+  Widget _buildSidebarHeader() {
+    // Get course details
+    final inst = (_profile['institute'] ?? _currentUser?.college ?? '')
+        .toString();
+    final yr = (_profile['yearOfStudy'] ?? _currentUser?.year ?? '').toString();
+    final cour = (_profile['course'] ?? _currentUser?.course ?? '').toString();
+    final display = [
+      cour.isNotEmpty ? cour : 'Course: To be updated',
+      yr.isNotEmpty ? 'Year $yr' : 'Year: To be updated',
+      inst.isNotEmpty ? inst : 'Institute: To be updated',
+    ].join(' | ');
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(20, 40, 20, 24),
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          colors: [Color(0xFF6B5FFF), Color(0xFF5E4FDB)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(3),
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(
+                color: Colors.white.withOpacity(0.3),
+                width: 2,
+              ),
+            ),
+            child: const CircleAvatar(
+              radius: 28,
+              backgroundColor: Colors.white,
+              child: Icon(
+                Icons.school_rounded,
+                size: 32,
+                color: Color(0xFF6B5FFF),
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            _currentUser?.name ?? 'Student',
+            style: const TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+              fontSize: 16,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+          const SizedBox(height: 4),
+          Text(
+            display,
+            style: TextStyle(
+              color: Colors.white.withOpacity(0.8),
+              fontSize: 12,
+            ),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSectionHeader(String title) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(12, 16, 12, 8),
+      child: Text(
+        title,
+        style: TextStyle(
+          color: Colors.grey.withOpacity(0.6),
+          fontSize: 12,
+          fontWeight: FontWeight.w600,
+          letterSpacing: 1.2,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildNavItem({
+    required IconData icon,
+    required String title,
+    required int index,
+    String? badge,
+  }) {
+    final isSelected = _selectedIndex == index;
+    return Material(
+      color: isSelected
+          ? const Color(0xFF6B5FFF).withOpacity(0.1)
+          : Colors.transparent,
+      borderRadius: BorderRadius.circular(12),
+      child: InkWell(
+        onTap: () {
+          if (_selectedIndex != index) {
+            HapticFeedback.selectionClick();
+            setState(() {
+              _selectedIndex = index;
+            });
+          }
+          _toggleSidebar();
+        },
+        borderRadius: BorderRadius.circular(12),
+        splashColor: const Color(0xFF6B5FFF).withOpacity(0.2),
+        highlightColor: const Color(0xFF6B5FFF).withOpacity(0.2),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(12),
+            color: isSelected
+                ? const Color(0xFF6B5FFF).withOpacity(0.1)
+                : Colors.transparent,
+            border: isSelected
+                ? Border.all(
+                    color: const Color(0xFF6B5FFF).withOpacity(0.3),
+                    width: 1,
+                  )
+                : null,
+          ),
+          child: Row(
+            children: [
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: isSelected
+                      ? const Color(0xFF6B5FFF).withOpacity(0.2)
+                      : Colors.grey.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(
+                  icon,
+                  color: isSelected ? const Color(0xFF6B5FFF) : Colors.grey,
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  title,
+                  style: TextStyle(
+                    color: isSelected
+                        ? const Color(0xFF6B5FFF)
+                        : Colors.grey[800],
+                    fontWeight: isSelected
+                        ? FontWeight.w600
+                        : FontWeight.normal,
+                    fontSize: 14,
+                  ),
+                ),
+              ),
+              if (badge != null)
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 2,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.red,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Text(
+                    badge,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLogoutTile() {
+    return Container(
+      margin: const EdgeInsets.all(8),
+      decoration: BoxDecoration(
+        color: Colors.red.withOpacity(0.05),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.red.withOpacity(0.3), width: 1),
+      ),
+      child: ListTile(
+        dense: true,
+        leading: Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: Colors.red.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: const Icon(Icons.logout, color: Colors.red, size: 20),
+        ),
+        title: const Text(
+          'Logout',
+          style: TextStyle(
+            color: Colors.red,
+            fontWeight: FontWeight.w600,
+            fontSize: 14,
+          ),
+        ),
+        trailing: const Icon(
+          Icons.arrow_forward_ios,
+          color: Colors.red,
+          size: 16,
+        ),
+        onTap: _showLogoutConfirmation,
       ),
     );
   }
 }
 
 class _HomePageContent extends StatelessWidget {
-  final String? studentName;
-  final String? course;
-  final String? year;
-  final String? college;
+  final Map<String, dynamic> sidebarCounts;
+  final Map<String, dynamic> dashboardData;
 
   const _HomePageContent({
-    this.studentName,
-    this.course,
-    this.year,
-    this.college,
+    required this.sidebarCounts,
+    required this.dashboardData,
   });
 
   @override
   Widget build(BuildContext context) {
-    final bool hasCourseInfo =
-        course != null && course!.isNotEmpty && course != "Not Provided";
+    final userProgress = dashboardData['userProgress'] ?? {};
+    final recentActivity = dashboardData['recentActivity'] ?? [];
+    final upcomingEvents = dashboardData['upcomingEvents'] ?? [];
+    final achievements = dashboardData['achievements'] ?? [];
+    final recommendedCourses = dashboardData['recommendedCourses'] ?? [];
 
-    return SafeArea(
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isTablet = screenWidth >= 600;
+    final isDesktop = screenWidth >= 1024;
+
+    return SingleChildScrollView(
+      padding: EdgeInsets.all(
+        isDesktop
+            ? 24.0
+            : isTablet
+            ? 20.0
+            : 16.0,
+      ),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            padding: const EdgeInsets.all(20),
-            color: Colors.white,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Hello, ${studentName ?? 'Student'}',
-                        style: const TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.black87,
-                        ),
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      const SizedBox(height: 4),
-                      if (hasCourseInfo)
-                        Text(
-                          '$course | $year | $college',
-                          style: const TextStyle(
-                            fontSize: 14,
-                            color: Colors.grey,
-                          ),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                    ],
-                  ),
-                ),
-                Row(
+          // Stats Cards Grid (2x2) with animations
+          const StudentStatsGrid(),
+          SizedBox(height: isDesktop ? 24 : 20),
+          // Weekly Progress
+          WeeklyProgressWidget(
+            weeklyProgress: userProgress['weeklyProgress'] ?? 0,
+            weeklyGoal: userProgress['weeklyGoal'] ?? 10,
+            currentStreak: userProgress['currentStreak'] ?? 0,
+          ),
+          SizedBox(height: isDesktop ? 24 : 20),
+          // Quick Actions
+          const QuickActionsWidget(),
+          SizedBox(height: isDesktop ? 24 : 20),
+          // Recent Activity and Upcoming Events - Side by side on large screens
+          isDesktop
+              ? Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Stack(
-                      children: [
-                        IconButton(
-                          icon: const Icon(Icons.notifications_outlined),
-                          onPressed: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => const NotificationPage(),
-                              ),
-                            );
-                          },
-                          iconSize: 28,
-                        ),
-                        Positioned(
-                          right: 8,
-                          top: 8,
-                          child: Container(
-                            padding: const EdgeInsets.all(4),
-                            decoration: const BoxDecoration(
-                              color: Colors.red,
-                              shape: BoxShape.circle,
-                            ),
-                            child: const Text(
-                              '5',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 10,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
+                    Expanded(
+                      child: RecentActivityWidget(activities: recentActivity),
                     ),
-                    const SizedBox(width: 8),
-                    GestureDetector(
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => const AvatarScreen(),
-                          ),
-                        );
-                      },
-                      child: Hero(
-                        tag: 'avatarHero',
-                        child: CircleAvatar(
-                          radius: 20,
-                          backgroundColor: Colors.grey[300],
-                          child: Icon(Icons.person, color: Colors.grey[600]),
-                        ),
-                      ),
+                    const SizedBox(width: 24),
+                    Expanded(
+                      child: UpcomingEventsWidget(events: upcomingEvents),
                     ),
                   ],
+                )
+              : Column(
+                  children: [
+                    RecentActivityWidget(activities: recentActivity),
+                    const SizedBox(height: 20),
+                    UpcomingEventsWidget(events: upcomingEvents),
+                  ],
                 ),
-              ],
-            ),
-          ),
-          Expanded(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(20),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(16),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.grey.withOpacity(0.1),
-                          spreadRadius: 1,
-                          blurRadius: 10,
-                        ),
-                      ],
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'Job Readiness Score',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const SizedBox(height: 20),
-                        Row(
-                          children: [
-                            Stack(
-                              alignment: Alignment.center,
-                              children: [
-                                SizedBox(
-                                  width: 80,
-                                  height: 80,
-                                  child: CircularProgressIndicator(
-                                    value: 0.75,
-                                    strokeWidth: 8,
-                                    backgroundColor: Colors.grey[200],
-                                    valueColor: AlwaysStoppedAnimation<Color>(
-                                      Colors.orange.shade400,
-                                    ),
-                                  ),
-                                ),
-                                const Text(
-                                  '75%',
-                                  style: TextStyle(
-                                    fontSize: 20,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(width: 20),
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Almost Ready',
-                                  style: TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.w600,
-                                    color: Colors.green[600],
-                                  ),
-                                ),
-                                const Text(
-                                  'Keep Pushing forward',
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    color: Colors.grey,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  Container(
-                    decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: [Color(0xFF6B5FFF), Color(0xFF5E4FDB)],
-                      ),
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    padding: const EdgeInsets.all(20),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            const Text(
-                              "Today's Skill Drill",
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 20,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 8,
-                                vertical: 4,
-                              ),
-                              decoration: BoxDecoration(
-                                color: Colors.orange,
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: Row(
-                                children: const [
-                                  Icon(
-                                    Icons.local_fire_department,
-                                    color: Colors.white,
-                                    size: 16,
-                                  ),
-                                  SizedBox(width: 4),
-                                  Text(
-                                    'Streak',
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.end,
-                          children: const [
-                            Text(
-                              'Day 12',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 16),
-                        const Text(
-                          'Logical Puzzle Challenge',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 18,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        const Text(
-                          'Solve pattern recognition problems',
-                          style: TextStyle(color: Colors.white70, fontSize: 14),
-                        ),
-                        const SizedBox(height: 8),
-                        const Text(
-                          '+20 XP',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        ElevatedButton(
-                          onPressed: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => const SkillDrillPage(),
-                              ),
-                            );
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.white,
-                            foregroundColor: const Color(0xFF6B5FFF),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: const [
-                              Icon(Icons.play_arrow),
-                              SizedBox(width: 8),
-                              Text(
-                                'START NOW',
-                                style: TextStyle(fontWeight: FontWeight.bold),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                  const Text(
-                    'Quick Access',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 16),
-                  GridView.count(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    crossAxisCount: 3,
-                    mainAxisSpacing: 16,
-                    crossAxisSpacing: 16,
-                    childAspectRatio: 1,
-                    children: [
-                      _buildQuickAccessItem(
-                        context,
-                        Icons.description,
-                        'Resume Optimizer',
-                        Colors.blue,
-                        () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => const ResumeOptimizerPage(),
-                            ),
-                          );
-                        },
-                      ),
-                      _buildQuickAccessItem(
-                        context,
-                        Icons.mic,
-                        'Interview Prep',
-                        Colors.green,
-                        () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => const AiInterviewPage(),
-                            ),
-                          );
-                        },
-                      ),
-                      _buildQuickAccessItem(
-                        context,
-                        Icons.psychology,
-                        'Skill Graph',
-                        Colors.purple,
-                        () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => const SkillGraphPage(),
-                            ),
-                          );
-                        },
-                      ),
-                      _buildQuickAccessItem(
-                        context,
-                        Icons.route,
-                        'Career Pathways',
-                        Colors.orange,
-                        () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => const CareerPathwaysPage(),
-                            ),
-                          );
-                        },
-                      ),
-                      _buildQuickAccessItem(
-                        context,
-                        Icons.work,
-                        'AI Job Connect',
-                        const Color(0xFF6B5FFF),
-                        () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) =>
-                                  const JobRecommendationScreen(),
-                            ),
-                          );
-                        },
-                      ),
-                      _buildQuickAccessItem(
-                        context,
-                        Icons.hub,
-                        'Skills Hub',
-                        Colors.pink,
-                        () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => const SkillsHubScreen(),
-                            ),
-                          );
-                        },
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 24),
-                  Container(
-                    padding: const EdgeInsets.all(20),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(16),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.grey.withOpacity(0.1),
-                          spreadRadius: 1,
-                          blurRadius: 10,
-                        ),
-                      ],
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'Your Learning Activity This Week',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const SizedBox(height: 20),
-                        SizedBox(
-                          height: 120,
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                            crossAxisAlignment: CrossAxisAlignment.end,
-                            children: [
-                              _buildActivityBar('SUN', 0.7, Colors.blue),
-                              _buildActivityBar('MON', 0.5, Colors.blue),
-                              _buildActivityBar('TUE', 0.8, Colors.blue),
-                              _buildActivityBar('WED', 0.4, Colors.blue),
-                              _buildActivityBar('THU', 0.9, Colors.orange),
-                              _buildActivityBar('FRI', 0.3, Colors.grey),
-                              _buildActivityBar('SAT', 0.3, Colors.grey),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                  Container(
-                    padding: const EdgeInsets.all(20),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(16),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.grey.withOpacity(0.1),
-                          spreadRadius: 1,
-                          blurRadius: 10,
-                        ),
-                      ],
-                    ),
-                    child: Column(
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            const Text(
-                              'Upcoming Opportunities',
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            TextButton(
-                              onPressed: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) =>
-                                        const AllOpportunitiesScreen(),
-                                  ),
-                                );
-                              },
-                              child: const Text('View All'),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 16),
-                        _buildOpportunityItem(
-                          Icons.location_on,
-                          'Kakinada job fair',
-                          'July,20, 2025',
-                          Colors.blue,
-                        ),
-                        const SizedBox(height: 12),
-                        _buildOpportunityItem(
-                          Icons.description,
-                          'Resume Due',
-                          'July,18, 2025',
-                          Colors.orange,
-                        ),
-                        const SizedBox(height: 12),
-                        _buildOpportunityItem(
-                          Icons.calendar_today,
-                          'Mock Interview Session',
-                          'July,22, 2025',
-                          Colors.green,
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 80),
-                ],
-              ),
-            ),
-          ),
+          SizedBox(height: isDesktop ? 24 : 20),
+          // Achievements
+          AchievementsWidget(achievements: achievements),
+          SizedBox(height: isDesktop ? 24 : 20),
+          // Recommended Courses
+          RecommendedCoursesWidget(courses: recommendedCourses),
+          SizedBox(height: isDesktop ? 24 : 20),
         ],
       ),
     );
   }
+}
 
-  Widget _buildQuickAccessItem(
-    BuildContext context,
-    IconData icon,
-    String label,
-    Color color,
-    VoidCallback onTap,
-  ) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
-            spreadRadius: 1,
-            blurRadius: 5,
-          ),
-        ],
-      ),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
+// Placeholder pages for navigation items
+class _ResultsPage extends StatelessWidget {
+  const _ResultsPage();
+
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(20.0),
+      child: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, color: color, size: 32),
-            const SizedBox(height: 8),
-            Text(
-              label,
-              textAlign: TextAlign.center,
-              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
+            const SizedBox(height: 100),
+            Container(
+              padding: const EdgeInsets.all(30),
+              decoration: BoxDecoration(
+                color: const Color(0xFF6B5FFF).withOpacity(0.1),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: const Icon(
+                Icons.assessment_rounded,
+                size: 80,
+                color: Color(0xFF6B5FFF),
+              ),
+            ),
+            const SizedBox(height: 24),
+            const Text(
+              'My Results',
+              style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 12),
+            const Text(
+              'Coming Soon',
+              style: TextStyle(fontSize: 16, color: Colors.grey),
             ),
           ],
         ),
       ),
     );
   }
+}
 
-  Widget _buildActivityBar(String day, double height, Color color) {
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.end,
-      children: [
-        Container(
-          width: 35,
-          height: 100 * height,
-          decoration: BoxDecoration(
-            color: color,
-            borderRadius: BorderRadius.circular(4),
-          ),
+class _InternshipsPage extends StatelessWidget {
+  const _InternshipsPage();
+
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(20.0),
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const SizedBox(height: 100),
+            Container(
+              padding: const EdgeInsets.all(30),
+              decoration: BoxDecoration(
+                color: const Color(0xFF6B5FFF).withOpacity(0.1),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: const Icon(
+                Icons.work_outline_rounded,
+                size: 80,
+                color: Color(0xFF6B5FFF),
+              ),
+            ),
+            const SizedBox(height: 24),
+            const Text(
+              'Internships',
+              style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 12),
+            const Text(
+              'Coming Soon',
+              style: TextStyle(fontSize: 16, color: Colors.grey),
+            ),
+          ],
         ),
-        const SizedBox(height: 8),
-        Text(
-          day,
-          style: const TextStyle(
-            fontSize: 11,
-            color: Colors.grey,
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-      ],
+      ),
     );
   }
+}
 
-  Widget _buildOpportunityItem(
-    IconData icon,
-    String title,
-    String date,
-    Color color,
-  ) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(12),
+class _AIAssistantPage extends StatelessWidget {
+  const _AIAssistantPage();
+
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(20.0),
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const SizedBox(height: 100),
+            Container(
+              padding: const EdgeInsets.all(30),
+              decoration: BoxDecoration(
+                color: const Color(0xFF6B5FFF).withOpacity(0.1),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: const Icon(
+                Icons.psychology_rounded,
+                size: 80,
+                color: Color(0xFF6B5FFF),
+              ),
+            ),
+            const SizedBox(height: 24),
+            const Text(
+              'AI Assistant',
+              style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 12),
+            const Text(
+              'Coming Soon',
+              style: TextStyle(fontSize: 16, color: Colors.grey),
+            ),
+          ],
+        ),
       ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: color.withOpacity(0.2),
-              borderRadius: BorderRadius.circular(8),
+    );
+  }
+}
+
+class _LearningHistoryPage extends StatelessWidget {
+  const _LearningHistoryPage();
+
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(20.0),
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const SizedBox(height: 100),
+            Container(
+              padding: const EdgeInsets.all(30),
+              decoration: BoxDecoration(
+                color: const Color(0xFF6B5FFF).withOpacity(0.1),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: const Icon(
+                Icons.history_rounded,
+                size: 80,
+                color: Color(0xFF6B5FFF),
+              ),
             ),
-            child: Icon(icon, color: color, size: 20),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  date,
-                  style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-                ),
-              ],
+            const SizedBox(height: 24),
+            const Text(
+              'Learning History',
+              style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
             ),
-          ),
-        ],
+            const SizedBox(height: 12),
+            const Text(
+              'Coming Soon',
+              style: TextStyle(fontSize: 16, color: Colors.grey),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _TransactionHistoryPage extends StatelessWidget {
+  const _TransactionHistoryPage();
+
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(20.0),
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const SizedBox(height: 100),
+            Container(
+              padding: const EdgeInsets.all(30),
+              decoration: BoxDecoration(
+                color: const Color(0xFF6B5FFF).withOpacity(0.1),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: const Icon(
+                Icons.receipt_long_rounded,
+                size: 80,
+                color: Color(0xFF6B5FFF),
+              ),
+            ),
+            const SizedBox(height: 24),
+            const Text(
+              'Transaction History',
+              style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 12),
+            const Text(
+              'Coming Soon',
+              style: TextStyle(fontSize: 16, color: Colors.grey),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _StartPaymentPage extends StatelessWidget {
+  const _StartPaymentPage();
+
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(20.0),
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const SizedBox(height: 100),
+            Container(
+              padding: const EdgeInsets.all(30),
+              decoration: BoxDecoration(
+                color: const Color(0xFF6B5FFF).withOpacity(0.1),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: const Icon(
+                Icons.payment_rounded,
+                size: 80,
+                color: Color(0xFF6B5FFF),
+              ),
+            ),
+            const SizedBox(height: 24),
+            const Text(
+              'Start Payment',
+              style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 12),
+            const Text(
+              'Coming Soon',
+              style: TextStyle(fontSize: 16, color: Colors.grey),
+            ),
+          ],
+        ),
       ),
     );
   }

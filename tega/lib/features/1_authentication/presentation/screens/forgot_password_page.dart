@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:tega/core/constants/app_colors.dart';
+import 'package:tega/features/1_authentication/data/auth_repository.dart';
 import 'otp_verification_page.dart';
 
 class ForgetPasswordPage extends StatefulWidget {
@@ -52,31 +53,49 @@ class _ForgetPasswordPageState extends State<ForgetPasswordPage> {
     super.dispose();
   }
 
-  void _handlePasswordReset() {
-    if (_formKey.currentState!.validate()) {
-      setState(() => _isLoading = true);
+  Future<void> _handlePasswordReset() async {
+    if (!(_formKey.currentState?.validate() ?? false)) return;
+    FocusScope.of(context).unfocus();
+    setState(() => _isLoading = true);
 
-      // Simulate sending email
-      Future.delayed(const Duration(seconds: 2), () {
-        if (mounted) {
-          setState(() {
-            _isLoading = false;
-            _isEmailSent = true;
-          });
-        }
+    try {
+      final email = _emailController.text.trim();
+      final auth = AuthService();
+      final result = await auth.forgotPassword(email);
 
-        // Navigate after the state has been updated
-        Future.delayed(const Duration(seconds: 2), () {
-          if (mounted) {
-            Navigator.of(context).push(
-              MaterialPageRoute(
-                builder: (context) =>
-                    OTPVerificationPage(email: _emailController.text),
-              ),
-            );
-          }
+      if (!mounted) return;
+
+      if (result['success'] == true) {
+        setState(() {
+          _isEmailSent = true;
+          _isLoading = false;
         });
-      });
+        // Proceed to OTP verification for password reset
+        await Future.delayed(const Duration(milliseconds: 500));
+        if (!mounted) return;
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (context) =>
+                OTPVerificationPage(email: email, isRegistration: false),
+          ),
+        );
+      } else {
+        setState(() => _isLoading = false);
+        final msg =
+            (result['message'] ?? 'Failed to send reset email.') as String;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(msg), backgroundColor: Colors.red),
+        );
+      }
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _isLoading = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error sending reset email: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
     }
   }
 

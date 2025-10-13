@@ -6,6 +6,7 @@ import 'package:tega/features/1_authentication/data/auth_repository.dart';
 import 'package:tega/features/3_admin_panel/presentation/0_dashboard/admin_dashboard.dart';
 import 'package:tega/features/4_college_panel/presentation/0_dashboard/dashboard_screen.dart';
 import 'package:tega/features/5_student_dashboard/presentation/1_home/student_home_page.dart';
+import 'package:tega/features/1_authentication/presentation/screens/reset_password_page.dart';
 
 class OTPVerificationPage extends StatefulWidget {
   final String email;
@@ -247,8 +248,12 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
       debugPrint('✅ [PASSWORD RESET] OTP verified');
 
       // Navigate to reset password page
-      // TODO: Navigate to reset password screen
-      _showSuccessMessage('OTP verified successfully!');
+      if (!mounted) return;
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => ResetPasswordPage(email: widget.email, otp: otp),
+        ),
+      );
     } else {
       debugPrint('❌ [PASSWORD RESET] Invalid OTP');
       _showErrorMessage(
