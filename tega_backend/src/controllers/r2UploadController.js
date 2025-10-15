@@ -8,7 +8,7 @@ import {
 } from '../config/r2.js';
 import multer from 'multer';
 import CourseMaterial from '../models/CourseMaterial.js';
-import Lecture from '../models/Lecture.js';
+import RealTimeCourse from '../models/RealTimeCourse.js';
 import fs from 'fs';
 
 // Configure multer for temporary storage before R2 upload

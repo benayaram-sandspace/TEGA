@@ -1,13 +1,13 @@
 import mongoose from 'mongoose';
 import Payment from '../models/Payment.js';
-import Course from '../models/Course.js';
+import RealTimeCourse from '../models/RealTimeCourse.js';
 import Student from '../models/Student.js';
 import Notification from '../models/Notification.js';
-import Admin from '../models/Admin.js'; // Import Admin model
+import Admin from '../models/Admin.js';
 import Razorpay from 'razorpay';
 import crypto from 'crypto';
-import UPISettings from '../models/UPISettings.js'; // Import UPISettings model
-import Offer from '../models/Offer.js'; // Import Offer model
+import UPISettings from '../models/UPISettings.js';
+import Offer from '../models/Offer.js';
 
 // Import in-memory storage from auth controller
 import { inMemoryUsers, userPayments, userNotifications, userCourseAccess } from './authController.js';
@@ -85,72 +85,29 @@ if (process.env.RAZORPAY_KEY_ID && process.env.RAZORPAY_KEY_SECRET) {
 // Get all courses with pricing
 export const getCourses = async (req, res) => {
   try {
+    // Use only RealTimeCourse model
+    const RealTimeCourse = (await import('../models/RealTimeCourse.js')).default;
     
-    // First, let's check if we can find any courses at all
-    const totalCourses = await Course.countDocuments({});
-    
-    // Check active courses
-    const activeCoursesCount = await Course.countDocuments({ isActive: true });
-    
-    // Try to get all courses first
-    const allCourses = await Course.find({});
-    
-    // Log first course structure for debugging
-    if (allCourses.length > 0) {
-    }
-    
-    // Get regular courses (excluding Tega Exam)
-    const regularCourses = await Course.getActiveCourses();
-    
-    // Get Tega Exam separately for payment page
-    const tegaExam = await Course.findOne({ 
-      courseName: 'Tega Exam',
-      isActive: true 
+    // Get all active courses
+    const courses = await RealTimeCourse.find({ 
+      isActive: true
+    }).select('title courseName description price duration category instructor level')
+      .sort({ createdAt: -1 });
+
+    res.json({
+      success: true,
+      data: courses,
+      debug: {
+        totalCourses: courses.length,
+        activeCoursesCount: courses.length,
+        method: 'realtime-only',
+        requestInfo: {
+          hasUser: !!req.user,
+          userRole: req.user?.role || 'none',
+          headers: Object.keys(req.headers)
+        }
+      }
     });
-    
-    // Combine regular courses with Tega Exam for payment page
-    const courses = [...regularCourses];
-    if (tegaExam) {
-      courses.push(tegaExam);
-    }
-    
-    
-    if (courses.length === 0) {
-      // Let's return all courses instead of just active ones for debugging (including Tega Exam for payment)
-      const fallbackCourses = await Course.find({ 
-        isActive: true
-      }).select('courseName description price duration category instructor level');
-      
-      res.json({
-        success: true,
-        data: fallbackCourses,
-        debug: {
-          totalCourses,
-          activeCoursesCount,
-          method: 'fallback',
-          requestInfo: {
-            hasUser: !!req.user,
-            userRole: req.user?.role || 'none',
-            headers: Object.keys(req.headers)
-          }
-        }
-      });
-    } else {
-      res.json({
-        success: true,
-        data: courses,
-        debug: {
-          totalCourses,
-          activeCoursesCount,
-          method: 'getActiveCourses',
-          requestInfo: {
-            hasUser: !!req.user,
-            userRole: req.user?.role || 'none',
-            headers: Object.keys(req.headers)
-          }
-        }
-      });
-    }
   } catch (error) {
     res.status(500).json({
       success: false,
@@ -160,13 +117,17 @@ export const getCourses = async (req, res) => {
   }
 };
 
-// Get course pricing
+// Get course pricing (RealTimeCourse only)
 export const getCoursePricing = async (req, res) => {
   try {
-    const pricing = await Course.getCoursePricing();
+    const RealTimeCourse = (await import('../models/RealTimeCourse.js')).default;
+    const courses = await RealTimeCourse.find({ isActive: true })
+      .select('title courseName price duration category')
+      .sort({ createdAt: -1 });
+    
     res.json({
       success: true,
-      data: pricing
+      data: courses
     });
   } catch (error) {
     res.status(500).json({
@@ -982,7 +943,9 @@ export const getUserPaidCourses = async (req, res) => {
 
         let coursesById = [];
         if (objectIdCourseIds.length > 0) {
-          coursesById = await Course.find({ _id: { $in: objectIdCourseIds } });
+          // Use RealTimeCourse model instead of Course
+          const RealTimeCourse = (await import('../models/RealTimeCourse.js')).default;
+          coursesById = await RealTimeCourse.find({ _id: { $in: objectIdCourseIds } });
         }
 
         courses = [...coursesById];

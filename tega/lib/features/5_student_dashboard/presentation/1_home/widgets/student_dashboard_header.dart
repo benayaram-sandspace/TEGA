@@ -15,6 +15,45 @@ class StudentDashboardHeader extends StatelessWidget {
     this.title = 'Dashboard',
   });
 
+  IconData _getIconForTitle(String title) {
+    switch (title) {
+      case 'Dashboard':
+        return Icons.home_rounded;
+      case 'Explore Courses':
+        return Icons.school_rounded;
+      case 'Placement Prep':
+        return Icons.business_center_rounded;
+      case 'Exams':
+        return Icons.assignment_rounded;
+      case 'My Results':
+        return Icons.assessment_rounded;
+      case 'Jobs':
+        return Icons.work_rounded;
+      case 'Internships':
+        return Icons.work_outline_rounded;
+      case 'Resume Builder':
+        return Icons.description_rounded;
+      case 'AI Assistant':
+        return Icons.psychology_rounded;
+      case 'Notifications':
+        return Icons.notifications_rounded;
+      case 'Learning History':
+        return Icons.history_rounded;
+      case 'Transaction History':
+        return Icons.receipt_long_rounded;
+      case 'Start Payment':
+        return Icons.payment_rounded;
+      case 'Help & Support':
+        return Icons.help_rounded;
+      case 'Settings':
+        return Icons.settings_rounded;
+      case 'Profile':
+        return Icons.person_rounded;
+      default:
+        return Icons.dashboard_rounded;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -64,17 +103,31 @@ class StudentDashboardHeader extends StatelessWidget {
               ),
             ),
           ),
-          // Page title (Center) with black text
+          // Page title (Center) with icon and black text
           Expanded(
             child: Center(
-              child: Text(
-                title,
-                style: const TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.w700,
-                  color: Colors.black,
-                  letterSpacing: 0.5,
-                ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    _getIconForTitle(title),
+                    size: 24,
+                    color: const Color(0xFF6B5FFF),
+                  ),
+                  const SizedBox(width: 10),
+                  Flexible(
+                    child: Text(
+                      title,
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.black,
+                        letterSpacing: 0.5,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
               ),
             ),
           ),

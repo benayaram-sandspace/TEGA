@@ -16,20 +16,21 @@ import {
   publishRealTimeCourse,
   getAllCoursesForAdmin
 } from '../controllers/realTimeCourseController.js';
-import { verifyStudent, verifyAdmin } from '../middlewares/authMiddleware.js';
+import { verifyStudent, verifyAdmin, optionalStudentAuth } from '../middlewares/authMiddleware.js';
 
 const router = express.Router();
 
 // Admin routes - CRUD operations (must come before :courseId routes)
 router.get('/admin', verifyAdmin, getAllCoursesForAdmin);
+router.get('/admin/all', verifyAdmin, getAllCoursesForAdmin); // Alias for backward compatibility
 router.post('/', verifyAdmin, createRealTimeCourse);
 
 // Public routes
 router.get('/', getRealTimeCourses);
-router.get('/:courseId', getRealTimeCourse);
+router.get('/:courseId', verifyStudent, getRealTimeCourse);
 
 // Student routes (require authentication)
-router.get('/:courseId/content', getCourseContent);
+router.get('/:courseId/content', verifyStudent, getCourseContent);
 router.get('/:courseId/enrollment-status', verifyStudent, getEnrollmentStatus);
 router.post('/:courseId/enroll', verifyStudent, enrollInCourse);
 router.put('/:courseId/lectures/:lectureId/progress', verifyStudent, updateLectureProgress);

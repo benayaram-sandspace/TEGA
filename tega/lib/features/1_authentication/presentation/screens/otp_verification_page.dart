@@ -3,9 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:tega/core/constants/app_colors.dart';
 import 'package:tega/features/1_authentication/data/auth_repository.dart';
-import 'package:tega/features/3_admin_panel/presentation/0_dashboard/admin_dashboard.dart';
-import 'package:tega/features/4_college_panel/presentation/0_dashboard/dashboard_screen.dart';
-import 'package:tega/features/5_student_dashboard/presentation/1_home/student_home_page.dart';
+import 'package:tega/features/1_authentication/presentation/screens/login_page.dart';
 import 'package:tega/features/1_authentication/presentation/screens/reset_password_page.dart';
 
 class OTPVerificationPage extends StatefulWidget {
@@ -154,7 +152,7 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
   Future<void> _handleRegistrationVerification(String otp) async {
     debugPrint('📝 [REGISTRATION] Verifying OTP and creating account...');
 
-    // Step 1: Verify OTP
+    // Verify OTP and create account in one step
     final verifyResult = await _authService.verifyRegistrationOTP(
       widget.email,
       otp,
@@ -163,71 +161,34 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
     if (!mounted) return;
 
     if (verifyResult['success'] == true && verifyResult['verified'] == true) {
-      debugPrint('✅ [REGISTRATION] OTP verified, creating account...');
+      debugPrint('✅ [REGISTRATION] Account created successfully!');
 
-      // Step 2: Complete registration
-      final signupResult = await _authService.signup(
-        firstName: widget.firstName!,
-        lastName: widget.lastName!,
-        email: widget.email,
-        password: widget.password!,
-        college: widget.college,
+      // Show success message
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text(
+            'Account created successfully! Please login to continue 🎉',
+          ),
+          backgroundColor: const Color(0xFF27AE60),
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+          duration: const Duration(seconds: 3),
+        ),
       );
 
+      await Future.delayed(const Duration(milliseconds: 500));
+
+      // Navigate to login page instead of dashboard
       if (!mounted) return;
-
-      if (signupResult['success'] == true) {
-        debugPrint('✅ [REGISTRATION] Account created successfully!');
-
-        // Show success message
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text(
-              'Account created successfully! Welcome to TEGA 🎉',
-            ),
-            backgroundColor: const Color(0xFF27AE60),
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10),
-            ),
-            duration: const Duration(seconds: 2),
-          ),
-        );
-
-        await Future.delayed(const Duration(milliseconds: 400));
-
-        // Navigate to concerned dashboard based on role
-        if (!mounted) return;
-        if (_authService.isAdmin) {
-          Navigator.pushAndRemoveUntil(
-            context,
-            MaterialPageRoute(builder: (_) => const AdminDashboard()),
-            (route) => false,
-          );
-        } else if (_authService.isPrincipal) {
-          Navigator.pushAndRemoveUntil(
-            context,
-            MaterialPageRoute(builder: (_) => const DashboardScreen()),
-            (route) => false,
-          );
-        } else {
-          Navigator.pushAndRemoveUntil(
-            context,
-            MaterialPageRoute(builder: (_) => const StudentHomePage()),
-            (route) => false,
-          );
-        }
-      } else {
-        debugPrint(
-          '❌ [REGISTRATION] Failed to create account: ${signupResult['message']}',
-        );
-        _showErrorMessage(
-          signupResult['message'] ??
-              'Failed to create account. Please try again.',
-        );
-      }
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (_) => const LoginPage()),
+        (route) => false,
+      );
     } else {
-      debugPrint('❌ [REGISTRATION] Invalid OTP');
+      debugPrint('❌ [REGISTRATION] Invalid OTP or account creation failed');
       _showErrorMessage(
         verifyResult['message'] ??
             'Invalid verification code. Please try again.',
@@ -349,11 +310,15 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
       body: Container(
         width: double.infinity,
         height: double.infinity,
-        decoration: BoxDecoration(
+        decoration: const BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [AppColors.background, AppColors.primary.withOpacity(0.05)],
+            colors: [
+              Color(0xFF9C88FF), // Light Purple
+              Color(0xFF8B7BFF), // Medium Light Purple
+              Color(0xFF7A6BFF), // Medium Purple
+            ],
           ),
         ),
         child: SafeArea(
@@ -411,11 +376,11 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
         child: Image.asset(
           'assets/logo.png',
           fit: BoxFit.contain,
-          errorBuilder: (_, __, ___) => const Center(
+          errorBuilder: (_, __, ___) => Center(
             child: Icon(
               Icons.flutter_dash,
               size: 80,
-              color: AppColors.textSecondary,
+              color: Colors.white.withOpacity(0.7),
             ),
           ),
         ),
@@ -431,7 +396,7 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
           style: const TextStyle(
             fontSize: 28,
             fontWeight: FontWeight.bold,
-            color: AppColors.textPrimary,
+            color: Colors.white,
           ),
         ),
         const SizedBox(height: 8),
@@ -439,7 +404,7 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
           width: 60,
           height: 4,
           decoration: BoxDecoration(
-            color: AppColors.primary,
+            color: const Color(0xFF9C88FF), // Light Purple
             borderRadius: BorderRadius.circular(2),
           ),
         ),
@@ -452,23 +417,23 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
       children: [
         Text(
           _tr('subtitle'),
-          style: const TextStyle(fontSize: 16, color: AppColors.textSecondary),
+          style: const TextStyle(fontSize: 16, color: Colors.white),
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: 16),
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           decoration: BoxDecoration(
-            color: AppColors.primary.withOpacity(0.1),
+            color: const Color(0xFF9C88FF).withOpacity(0.2),
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: AppColors.primary.withOpacity(0.3)),
+            border: Border.all(color: const Color(0xFF9C88FF).withOpacity(0.4)),
           ),
           child: Text(
             _maskEmail(widget.email),
             style: const TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w600,
-              color: AppColors.primary,
+              color: Colors.white,
             ),
           ),
         ),
@@ -489,26 +454,30 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
             textAlign: TextAlign.center,
             keyboardType: TextInputType.number,
             maxLength: 1,
-            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            style: const TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF2C3E50),
+            ),
             decoration: InputDecoration(
               counterText: '',
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: const BorderSide(color: AppColors.borderLight),
+                borderSide: const BorderSide(color: Colors.white),
               ),
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: const BorderSide(color: AppColors.borderLight),
+                borderSide: const BorderSide(color: Colors.white),
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
                 borderSide: const BorderSide(
-                  color: AppColors.primary,
+                  color: Color(0xFF9C88FF), // Light Purple
                   width: 2,
                 ),
               ),
               filled: true,
-              fillColor: AppColors.surfaceVariant,
+              fillColor: Colors.white,
             ),
             inputFormatters: [FilteringTextInputFormatter.digitsOnly],
             onChanged: (value) => _onOTPChanged(index, value),
@@ -525,7 +494,7 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
           ? Text(
               _tr('resend_now'),
               style: const TextStyle(
-                color: AppColors.info,
+                color: Color(0xFF9C88FF), // Light Purple
                 fontWeight: FontWeight.w600,
                 fontSize: 14,
               ),
@@ -533,17 +502,13 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
           : Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Icon(
-                  Icons.access_time,
-                  size: 16,
-                  color: AppColors.textSecondary,
-                ),
+                const Icon(Icons.access_time, size: 16, color: Colors.white),
                 const SizedBox(width: 8),
                 Text(
                   '${_tr('resend_in')} ${_resendCountdown.toString().padLeft(2, '0')}',
                   style: const TextStyle(
                     fontSize: 14,
-                    color: AppColors.textSecondary,
+                    color: Colors.white,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
@@ -559,8 +524,8 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
       child: ElevatedButton(
         onPressed: _isVerifying ? null : _verifyOTP,
         style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.primary,
-          foregroundColor: AppColors.pureWhite,
+          backgroundColor: const Color(0xFF9C88FF), // Light Purple
+          foregroundColor: Colors.white,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),
@@ -572,9 +537,7 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
                 height: 20,
                 child: CircularProgressIndicator(
                   strokeWidth: 2,
-                  valueColor: AlwaysStoppedAnimation<Color>(
-                    AppColors.pureWhite,
-                  ),
+                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                 ),
               )
             : Text(
@@ -591,11 +554,11 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
   Widget _buildBackToLoginButton() {
     return TextButton.icon(
       onPressed: () => Navigator.of(context).pop(),
-      icon: const Icon(Icons.arrow_back, color: AppColors.info),
+      icon: const Icon(Icons.arrow_back, color: Color(0xFF9C88FF)),
       label: Text(
         _tr('back_to_login'),
         style: const TextStyle(
-          color: AppColors.info,
+          color: Color(0xFF9C88FF), // Light Purple
           fontSize: 14,
           fontWeight: FontWeight.w600,
         ),

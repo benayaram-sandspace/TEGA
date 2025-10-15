@@ -1,15 +1,19 @@
 import express from "express";
-import { 
-  register, 
-  login, 
-  forgotPassword, 
-  verifyOTP, 
-  resetPassword, 
-  sendRegistrationOTP, 
+import {
+  secureLogin,
+  secureRefreshToken,
+  secureLogout,
+} from "../controllers/secureAuthController.js";
+import {
+  register,
+  forgotPassword,
+  verifyOTP,
+  resetPassword,
+  sendRegistrationOTP,
   verifyRegistrationOTP,
-  refreshToken,
-  checkEmailAvailability 
+  checkEmailAvailability,
 } from "../controllers/authController.js";
+import { secureUserAuth } from "../middleware/secureAuth.js";
 
 const router = express.Router();
 
@@ -26,7 +30,7 @@ router.post("/register/send-otp", sendRegistrationOTP);
 router.post("/register/verify-otp", verifyRegistrationOTP);
 
 // POST /api/auth/login
-router.post("/login", login);
+router.post("/login", secureLogin);
 
 // POST /api/auth/forgot-password
 router.post("/forgot-password", forgotPassword);
@@ -38,7 +42,10 @@ router.post("/verify-otp", verifyOTP);
 router.post("/reset-password", resetPassword);
 
 // POST /api/auth/refresh-token
-router.post("/refresh-token", refreshToken);
+router.post("/refresh-token", secureRefreshToken);
+
+// POST /api/auth/logout
+router.post("/logout", secureUserAuth, secureLogout);
 
 // GET /api/auth/test
 router.get("/test", (req, res) => {

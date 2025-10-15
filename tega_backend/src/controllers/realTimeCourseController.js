@@ -56,17 +56,38 @@ export const getRealTimeCourses = async (req, res) => {
     query = query.skip(skip).limit(Number(limit));
 
     const courses = await query;
-    
-    console.log('getRealTimeCourses - Found courses:', courses.length);
-    console.log('getRealTimeCourses - Course titles:', courses.map(c => c.title));
-    console.log('getRealTimeCourses - Course statuses:', courses.map(c => c.status));
+
+    // Calculate actual enrollment counts for each course
+    const coursesWithEnrollmentCount = await Promise.all(
+      courses.map(async (course) => {
+        try {
+          // Count actual enrollments for this course
+          const actualEnrollmentCount = await Enrollment.countDocuments({
+            courseId: course._id,
+            status: 'active'
+          });
+          
+          // Return course with actual enrollment count
+          return {
+            ...course.toObject(),
+            enrollmentCount: actualEnrollmentCount
+          };
+        } catch (error) {
+          // Return course with existing enrollment count if calculation fails
+          return {
+            ...course.toObject(),
+            enrollmentCount: course.enrollmentCount || 0
+          };
+        }
+      })
+    );
 
     // Get total count for pagination
     const totalCourses = await RealTimeCourse.countDocuments(filters);
 
     res.json({
       success: true,
-      courses,
+      courses: coursesWithEnrollmentCount,
       pagination: {
         currentPage: Number(page),
         totalPages: Math.ceil(totalCourses / limit),
@@ -77,7 +98,6 @@ export const getRealTimeCourses = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Get courses error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to fetch courses',
@@ -91,6 +111,7 @@ export const getRealTimeCourse = async (req, res) => {
   try {
     const { courseId } = req.params;
     const studentId = req.studentId;
+    
 
     const course = await RealTimeCourse.findById(courseId);
 
@@ -145,7 +166,6 @@ export const getRealTimeCourse = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Get course error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to fetch course',
@@ -171,12 +191,49 @@ export const getCourseContent = async (req, res) => {
     // If student is authenticated, check enrollment
     let isEnrolled = false;
     if (studentId) {
+      
+      // Check enrollment with multiple possible statuses
       const enrollment = await Enrollment.findOne({ 
         studentId, 
         courseId,
-        status: 'active' 
+        $or: [
+          { status: 'active' },
+          { status: 'enrolled' },
+          { status: { $exists: false } } // Handle old records without status field
+        ]
       });
+      
       isEnrolled = !!enrollment;
+      if (enrollment) {
+        
+        // CRITICAL: Only mark as enrolled if payment is verified
+        // For paid courses, isPaid must be true
+        if (!course.isFree && course.price > 0 && !enrollment.isPaid) {
+          isEnrolled = false;
+        }
+      }
+      
+      // Additional check: if no enrollment found, check if student has any enrollment for this course
+      if (!enrollment) {
+        const anyEnrollment = await Enrollment.findOne({ 
+          studentId, 
+          courseId
+        });
+        // Only set as enrolled if the enrollment has a valid status AND payment is verified
+        if (anyEnrollment && (anyEnrollment.status === 'active' || anyEnrollment.status === 'enrolled')) {
+          // CRITICAL: Check payment status for paid courses
+          if (!course.isFree && course.price > 0 && !anyEnrollment.isPaid) {
+            isEnrolled = false;
+          } else {
+            isEnrolled = true;
+          }
+        } else {
+          isEnrolled = false;
+        }
+      }
+      
+      // Final enrollment decision logged above
+    } else {
     }
 
     // Get or create student progress (only if enrolled and authenticated)
@@ -184,11 +241,21 @@ export const getCourseContent = async (req, res) => {
     if (studentId && isEnrolled) {
       progress = await RealTimeProgress.findOne({ studentId, courseId });
       if (!progress) {
+        const totalModules = course.modules?.length || 0;
+        const totalLectures = course.modules?.reduce((total, module) => total + (module.lectures?.length || 0), 0) || 0;
+        
         progress = new RealTimeProgress({
           studentId,
           courseId,
-          totalModules: course.modules.length,
-          totalLectures: course.modules.reduce((total, module) => total + module.lectures.length, 0)
+          totalModules,
+          totalLectures,
+          overallProgress: {
+            totalModules,
+            totalLectures,
+            completedModules: 0,
+            completedLectures: 0,
+            progressPercentage: 0
+          }
         });
         await progress.save();
       }
@@ -214,6 +281,8 @@ export const getCourseContent = async (req, res) => {
     // RULE: First lecture of first module is ALWAYS free (introduction video)
     const filteredCourse = course.toObject();
     
+    console.log(`📹 Filtering course content. isEnrolled: ${isEnrolled}, studentId: ${studentId}`);
+    
     if (!isEnrolled) {
       // Remove video URLs from non-preview lectures
       filteredCourse.modules = filteredCourse.modules.map((module, moduleIndex) => ({
@@ -224,14 +293,20 @@ export const getCourseContent = async (req, res) => {
           
           // If lecture is marked as preview OR it's the introduction video, keep video URL
           if (lecture.isPreview || isIntroductionVideo) {
+            // CRITICAL FIX: Flatten video URLs for frontend compatibility
+            const videoUrl = lecture.videoContent?.r2Url || lecture.videoUrl || lecture.videoLink;
             return {
               ...lecture,
               isPreview: true, // Ensure it's marked as preview
-              // For preview/intro videos, we can use direct URLs (they're free for marketing)
+              // Provide video URLs in multiple formats for frontend compatibility
               videoContent: lecture.videoContent ? {
                 ...lecture.videoContent,
                 r2Url: lecture.videoContent.r2Url
-              } : null
+              } : null,
+              // Flattened URLs for video players
+              r2VideoUrl: lecture.videoContent?.r2Url || null,
+              videoUrl: videoUrl,
+              videoLink: videoUrl
             };
           }
           
@@ -249,24 +324,57 @@ export const getCourseContent = async (req, res) => {
             // Also remove any direct video URLs
             videoUrl: null,
             r2VideoUrl: null,
+            videoLink: null,
             // Mark as restricted for frontend
             isRestricted: true
           };
         })
       }));
+    } else {
+      // CRITICAL FIX: For enrolled students, ensure all video URLs are flattened and accessible
+      console.log(`✅ Student is enrolled. Providing full video access.`);
+      filteredCourse.modules = filteredCourse.modules.map((module, moduleIndex) => ({
+        ...module,
+        lectures: module.lectures.map((lecture, lectureIndex) => {
+          // Flatten video URLs for frontend compatibility
+          const videoUrl = lecture.videoContent?.r2Url || lecture.videoUrl || lecture.videoLink;
+          
+          console.log(`📹 Lecture "${lecture.title}" video URLs:`, {
+            'videoContent.r2Url': lecture.videoContent?.r2Url,
+            'videoUrl': lecture.videoUrl,
+            'videoLink': lecture.videoLink,
+            'final': videoUrl
+          });
+          
+          return {
+            ...lecture,
+            // Keep original nested structure
+            videoContent: lecture.videoContent ? {
+              ...lecture.videoContent,
+              r2Url: lecture.videoContent.r2Url
+            } : null,
+            // CRITICAL: Provide flattened URLs for video players
+            r2VideoUrl: lecture.videoContent?.r2Url || null,
+            videoUrl: videoUrl,
+            videoLink: videoUrl,
+            isRestricted: false
+          };
+        })
+      }));
     }
 
-    res.json({
+    const response = {
       success: true,
       isEnrolled,
       course: {
         ...filteredCourse,
         progress: progress ? progress.toObject() : null
       }
-    });
+    };
+    
+    res.json(response);
 
   } catch (error) {
-    console.error('Get course content error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to fetch course content',
@@ -295,6 +403,56 @@ export const updateLectureProgress = async (req, res) => {
       return res.status(401).json({
         success: false,
         message: 'Authentication required'
+      });
+    }
+
+    // CRITICAL: Verify enrollment and payment before allowing progress update
+    const course = await RealTimeCourse.findById(courseId);
+    if (!course) {
+      return res.status(404).json({
+        success: false,
+        message: 'Course not found'
+      });
+    }
+
+    const enrollment = await Enrollment.findOne({
+      studentId,
+      courseId,
+      status: { $in: ['active', 'enrolled'] }
+    });
+
+    if (!enrollment) {
+      return res.status(403).json({
+        success: false,
+        message: 'Access denied: You are not enrolled in this course'
+      });
+    }
+
+    // For paid courses, verify payment
+    if (!course.isFree && course.price > 0 && !enrollment.isPaid) {
+      return res.status(403).json({
+        success: false,
+        message: 'Access denied: Payment required to access this course'
+      });
+    }
+
+    // Check if the lecture is a preview/free lecture
+    let lecture = null;
+    let isFirstLecture = false;
+    for (const [moduleIndex, module] of course.modules.entries()) {
+      const lectureIndex = module.lectures.findIndex(l => l.id === lectureId);
+      if (lectureIndex !== -1) {
+        lecture = module.lectures[lectureIndex];
+        isFirstLecture = moduleIndex === 0 && lectureIndex === 0;
+        break;
+      }
+    }
+
+    // If not enrolled or not paid, only allow progress on preview/first lecture
+    if (!enrollment.isPaid && !lecture?.isPreview && !isFirstLecture) {
+      return res.status(403).json({
+        success: false,
+        message: 'Access denied: This lecture requires course enrollment'
       });
     }
 
@@ -337,7 +495,6 @@ export const updateLectureProgress = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Update progress error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to update progress',
@@ -366,6 +523,28 @@ export const submitQuiz = async (req, res) => {
       return res.status(404).json({
         success: false,
         message: 'Course not found'
+      });
+    }
+
+    // CRITICAL: Verify enrollment and payment before allowing quiz submission
+    const enrollment = await Enrollment.findOne({
+      studentId,
+      courseId,
+      status: { $in: ['active', 'enrolled'] }
+    });
+
+    if (!enrollment) {
+      return res.status(403).json({
+        success: false,
+        message: 'Access denied: You are not enrolled in this course'
+      });
+    }
+
+    // For paid courses, verify payment
+    if (!course.isFree && course.price > 0 && !enrollment.isPaid) {
+      return res.status(403).json({
+        success: false,
+        message: 'Access denied: Payment required to access this course'
       });
     }
 
@@ -441,7 +620,6 @@ export const submitQuiz = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Submit quiz error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to submit quiz',
@@ -533,7 +711,6 @@ export const getCourseAnalytics = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Get analytics error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to fetch analytics',
@@ -569,7 +746,6 @@ export const updateHeartbeat = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Heartbeat error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to update heartbeat',
@@ -605,7 +781,6 @@ export const getStudentProgress = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Get student progress error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to fetch progress',
@@ -617,10 +792,6 @@ export const getStudentProgress = async (req, res) => {
 // ADMIN: Create a new course
 export const createRealTimeCourse = async (req, res) => {
   try {
-    console.log('=== CREATE COURSE REQUEST ===');
-    console.log('Admin ID from token:', req.adminId);
-    console.log('Request body size:', JSON.stringify(req.body).length, 'bytes');
-    console.log('Creating course with data:', JSON.stringify(req.body, null, 2));
     
     // Debug and fix modules and materials specifically
     if (req.body.modules && Array.isArray(req.body.modules)) {
@@ -628,25 +799,18 @@ export const createRealTimeCourse = async (req, res) => {
         if (module.lectures && Array.isArray(module.lectures)) {
           module.lectures.forEach((lecture, lectureIndex) => {
             if (lecture.materials) {
-              console.log(`Module ${moduleIndex}, Lecture ${lectureIndex} materials:`, lecture.materials);
-              console.log('Materials type:', typeof lecture.materials);
-              console.log('Is array:', Array.isArray(lecture.materials));
               
               // Fix stringified materials
               if (typeof lecture.materials === 'string') {
-                console.log('Materials is stringified! Attempting to parse...');
                 try {
                   lecture.materials = JSON.parse(lecture.materials);
-                  console.log('Successfully parsed materials:', lecture.materials);
                 } catch (parseError) {
-                  console.error('Failed to parse materials string:', parseError);
                   lecture.materials = [];
                 }
               }
               
               // Ensure materials is an array
               if (!Array.isArray(lecture.materials)) {
-                console.log('Materials is not an array, converting to empty array');
                 lecture.materials = [];
               }
             }
@@ -657,13 +821,10 @@ export const createRealTimeCourse = async (req, res) => {
     
     // Check for large base64 data in thumbnail, banner, or previewVideo
     if (req.body.thumbnail && req.body.thumbnail.length > 1000) {
-      console.log('Large thumbnail data detected, length:', req.body.thumbnail.length);
     }
     if (req.body.banner && req.body.banner.length > 1000) {
-      console.log('Large banner data detected, length:', req.body.banner.length);
     }
     if (req.body.previewVideo && req.body.previewVideo.length > 1000) {
-      console.log('Large preview video data detected, length:', req.body.previewVideo.length);
     }
     
     const {
@@ -691,7 +852,6 @@ export const createRealTimeCourse = async (req, res) => {
 
     // Validation
     if (!req.adminId) {
-      console.error('No admin ID found in request');
       return res.status(401).json({
         success: false,
         message: 'Admin authentication required'
@@ -699,7 +859,6 @@ export const createRealTimeCourse = async (req, res) => {
     }
     
     if (!title || !description) {
-      console.error('Missing required fields:', { title: !!title, description: !!description });
       return res.status(400).json({
         success: false,
         message: 'Title and description are required'
@@ -783,17 +942,12 @@ export const createRealTimeCourse = async (req, res) => {
         if (module.lectures && Array.isArray(module.lectures)) {
           module.lectures.forEach((lecture, lectureIndex) => {
             if (lecture.materials) {
-              console.log(`Pre-save: Module ${moduleIndex}, Lecture ${lectureIndex} materials:`, lecture.materials);
-              console.log(`Pre-save: Materials type:`, typeof lecture.materials);
-              console.log(`Pre-save: Materials is array:`, Array.isArray(lecture.materials));
               
               // Ensure materials is properly structured
               if (typeof lecture.materials === 'string') {
-                console.log('Pre-save: Materials is string, parsing...');
                 try {
                   lecture.materials = JSON.parse(lecture.materials);
                 } catch (parseError) {
-                  console.error('Pre-save: Failed to parse materials:', parseError);
                   lecture.materials = [];
                 }
               }
@@ -816,17 +970,7 @@ export const createRealTimeCourse = async (req, res) => {
       });
     }
 
-    console.log('Attempting to save course to database...');
-    console.log('Final course data before save:', JSON.stringify(newCourse, null, 2));
     const savedCourse = await newCourse.save();
-    console.log('Course saved successfully:', savedCourse._id);
-    console.log('Saved course details:', {
-      _id: savedCourse._id,
-      title: savedCourse.title,
-      status: savedCourse.status,
-      instructor: savedCourse.instructor?.name,
-      modules: savedCourse.modules?.length || 0
-    });
 
     res.status(201).json({
       success: true,
@@ -841,7 +985,6 @@ export const createRealTimeCourse = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Create course error:', error);
     
     // Handle validation errors
     if (error.name === 'ValidationError') {
@@ -850,8 +993,6 @@ export const createRealTimeCourse = async (req, res) => {
         message: err.message,
         value: err.value
       }));
-      console.log('Validation errors:', validationErrors);
-      console.log('Course data that failed validation:', JSON.stringify(req.body, null, 2));
       return res.status(400).json({
         success: false,
         message: 'Validation error',
@@ -879,7 +1020,6 @@ export const createRealTimeCourse = async (req, res) => {
 // ADMIN: Update a course
 export const updateRealTimeCourse = async (req, res) => {
   try {
-    console.log('Updating course with data:', JSON.stringify(req.body, null, 2));
     const { courseId } = req.params;
     const updateData = req.body;
     
@@ -889,25 +1029,18 @@ export const updateRealTimeCourse = async (req, res) => {
         if (module.lectures && Array.isArray(module.lectures)) {
           module.lectures.forEach((lecture, lectureIndex) => {
             if (lecture.materials) {
-              console.log(`Update - Module ${moduleIndex}, Lecture ${lectureIndex} materials:`, lecture.materials);
-              console.log('Update - Materials type:', typeof lecture.materials);
-              console.log('Update - Is array:', Array.isArray(lecture.materials));
               
               // Fix stringified materials
               if (typeof lecture.materials === 'string') {
-                console.log('Update - Materials is stringified! Attempting to parse...');
                 try {
                   lecture.materials = JSON.parse(lecture.materials);
-                  console.log('Update - Successfully parsed materials:', lecture.materials);
                 } catch (parseError) {
-                  console.error('Update - Failed to parse materials string:', parseError);
                   lecture.materials = [];
                 }
               }
               
               // Ensure materials is an array
               if (!Array.isArray(lecture.materials)) {
-                console.log('Update - Materials is not an array, converting to empty array');
                 lecture.materials = [];
               }
             }
@@ -971,17 +1104,12 @@ export const updateRealTimeCourse = async (req, res) => {
         if (module.lectures && Array.isArray(module.lectures)) {
           module.lectures.forEach((lecture, lectureIndex) => {
             if (lecture.materials) {
-              console.log(`Update Pre-save: Module ${moduleIndex}, Lecture ${lectureIndex} materials:`, lecture.materials);
-              console.log(`Update Pre-save: Materials type:`, typeof lecture.materials);
-              console.log(`Update Pre-save: Materials is array:`, Array.isArray(lecture.materials));
               
               // Ensure materials is properly structured
               if (typeof lecture.materials === 'string') {
-                console.log('Update Pre-save: Materials is string, parsing...');
                 try {
                   lecture.materials = JSON.parse(lecture.materials);
                 } catch (parseError) {
-                  console.error('Update Pre-save: Failed to parse materials:', parseError);
                   lecture.materials = [];
                 }
               }
@@ -1009,7 +1137,6 @@ export const updateRealTimeCourse = async (req, res) => {
       updateData.publishedAt = new Date();
     }
 
-    console.log('Update: Final course data before save:', JSON.stringify(updateData, null, 2));
     const course = await RealTimeCourse.findByIdAndUpdate(
       courseId,
       { $set: updateData },
@@ -1030,7 +1157,6 @@ export const updateRealTimeCourse = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Update course error:', error);
     
     // Handle validation errors
     if (error.name === 'ValidationError') {
@@ -1039,8 +1165,6 @@ export const updateRealTimeCourse = async (req, res) => {
         message: err.message,
         value: err.value
       }));
-      console.log('Validation errors:', validationErrors);
-      console.log('Course data that failed validation:', JSON.stringify(updateData, null, 2));
       return res.status(400).json({
         success: false,
         message: 'Validation error',
@@ -1088,7 +1212,6 @@ export const deleteRealTimeCourse = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Delete course error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to delete course',
@@ -1127,7 +1250,6 @@ export const publishRealTimeCourse = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Publish course error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to publish course',
@@ -1148,7 +1270,6 @@ export const getAllCoursesForAdmin = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Get admin courses error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to fetch courses',
@@ -1183,7 +1304,6 @@ export const getEnrollmentStatus = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Get enrollment status error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to check enrollment status',
@@ -1198,11 +1318,17 @@ export const enrollInCourse = async (req, res) => {
     const { courseId } = req.params;
     const studentId = req.studentId;
 
+
     if (!studentId) {
       return res.status(401).json({
         success: false,
         message: 'Authentication required'
       });
+    }
+
+    // Get student details for logging
+    const student = await Student.findById(studentId);
+    if (student) {
     }
 
     const course = await RealTimeCourse.findById(courseId);
@@ -1212,6 +1338,7 @@ export const enrollInCourse = async (req, res) => {
         message: 'Course not found'
       });
     }
+
 
     // Check if already enrolled
     const existingEnrollment = await Enrollment.findOne({ 
@@ -1236,7 +1363,7 @@ export const enrollInCourse = async (req, res) => {
       enrolledAt: new Date(),
       status: 'active',
       progress: 0,
-      isPaid: course.isFree || course.price === 0 ? true : true, // Set to true for testing, change to false after payment integration
+      isPaid: course.isFree || course.price === 0 ? true : false, // CRITICAL: Only free courses are auto-paid
     });
 
     await enrollment.save();
@@ -1245,11 +1372,21 @@ export const enrollInCourse = async (req, res) => {
     await course.incrementEnrollment();
 
     // Create initial progress tracking
+    const totalModules = course.modules?.length || 0;
+    const totalLectures = course.modules?.reduce((total, module) => total + (module.lectures?.length || 0), 0) || 0;
+    
     const progressDoc = new RealTimeProgress({
       studentId,
       courseId,
-      totalModules: course.modules.length,
-      totalLectures: course.modules.reduce((total, module) => total + module.lectures.length, 0)
+      totalModules,
+      totalLectures,
+      overallProgress: {
+        totalModules,
+        totalLectures,
+        completedModules: 0,
+        completedLectures: 0,
+        progressPercentage: 0
+      }
     });
     await progressDoc.save();
 
@@ -1260,11 +1397,11 @@ export const enrollInCourse = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Enroll in course error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to enroll in course',
-      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined,
+      details: process.env.NODE_ENV === 'development' ? error.stack : undefined
     });
   }
 };

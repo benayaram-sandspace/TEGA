@@ -213,6 +213,15 @@ router.post('/reset-password', async (req, res) => {
       });
     }
 
+    // Check if new password is same as old password
+    const isSamePassword = await bcrypt.compare(newPassword, principal.password);
+    if (isSamePassword) {
+      return res.status(400).json({
+        success: false,
+        message: 'New password cannot be the same as your current password. Please choose a different password.'
+      });
+    }
+
     // Hash new password
     const hashedPassword = await bcrypt.hash(newPassword, 10);
     
@@ -247,7 +256,7 @@ router.get('/dashboard', async (req, res) => {
       });
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-super-secret-jwt-key-change-this-in-production');
     const principal = await Principal.findById(decoded.id);
     if (principal) {
     } else {
@@ -321,7 +330,7 @@ router.get('/students', async (req, res) => {
       });
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-super-secret-jwt-key-change-this-in-production');
     const university = decoded.university;
 
     if (!university) {

@@ -35,6 +35,23 @@ const adminSchema = new mongoose.Schema({
   role: {
     type: String,
     default: 'admin'
+  },
+  // Production authentication fields
+  refreshToken: {
+    type: String,
+    default: null
+  },
+  lastLogin: {
+    type: Date,
+    default: null
+  },
+  loginAttempts: {
+    type: Number,
+    default: 0
+  },
+  lockUntil: {
+    type: Date,
+    default: null
   }
 }, {
   timestamps: true

@@ -136,7 +136,7 @@ class _SignUpPageState extends State<SignUpPage> with TickerProviderStateMixin {
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(
-                  color: const Color(0xFFFF6B35).withOpacity(0.2),
+                  color: const Color(0xFF9C88FF).withOpacity(0.2),
                   width: 1,
                 ),
                 boxShadow: [
@@ -146,7 +146,7 @@ class _SignUpPageState extends State<SignUpPage> with TickerProviderStateMixin {
                     offset: const Offset(0, 10),
                   ),
                   BoxShadow(
-                    color: const Color(0xFFFF6B35).withOpacity(0.08),
+                    color: const Color(0xFF9C88FF).withOpacity(0.08),
                     blurRadius: 15,
                     offset: const Offset(0, 5),
                   ),
@@ -160,7 +160,7 @@ class _SignUpPageState extends State<SignUpPage> with TickerProviderStateMixin {
                           padding: EdgeInsets.all(20),
                           child: CircularProgressIndicator(
                             valueColor: AlwaysStoppedAnimation<Color>(
-                              Color(0xFFFF6B35),
+                              Color(0xFF9C88FF),
                             ),
                           ),
                         ),
@@ -224,7 +224,7 @@ class _SignUpPageState extends State<SignUpPage> with TickerProviderStateMixin {
                               ),
                               decoration: BoxDecoration(
                                 color: isSelected
-                                    ? const Color(0xFFFF6B35).withOpacity(0.08)
+                                    ? const Color(0xFF9C88FF).withOpacity(0.08)
                                     : Colors.transparent,
                               ),
                               child: Row(
@@ -236,8 +236,8 @@ class _SignUpPageState extends State<SignUpPage> with TickerProviderStateMixin {
                                       gradient: LinearGradient(
                                         colors: isSelected
                                             ? [
-                                                const Color(0xFFFF6B35),
-                                                const Color(0xFFFBB040),
+                                                const Color(0xFF9C88FF),
+                                                const Color(0xFF8B7BFF),
                                               ]
                                             : [
                                                 const Color(0xFFF5F5F5),
@@ -254,7 +254,7 @@ class _SignUpPageState extends State<SignUpPage> with TickerProviderStateMixin {
                                         style: TextStyle(
                                           color: isSelected
                                               ? Colors.white
-                                              : const Color(0xFFFF6B35),
+                                              : const Color(0xFF9C88FF),
                                           fontWeight: FontWeight.bold,
                                           fontSize: 16,
                                         ),
@@ -271,7 +271,7 @@ class _SignUpPageState extends State<SignUpPage> with TickerProviderStateMixin {
                                           college.name,
                                           style: TextStyle(
                                             color: isSelected
-                                                ? const Color(0xFFFF6B35)
+                                                ? const Color(0xFF9C88FF)
                                                 : const Color(0xFF2C3E50),
                                             fontSize: 14,
                                             fontWeight: isSelected
@@ -462,9 +462,9 @@ class _SignUpPageState extends State<SignUpPage> with TickerProviderStateMixin {
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [
-              Color(0xFFFF6B35), // Orange
-              Color(0xFFF7931E), // Deep Orange
-              Color(0xFFFBB040), // Yellow-Orange
+              Color(0xFF9C88FF), // Light Purple
+              Color(0xFF8B7BFF), // Medium Light Purple
+              Color(0xFF7A6BFF), // Medium Purple
             ],
           ),
         ),
@@ -534,7 +534,7 @@ class _SignUpPageState extends State<SignUpPage> with TickerProviderStateMixin {
                   child: Icon(
                     Icons.flutter_dash,
                     size: 60,
-                    color: Color(0xFFFF6B35),
+                    color: Color(0xFF9C88FF),
                   ),
                 ),
               ),
@@ -626,7 +626,7 @@ class _SignUpPageState extends State<SignUpPage> with TickerProviderStateMixin {
             offset: const Offset(0, 15),
           ),
           BoxShadow(
-            color: const Color(0xFFFF6B35).withOpacity(0.1),
+            color: const Color(0xFF9C88FF).withOpacity(0.1),
             blurRadius: 20,
             offset: const Offset(0, 10),
           ),
@@ -702,7 +702,7 @@ class _SignUpPageState extends State<SignUpPage> with TickerProviderStateMixin {
                     Icons.school_rounded,
                     color: _isCollegesLoading
                         ? Colors.grey.shade400
-                        : const Color(0xFFFF6B35),
+                        : const Color(0xFF9C88FF),
                     size: 22,
                   ),
                 ),
@@ -710,7 +710,7 @@ class _SignUpPageState extends State<SignUpPage> with TickerProviderStateMixin {
                     ? IconButton(
                         icon: const Icon(
                           Icons.arrow_drop_up_rounded,
-                          color: Color(0xFFFF6B35),
+                          color: Color(0xFF9C88FF),
                           size: 28,
                         ),
                         onPressed: () {
@@ -722,7 +722,7 @@ class _SignUpPageState extends State<SignUpPage> with TickerProviderStateMixin {
                           Icons.arrow_drop_down_rounded,
                           color: _isCollegesLoading
                               ? Colors.grey.shade400
-                              : const Color(0xFFFF6B35),
+                              : const Color(0xFF9C88FF),
                           size: 28,
                         ),
                         onPressed: _isCollegesLoading
@@ -742,7 +742,7 @@ class _SignUpPageState extends State<SignUpPage> with TickerProviderStateMixin {
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(14),
                   borderSide: const BorderSide(
-                    color: Color(0xFFFF6B35),
+                    color: Color(0xFF9C88FF),
                     width: 2,
                   ),
                 ),
@@ -995,7 +995,7 @@ class _SignUpPageState extends State<SignUpPage> with TickerProviderStateMixin {
       hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 14),
       prefixIcon: Container(
         margin: const EdgeInsets.only(left: 12, right: 8),
-        child: Icon(icon, color: const Color(0xFFFF6B35), size: 22),
+        child: Icon(icon, color: const Color(0xFF9C88FF), size: 22),
       ),
       suffixIcon: isPassword
           ? IconButton(
@@ -1031,7 +1031,7 @@ class _SignUpPageState extends State<SignUpPage> with TickerProviderStateMixin {
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(14),
-        borderSide: const BorderSide(color: Color(0xFFFF6B35), width: 2),
+        borderSide: const BorderSide(color: Color(0xFF9C88FF), width: 2),
       ),
       errorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(14),

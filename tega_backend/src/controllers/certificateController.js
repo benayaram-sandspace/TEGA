@@ -1,8 +1,8 @@
 import Certificate from '../models/Certificate.js';
-import Course from '../models/Course.js';
+import RealTimeCourse from '../models/RealTimeCourse.js';
+import RealTimeProgress from '../models/RealTimeProgress.js';
 import Student from '../models/Student.js';
 import Enrollment from '../models/Enrollment.js';
-import StudentProgress from '../models/StudentProgress.js';
 import { uploadToR2, generateR2Key, generatePresignedDownloadUrl } from '../config/r2.js';
 import PDFDocument from 'pdfkit';
 import fs from 'fs';
@@ -38,9 +38,9 @@ export const generateCertificate = async (req, res) => {
       });
     }
 
-    // Get student, course, and enrollment information
+    // Get student, course, and enrollment information - USE ONLY REALTIMECOURSE
     const student = await Student.findById(studentId);
-    const course = await Course.findById(courseId);
+    const course = await RealTimeCourse.findById(courseId);
     const enrollment = await Enrollment.findOne({ studentId, courseId });
 
     if (!student || !course || !enrollment) {
@@ -50,32 +50,38 @@ export const generateCertificate = async (req, res) => {
       });
     }
 
-    // Check if course is completed
-    const progress = await StudentProgress.find({ studentId, courseId });
-    const totalLectures = progress.length;
-    const completedLectures = progress.filter(p => p.isCompleted).length;
-    const completionPercentage = totalLectures > 0 ? (completedLectures / totalLectures) * 100 : 0;
+    // Check if course is completed using RealTimeProgress
+    const progress = await RealTimeProgress.findOne({ studentId, courseId });
+    
+    if (!progress) {
+      return res.status(404).json({
+        success: false,
+        message: 'Progress record not found'
+      });
+    }
+
+    const completionPercentage = progress.overallProgress?.progressPercentage || 0;
 
     if (completionPercentage < 100) {
       return res.status(400).json({
         success: false,
         message: 'Course not completed yet',
         progress: {
-          completedLectures,
-          totalLectures,
+          completedLectures: progress.overallProgress?.completedLectures || 0,
+          totalLectures: progress.overallProgress?.totalLectures || 0,
           completionPercentage: Math.round(completionPercentage)
         }
       });
     }
 
-    // Calculate final score
-    const quizProgress = progress.filter(p => p.quizAttempts && p.quizAttempts.length > 0);
+    // Calculate final score from quiz attempts
+    const quizProgress = progress.lectureProgress?.filter(lp => lp.quizAttempts && lp.quizAttempts.length > 0) || [];
     let totalScore = 0;
     let quizCount = 0;
     
-    quizProgress.forEach(p => {
-      const bestAttempt = p.quizAttempts.reduce((max, attempt) => 
-        attempt.score > max.score ? attempt : max, p.quizAttempts[0]
+    quizProgress.forEach(lp => {
+      const bestAttempt = lp.quizAttempts.reduce((max, attempt) => 
+        attempt.score > max.score ? attempt : max, lp.quizAttempts[0]
       );
       totalScore += bestAttempt.score;
       quizCount++;
@@ -95,7 +101,7 @@ export const generateCertificate = async (req, res) => {
       verificationCode,
       studentName: student.name || student.email,
       studentEmail: student.email,
-      courseName: course.courseName,
+      courseName: course.title || course.courseName,
       courseDescription: course.description,
       completionDate: new Date(),
       totalDuration: course.duration,

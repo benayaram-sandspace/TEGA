@@ -14,7 +14,7 @@ const studentAuth = async (req, res, next) => {
     }
 
     
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-super-secret-jwt-key-change-this-in-production');
     
     // Check for both 'id' and 'userId' in the decoded token
     const studentId = decoded.id || decoded.userId;

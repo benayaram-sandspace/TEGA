@@ -1,14 +1,10 @@
 import Enrollment from '../models/Enrollment.js';
-import Course from '../models/Course.js';
 import RealTimeCourse from '../models/RealTimeCourse.js';
 import RealTimeProgress from '../models/RealTimeProgress.js';
-import Section from '../models/Section.js';
-import Lecture from '../models/Lecture.js';
-import StudentProgress from '../models/StudentProgress.js';
 import UserCourse from '../models/UserCourse.js';
 import mongoose from 'mongoose';
 
-// Enroll student in course
+// Enroll student in course - CONSOLIDATED TO USE ONLY REALTIMECOURSE
 export const enrollInCourse = async (req, res) => {
   try {
     const { courseId } = req.params;
@@ -21,14 +17,8 @@ export const enrollInCourse = async (req, res) => {
       });
     }
 
-    // Check if course exists - try both Course and RealTimeCourse models
-    let course = await Course.findById(courseId);
-    let isRealTimeCourse = false;
-    
-    if (!course) {
-      course = await RealTimeCourse.findById(courseId);
-      isRealTimeCourse = true;
-    }
+    // Use only RealTimeCourse model (R2-based system)
+    const course = await RealTimeCourse.findById(courseId);
     
     if (!course) {
       return res.status(404).json({
@@ -61,61 +51,29 @@ export const enrollInCourse = async (req, res) => {
 
     await enrollment.save();
 
-    // Initialize progress based on course type
-    if (isRealTimeCourse) {
-      // For RealTimeCourse, initialize RealTimeProgress
-      const lectureProgress = [];
-      
-      if (course.modules && course.modules.length > 0) {
-        for (const module of course.modules) {
-          if (module.lectures && module.lectures.length > 0) {
-            for (const lecture of module.lectures) {
-              lectureProgress.push({
-                lectureId: lecture._id,
-                moduleId: module._id,
-                completed: false,
-                watchTime: 0,
-                lastWatchedAt: null
-              });
-            }
-          }
-        }
+    // Initialize RealTimeProgress for all courses
+    const totalModules = course.modules?.length || 0;
+    const totalLectures = course.modules?.reduce((total, module) => 
+      total + (module.lectures?.length || 0), 0) || 0;
+    
+    const progress = new RealTimeProgress({
+      studentId: new mongoose.Types.ObjectId(studentId),
+      courseId: new mongoose.Types.ObjectId(courseId),
+      totalModules,
+      totalLectures,
+      overallProgress: {
+        totalModules,
+        totalLectures,
+        completedModules: 0,
+        completedLectures: 0,
+        progressPercentage: 0
       }
-      
-      const progress = new RealTimeProgress({
-        studentId: new mongoose.Types.ObjectId(studentId),
-        courseId: new mongoose.Types.ObjectId(courseId),
-        lectureProgress,
-        overallProgress: {
-          completedLectures: 0,
-          totalLectures: lectureProgress.length,
-          percentageComplete: 0
-        }
-      });
-      
-      await progress.save();
-      
-      // Update enrollment count
-      course.enrollmentCount = (course.enrollmentCount || 0) + 1;
-      await course.save();
-      
-    } else {
-      // For regular Course, initialize StudentProgress
-      const sections = await Section.find({ courseId });
-      const lectures = await Lecture.find({
-        sectionId: { $in: sections.map(s => s._id) }
-      });
-
-      for (const lecture of lectures) {
-        const progress = new StudentProgress({
-          studentId,
-          courseId,
-          sectionId: lecture.sectionId,
-          lectureId: lecture._id
-        });
-        await progress.save();
-      }
-    }
+    });
+    
+    await progress.save();
+    
+    // Update enrollment count
+    await course.incrementEnrollment();
 
     res.status(201).json({
       success: true,
@@ -146,12 +104,8 @@ export const checkEnrollment = async (req, res) => {
       });
     }
 
-    // Check if course exists - try both models
-    let course = await Course.findById(courseId);
-    
-    if (!course) {
-      course = await RealTimeCourse.findById(courseId);
-    }
+    // Use only RealTimeCourse model (R2-based system)
+    const course = await RealTimeCourse.findById(courseId);
 
     if (!course) {
       return res.status(404).json({

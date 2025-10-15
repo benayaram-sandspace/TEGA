@@ -102,16 +102,6 @@ class _PlacementPrepPageState extends State<PlacementPrepPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header Section
-          _buildHeader(isDesktop, isTablet),
-          SizedBox(
-            height: isDesktop
-                ? 24
-                : isTablet
-                ? 20
-                : 16,
-          ),
-
           // Stats Cards - Compact Design
           _buildCompactStats(isDesktop, isTablet),
           SizedBox(
@@ -171,103 +161,6 @@ class _PlacementPrepPageState extends State<PlacementPrepPage> {
     );
   }
 
-  Widget _buildHeader(bool isDesktop, bool isTablet) {
-    return Container(
-      padding: EdgeInsets.all(
-        isDesktop
-            ? 20
-            : isTablet
-            ? 18
-            : 16,
-      ),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [Color(0xFF6B5FFF), Color(0xFF8F7FFF)],
-        ),
-        borderRadius: BorderRadius.circular(isDesktop ? 20 : 16),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFF6B5FFF).withOpacity(0.3),
-            blurRadius: isDesktop ? 20 : 15,
-            offset: Offset(0, isDesktop ? 8 : 6),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: EdgeInsets.all(
-              isDesktop
-                  ? 14
-                  : isTablet
-                  ? 12
-                  : 10,
-            ),
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.2),
-              borderRadius: BorderRadius.circular(isDesktop ? 14 : 12),
-            ),
-            child: Icon(
-              Icons.rocket_launch_rounded,
-              color: Colors.white,
-              size: isDesktop
-                  ? 32
-                  : isTablet
-                  ? 28
-                  : 24,
-            ),
-          ),
-          SizedBox(
-            width: isDesktop
-                ? 16
-                : isTablet
-                ? 14
-                : 12,
-          ),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                FittedBox(
-                  fit: BoxFit.scaleDown,
-                  alignment: Alignment.centerLeft,
-                  child: Text(
-                    'Placement Preparation',
-                    style: TextStyle(
-                      fontSize: isDesktop
-                          ? 24
-                          : isTablet
-                          ? 20
-                          : 18,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
-                  ),
-                ),
-                SizedBox(height: isDesktop ? 4 : 2),
-                Text(
-                  'Track your progress and ace your interviews',
-                  style: TextStyle(
-                    fontSize: isDesktop
-                        ? 13
-                        : isTablet
-                        ? 12
-                        : 11,
-                    color: Colors.white.withOpacity(0.9),
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildCompactStats(bool isDesktop, bool isTablet) {
     final stats = [
       {
@@ -316,10 +209,10 @@ class _PlacementPrepPageState extends State<PlacementPrepPage> {
             ? 8
             : 6,
         childAspectRatio: isDesktop
-            ? 1.6
+            ? 2.0
             : isTablet
-            ? 1.4
-            : 1.2,
+            ? 1.8
+            : 1.6,
       ),
       itemCount: stats.length,
       itemBuilder: (context, index) {
@@ -598,10 +491,10 @@ class _PlacementPrepPageState extends State<PlacementPrepPage> {
                             title,
                             style: TextStyle(
                               fontSize: isDesktop
-                                  ? 16
+                                  ? 18
                                   : isTablet
-                                  ? 15
-                                  : 14,
+                                  ? 17
+                                  : 15,
                               fontWeight: FontWeight.bold,
                               color: Colors.white,
                               height: 1.2,
@@ -614,10 +507,10 @@ class _PlacementPrepPageState extends State<PlacementPrepPage> {
                             description,
                             style: TextStyle(
                               fontSize: isDesktop
-                                  ? 12
+                                  ? 14
                                   : isTablet
-                                  ? 11
-                                  : 10,
+                                  ? 13
+                                  : 11,
                               color: Colors.white.withOpacity(0.9),
                               height: 1.2,
                             ),

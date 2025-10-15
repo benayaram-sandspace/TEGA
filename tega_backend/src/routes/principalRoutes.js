@@ -221,6 +221,15 @@ router.post('/reset-password', async (req, res) => {
       });
     }
 
+    // Check if new password is same as old password
+    const isSamePassword = await bcrypt.compare(newPassword, principal.password);
+    if (isSamePassword) {
+      return res.status(400).json({
+        success: false,
+        message: 'New password cannot be the same as your current password. Please choose a different password.'
+      });
+    }
+
     // Hash new password
     const hashedPassword = await bcrypt.hash(newPassword, 10);
     
@@ -257,7 +266,7 @@ router.get('/dashboard', async (req, res) => {
 
     let decoded;
     try {
-      decoded = jwt.verify(token, process.env.JWT_SECRET);
+      decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-super-secret-jwt-key-change-this-in-production');
     } catch (error) {
       if (error.name === 'TokenExpiredError') {
         return res.status(401).json({
@@ -354,7 +363,7 @@ router.get('/students', async (req, res) => {
 
     let decoded;
     try {
-      decoded = jwt.verify(token, process.env.JWT_SECRET);
+      decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-super-secret-jwt-key-change-this-in-production');
     } catch (error) {
       if (error.name === 'TokenExpiredError') {
         return res.status(401).json({
@@ -514,7 +523,7 @@ router.get('/students/:studentId', async (req, res) => {
 
     let decoded;
     try {
-      decoded = jwt.verify(token, process.env.JWT_SECRET);
+      decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-super-secret-jwt-key-change-this-in-production');
     } catch (error) {
       if (error.name === 'TokenExpiredError') {
         return res.status(401).json({
@@ -588,7 +597,7 @@ router.get('/students/export', async (req, res) => {
 
     let decoded;
     try {
-      decoded = jwt.verify(token, process.env.JWT_SECRET);
+      decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-super-secret-jwt-key-change-this-in-production');
     } catch (error) {
       if (error.name === 'TokenExpiredError') {
         return res.status(401).json({

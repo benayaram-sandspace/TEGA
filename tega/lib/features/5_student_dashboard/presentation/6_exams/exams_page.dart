@@ -20,7 +20,8 @@ class _ExamsPageState extends State<ExamsPage>
 
   final List<String> _filters = [
     'All Exams',
-    'Programming Languages',
+    'Attempted Exams',
+    'Programming Language',
     'Web Technologies',
     'Microsoft Office',
     'Full Stack Development',
@@ -61,8 +62,8 @@ class _ExamsPageState extends State<ExamsPage>
 
         final matchesFilter =
             _selectedFilter == 'All Exams' ||
-            exam['category'].toString().toLowerCase() ==
-                _selectedFilter.toLowerCase();
+            (_selectedFilter == 'Attempted Exams' && exam['attempts'] > 0) ||
+            exam['category'] == _selectedFilter;
 
         return matchesSearch && matchesFilter;
       }).toList();
@@ -438,58 +439,50 @@ class _ExamsPageState extends State<ExamsPage>
     return Column(
       children: [
         // Search Bar
-        Container(
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(12),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.05),
-                blurRadius: 10,
-                offset: const Offset(0, 2),
-              ),
-            ],
-          ),
-          child: TextField(
-            controller: _searchController,
-            onChanged: (_) => _applyFilters(),
-            decoration: InputDecoration(
-              hintText: 'Search exams...',
-              hintStyle: TextStyle(
-                color: Colors.grey[400],
-                fontSize: isDesktop ? 15 : 14,
-              ),
-              prefixIcon: Icon(
-                Icons.search_rounded,
-                color: const Color(0xFF6B5FFF),
-                size: isDesktop ? 24 : 22,
-              ),
-              suffixIcon: _searchController.text.isNotEmpty
-                  ? IconButton(
-                      icon: const Icon(Icons.clear_rounded, size: 20),
-                      onPressed: () {
-                        _searchController.clear();
-                        _applyFilters();
-                      },
-                      color: Colors.grey[400],
-                    )
-                  : null,
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide.none,
-              ),
-              contentPadding: EdgeInsets.symmetric(
-                horizontal: isDesktop ? 20 : 16,
-                vertical: isDesktop ? 16 : 14,
-              ),
+        TextField(
+          controller: _searchController,
+          onChanged: (_) => _applyFilters(),
+          style: TextStyle(fontSize: isDesktop ? 16 : 14),
+          decoration: InputDecoration(
+            hintText: 'Search exams...',
+            hintStyle: TextStyle(
+              color: Colors.grey[400],
+              fontSize: isDesktop ? 16 : 14,
+            ),
+            prefixIcon: Icon(
+              Icons.search,
+              color: const Color(0xFF6B5FFF),
+              size: isDesktop ? 24 : 20,
+            ),
+            filled: true,
+            fillColor: Colors.white,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(isDesktop ? 14 : 12),
+              borderSide: BorderSide.none,
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(isDesktop ? 14 : 12),
+              borderSide: BorderSide(color: Colors.grey[200]!),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(isDesktop ? 14 : 12),
+              borderSide: const BorderSide(color: Color(0xFF6B5FFF), width: 2),
+            ),
+            contentPadding: EdgeInsets.symmetric(
+              horizontal: isDesktop ? 20 : 16,
+              vertical: isDesktop ? 16 : 14,
             ),
           ),
         ),
-        SizedBox(height: isDesktop ? 16 : 12),
+        SizedBox(height: isDesktop ? 16 : 14),
 
         // Category Filters
         SizedBox(
-          height: isDesktop ? 48 : 44,
+          height: isDesktop
+              ? 44
+              : isTablet
+              ? 42
+              : 40,
           child: ListView.builder(
             scrollDirection: Axis.horizontal,
             itemCount: _filters.length,
@@ -497,7 +490,7 @@ class _ExamsPageState extends State<ExamsPage>
               final filter = _filters[index];
               final isSelected = _selectedFilter == filter;
               return Padding(
-                padding: EdgeInsets.only(right: isDesktop ? 12 : 10),
+                padding: EdgeInsets.only(right: isDesktop ? 10 : 8),
                 child: FilterChip(
                   label: Text(filter),
                   selected: isSelected,
@@ -508,26 +501,26 @@ class _ExamsPageState extends State<ExamsPage>
                     });
                   },
                   backgroundColor: Colors.white,
-                  selectedColor: const Color(0xFF6B5FFF),
+                  selectedColor: const Color(0xFF6B5FFF).withOpacity(0.2),
                   labelStyle: TextStyle(
-                    color: isSelected ? Colors.white : Colors.grey[700],
+                    fontSize: isDesktop ? 14 : 13,
+                    color: isSelected
+                        ? const Color(0xFF6B5FFF)
+                        : Colors.grey[700],
                     fontWeight: isSelected
                         ? FontWeight.w600
                         : FontWeight.normal,
-                    fontSize: isDesktop ? 14 : 13,
                   ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(20),
-                    side: BorderSide(
-                      color: isSelected
-                          ? const Color(0xFF6B5FFF)
-                          : Colors.grey.withOpacity(0.3),
-                      width: 1.5,
-                    ),
+                  side: BorderSide(
+                    color: isSelected
+                        ? const Color(0xFF6B5FFF)
+                        : Colors.grey[300]!,
+                    width: 1.5,
                   ),
-                  showCheckmark: false,
-                  elevation: isSelected ? 2 : 0,
-                  pressElevation: 4,
+                  padding: EdgeInsets.symmetric(
+                    horizontal: isDesktop ? 16 : 12,
+                    vertical: isDesktop ? 10 : 8,
+                  ),
                 ),
               );
             },

@@ -3,6 +3,8 @@ import 'package:flutter/services.dart';
 import 'package:tega/features/1_authentication/data/auth_repository.dart';
 import 'package:tega/features/1_authentication/presentation/screens/login_page.dart';
 import 'package:tega/features/5_student_dashboard/presentation/1_home/student_notification_page.dart';
+import 'package:tega/features/5_student_dashboard/presentation/1_home/learning_history_page.dart';
+import 'package:tega/features/5_student_dashboard/presentation/1_home/transaction_history_page.dart';
 import 'package:tega/features/5_student_dashboard/presentation/1_home/widgets/student_dashboard_header.dart';
 import 'package:tega/features/5_student_dashboard/presentation/1_home/widgets/student_stats_grid.dart';
 import 'package:tega/features/5_student_dashboard/presentation/1_home/widgets/weekly_progress_widget.dart';
@@ -13,13 +15,15 @@ import 'package:tega/features/5_student_dashboard/presentation/1_home/widgets/qu
 import 'package:tega/features/5_student_dashboard/presentation/1_home/widgets/recommended_courses_widget.dart';
 import 'package:tega/features/5_student_dashboard/presentation/2_learning_hub/courses_page.dart';
 import 'package:tega/features/5_student_dashboard/presentation/3_ai_tools/student_ai_job_search_page.dart';
-import 'package:tega/features/5_student_dashboard/presentation/3_ai_tools/student_resume_optimizer.dart';
+import 'package:tega/features/5_student_dashboard/presentation/3_ai_tools/student_internships_page.dart';
+import 'package:tega/features/5_student_dashboard/presentation/3_ai_tools/resume_builder_page.dart';
 import 'package:tega/features/5_student_dashboard/data/student_dashboard_service.dart';
 import 'package:tega/features/5_student_dashboard/presentation/4_profile_and_settings/student_profile_page.dart';
-import 'package:tega/features/5_student_dashboard/presentation/4_profile_and_settings/student_setting_page.dart';
-import 'package:tega/features/5_student_dashboard/presentation/4_profile_and_settings/student_help_page.dart';
 import 'package:tega/features/5_student_dashboard/presentation/5_placement_prep/placement_prep_page.dart';
 import 'package:tega/features/5_student_dashboard/presentation/6_exams/exams_page.dart';
+import 'package:tega/features/5_student_dashboard/presentation/7_results/my_results_page.dart';
+import 'package:tega/features/5_student_dashboard/presentation/shared/widgets/coming_soon_overlay.dart';
+import 'package:tega/core/config/env_config.dart';
 
 class StudentHomePage extends StatefulWidget {
   const StudentHomePage({super.key});
@@ -54,9 +58,9 @@ class _StudentHomePageState extends State<StudentHomePage>
     'Notifications',
     'Learning History',
     'Transaction History',
-    'Start Payment',
-    'Help & Support',
-    'Settings',
+    // 'Start Payment', // (locked) - REMOVED
+    // 'Help & Support', // (locked) - REMOVED
+    // 'Settings', // (locked) - REMOVED
     'Profile',
   ];
 
@@ -99,6 +103,12 @@ class _StudentHomePageState extends State<StudentHomePage>
         _profile = prof;
         _isLoading = false;
       });
+
+      // Debug: Print profile data to see the actual structure (remove in production)
+      if (EnvConfig.enableDebugLogs) {
+        print('🔍 Profile data received: $prof');
+        print('🔍 Current user data: ${_currentUser?.toJson()}');
+      }
       // Reinitialize pages with new data
       _initializePages();
     } catch (_) {
@@ -117,17 +127,17 @@ class _StudentHomePageState extends State<StudentHomePage>
       CoursesPage(key: const PageStorageKey('courses_page')), // Explore Courses
       const PlacementPrepPage(), // Placement Prep
       ExamsPage(key: const PageStorageKey('exams_page')), // Exams
-      const _ResultsPage(), // My Results
+      MyResultsPage(key: const PageStorageKey('results_page')), // My Results
       const JobRecommendationScreen(), // Jobs
-      const _InternshipsPage(), // Internships
-      const ResumeOptimizerPage(), // Resume Builder
+      const InternshipsPage(), // Internships
+      const ResumeBuilderPage(), // Resume Builder
       const _AIAssistantPage(), // AI Assistant
       const NotificationPage(), // Notifications
-      const _LearningHistoryPage(), // Learning History
-      const _TransactionHistoryPage(), // Transaction History
-      const _StartPaymentPage(), // Start Payment
-      const HelpPage(), // Help & Support
-      const SettingsPage(), // Settings
+      const LearningHistoryPage(), // Learning History
+      const TransactionHistoryPage(), // Transaction History
+      // const _StartPaymentPage(), // Start Payment (locked) - REMOVED
+      // const HelpPage(), // Help & Support (locked) - REMOVED
+      // const SettingsPage(), // Settings (locked) - REMOVED
       StudentProfilePage(), // Profile
     ];
   }
@@ -307,15 +317,17 @@ class _StudentHomePageState extends State<StudentHomePage>
                       title: 'Internships',
                       index: 6,
                     ),
-                    _buildNavItem(
+                    LockedNavItem(
                       icon: Icons.description_rounded,
                       title: 'Resume Builder',
-                      index: 7,
+                      description: 'Create professional resumes',
+                      primaryColor: const Color(0xFF4CAF50),
                     ),
-                    _buildNavItem(
+                    LockedNavItem(
                       icon: Icons.psychology_rounded,
                       title: 'AI Assistant',
-                      index: 8,
+                      description: 'Get AI-powered career guidance',
+                      primaryColor: const Color(0xFF6B5FFF),
                     ),
                     _buildNavItem(
                       icon: Icons.notifications_rounded,
@@ -337,20 +349,23 @@ class _StudentHomePageState extends State<StudentHomePage>
                     ),
                     const Divider(height: 24),
                     _buildSectionHeader('QUICK ACTIONS'),
-                    _buildNavItem(
+                    LockedNavItem(
                       icon: Icons.payment_rounded,
                       title: 'Start Payment',
-                      index: 12,
+                      description: 'Payment processing system',
+                      primaryColor: const Color(0xFF4CAF50),
                     ),
-                    _buildNavItem(
+                    LockedNavItem(
                       icon: Icons.help_rounded,
                       title: 'Help & Support',
-                      index: 13,
+                      description: 'Get help and support',
+                      primaryColor: const Color(0xFF2196F3),
                     ),
-                    _buildNavItem(
+                    LockedNavItem(
                       icon: Icons.settings_rounded,
                       title: 'Settings',
-                      index: 14,
+                      description: 'App settings and preferences',
+                      primaryColor: const Color(0xFF9C27B0),
                     ),
                     _buildNavItem(
                       icon: Icons.person_rounded,
@@ -369,11 +384,26 @@ class _StudentHomePageState extends State<StudentHomePage>
   }
 
   Widget _buildSidebarHeader() {
-    // Get course details
-    final inst = (_profile['institute'] ?? _currentUser?.college ?? '')
-        .toString();
-    final yr = (_profile['yearOfStudy'] ?? _currentUser?.year ?? '').toString();
-    final cour = (_profile['course'] ?? _currentUser?.course ?? '').toString();
+    // Get course details - try multiple possible field names from backend
+    final inst =
+        (_profile['institute'] ??
+                _profile['instituteName'] ??
+                _profile['college'] ??
+                _currentUser?.college ??
+                '')
+            .toString();
+    final yr =
+        (_profile['yearOfStudy'] ??
+                _profile['year'] ??
+                _currentUser?.year ??
+                '')
+            .toString();
+    final cour =
+        (_profile['course'] ??
+                _profile['courseName'] ??
+                _currentUser?.course ??
+                '')
+            .toString();
     final display = [
       cour.isNotEmpty ? cour : 'Course: To be updated',
       yr.isNotEmpty ? 'Year $yr' : 'Year: To be updated',
@@ -668,246 +698,48 @@ class _HomePageContent extends StatelessWidget {
 }
 
 // Placeholder pages for navigation items
-class _ResultsPage extends StatelessWidget {
-  const _ResultsPage();
-
-  @override
-  Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(20.0),
-      child: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const SizedBox(height: 100),
-            Container(
-              padding: const EdgeInsets.all(30),
-              decoration: BoxDecoration(
-                color: const Color(0xFF6B5FFF).withOpacity(0.1),
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: const Icon(
-                Icons.assessment_rounded,
-                size: 80,
-                color: Color(0xFF6B5FFF),
-              ),
-            ),
-            const SizedBox(height: 24),
-            const Text(
-              'My Results',
-              style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 12),
-            const Text(
-              'Coming Soon',
-              style: TextStyle(fontSize: 16, color: Colors.grey),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _InternshipsPage extends StatelessWidget {
-  const _InternshipsPage();
-
-  @override
-  Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(20.0),
-      child: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const SizedBox(height: 100),
-            Container(
-              padding: const EdgeInsets.all(30),
-              decoration: BoxDecoration(
-                color: const Color(0xFF6B5FFF).withOpacity(0.1),
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: const Icon(
-                Icons.work_outline_rounded,
-                size: 80,
-                color: Color(0xFF6B5FFF),
-              ),
-            ),
-            const SizedBox(height: 24),
-            const Text(
-              'Internships',
-              style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 12),
-            const Text(
-              'Coming Soon',
-              style: TextStyle(fontSize: 16, color: Colors.grey),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
 class _AIAssistantPage extends StatelessWidget {
   const _AIAssistantPage();
 
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(20.0),
-      child: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const SizedBox(height: 100),
-            Container(
-              padding: const EdgeInsets.all(30),
-              decoration: BoxDecoration(
-                color: const Color(0xFF6B5FFF).withOpacity(0.1),
-                borderRadius: BorderRadius.circular(20),
+    return ComingSoonOverlay(
+      featureName: 'AI Assistant',
+      description:
+          'Get personalized career guidance, interview preparation, and learning recommendations powered by advanced AI.',
+      icon: Icons.psychology_rounded,
+      primaryColor: const Color(0xFF6B5FFF),
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(20.0),
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const SizedBox(height: 100),
+              Container(
+                padding: const EdgeInsets.all(30),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF6B5FFF).withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: const Icon(
+                  Icons.psychology_rounded,
+                  size: 80,
+                  color: Color(0xFF6B5FFF),
+                ),
               ),
-              child: const Icon(
-                Icons.psychology_rounded,
-                size: 80,
-                color: Color(0xFF6B5FFF),
+              const SizedBox(height: 24),
+              const Text(
+                'AI Assistant',
+                style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
               ),
-            ),
-            const SizedBox(height: 24),
-            const Text(
-              'AI Assistant',
-              style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 12),
-            const Text(
-              'Coming Soon',
-              style: TextStyle(fontSize: 16, color: Colors.grey),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _LearningHistoryPage extends StatelessWidget {
-  const _LearningHistoryPage();
-
-  @override
-  Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(20.0),
-      child: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const SizedBox(height: 100),
-            Container(
-              padding: const EdgeInsets.all(30),
-              decoration: BoxDecoration(
-                color: const Color(0xFF6B5FFF).withOpacity(0.1),
-                borderRadius: BorderRadius.circular(20),
+              const SizedBox(height: 12),
+              const Text(
+                'Coming Soon',
+                style: TextStyle(fontSize: 16, color: Colors.grey),
               ),
-              child: const Icon(
-                Icons.history_rounded,
-                size: 80,
-                color: Color(0xFF6B5FFF),
-              ),
-            ),
-            const SizedBox(height: 24),
-            const Text(
-              'Learning History',
-              style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 12),
-            const Text(
-              'Coming Soon',
-              style: TextStyle(fontSize: 16, color: Colors.grey),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _TransactionHistoryPage extends StatelessWidget {
-  const _TransactionHistoryPage();
-
-  @override
-  Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(20.0),
-      child: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const SizedBox(height: 100),
-            Container(
-              padding: const EdgeInsets.all(30),
-              decoration: BoxDecoration(
-                color: const Color(0xFF6B5FFF).withOpacity(0.1),
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: const Icon(
-                Icons.receipt_long_rounded,
-                size: 80,
-                color: Color(0xFF6B5FFF),
-              ),
-            ),
-            const SizedBox(height: 24),
-            const Text(
-              'Transaction History',
-              style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 12),
-            const Text(
-              'Coming Soon',
-              style: TextStyle(fontSize: 16, color: Colors.grey),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _StartPaymentPage extends StatelessWidget {
-  const _StartPaymentPage();
-
-  @override
-  Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(20.0),
-      child: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const SizedBox(height: 100),
-            Container(
-              padding: const EdgeInsets.all(30),
-              decoration: BoxDecoration(
-                color: const Color(0xFF6B5FFF).withOpacity(0.1),
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: const Icon(
-                Icons.payment_rounded,
-                size: 80,
-                color: Color(0xFF6B5FFF),
-              ),
-            ),
-            const SizedBox(height: 24),
-            const Text(
-              'Start Payment',
-              style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 12),
-            const Text(
-              'Coming Soon',
-              style: TextStyle(fontSize: 16, color: Colors.grey),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

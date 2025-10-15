@@ -8,8 +8,8 @@ import Student from '../models/Student.js';
 import Principal from '../models/Principal.js';
 import { adminAuth } from '../middleware/adminAuth.js';
 import Notification from '../models/Notification.js';
-import Course from '../models/Course.js'; // Added Course model
-import UPISettings from '../models/UPISettings.js'; // Added UPISettings model
+import RealTimeCourse from '../models/RealTimeCourse.js'; // Use RealTimeCourse only
+import UPISettings from '../models/UPISettings.js';
 import Payment from '../models/Payment.js'; // Added Payment model
 import RazorpayPayment from '../models/RazorpayPayment.js'; // Added RazorpayPayment model
 import { getPrincipalWelcomeTemplate } from '../utils/emailTemplates.js';

@@ -17,7 +17,16 @@ const server = createServer(app);
 
 // CORS configuration
 const corsOptions = {
-  origin: ["http://localhost:3000", "http://127.0.0.1:3000"], // Allow your frontend URLs
+  origin: [
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+    "https://tegaedu.com",
+    "https://www.tegaedu.com",
+    "http://tegaedu.com",
+    "http://www.tegaedu.com",
+    process.env.CLIENT_URL,
+    process.env.FRONTEND_URL,
+  ].filter(Boolean), // Remove undefined values
   credentials: true, // Allow credentials (cookies, authorization headers)
   methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
   allowedHeaders: [
@@ -63,10 +72,18 @@ app.use(express.urlencoded({ extended: true, limit: "50mb" }));
 // Connect to MongoDB with better error handling
 const connectDB = async () => {
   try {
+    // Ensure MongoDB URI is provided in production
+    if (!process.env.MONGODB_URI && process.env.NODE_ENV === "production") {
+      console.error(
+        "FATAL ERROR: MONGODB_URI is not defined in production environment"
+      );
+      process.exit(1);
+    }
+
     const mongoURI =
       process.env.MONGODB_URI || "mongodb://localhost:27017/tega-auth-starter";
 
-    // MongoDB connection options with increased timeout
+    // MongoDB connection options - production optimized
     const options = {
       serverSelectionTimeoutMS: 30000, // 30 seconds
       socketTimeoutMS: 45000, // 45 seconds
@@ -74,16 +91,78 @@ const connectDB = async () => {
       maxPoolSize: 10,
       minPoolSize: 5,
       maxIdleTimeMS: 30000,
+      retryWrites: true, // Retry failed writes
+      retryReads: true, // Retry failed reads
+      autoIndex: process.env.NODE_ENV !== "production", // Disable in production for performance
     };
 
     await mongoose.connect(mongoURI, options);
 
-    // Handle connection events
-    mongoose.connection.on("error", (err) => {});
+    // Handle connection events with proper logging
+    mongoose.connection.on("error", (err) => {
+      console.error("❌ MongoDB Connection Error:", err);
+    });
 
-    mongoose.connection.on("disconnected", () => {});
-  } catch (err) {}
+    mongoose.connection.on("disconnected", () => {
+      console.warn("⚠️  MongoDB Disconnected. Attempting to reconnect...");
+    });
+
+    mongoose.connection.on("reconnected", () => {
+      console.log("✅ MongoDB Reconnected Successfully");
+    });
+  } catch (err) {
+    console.error("❌ MongoDB Connection Failed:", err.message);
+    console.error("Stack:", err.stack);
+
+    // In production, exit if DB connection fails
+    if (process.env.NODE_ENV === "production") {
+      console.error("Exiting application due to database connection failure");
+      process.exit(1);
+    }
+
+    // In development, retry after delay
+    console.log("Retrying connection in 5 seconds...");
+    setTimeout(connectDB, 5000);
+  }
 };
+
+// Graceful shutdown handler
+const gracefulShutdown = async (signal) => {
+  console.log(`\n${signal} received. Starting graceful shutdown...`);
+
+  try {
+    // Close MongoDB connection
+    await mongoose.connection.close();
+    console.log("✅ MongoDB connection closed");
+
+    // Close server
+    server.close(() => {
+      console.log("✅ HTTP server closed");
+      process.exit(0);
+    });
+
+    // Force close after timeout
+    setTimeout(() => {
+      console.error("⚠️  Forced shutdown after timeout");
+      process.exit(1);
+    }, 10000); // 10 seconds timeout
+  } catch (err) {
+    console.error("❌ Error during shutdown:", err);
+    process.exit(1);
+  }
+};
+
+// Register shutdown handlers
+process.on("SIGTERM", () => gracefulShutdown("SIGTERM"));
+process.on("SIGINT", () => gracefulShutdown("SIGINT"));
+process.on("uncaughtException", (err) => {
+  console.error("❌ Uncaught Exception:", err);
+  gracefulShutdown("uncaughtException");
+});
+process.on("unhandledRejection", (reason, promise) => {
+  console.error("❌ Unhandled Rejection at:", promise, "reason:", reason);
+  gracefulShutdown("unhandledRejection");
+});
 
 // Routes
 // Import routes
@@ -99,11 +178,6 @@ import resumeRoutes from "./routes/resumeRoutes.js";
 import examRoutes from "./routes/examRoutes.js";
 import questionPaperRoutes from "./routes/questionPaperRoutes.js";
 import tegaExamPaymentRoutes from "./routes/tegaExamPaymentRoutes.js";
-import courseRoutes from "./routes/courseRoutes.js";
-import sectionRoutes from "./routes/sectionRoutes.js";
-import lectureRoutes from "./routes/lectureRoutes.js";
-import studentProgressRoutes from "./routes/studentProgressRoutes.js";
-import adminCourseRoutes from "./routes/adminCourseRoutes.js";
 import enrollmentRoutes from "./routes/enrollmentRoutes.js";
 import offerRoutes from "./routes/offerRoutes.js";
 import adminExamResultRoutes from "./routes/adminExamResultRoutes.js";
@@ -115,6 +189,8 @@ import r2UploadRoutes from "./routes/r2Upload.js";
 import certificateRoutes from "./routes/certificate.js";
 import realTimeCourseRoutes from "./routes/realTimeCourse.js";
 import videoAccessRoutes from "./routes/videoAccessRoutes.js";
+import videoRoutes from "./routes/videoRoutes.js";
+import contactRoutes from "./routes/contactRoutes.js";
 
 // Serve static files (uploaded images)
 app.use("/uploads", express.static("uploads"));
@@ -133,29 +209,14 @@ app.use("/api/resume", resumeRoutes);
 app.use("/api/exams", examRoutes);
 app.use("/api/question-papers", questionPaperRoutes);
 app.use("/api/tega-exam-payments", tegaExamPaymentRoutes);
-// New real-time course system (prioritized)
+
+// Real-Time Course System (R2-Based) - CONSOLIDATED SINGLE SYSTEM
 app.use("/api/real-time-courses", realTimeCourseRoutes);
+app.use("/api/courses", realTimeCourseRoutes); // Alias for backward compatibility
 app.use("/api/r2", r2UploadRoutes);
 app.use("/api/certificates", certificateRoutes);
 app.use("/api/video-access", videoAccessRoutes);
-
-// Legacy course system (deprecated - redirect to new system)
-app.use(
-  "/api/courses",
-  (req, res, next) => {
-    // Redirect old course API calls to new real-time system
-    if (req.method === "GET" && req.params.courseId) {
-      return res.redirect(`/api/real-time-courses/${req.params.courseId}`);
-    }
-    next();
-  },
-  courseRoutes
-);
-
-app.use("/api/sections", sectionRoutes);
-app.use("/api/lectures", lectureRoutes);
-app.use("/api/student-progress", studentProgressRoutes);
-app.use("/api/admin/courses", adminCourseRoutes);
+app.use("/api/videos", videoRoutes);
 app.use("/api/enrollments", enrollmentRoutes);
 app.use("/api/offers", offerRoutes);
 app.use("/api/admin/exam-results", adminExamResultRoutes);
@@ -164,11 +225,12 @@ app.use("/api/placement", placementRoutes);
 app.use("/api/company-questions", companyQuestionRoutes);
 app.use("/api/images", imageRoutes);
 app.use("/api/ai-assistant", aiAssistantRoutes);
+app.use("/api/contact", contactRoutes);
 
 // Serve uploaded files
 app.use("/uploads", express.static("uploads"));
 
-// Note: Public course access is now handled by courseRoutes.js
+// Note: All course access now handled by realTimeCourse.js (R2-based system only)
 
 // Health check endpoint
 app.get("/api/health", (req, res) => {
@@ -206,25 +268,13 @@ app.use("*", (req, res) => {
 });
 
 const PORT = process.env.PORT || 5001;
-const HOST = "0.0.0.0"; // Allow connections from physical devices
 
 // Start server only after database connection is established
 const startServer = async () => {
   try {
     await connectDB();
-    server.listen(PORT, HOST, () => {
-      console.log(`🚀 Server running on http://${HOST}:${PORT}`);
-      console.log(`📱 Access from physical device: http://[YOUR_IP]:${PORT}`);
-      console.log(
-        `💻 Database: ${
-          mongoose.connection.readyState === 1
-            ? "Connected ✅"
-            : "Disconnected ❌"
-        }`
-      );
-    });
+    server.listen(PORT, () => {});
   } catch (error) {
-    console.error("❌ Server startup failed:", error.message);
     process.exit(1);
   }
 };

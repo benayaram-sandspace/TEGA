@@ -3,7 +3,7 @@ import Question from '../models/Question.js';
 import QuestionPaper from '../models/QuestionPaper.js';
 import ExamAttempt from '../models/ExamAttempt.js';
 import ExamRegistration from '../models/ExamRegistration.js';
-import Course from '../models/Course.js';
+import RealTimeCourse from '../models/RealTimeCourse.js';
 import Payment from '../models/Payment.js';
 import { parseQuestionExcel, validateQuestionExcel, generateQuestionTemplate } from '../utils/excelParser.js';
 import path from 'path';
@@ -367,10 +367,10 @@ export const createExam = async (req, res) => {
     let finalCourseId = courseId;
     if (courseId === 'tega-exam') {
       // For tega-exam, we need to create or find a special course
-      let tegaCourse = await Course.findOne({ courseName: 'Tega Exam' });
+      let tegaCourse = await RealTimeCourse.findOne({ title: 'Tega Exam' });
       if (!tegaCourse) {
-        tegaCourse = new Course({
-          courseName: 'Tega Exam',
+        tegaCourse = new RealTimeCourse({
+          title: 'Tega Exam',
           description: 'Special course for Tega Exams',
           price: 0,
           duration: 'Self-paced',
@@ -381,7 +381,7 @@ export const createExam = async (req, res) => {
       }
       finalCourseId = tegaCourse._id;
     } else {
-      const course = await Course.findById(courseId);
+      const course = await RealTimeCourse.findById(courseId);
       if (!course) {
         return res.status(400).json({
           success: false,
@@ -407,8 +407,8 @@ export const createExam = async (req, res) => {
       if (courseId === 'tega-exam') {
         examSubject = 'Tega Exam';
       } else {
-        const course = await Course.findById(courseId);
-        examSubject = course ? course.courseName : 'General';
+        const course = await RealTimeCourse.findById(courseId);
+        examSubject = course ? (course.title || course.courseName) : 'General';
       }
     }
 
@@ -602,8 +602,8 @@ export const registerForExam = async (req, res) => {
       
       if (exam.courseId && exam.courseId.toString() !== 'null') {
         // Course-based exam - user needs to pay for the course
-        const course = await Course.findById(exam.courseId);
-        paymentMessage = `You must purchase the course "${course?.courseName || 'this course'}" to access this exam.`;
+        const course = await RealTimeCourse.findById(exam.courseId);
+        paymentMessage = `You must purchase the course "${course?.title || course?.courseName || 'this course'}" to access this exam.`;
         paymentType = 'course';
         paymentAmount = course?.price || 0;
       } else {
@@ -1341,7 +1341,7 @@ export const updateExam = async (req, res) => {
 
     // Validate course if not tega-exam
     if (courseId && courseId !== 'tega-exam') {
-      const course = await Course.findById(courseId);
+      const course = await RealTimeCourse.findById(courseId);
       if (!course) {
         return res.status(400).json({
           success: false,
@@ -1356,8 +1356,8 @@ export const updateExam = async (req, res) => {
       if (courseId === 'tega-exam') {
         examSubject = 'Tega Exam';
       } else {
-        const course = await Course.findById(courseId);
-        examSubject = course ? course.courseName : 'General';
+        const course = await RealTimeCourse.findById(courseId);
+        examSubject = course ? (course.title || course.courseName) : 'General';
       }
     }
 

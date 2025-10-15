@@ -1,15 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import 'package:tega/core/theme/theme_provider.dart';
 
 class SettingsPage extends StatelessWidget {
   const SettingsPage({super.key});
 
   @override
   Widget build(BuildContext context) {
-    // Access the ThemeProvider instance here. It can be used anywhere below.
-    final themeProvider = Provider.of<ThemeProvider>(context);
-
     return Scaffold(
       appBar: AppBar(
         title: const Text("App Settings"),
@@ -32,17 +27,6 @@ class SettingsPage extends StatelessWidget {
                 value: true, // Placeholder value
                 onChanged: (bool value) {
                   // Logic for notifications
-                },
-              ),
-              SwitchListTile(
-                title: const Text("Dark Mode"),
-                subtitle: const Text("Reduce glare and improve night viewing"),
-                secondary: const Icon(Icons.dark_mode_outlined),
-                value: themeProvider.isDarkMode,
-                // FIX: Use the themeProvider variable defined at the top of the build method.
-                // This resolves the 'undefined context' error.
-                onChanged: (bool value) {
-                  themeProvider.toggleTheme(value);
                 },
               ),
             ],

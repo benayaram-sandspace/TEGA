@@ -1,7 +1,8 @@
 import razorpay, { verifyRazorpaySignature, verifyWebhookSignature } from '../config/razorpay.js';
 import RazorpayPayment from '../models/RazorpayPayment.js';
 import UserCourse from '../models/UserCourse.js';
-import Course from '../models/Course.js';
+import Enrollment from '../models/Enrollment.js';
+import RealTimeCourse from '../models/RealTimeCourse.js';
 import Student from '../models/Student.js';
 import Notification from '../models/Notification.js';
 import Offer from '../models/Offer.js';
@@ -69,8 +70,17 @@ export const createOrder = async (req, res) => {
       }
     }
 
-    // Fetch course details
-    const course = await Course.findById(courseId);
+    // Fetch course details - try both Course and RealTimeCourse models
+    let course = await Course.findById(courseId);
+    let isRealTimeCourse = false;
+    
+    if (!course) {
+      // Try RealTimeCourse model
+      const RealTimeCourse = (await import('../models/RealTimeCourse.js')).default;
+      course = await RealTimeCourse.findById(courseId);
+      isRealTimeCourse = true;
+    }
+    
     if (!course) {
       return res.status(404).json({
         success: false,
@@ -78,8 +88,9 @@ export const createOrder = async (req, res) => {
       });
     }
 
-
-    if (!course.isActive) {
+    // Check if course is active (different field names for different models)
+    const isActive = course.isActive || (course.status === 'published');
+    if (!isActive) {
       return res.status(400).json({
         success: false,
         message: 'Course is not available for purchase'
@@ -87,7 +98,16 @@ export const createOrder = async (req, res) => {
     }
 
     // Determine amount: prefer institute offer if available
-    let amountToCharge = course.price;
+    let amountToCharge = course.price || 0;
+    
+    // For free courses, don't create payment order
+    if (course.isFree || amountToCharge === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'This is a free course. No payment required.'
+      });
+    }
+    
     try {
       const offerPrice = await getOfferPriceForStudent(studentId);
       if (offerPrice !== null && offerPrice >= 0) {
@@ -98,6 +118,10 @@ export const createOrder = async (req, res) => {
     // Create Razorpay order
     // Fetch student once for notes
     const studentDoc = await Student.findById(studentId);
+    
+    // Get course name - handle both Course and RealTimeCourse models
+    const courseName = course.courseName || course.title || 'Course';
+    
     const orderOptions = {
       amount: amountToCharge * 100, // Razorpay expects amount in paise
       currency: 'INR',
@@ -105,7 +129,7 @@ export const createOrder = async (req, res) => {
       notes: {
         studentId: studentId.toString(),
         courseId: courseId.toString(),
-        courseName: examId ? examTitle || 'Exam Payment' : course.courseName,
+        courseName: examId ? examTitle || 'Exam Payment' : courseName,
         studentEmail: studentDoc?.email,
         studentName: (studentDoc?.firstName && studentDoc?.lastName)
           ? `${studentDoc.firstName} ${studentDoc.lastName}`
@@ -122,14 +146,14 @@ export const createOrder = async (req, res) => {
     const payment = new RazorpayPayment({
       studentId,
       courseId,
-      courseName: examId ? examTitle || 'Exam Payment' : course.courseName,
+      courseName: examId ? examTitle || 'Exam Payment' : courseName,
       amount: amountToCharge,
       currency: 'INR',
       razorpayOrderId: order.id,
       razorpayReceipt: order.receipt,
       razorpayNotes: order.notes,
       status: 'pending',
-      description: examId ? `Payment for exam: ${examTitle || 'Exam'}` : `Payment for course: ${course.courseName}`,
+      description: examId ? `Payment for exam: ${examTitle || 'Exam'}` : `Payment for course: ${courseName}`,
       examAccess: !!examId,
       examId: examId || null,
       attemptNumber: attemptNumber || null,
@@ -230,6 +254,34 @@ export const verifyPayment = async (req, res) => {
 
     const savedUserCourse = await userCourse.save();
 
+    // CRITICAL: Create Enrollment record for course access
+    const existingEnrollment = await Enrollment.findOne({
+      studentId: payment.studentId,
+      courseId: payment.courseId
+    });
+
+    if (!existingEnrollment) {
+      const enrollment = new Enrollment({
+        studentId: payment.studentId,
+        courseId: payment.courseId,
+        enrolledAt: payment.paymentDate,
+        status: 'active',
+        isPaid: true,
+        paymentId: payment._id,
+        progress: 0
+      });
+
+      await enrollment.save();
+      console.log('✅ Enrollment created for student:', payment.studentId, 'course:', payment.courseId);
+    } else {
+      // Update existing enrollment to active and paid
+      existingEnrollment.status = 'active';
+      existingEnrollment.isPaid = true;
+      existingEnrollment.paymentId = payment._id;
+      await existingEnrollment.save();
+      console.log('✅ Enrollment updated for student:', payment.studentId, 'course:', payment.courseId);
+    }
+
     // Send notifications
     await sendPaymentNotifications(payment);
 
@@ -327,6 +379,34 @@ const handlePaymentCaptured = async (paymentEntity) => {
       });
 
       await userCourse.save();
+    }
+
+    // CRITICAL: Create Enrollment record for course access
+    const existingEnrollment = await Enrollment.findOne({
+      studentId: payment.studentId,
+      courseId: payment.courseId
+    });
+
+    if (!existingEnrollment) {
+      const enrollment = new Enrollment({
+        studentId: payment.studentId,
+        courseId: payment.courseId,
+        enrolledAt: payment.paymentDate,
+        status: 'active',
+        isPaid: true,
+        paymentId: payment._id,
+        progress: 0
+      });
+
+      await enrollment.save();
+      console.log('✅ Enrollment created via webhook for student:', payment.studentId, 'course:', payment.courseId);
+    } else {
+      // Update existing enrollment to active and paid
+      existingEnrollment.status = 'active';
+      existingEnrollment.isPaid = true;
+      existingEnrollment.paymentId = payment._id;
+      await existingEnrollment.save();
+      console.log('✅ Enrollment updated via webhook for student:', payment.studentId, 'course:', payment.courseId);
     }
 
     // Send notifications

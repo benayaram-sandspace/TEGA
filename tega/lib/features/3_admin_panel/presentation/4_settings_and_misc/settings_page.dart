@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:provider/provider.dart';
-import 'package:tega/core/theme/theme_provider.dart';
 import 'package:tega/features/3_admin_panel/presentation/0_dashboard/admin_dashboard_styles.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -16,11 +14,11 @@ class _SettingsPageState extends State<SettingsPage>
     with TickerProviderStateMixin {
   bool _notificationsEnabled = true;
   bool _autoBackupEnabled = true;
-  
+
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
   late Animation<Offset> _slideAnimation;
-  
+
   // Enhanced animations for settings tiles
   late List<AnimationController> _tileAnimations;
   late List<Animation<double>> _scaleAnimations;
@@ -32,7 +30,7 @@ class _SettingsPageState extends State<SettingsPage>
     _loadSettings();
     _initializeAnimations();
   }
-  
+
   void _initializeAnimations() {
     _animationController = AnimationController(
       duration: const Duration(milliseconds: 800),
@@ -41,11 +39,14 @@ class _SettingsPageState extends State<SettingsPage>
     _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
     );
-    _slideAnimation = Tween<Offset>(
-      begin: const Offset(0, 0.3),
-      end: Offset.zero,
-    ).animate(CurvedAnimation(parent: _animationController, curve: Curves.easeOutCubic));
-    
+    _slideAnimation =
+        Tween<Offset>(begin: const Offset(0, 0.3), end: Offset.zero).animate(
+          CurvedAnimation(
+            parent: _animationController,
+            curve: Curves.easeOutCubic,
+          ),
+        );
+
     // Initialize tile animations (for ~15 settings items)
     _tileAnimations = List.generate(
       15,
@@ -54,28 +55,30 @@ class _SettingsPageState extends State<SettingsPage>
         vsync: this,
       ),
     );
-    
+
     _scaleAnimations = _tileAnimations
-        .map((controller) => CurvedAnimation(
-              parent: controller,
-              curve: Curves.easeOutBack,
-            ))
+        .map(
+          (controller) =>
+              CurvedAnimation(parent: controller, curve: Curves.easeOutBack),
+        )
         .toList();
-    
+
     _slideTileAnimations = _tileAnimations
-        .map((controller) => Tween<Offset>(
-              begin: const Offset(0, 0.3),
-              end: Offset.zero,
-            ).animate(CurvedAnimation(
-              parent: controller,
-              curve: Curves.easeOutCubic,
-            )))
+        .map(
+          (controller) =>
+              Tween<Offset>(
+                begin: const Offset(0, 0.3),
+                end: Offset.zero,
+              ).animate(
+                CurvedAnimation(parent: controller, curve: Curves.easeOutCubic),
+              ),
+        )
         .toList();
-    
+
     _animationController.forward();
     _startTileAnimations();
   }
-  
+
   void _startTileAnimations() {
     for (int i = 0; i < _tileAnimations.length; i++) {
       Future.delayed(Duration(milliseconds: i * 150), () {
@@ -85,7 +88,7 @@ class _SettingsPageState extends State<SettingsPage>
       });
     }
   }
-  
+
   Future<void> _loadSettings() async {
     final prefs = await SharedPreferences.getInstance();
     setState(() {
@@ -93,7 +96,7 @@ class _SettingsPageState extends State<SettingsPage>
       _autoBackupEnabled = prefs.getBool('autoBackupEnabled') ?? true;
     });
   }
-  
+
   Future<void> _saveSettings() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('notificationsEnabled', _notificationsEnabled);
@@ -133,7 +136,8 @@ class _SettingsPageState extends State<SettingsPage>
                             _buildAnimatedSettingsTile(
                               icon: Icons.notifications,
                               title: 'Push Notifications',
-                              subtitle: 'Receive notifications for important updates',
+                              subtitle:
+                                  'Receive notifications for important updates',
                               trailing: Switch(
                                 value: _notificationsEnabled,
                                 onChanged: (value) {
@@ -145,63 +149,6 @@ class _SettingsPageState extends State<SettingsPage>
                                 activeThumbColor: AdminDashboardStyles.primary,
                               ),
                               index: 0,
-                            ),
-                            _buildAnimatedSettingsTile(
-                              icon: Icons.palette,
-                              title: 'Theme',
-                              subtitle: 'Choose your preferred theme',
-                              trailing: Consumer<ThemeProvider>(
-                                builder: (context, themeProvider, child) {
-                                  return PopupMenuButton<String>(
-                                    icon: Icon(
-                                      _getThemeIcon(themeProvider.themePreference),
-                                      color: AdminDashboardStyles.primary,
-                                    ),
-                                    onSelected: (value) {
-                                      themeProvider.setThemePreference(value);
-                                    },
-                                    itemBuilder: (context) => [
-                                      PopupMenuItem(
-                                        value: 'light',
-                                        child: Row(
-                                          children: [
-                                            Icon(Icons.light_mode, size: 18),
-                                            SizedBox(width: 8),
-                                            Text('Light'),
-                                            if (themeProvider.themePreference == 'light')
-                                              Icon(Icons.check, size: 18, color: AdminDashboardStyles.primary),
-                                          ],
-                                        ),
-                                      ),
-                                      PopupMenuItem(
-                                        value: 'dark',
-                                        child: Row(
-                                          children: [
-                                            Icon(Icons.dark_mode, size: 18),
-                                            SizedBox(width: 8),
-                                            Text('Dark'),
-                                            if (themeProvider.themePreference == 'dark')
-                                              Icon(Icons.check, size: 18, color: AdminDashboardStyles.primary),
-                                          ],
-                                        ),
-                                      ),
-                                      PopupMenuItem(
-                                        value: 'system',
-                                        child: Row(
-                                          children: [
-                                            Icon(Icons.settings_system_daydream, size: 18),
-                                            SizedBox(width: 8),
-                                            Text('System'),
-                                            if (themeProvider.themePreference == 'system')
-                                              Icon(Icons.check, size: 18, color: AdminDashboardStyles.primary),
-                                          ],
-                                        ),
-                                      ),
-                                    ],
-                                  );
-                                },
-                              ),
-                              index: 1,
                             ),
                             _buildAnimatedSettingsTile(
                               icon: Icons.language,
@@ -420,7 +367,7 @@ class _SettingsPageState extends State<SettingsPage>
         onTap: onTap,
       );
     }
-    
+
     return AnimatedBuilder(
       animation: _scaleAnimations[index],
       builder: (context, child) {
@@ -468,18 +415,6 @@ class _SettingsPageState extends State<SettingsPage>
       trailing: trailing,
       onTap: onTap,
     );
-  }
-  
-  IconData _getThemeIcon(String themePreference) {
-    switch (themePreference) {
-      case 'light':
-        return Icons.light_mode;
-      case 'dark':
-        return Icons.dark_mode;
-      case 'system':
-      default:
-        return Icons.settings_system_daydream;
-    }
   }
 
   void _showLanguageDialog() {

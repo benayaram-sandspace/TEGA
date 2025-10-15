@@ -4,15 +4,16 @@ import fs from 'fs';
 
 // Minimal email template with official TEGA logo (small size to avoid "View entire message")
 const getBaseEmailTemplate = (title, content, showLogo = true) => {
-  // Use the official TEGA logo URL from tegaedu.com
-  const logoUrl = showLogo ? 'https://tegaedu.com/static/images/tegalogo.0ffcfb4c2d60.png' : '';
+  // Multiple fallback options for logo to ensure it displays in all environments
+  const clientUrl = process.env.CLIENT_URL || 'http://localhost:3000';
+  const logoUrl = showLogo ? `${clientUrl}/maillogo.jpg` : '';
   
   return `
     <html>
     <body style="font-family: Arial, sans-serif; margin: 0; padding: 0; background-color: #f8f9fa;">
       <div style="max-width: 500px; margin: 20px auto; background: white; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); overflow: hidden;">
         <div style="background: #1e3a8a; color: white; padding: 20px; text-align: center;">
-          ${logoUrl ? `<img src="${logoUrl}" alt="TEGA Logo" style="width: 80px; height: 80px; margin-bottom: 0; display: block; margin-left: auto; margin-right: auto;">` : ''}
+          ${logoUrl ? `<img src="${logoUrl}" alt="TEGA Logo" style="width: 80px; height: 80px; margin-bottom: 0; display: block; margin-left: auto; margin-right: auto; max-width: 80px; height: auto;" onerror="this.style.display='none';">` : ''}
         </div>
         
         <div style="padding: 25px;">

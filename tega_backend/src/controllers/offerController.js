@@ -1,5 +1,5 @@
 import Offer from '../models/Offer.js';
-import Course from '../models/Course.js';
+import RealTimeCourse from '../models/RealTimeCourse.js';
 import Exam from '../models/Exam.js';
 import Student from '../models/Student.js';
 import mongoose from 'mongoose';
@@ -142,7 +142,7 @@ export const createOffer = async (req, res) => {
 
         // Validate course exists (skip validation for default courses)
         if (!courseOffer.courseId.startsWith('default-')) {
-          const course = await Course.findById(courseOffer.courseId);
+          const course = await RealTimeCourse.findById(courseOffer.courseId);
           if (!course) {
             invalidCourses.push(`Course ID ${courseOffer.courseId} (not found)`);
             continue;
@@ -299,7 +299,7 @@ export const updateOffer = async (req, res) => {
       
       for (const courseOffer of updateData.courseOffers) {
         if (courseOffer.courseId) {
-          const course = await Course.findById(courseOffer.courseId);
+          const course = await RealTimeCourse.findById(courseOffer.courseId);
           if (!course) {
             invalidCourses.push(`Course ID ${courseOffer.courseId} (not found)`);
             continue; // Skip this course offer
@@ -621,9 +621,9 @@ export const getTegaExamOfferForInstitute = async (req, res) => {
 export const getAvailableCourses = async (req, res) => {
   try {
     
-    const courses = await Course.find({ isActive: true })
-      .select('_id courseName price category description')
-      .sort({ courseName: 1 });
+    const courses = await RealTimeCourse.find({ status: 'published' })
+      .select('_id title price category description')
+      .sort({ title: 1 });
 
 
     // If no courses found, add some default courses

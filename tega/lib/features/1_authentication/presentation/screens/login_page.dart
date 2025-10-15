@@ -401,9 +401,9 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [
-              Color(0xFFFF6B35), // Orange
-              Color(0xFFF7931E), // Deep Orange
-              Color(0xFFFBB040), // Yellow-Orange
+              Color(0xFF9C88FF), // Light Purple
+              Color(0xFF8B7BFF), // Medium Light Purple
+              Color(0xFF7A6BFF), // Medium Purple
             ],
           ),
         ),
@@ -543,7 +543,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                   child: Icon(
                     Icons.flutter_dash,
                     size: logoSize * 0.4,
-                    color: const Color(0xFFFF6B35),
+                    color: const Color(0xFF9C88FF),
                   ),
                 ),
               ),
@@ -656,7 +656,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
             offset: const Offset(0, 15),
           ),
           BoxShadow(
-            color: const Color(0xFFFF6B35).withOpacity(0.1),
+            color: const Color(0xFF9C88FF).withOpacity(0.1),
             blurRadius: 20,
             offset: const Offset(0, 10),
           ),
@@ -783,7 +783,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
           child: Text(
             _tr('forgot_password'),
             style: const TextStyle(
-              color: Color(0xFFFF6B35),
+              color: Color(0xFF9C88FF),
               fontSize: 14,
               fontWeight: FontWeight.w600,
               decoration: TextDecoration.underline,
@@ -804,14 +804,14 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
       decoration: BoxDecoration(
         gradient: const LinearGradient(
           colors: [
-            Color(0xFF27AE60), // Green
-            Color(0xFF2ECC71), // Light Green
+            Color(0xFF9C88FF), // Light Purple
+            Color(0xFF8B7BFF), // Medium Light Purple
           ],
         ),
         borderRadius: BorderRadius.circular(isMobile ? 14 : 16),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF27AE60).withOpacity(0.4),
+            color: const Color(0xFF9C88FF).withOpacity(0.4),
             blurRadius: 20,
             offset: const Offset(0, 10),
           ),
@@ -1045,7 +1045,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
             child: _buildDemoCredentialItem(
               _tr('demo_principal'),
               Icons.school_rounded,
-              const Color(0xFFFF6B35),
+              const Color(0xFF9C88FF),
             ),
           ),
           SizedBox(height: isMobile ? 5 : 6),
@@ -1186,7 +1186,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
             offset: const Offset(0, 5),
           ),
           BoxShadow(
-            color: const Color(0xFFFF6B35).withOpacity(0.1),
+            color: const Color(0xFF9C88FF).withOpacity(0.1),
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -1240,7 +1240,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
       hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 14),
       prefixIcon: Container(
         margin: const EdgeInsets.only(left: 12, right: 8),
-        child: Icon(icon, color: const Color(0xFFFF6B35), size: 22),
+        child: Icon(icon, color: const Color(0xFF9C88FF), size: 22),
       ),
       suffixIcon: isPassword
           ? IconButton(
@@ -1265,7 +1265,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(14),
-        borderSide: const BorderSide(color: Color(0xFFFF6B35), width: 2),
+        borderSide: const BorderSide(color: Color(0xFF9C88FF), width: 2),
       ),
       errorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(14),

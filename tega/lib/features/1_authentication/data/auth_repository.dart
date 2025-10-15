@@ -175,7 +175,7 @@ class AuthService {
   static const Duration _requestTimeout = Duration(seconds: 30);
   static const int _maxRetries = 3;
   static const Duration _tokenRefreshBuffer = Duration(minutes: 5);
-  static const bool _useDemoMode = true; // Set to false in production
+  static const bool _useDemoMode = false; // Set to false in production
 
   // State
   User? _currentUser;
@@ -354,16 +354,25 @@ class AuthService {
     String? college,
   }) async {
     try {
-      final response = await _makePostRequest(ApiEndpoints.register, {
+      final signupData = {
         'firstName': firstName,
         'lastName': lastName,
+        'username': email, // Use email as username
         'email': email,
         'password': password,
         if (phone != null) 'phone': phone,
         if (course != null) 'course': course,
         if (year != null) 'year': year,
         if (college != null) 'college': college,
-      });
+      };
+
+      debugPrint('🔍 [AUTH] Signup request data: $signupData');
+      debugPrint('🔍 [AUTH] Signup URL: ${ApiEndpoints.register}');
+
+      final response = await _makePostRequest(
+        ApiEndpoints.register,
+        signupData,
+      );
 
       _handleResponseErrors(response, 'Signup');
       final responseData = json.decode(response.body);
@@ -371,7 +380,17 @@ class AuthService {
       if (responseData['token'] != null && responseData['user'] != null) {
         _authToken = responseData['token'];
         _refreshToken = responseData['refreshToken'];
+
+        // Debug: Print the raw user data from backend
+        debugPrint(
+          '🔍 [AUTH] Raw user data from signup: ${responseData['user']}',
+        );
+
         _currentUser = User.fromJson(responseData['user']);
+
+        // Debug: Print the parsed user object
+        debugPrint('🔍 [AUTH] Parsed user object: ${_currentUser?.toJson()}');
+
         _isLoggedIn = true;
         _loginTime = DateTime.now();
         _tokenExpiryTime = DateTime.now().add(
@@ -442,10 +461,12 @@ class AuthService {
     }
 
     try {
-      final response = await _makePostRequest(ApiEndpoints.login, {
-        'email': email,
-        'password': password,
-      });
+      final loginData = {'email': email, 'password': password};
+
+      debugPrint('🔍 [AUTH] Login request data: $loginData');
+      debugPrint('🔍 [AUTH] Login URL: ${ApiEndpoints.login}');
+
+      final response = await _makePostRequest(ApiEndpoints.login, loginData);
 
       _handleResponseErrors(response, 'Login');
       final responseData = json.decode(response.body);
@@ -453,7 +474,17 @@ class AuthService {
       if (responseData['token'] != null && responseData['user'] != null) {
         _authToken = responseData['token'];
         _refreshToken = responseData['refreshToken'];
+
+        // Debug: Print the raw user data from backend
+        debugPrint(
+          '🔍 [AUTH] Raw user data from login: ${responseData['user']}',
+        );
+
         _currentUser = User.fromJson(responseData['user']);
+
+        // Debug: Print the parsed user object
+        debugPrint('🔍 [AUTH] Parsed user object: ${_currentUser?.toJson()}');
+
         _isLoggedIn = true;
         _loginTime = DateTime.now();
         _tokenExpiryTime = DateTime.now().add(const Duration(days: 7));
@@ -498,15 +529,28 @@ class AuthService {
     }
 
     try {
+      print(
+        '🔍 [AUTH] Fetching user profile from: ${ApiEndpoints.studentProfile}',
+      );
       final response = await _makeGetRequest(
-        '$baseUrl/api/users/profile',
+        ApiEndpoints.studentProfile,
         headers: getAuthHeaders(),
       );
+
+      print('🔍 [AUTH] Profile fetch response status: ${response.statusCode}');
+      print('🔍 [AUTH] Profile fetch response body: ${response.body}');
 
       _handleResponseErrors(response, 'Fetch profile');
       final profileData = json.decode(response.body);
 
+      // Debug: Print the raw profile data from backend
+      debugPrint('🔍 [AUTH] Raw profile data from fetch: $profileData');
+
       _currentUser = User.fromJson(profileData);
+
+      // Debug: Print the updated user object
+      debugPrint('🔍 [AUTH] Updated user object: ${_currentUser?.toJson()}');
+
       await _saveSession();
 
       debugPrint('✅ User profile updated');
