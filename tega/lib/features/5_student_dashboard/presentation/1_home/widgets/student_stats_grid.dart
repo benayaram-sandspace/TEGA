@@ -193,6 +193,8 @@ class _StudentStatsGridState extends State<StudentStatsGrid>
         final screenWidth = MediaQuery.of(context).size.width;
         final isTablet = screenWidth >= 600;
         final isDesktop = screenWidth >= 1024;
+        final isLargeDesktop = screenWidth >= 1440;
+        final isSmallScreen = screenWidth < 400;
 
         return AnimatedBuilder(
           animation: _scaleAnimations[index],
@@ -298,7 +300,17 @@ class _StudentStatsGridState extends State<StudentStatsGrid>
                           ),
                           // Content
                           Padding(
-                            padding: const EdgeInsets.all(12),
+                            padding: EdgeInsets.all(
+                              isLargeDesktop
+                                  ? 16
+                                  : isDesktop
+                                  ? 14
+                                  : isTablet
+                                  ? 12
+                                  : isSmallScreen
+                                  ? 8
+                                  : 10,
+                            ),
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.center,
                               mainAxisSize: MainAxisSize.min,
@@ -308,26 +320,42 @@ class _StudentStatsGridState extends State<StudentStatsGrid>
                                   child: AnimatedContainer(
                                     duration: const Duration(milliseconds: 300),
                                     width: isHovered
-                                        ? (isDesktop
+                                        ? (isLargeDesktop
+                                              ? 56
+                                              : isDesktop
+                                              ? 52
+                                              : isTablet
+                                              ? 48
+                                              : isSmallScreen
+                                              ? 36
+                                              : 40)
+                                        : (isLargeDesktop
+                                              ? 52
+                                              : isDesktop
                                               ? 48
                                               : isTablet
                                               ? 44
-                                              : 40)
-                                        : (isDesktop
-                                              ? 44
-                                              : isTablet
-                                              ? 40
+                                              : isSmallScreen
+                                              ? 32
                                               : 36),
                                     height: isHovered
-                                        ? (isDesktop
+                                        ? (isLargeDesktop
+                                              ? 56
+                                              : isDesktop
+                                              ? 52
+                                              : isTablet
+                                              ? 48
+                                              : isSmallScreen
+                                              ? 36
+                                              : 40)
+                                        : (isLargeDesktop
+                                              ? 52
+                                              : isDesktop
                                               ? 48
                                               : isTablet
                                               ? 44
-                                              : 40)
-                                        : (isDesktop
-                                              ? 44
-                                              : isTablet
-                                              ? 40
+                                              : isSmallScreen
+                                              ? 32
                                               : 36),
                                     decoration: BoxDecoration(
                                       shape: BoxShape.circle,
@@ -354,22 +382,30 @@ class _StudentStatsGridState extends State<StudentStatsGrid>
                                           key: ValueKey(isHovered),
                                           color: Colors.white,
                                           size: isHovered
-                                              ? (isDesktop
+                                              ? (isLargeDesktop
+                                                    ? 28
+                                                    : isDesktop
+                                                    ? 26
+                                                    : isTablet
+                                                    ? 24
+                                                    : isSmallScreen
+                                                    ? 18
+                                                    : 20)
+                                              : (isLargeDesktop
+                                                    ? 26
+                                                    : isDesktop
                                                     ? 24
                                                     : isTablet
                                                     ? 22
-                                                    : 20)
-                                              : (isDesktop
-                                                    ? 22
-                                                    : isTablet
-                                                    ? 20
+                                                    : isSmallScreen
+                                                    ? 16
                                                     : 18),
                                         ),
                                       ),
                                     ),
                                   ),
                                 ),
-                                SizedBox(height: isDesktop ? 10 : 8),
+                                SizedBox(height: isLargeDesktop ? 12 : isDesktop ? 10 : isTablet ? 8 : 6),
                                 Center(
                                   child: FittedBox(
                                     fit: BoxFit.scaleDown,
@@ -378,15 +414,23 @@ class _StudentStatsGridState extends State<StudentStatsGrid>
                                       style: TextStyle(
                                         color: Colors.white,
                                         fontSize: isHovered
-                                            ? (isDesktop
+                                            ? (isLargeDesktop
+                                                  ? 32
+                                                  : isDesktop
+                                                  ? 28
+                                                  : isTablet
+                                                  ? 26
+                                                  : isSmallScreen
+                                                  ? 20
+                                                  : 22)
+                                            : (isLargeDesktop
+                                                  ? 30
+                                                  : isDesktop
                                                   ? 26
                                                   : isTablet
                                                   ? 24
-                                                  : 22)
-                                            : (isDesktop
-                                                  ? 24
-                                                  : isTablet
-                                                  ? 22
+                                                  : isSmallScreen
+                                                  ? 18
                                                   : 20),
                                         fontWeight: FontWeight.w700,
                                         letterSpacing: 0.5,
@@ -410,23 +454,31 @@ class _StudentStatsGridState extends State<StudentStatsGrid>
                                     child: FittedBox(
                                       fit: BoxFit.scaleDown,
                                       child: Padding(
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 4.0,
+                                        padding: EdgeInsets.symmetric(
+                                          horizontal: isSmallScreen ? 2.0 : 4.0,
                                         ),
                                         child: Text(
                                           title,
                                           style: TextStyle(
                                             color: Colors.white,
                                             fontSize: isHovered
-                                                ? (isDesktop
+                                                ? (isLargeDesktop
+                                                      ? 16
+                                                      : isDesktop
+                                                      ? 15
+                                                      : isTablet
+                                                      ? 14
+                                                      : isSmallScreen
+                                                      ? 10
+                                                      : 12)
+                                                : (isLargeDesktop
+                                                      ? 15
+                                                      : isDesktop
                                                       ? 14
                                                       : isTablet
                                                       ? 13
-                                                      : 12)
-                                                : (isDesktop
-                                                      ? 13
-                                                      : isTablet
-                                                      ? 12
+                                                      : isSmallScreen
+                                                      ? 9
                                                       : 11),
                                             fontWeight: isHovered
                                                 ? FontWeight.w700
@@ -511,27 +563,45 @@ class _StudentStatsGridState extends State<StudentStatsGrid>
     final screenWidth = MediaQuery.of(context).size.width;
     final isTablet = screenWidth >= 600;
     final isDesktop = screenWidth >= 1024;
+    final isLargeDesktop = screenWidth >= 1440;
+    final isSmallScreen = screenWidth < 400;
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        final spacing = isDesktop
+        // Responsive spacing and sizing
+        final spacing = isLargeDesktop
+            ? 20.0
+            : isDesktop
+            ? 18.0
+            : isTablet
             ? 16.0
-            : isTablet
-            ? 14.0
+            : isSmallScreen
+            ? 8.0
             : 12.0;
-        final horizontalPadding = isDesktop
+        
+        final horizontalPadding = isLargeDesktop
+            ? 0.0
+            : isDesktop
             ? 0.0
             : isTablet
             ? 0.0
+            : isSmallScreen
+            ? 8.0
             : 10.0;
+            
         final availableWidth = constraints.maxWidth - (horizontalPadding * 2);
         final cardWidth = (availableWidth - spacing) / 2;
-        final cardHeight =
-            cardWidth *
-            (isDesktop
-                ? 0.75
+        
+        // Responsive card height with better aspect ratio
+        final cardHeight = cardWidth *
+            (isLargeDesktop
+                ? 0.8
+                : isDesktop
+                ? 0.78
                 : isTablet
-                ? 0.73
+                ? 0.75
+                : isSmallScreen
+                ? 0.7
                 : 0.72);
 
         return Padding(
