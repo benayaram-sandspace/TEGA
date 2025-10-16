@@ -2,12 +2,70 @@ import express from 'express';
 import { authRequired } from '../middleware/auth.js';
 import Student from '../models/Student.js';
 import Conversation from '../models/Conversation.js';
+import { GoogleGenerativeAI } from '@google/generative-ai';
+import { SYSTEM_PROMPT } from '../config/systemPrompt.js';
 
 const router = express.Router();
 
-// Ollama configuration
+// AI Configuration - Prioritize Gemini (cloud), fallback to Ollama (local)
 const OLLAMA_API_URL = process.env.OLLAMA_API_URL || 'http://localhost:11434';
-const OLLAMA_MODEL = process.env.OLLAMA_MODEL || 'phi'; // Using phi model (fast and accurate)
+const OLLAMA_MODEL = process.env.OLLAMA_MODEL || 'phi';
+
+// Function to get Gemini API key (called at runtime, not module load time)
+function getGeminiApiKey() {
+  return process.env.GEMINI_API_KEY;
+}
+
+// Function to get Gemini AI instance (called at runtime)
+function getGeminiAI() {
+  const apiKey = getGeminiApiKey();
+  return apiKey ? new GoogleGenerativeAI(apiKey) : null;
+}
+
+// Debug: Check if GEMINI_API_KEY is loaded (called at runtime)
+// Note: These debug logs are misleading at module load time, 
+// the actual runtime check happens in the status endpoint
+
+// Helper function to call Gemini API (streaming)
+async function callGemini(messages, res) {
+  try {
+    const genAI = getGeminiAI();
+    if (!genAI) {
+      throw new Error('Gemini AI not initialized');
+    }
+    const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
+    
+    // Build prompt from messages
+    let prompt = '';
+    messages.forEach(msg => {
+      if (msg.role === 'system') {
+        prompt += `${msg.content}\n\n`;
+      } else if (msg.role === 'user') {
+        prompt += `User: ${msg.content}\n`;
+      } else if (msg.role === 'assistant') {
+        prompt += `Assistant: ${msg.content}\n`;
+      }
+    });
+
+    // Stream the response
+    // Use streaming for better user experience
+    const result = await model.generateContentStream(prompt);
+    
+    let fullResponse = '';
+    for await (const chunk of result.stream) {
+      const chunkText = chunk.text();
+      fullResponse += chunkText;
+      
+      // Send chunk to client
+      res.write(`data: ${JSON.stringify({ content: chunkText })}\n\n`);
+    }
+    
+    return fullResponse;
+  } catch (error) {
+    console.error('Gemini API error:', error);
+    throw new Error(`Gemini error: ${error.message}`);
+  }
+}
 
 // Helper function to call Ollama API
 async function callOllama(messages, stream = true) {
@@ -88,17 +146,8 @@ router.post('/chat', async (req, res) => {
       }
     }
 
-    const systemPrompt = `Answer in MAX 20 words + code only.
-
-FORMAT: "X does Y.\`\`\`language\ncode\`\`\`"
-
-EXAMPLES:
-"what is sql" → "SQL queries databases.\`\`\`sql\nSELECT * FROM users;\`\`\`"
-"kadane algorithm" → "Finds max subarray sum.\`\`\`python\ndef kadane(arr):\n  max_sum = curr = arr[0]\n  for n in arr[1:]:\n    curr = max(n, curr+n)\n    max_sum = max(max_sum, curr)\n  return max_sum\`\`\`"
-"react hooks" → "State in functions.\`\`\`javascript\nconst [x, setX] = useState(0);\`\`\`"
-"nodejs server" → "Use Express.\`\`\`javascript\nrequire('express')().listen(3000);\`\`\`"
-
-CODE FIRST. Be ultra brief.`;
+    // Use the imported system prompt
+    const systemPrompt = SYSTEM_PROMPT;
 
     // Build conversation messages for Ollama
     const ollamaMessages = [
@@ -108,12 +157,12 @@ CODE FIRST. Be ultra brief.`;
       }
     ];
 
-    // Add conversation history (last 1 message only for maximum speed)
+    // Add conversation history (last 3 messages for better context)
     if (conversationHistory && Array.isArray(conversationHistory)) {
-      conversationHistory.slice(-1).forEach(msg => {
+      conversationHistory.slice(-3).forEach(msg => {
         ollamaMessages.push({
           role: msg.role,
-          content: msg.content.substring(0, 100) // HEAVILY REDUCED for speed
+          content: msg.content.substring(0, 500) // Allow more context
         });
       });
     }
@@ -129,61 +178,83 @@ CODE FIRST. Be ultra brief.`;
     res.setHeader('Cache-Control', 'no-cache');
     res.setHeader('Connection', 'keep-alive');
 
-    // Call Ollama with streaming using selected model
-    const ollamaResponse = await fetch(`${OLLAMA_API_URL}/api/chat`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: selectedModel, // Use selected model
-        messages: ollamaMessages,
-        stream: true,
-        options: {
-          temperature: 0.1,        // Low for focus
-          top_p: 0.7,              // Controlled
-          num_predict: 80,         // ULTRA SHORT - max 80 tokens ONLY
-          num_ctx: 512,            // MINIMAL context for speed
-          repeat_penalty: 1.1,     // Less strict
-          stop: ["Human:", "User:", "\n\n\n\n"],  // Fewer stop tokens
-          num_thread: 12,          // MAX CPU threads
-          num_gpu: 1,              // GPU enabled
-          num_batch: 512,          // Batch processing
-          keep_alive: "30m"        // Keep model loaded longer (less startup)
-        }
-      }),
-    });
-    const reader = ollamaResponse.body.getReader();
-    const decoder = new TextDecoder();
-
     let fullResponse = '';
     let savedConversationId = conversationId;
 
-    // Stream response to client
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
+    // Check if user specifically requested Gemini or if it's the default
+    const geminiApiKey = getGeminiApiKey();
+    const useGemini = model === 'gemini' && geminiApiKey;
+    
+    if (useGemini) {
+      // Use Gemini API
+      console.log('Using Gemini API for AI Assistant');
+      try {
+        fullResponse = await callGemini(ollamaMessages, res);
+      } catch (geminiError) {
+        console.error('Gemini failed, trying Ollama:', geminiError.message);
+        // If Gemini fails, try Ollama
+        if (!getGeminiApiKey()) {
+          throw new Error('Gemini failed and Ollama not configured');
+        }
+        // Fall through to Ollama below
+      }
+    }
+    
+    // Use Ollama with Mistral if Gemini is not available or failed
+    if (!fullResponse || fullResponse.length === 0) {
+      console.log('Using Ollama with Mistral for AI Assistant (Gemini fallback)');
+      const ollamaResponse = await fetch(`${OLLAMA_API_URL}/api/chat`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'mistral:latest', // Use Mistral specifically as fallback
+          messages: ollamaMessages,
+          stream: true,
+          options: {
+            temperature: 0.7,
+            top_p: 0.9,
+            num_predict: 1000,
+            num_ctx: 8192,
+            repeat_penalty: 1.1,
+            stop: ["Human:", "User:", "\n\n\n\n"],
+            num_thread: 8,
+            num_gpu: 1,
+            num_batch: 256,
+            keep_alive: "5m"
+          }
+        }),
+      });
+      const reader = ollamaResponse.body.getReader();
+      const decoder = new TextDecoder();
 
-      const chunk = decoder.decode(value, { stream: true });
-      const lines = chunk.split('\n').filter(line => line.trim());
+      // Stream response to client
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
 
-      for (const line of lines) {
-        try {
-          const parsed = JSON.parse(line);
-          
-          if (parsed.message && parsed.message.content) {
-            const content = parsed.message.content;
-            fullResponse += content;
+        const chunk = decoder.decode(value, { stream: true });
+        const lines = chunk.split('\n').filter(line => line.trim());
+
+        for (const line of lines) {
+          try {
+            const parsed = JSON.parse(line);
             
-            // Send chunk to client
-            res.write(`data: ${JSON.stringify({ content })}\n\n`);
-          }
+            if (parsed.message && parsed.message.content) {
+              const content = parsed.message.content;
+              fullResponse += content;
+              
+              // Send chunk to client
+              res.write(`data: ${JSON.stringify({ content })}\n\n`);
+            }
 
-          // Check if done
-          if (parsed.done === true) {
-            break;
+            // Check if done
+            if (parsed.done === true) {
+              break;
+            }
+          } catch (e) {
+            // Skip malformed JSON lines
+            console.error('JSON parse error:', e);
           }
-        } catch (e) {
-          // Skip malformed JSON lines
-          console.error('JSON parse error:', e);
         }
       }
     }
@@ -236,9 +307,11 @@ CODE FIRST. Be ultra brief.`;
     console.error('AI Assistant error:', error);
     
     try {
-      res.write(`data: ${JSON.stringify({ 
-        content: `\n\n❌ Error: ${error.message}\n\nPlease make sure:\n1. Ollama is installed and running\n2. Run: ollama pull ${OLLAMA_MODEL}\n3. Check server logs for details` 
-      })}\n\n`);
+      const errorMsg = getGeminiApiKey() 
+        ? `\n\n❌ Error: ${error.message}\n\nPlease check:\n1. GEMINI_API_KEY is valid in .env file\n2. You have internet connection\n3. Check server logs for details`
+        : `\n\n❌ Error: ${error.message}\n\nPlease make sure:\n1. Add GEMINI_API_KEY to .env (Recommended - Free tier available)\nOR\n2. Install Ollama and run: ollama pull ${OLLAMA_MODEL}\n3. Check server logs for details`;
+      
+      res.write(`data: ${JSON.stringify({ content: errorMsg })}\n\n`);
       res.write('data: [DONE]\n\n');
       res.end();
     } catch (writeError) {
@@ -401,46 +474,66 @@ router.delete('/conversations/:id', async (req, res) => {
   }
 });
 
-// GET /api/ai-assistant/status - Check Ollama status
+// GET /api/ai-assistant/debug - Debug environment variables
+router.get('/debug', (req, res) => {
+  res.json({
+    geminiKey: process.env.GEMINI_API_KEY ? 'FOUND' : 'NOT FOUND',
+    geminiValue: process.env.GEMINI_API_KEY ? process.env.GEMINI_API_KEY.substring(0, 20) + '...' : 'undefined',
+    allGeminiVars: Object.keys(process.env).filter(key => key.includes('GEMINI')),
+    nodeEnv: process.env.NODE_ENV,
+    workingDir: process.cwd()
+  });
+});
+
+// GET /api/ai-assistant/status - Check AI service status
 router.get('/status', async (req, res) => {
+  const geminiApiKey = getGeminiApiKey();
+  const status = {
+    gemini: {
+      available: !!geminiApiKey,
+      status: geminiApiKey ? 'configured' : 'not configured',
+      model: 'gemini-2.0-flash'
+    },
+    ollama: {
+      available: false,
+      status: 'offline',
+      url: OLLAMA_API_URL,
+      model: OLLAMA_MODEL
+    }
+  };
+
+  // Check Ollama status
   try {
-    const response = await fetch(`${OLLAMA_API_URL}/api/tags`);
+    const response = await fetch(`${OLLAMA_API_URL}/api/tags`, {
+      signal: AbortSignal.timeout(2000) // 2 second timeout
+    });
     
     if (response.ok) {
       const data = await response.json();
       const hasModel = data.models?.some(m => m.name.includes(OLLAMA_MODEL));
       
-      res.json({
-        success: true,
-        data: {
-          status: 'online',
-          ollamaUrl: OLLAMA_API_URL,
-          model: OLLAMA_MODEL,
-          modelAvailable: hasModel,
-          availableModels: data.models?.map(m => m.name) || []
-        }
-      });
-    } else {
-      res.json({
-        success: false,
-        error: 'Ollama is not running',
-        data: {
-          status: 'offline',
-          ollamaUrl: OLLAMA_API_URL
-        }
-      });
+      status.ollama.available = true;
+      status.ollama.status = 'online';
+      status.ollama.modelAvailable = hasModel;
+      status.ollama.availableModels = data.models?.map(m => m.name) || [];
     }
   } catch (error) {
-    res.json({
-      success: false,
-      error: 'Cannot connect to Ollama',
-      data: {
-        status: 'offline',
-        ollamaUrl: OLLAMA_API_URL,
-        message: 'Make sure Ollama is installed and running'
-      }
-    });
+    // Ollama not available, already set to offline
   }
+
+  // Determine primary AI service
+  status.primary = geminiApiKey ? 'gemini' : (status.ollama.available ? 'ollama' : 'none');
+  status.success = status.primary !== 'none';
+
+  res.json({
+    success: status.success,
+    data: status,
+    message: status.primary === 'gemini' 
+      ? 'Using Google Gemini AI (cloud) - FREE tier'
+      : status.primary === 'ollama'
+      ? 'Using Ollama with Mistral AI (local fallback)'
+      : 'No AI service configured. Add GEMINI_API_KEY to .env or install Ollama'
+  });
 });
 
 export default router;

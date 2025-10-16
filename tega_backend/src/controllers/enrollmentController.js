@@ -1,7 +1,7 @@
 import Enrollment from '../models/Enrollment.js';
 import RealTimeCourse from '../models/RealTimeCourse.js';
 import RealTimeProgress from '../models/RealTimeProgress.js';
-import UserCourse from '../models/UserCourse.js';
+// Enrollment functionality now in Enrollment model
 import mongoose from 'mongoose';
 
 // Enroll student in course - CONSOLIDATED TO USE ONLY REALTIMECOURSE
@@ -82,7 +82,8 @@ export const enrollInCourse = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Enrollment error:', error);
+    console.error('❌ Enrollment error:', error);
+    console.error('❌ Error stack:', error.stack);
     res.status(500).json({
       success: false,
       message: 'Failed to enroll in course',
@@ -114,13 +115,13 @@ export const checkEnrollment = async (req, res) => {
       });
     }
 
-    // Check both Enrollment and UserCourse records
+    // Check both Enrollment and Enrollment records
     const enrollment = await Enrollment.findOne({
       studentId,
       courseId
     });
 
-    const userCourse = await UserCourse.findOne({
+    const userCourse = await Enrollment.findOne({
       studentId,
       courseId,
       isActive: true,
@@ -154,19 +155,27 @@ export const checkEnrollment = async (req, res) => {
 export const getStudentEnrollments = async (req, res) => {
   try {
     const studentId = req.studentId;
+    console.log('🔍 getStudentEnrollments called with studentId:', studentId);
 
     if (!studentId) {
+      console.log('❌ No studentId found in request');
       return res.status(401).json({
         success: false,
         message: 'Student authentication required'
       });
     }
 
+    console.log('📊 Fetching enrollments for studentId:', studentId);
     const enrollments = await Enrollment.getStudentEnrollments(studentId);
-    const userCourses = await UserCourse.getActiveCourses(studentId);
+    console.log('📚 Found enrollments:', enrollments.length);
+    
+    console.log('📊 Fetching userCourses for studentId:', studentId);
+    const userCourses = await Enrollment.getActiveCourses(studentId);
+    console.log('📚 Found userCourses:', userCourses.length);
 
     // Combine both enrollment types
     const allEnrollments = [...enrollments, ...userCourses];
+    console.log('✅ Total enrollments:', allEnrollments.length);
 
     res.json({
       success: true,
@@ -174,6 +183,7 @@ export const getStudentEnrollments = async (req, res) => {
     });
 
   } catch (error) {
+    console.error('❌ getStudentEnrollments error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to get enrollments',
@@ -195,74 +205,51 @@ export const checkLectureAccess = async (req, res) => {
       });
     }
 
-    // Get course - try both models
-    let course = await Course.findById(courseId);
-    let isRealTimeCourse = false;
+    // Get course using RealTimeCourse model
+    const course = await RealTimeCourse.findById(courseId);
     
-    if (!course) {
-      course = await RealTimeCourse.findById(courseId);
-      isRealTimeCourse = true;
-    }
+    // Find lecture in course modules
+    let lecture = null;
+    let moduleIndex = -1;
+    let lectureIndex = -1;
     
-    const lecture = await Lecture.findById(lectureId);
-
-    // If lecture not found in Lecture collection, check if it's a video in course modules
-    let videoAccess = null;
-    if (!lecture && course) {
-      if (course.modules && Array.isArray(course.modules)) {
-        for (const module of course.modules) {
-          if (module.videos && Array.isArray(module.videos)) {
-            const video = module.videos.find(v => v._id?.toString() === lectureId || v.id === lectureId);
-            if (video) {
-              videoAccess = {
-                _id: video._id || video.id,
-                title: video.title,
-                videoUrl: video.videoLink || video.videoUrl,
-                isPreview: video.isPreview || false
-              };
+    if (course && course.modules && Array.isArray(course.modules)) {
+      for (let mIdx = 0; mIdx < course.modules.length; mIdx++) {
+        const module = course.modules[mIdx];
+        if (module.lectures && Array.isArray(module.lectures)) {
+          for (let lIdx = 0; lIdx < module.lectures.length; lIdx++) {
+            if (module.lectures[lIdx].id === lectureId) {
+              lecture = module.lectures[lIdx];
+              moduleIndex = mIdx;
+              lectureIndex = lIdx;
               break;
             }
           }
         }
+        if (lecture) break;
       }
     }
 
-    if (!course || (!lecture && !videoAccess)) {
+    if (!course || !lecture) {
       return res.status(404).json({
         success: false,
         message: 'Course or lecture not found'
       });
     }
 
-    // Check if it's the first lecture/video (always free)
-    let isFirstLecture = false;
-    
-    if (lecture) {
-      // Traditional lecture structure
-      const sections = await Section.find({ courseId }).sort({ order: 1 });
-      const firstSection = sections[0];
-      const firstLecture = firstSection ? await Lecture.findOne({ sectionId: firstSection._id }).sort({ order: 1 }) : null;
-      isFirstLecture = firstLecture && firstLecture._id.toString() === lectureId;
-    } else if (videoAccess) {
-      // Module-based video structure - NO module videos should be free by default
-      // Only course introduction (handled separately) should be free
-      isFirstLecture = false;
-    }
+    // Check if it's the first lecture (always free)
+    const isFirstLecture = moduleIndex === 0 && lectureIndex === 0;
     
     // Additional check: if it's marked as preview, it should be free
-    if (lecture && lecture.isPreview) {
-      isFirstLecture = true;
-    } else if (videoAccess && videoAccess.isPreview) {
-      isFirstLecture = true;
-    }
+    const isPreview = lecture.isPreview || false;
 
-    // Check both Enrollment and UserCourse records
+    // Check both Enrollment and Enrollment records
     const enrollment = await Enrollment.findOne({
       studentId,
       courseId
     });
 
-    const userCourse = await UserCourse.findOne({
+    const userCourse = await Enrollment.findOne({
       studentId,
       courseId,
       isActive: true,
@@ -272,9 +259,9 @@ export const checkLectureAccess = async (req, res) => {
     let hasAccess = false;
     let reason = '';
 
-    if (isFirstLecture) {
+    if (isFirstLecture || isPreview) {
       hasAccess = true;
-      reason = 'First lecture is free';
+      reason = isFirstLecture ? 'First lecture is free' : 'Preview lecture is free';
     } else if (course.isFree || course.price === 0) {
       hasAccess = true;
       reason = 'Course is free';
@@ -289,19 +276,25 @@ export const checkLectureAccess = async (req, res) => {
       reason = 'Enrollment required';
     }
 
-
     res.json({
       success: true,
       hasAccess,
       reason,
       isFirstLecture,
+      isPreview,
       course: {
         title: course.title,
         price: course.price,
         isFree: course.isFree
       },
       enrollment: enrollment || userCourse || null,
-      lecture: lecture || videoAccess
+      lecture: {
+        id: lecture.id,
+        title: lecture.title,
+        type: lecture.type,
+        duration: lecture.duration,
+        isPreview: isPreview
+      }
     });
 
   } catch (error) {

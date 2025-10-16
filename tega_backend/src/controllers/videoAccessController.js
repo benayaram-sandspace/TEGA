@@ -1,6 +1,6 @@
 import { generatePresignedDownloadUrl } from '../config/r2.js';
 import Enrollment from '../models/Enrollment.js';
-import UserCourse from '../models/UserCourse.js';
+// Enrollment functionality now in Enrollment model
 import RealTimeCourse from '../models/RealTimeCourse.js';
 
 /**
@@ -112,7 +112,7 @@ export const getSignedVideoUrl = async (req, res) => {
       status: 'active' 
     });
 
-    const userCourse = await UserCourse.findOne({
+    const userCourse = await Enrollment.findOne({
       studentId,
       courseId,
       isActive: true,
@@ -207,7 +207,7 @@ export const getVideoAccessStatus = async (req, res) => {
       status: 'active' 
     });
 
-    const userCourse = await UserCourse.findOne({
+    const userCourse = await Enrollment.findOne({
       studentId,
       courseId,
       isActive: true,

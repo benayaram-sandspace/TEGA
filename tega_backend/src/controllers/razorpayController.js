@@ -1,6 +1,5 @@
 import razorpay, { verifyRazorpaySignature, verifyWebhookSignature } from '../config/razorpay.js';
-import RazorpayPayment from '../models/RazorpayPayment.js';
-import UserCourse from '../models/UserCourse.js';
+import Payment from '../models/Payment.js';
 import Enrollment from '../models/Enrollment.js';
 import RealTimeCourse from '../models/RealTimeCourse.js';
 import Student from '../models/Student.js';
@@ -56,7 +55,7 @@ export const createOrder = async (req, res) => {
 
     // Check if user already has access to this course (skip for exam payments)
     if (!examId) {
-      const existingPayment = await RazorpayPayment.checkExistingPayment(studentId, courseId);
+      const existingPayment = await Payment.checkExistingPayment(studentId, courseId);
       if (existingPayment) {
         return res.status(400).json({
           success: false,
@@ -100,11 +99,27 @@ export const createOrder = async (req, res) => {
     // Determine amount: prefer institute offer if available
     let amountToCharge = course.price || 0;
     
+    console.log('💰 Course pricing details:', {
+      courseId,
+      courseName: course.courseName || course.title,
+      originalPrice: course.price,
+      isFree: course.isFree,
+      amountToCharge
+    });
+    
     // For free courses, don't create payment order
     if (course.isFree || amountToCharge === 0) {
       return res.status(400).json({
         success: false,
         message: 'This is a free course. No payment required.'
+      });
+    }
+    
+    // Validate amount
+    if (amountToCharge <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid course price. Please contact administrator.'
       });
     }
     
@@ -140,10 +155,12 @@ export const createOrder = async (req, res) => {
       }
     };
 
+    console.log('🔍 Creating Razorpay order with options:', orderOptions);
     const order = await razorpay.orders.create(orderOptions);
+    console.log('✅ Razorpay order created successfully:', order.id);
 
     // Save payment record to database
-    const payment = new RazorpayPayment({
+    const payment = new Payment({
       studentId,
       courseId,
       courseName: examId ? examTitle || 'Exam Payment' : courseName,
@@ -184,10 +201,23 @@ export const createOrder = async (req, res) => {
     });
 
   } catch (error) {
+    console.error('❌ Razorpay order creation failed:', error);
+    console.error('❌ Error details:', {
+      message: error.message,
+      code: error.code,
+      statusCode: error.statusCode,
+      response: error.response
+    });
+    
     res.status(500).json({
       success: false,
       message: 'Failed to create order',
-      error: error.message
+      error: error.message,
+      details: process.env.NODE_ENV === 'development' ? {
+        code: error.code,
+        statusCode: error.statusCode,
+        response: error.response
+      } : undefined
     });
   }
 };
@@ -215,7 +245,7 @@ export const verifyPayment = async (req, res) => {
     }
 
     // Find payment record
-    const payment = await RazorpayPayment.findByOrderId(razorpay_order_id);
+    const payment = await Payment.findByOrderId(razorpay_order_id);
     
     if (!payment) {
       return res.status(404).json({
@@ -244,7 +274,7 @@ export const verifyPayment = async (req, res) => {
     const savedPayment = await payment.save();
 
     // Create user course access
-    const userCourse = new UserCourse({
+    const userCourse = new Enrollment({
       studentId: payment.studentId,
       courseId: payment.courseId,
       courseName: payment.courseName,
@@ -252,35 +282,9 @@ export const verifyPayment = async (req, res) => {
       accessExpiresAt: payment.validUntil
     });
 
-    const savedUserCourse = await userCourse.save();
+    const savedEnrollment = await userCourse.save();
 
-    // CRITICAL: Create Enrollment record for course access
-    const existingEnrollment = await Enrollment.findOne({
-      studentId: payment.studentId,
-      courseId: payment.courseId
-    });
-
-    if (!existingEnrollment) {
-      const enrollment = new Enrollment({
-        studentId: payment.studentId,
-        courseId: payment.courseId,
-        enrolledAt: payment.paymentDate,
-        status: 'active',
-        isPaid: true,
-        paymentId: payment._id,
-        progress: 0
-      });
-
-      await enrollment.save();
-      console.log('✅ Enrollment created for student:', payment.studentId, 'course:', payment.courseId);
-    } else {
-      // Update existing enrollment to active and paid
-      existingEnrollment.status = 'active';
-      existingEnrollment.isPaid = true;
-      existingEnrollment.paymentId = payment._id;
-      await existingEnrollment.save();
-      console.log('✅ Enrollment updated for student:', payment.studentId, 'course:', payment.courseId);
-    }
+    // Enrollment record already created above, no need to duplicate
 
     // Send notifications
     await sendPaymentNotifications(payment);
@@ -344,7 +348,7 @@ const handlePaymentCaptured = async (paymentEntity) => {
 
 
     // Find payment record
-    const payment = await RazorpayPayment.findByOrderId(razorpay_order_id);
+    const payment = await Payment.findByOrderId(razorpay_order_id);
     if (!payment) {
       return;
     }
@@ -364,13 +368,13 @@ const handlePaymentCaptured = async (paymentEntity) => {
     await payment.save();
 
     // Create user course access
-    const existingUserCourse = await UserCourse.findOne({
+    const existingEnrollment = await Enrollment.findOne({
       studentId: payment.studentId,
       courseId: payment.courseId
     });
 
-    if (!existingUserCourse) {
-      const userCourse = new UserCourse({
+    if (!existingEnrollment) {
+      const userCourse = new Enrollment({
         studentId: payment.studentId,
         courseId: payment.courseId,
         courseName: payment.courseName,
@@ -381,33 +385,7 @@ const handlePaymentCaptured = async (paymentEntity) => {
       await userCourse.save();
     }
 
-    // CRITICAL: Create Enrollment record for course access
-    const existingEnrollment = await Enrollment.findOne({
-      studentId: payment.studentId,
-      courseId: payment.courseId
-    });
-
-    if (!existingEnrollment) {
-      const enrollment = new Enrollment({
-        studentId: payment.studentId,
-        courseId: payment.courseId,
-        enrolledAt: payment.paymentDate,
-        status: 'active',
-        isPaid: true,
-        paymentId: payment._id,
-        progress: 0
-      });
-
-      await enrollment.save();
-      console.log('✅ Enrollment created via webhook for student:', payment.studentId, 'course:', payment.courseId);
-    } else {
-      // Update existing enrollment to active and paid
-      existingEnrollment.status = 'active';
-      existingEnrollment.isPaid = true;
-      existingEnrollment.paymentId = payment._id;
-      await existingEnrollment.save();
-      console.log('✅ Enrollment updated via webhook for student:', payment.studentId, 'course:', payment.courseId);
-    }
+    // Enrollment record already created above, no need to duplicate
 
     // Send notifications
     await sendPaymentNotifications(payment);
@@ -424,7 +402,7 @@ const handlePaymentFailed = async (paymentEntity) => {
 
 
     // Find payment record
-    const payment = await RazorpayPayment.findByOrderId(razorpay_order_id);
+    const payment = await Payment.findByOrderId(razorpay_order_id);
     if (!payment) {
       return;
     }
@@ -449,7 +427,7 @@ export const getPaymentStatus = async (req, res) => {
     const { orderId } = req.params;
     const studentId = req.studentId;
 
-    const payment = await RazorpayPayment.findByOrderId(orderId);
+    const payment = await Payment.findByOrderId(orderId);
     if (!payment) {
       return res.status(404).json({
         success: false,
@@ -492,7 +470,7 @@ export const getPaymentHistory = async (req, res) => {
   try {
     const studentId = req.studentId;
 
-    const payments = await RazorpayPayment.find({ studentId })
+    const payments = await Payment.find({ studentId })
       .sort({ createdAt: -1 })
       .populate('courseId', 'name description price duration category');
 

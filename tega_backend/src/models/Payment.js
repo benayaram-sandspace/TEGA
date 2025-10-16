@@ -8,7 +8,7 @@ const paymentSchema = new mongoose.Schema({
   },
   courseId: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'Course',
+    ref: 'RealTimeCourse',
     required: false // Made optional for Tega Exam payments
   },
   examId: {
@@ -44,8 +44,28 @@ const paymentSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ['pending', 'completed', 'failed', 'refunded'],
+    enum: ['pending', 'completed', 'failed', 'refunded', 'cancelled'],
     default: 'pending'
+  },
+  // Razorpay specific fields
+  razorpayOrderId: {
+    type: String,
+    unique: true,
+    sparse: true
+  },
+  razorpayPaymentId: {
+    type: String,
+    unique: true,
+    sparse: true
+  },
+  razorpaySignature: {
+    type: String
+  },
+  razorpayReceipt: {
+    type: String
+  },
+  razorpayNotes: {
+    type: mongoose.Schema.Types.Mixed
   },
   transactionId: {
     type: String,
@@ -107,9 +127,31 @@ paymentSchema.statics.getUserPaidCourses = async function (studentId) {
   return payments;
 };
 
+// Static method to check for existing successful payment
+paymentSchema.statics.checkExistingPayment = async function(studentId, courseId) {
+  return await this.findOne({
+    studentId,
+    courseId,
+    status: 'completed'
+  });
+};
+
+// Static method to find payment by Razorpay order ID
+paymentSchema.statics.findByOrderId = async function(orderId) {
+  return await this.findOne({ razorpayOrderId: orderId });
+};
+
+// Static method to find payment by Razorpay payment ID
+paymentSchema.statics.findByPaymentId = async function(paymentId) {
+  return await this.findOne({ razorpayPaymentId: paymentId });
+};
+
 // Index for efficient querying
 paymentSchema.index({ studentId: 1, courseId: 1 });
 paymentSchema.index({ status: 1, paymentDate: 1 });
 paymentSchema.index({ transactionId: 1 });
+paymentSchema.index({ studentId: 1, courseId: 1, status: 1 });
+paymentSchema.index({ razorpayOrderId: 1 });
+paymentSchema.index({ razorpayPaymentId: 1 });
 
 export default mongoose.model('Payment', paymentSchema);

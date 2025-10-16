@@ -15,6 +15,12 @@ router.use(studentAuth);
 router.get('/:courseId/:lectureId/url', getSignedVideoUrl);
 
 /**
+ * GET /api/video-access/:courseId/:lectureId/signed-url
+ * Alias for the above route for frontend compatibility
+ */
+router.get('/:courseId/:lectureId/signed-url', getSignedVideoUrl);
+
+/**
  * GET /api/video-access/:courseId/:lectureId/status
  * Check if user can access video (without generating URL)
  */

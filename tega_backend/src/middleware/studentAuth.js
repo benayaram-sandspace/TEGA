@@ -49,9 +49,11 @@ const studentAuth = async (req, res, next) => {
     }
     
     if (!student) {
+      console.log(`❌ Student not found for ID: ${studentId}`);
+      console.log(`🔍 Token payload:`, decoded);
       return res.status(401).json({
         success: false,
-        message: 'Invalid token or student account not found.'
+        message: 'Account not found. Please verify your email address or register for a new account.'
       });
     }
 

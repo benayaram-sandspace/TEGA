@@ -191,6 +191,7 @@ export const getCourseContent = async (req, res) => {
     // If student is authenticated, check enrollment
     let isEnrolled = false;
     if (studentId) {
+      console.log(`🔍 Checking enrollment for studentId: ${studentId}, courseId: ${courseId}`);
       
       // Check enrollment with multiple possible statuses
       const enrollment = await Enrollment.findOne({ 
@@ -203,13 +204,24 @@ export const getCourseContent = async (req, res) => {
         ]
       });
       
+      console.log(`📊 Enrollment found:`, enrollment ? {
+        id: enrollment._id,
+        status: enrollment.status,
+        isPaid: enrollment.isPaid,
+        enrolledAt: enrollment.enrolledAt
+      } : 'No enrollment found');
+      
       isEnrolled = !!enrollment;
       if (enrollment) {
         
         // CRITICAL: Only mark as enrolled if payment is verified
         // For paid courses, isPaid must be true
+        console.log(`💰 Payment check: course.isFree=${course.isFree}, course.price=${course.price}, enrollment.isPaid=${enrollment.isPaid}`);
         if (!course.isFree && course.price > 0 && !enrollment.isPaid) {
+          console.log(`❌ Student not enrolled: Payment required for paid course`);
           isEnrolled = false;
+        } else {
+          console.log(`✅ Student enrolled: Payment verified or free course`);
         }
       }
       
@@ -232,8 +244,29 @@ export const getCourseContent = async (req, res) => {
         }
       }
       
+      // CRITICAL FIX: Auto-enroll students for free courses
+      if (!isEnrolled && course.isFree && course.price === 0) {
+        console.log(`🆓 Auto-enrolling student in free course: ${course.title}`);
+        try {
+          const autoEnrollment = new Enrollment({
+            studentId,
+            courseId,
+            isPaid: true, // Free courses are considered "paid"
+            enrolledAt: new Date(),
+            status: 'active'
+          });
+          await autoEnrollment.save();
+          isEnrolled = true;
+          console.log(`✅ Auto-enrollment successful`);
+        } catch (enrollmentError) {
+          console.log(`❌ Auto-enrollment failed:`, enrollmentError.message);
+        }
+      }
+      
       // Final enrollment decision logged above
+      console.log(`🎯 Final enrollment decision: isEnrolled=${isEnrolled}`);
     } else {
+      console.log(`❌ No studentId provided - treating as not enrolled`);
     }
 
     // Get or create student progress (only if enrolled and authenticated)
@@ -282,8 +315,54 @@ export const getCourseContent = async (req, res) => {
     const filteredCourse = course.toObject();
     
     console.log(`📹 Filtering course content. isEnrolled: ${isEnrolled}, studentId: ${studentId}`);
+    console.log(`📚 Course has ${filteredCourse.modules?.length || 0} modules`);
+    
+    // CRITICAL FIX: Ensure all modules are properly structured
+    if (!filteredCourse.modules || filteredCourse.modules.length === 0) {
+      console.warn('⚠️ Course has no modules, creating default structure');
+      filteredCourse.modules = [{
+        id: 'module-1',
+        title: 'Course Content',
+        description: 'Main course content',
+        order: 1,
+        lectures: []
+      }];
+    }
+    
+    // CRITICAL FIX: Always ensure first lecture is accessible for video playback
+    if (filteredCourse.modules?.[0]?.lectures?.[0]) {
+      const firstLecture = filteredCourse.modules[0].lectures[0];
+      const originalFirstLecture = course.modules[0].lectures[0];
+      console.log(`🎯 Ensuring first lecture "${firstLecture.title}" is always accessible`);
+      
+      // Force first lecture to have video access regardless of enrollment
+      if (originalFirstLecture.videoContent) {
+        firstLecture.videoContent = {
+          ...originalFirstLecture.videoContent,
+          r2Url: originalFirstLecture.videoContent.r2Url,
+          restricted: false
+        };
+      }
+      
+      // CRITICAL FIX: Ensure first lecture has proper ID
+      if (!firstLecture.id || firstLecture.id === 'lecture-1' || firstLecture.id === 'undefined') {
+        firstLecture.id = `module-1-lecture-0`; // Use 0-based indexing to match frontend
+        console.log(`🔄 Generated fallback ID for first lecture: ${firstLecture.id}`);
+      }
+      firstLecture.isPreview = true;
+      firstLecture.isRestricted = false;
+      firstLecture.videoUrl = originalFirstLecture.videoContent?.r2Url || originalFirstLecture.videoUrl;
+      firstLecture.r2VideoUrl = originalFirstLecture.videoContent?.r2Url;
+      firstLecture.videoLink = originalFirstLecture.videoContent?.r2Url || originalFirstLecture.videoLink;
+      
+      // Ensure lecture has proper ID
+      if (!firstLecture.id) {
+        firstLecture.id = 'lecture-1';
+      }
+    }
     
     if (!isEnrolled) {
+      console.log(`🔒 Student not enrolled - filtering content for preview access only`);
       // Remove video URLs from non-preview lectures
       filteredCourse.modules = filteredCourse.modules.map((module, moduleIndex) => ({
         ...module,
@@ -291,8 +370,11 @@ export const getCourseContent = async (req, res) => {
           // First lecture of first module is ALWAYS free for everyone (introduction)
           const isIntroductionVideo = moduleIndex === 0 && lectureIndex === 0;
           
+          console.log(`📹 Processing lecture "${lecture.title}": isPreview=${lecture.isPreview}, isIntroductionVideo=${isIntroductionVideo}`);
+          
           // If lecture is marked as preview OR it's the introduction video, keep video URL
           if (lecture.isPreview || isIntroductionVideo) {
+            console.log(`✅ Keeping video URL for "${lecture.title}" (preview/introduction)`);
             // CRITICAL FIX: Flatten video URLs for frontend compatibility
             const videoUrl = lecture.videoContent?.r2Url || lecture.videoUrl || lecture.videoLink;
             return {
@@ -306,11 +388,14 @@ export const getCourseContent = async (req, res) => {
               // Flattened URLs for video players
               r2VideoUrl: lecture.videoContent?.r2Url || null,
               videoUrl: videoUrl,
-              videoLink: videoUrl
+              videoLink: videoUrl,
+              // Ensure proper ID - use consistent pattern for frontend compatibility
+              id: lecture.id || `module-${moduleIndex + 1}-lecture-${lectureIndex}`
             };
           }
           
           // For non-preview lectures, remove video content
+          console.log(`🔒 Restricting video access for "${lecture.title}" - enrollment required`);
           return {
             ...lecture,
             videoContent: lecture.videoContent ? {
@@ -326,7 +411,9 @@ export const getCourseContent = async (req, res) => {
             r2VideoUrl: null,
             videoLink: null,
             // Mark as restricted for frontend
-            isRestricted: true
+            isRestricted: true,
+            // Ensure proper ID - use consistent pattern for frontend compatibility
+            id: lecture.id || `module-${moduleIndex + 1}-lecture-${lectureIndex}`
           };
         })
       }));
@@ -336,40 +423,177 @@ export const getCourseContent = async (req, res) => {
       filteredCourse.modules = filteredCourse.modules.map((module, moduleIndex) => ({
         ...module,
         lectures: module.lectures.map((lecture, lectureIndex) => {
+          // Get original lecture data to ensure we have all video URLs
+          const originalModule = course.modules[moduleIndex];
+          const originalLecture = originalModule?.lectures[lectureIndex];
+          
           // Flatten video URLs for frontend compatibility
-          const videoUrl = lecture.videoContent?.r2Url || lecture.videoUrl || lecture.videoLink;
+          const videoUrl = originalLecture?.videoContent?.r2Url || originalLecture?.videoUrl || originalLecture?.videoLink || 
+                          lecture.videoContent?.r2Url || lecture.videoUrl || lecture.videoLink;
           
           console.log(`📹 Lecture "${lecture.title}" video URLs:`, {
-            'videoContent.r2Url': lecture.videoContent?.r2Url,
-            'videoUrl': lecture.videoUrl,
-            'videoLink': lecture.videoLink,
+            'originalVideoContent.r2Url': originalLecture?.videoContent?.r2Url,
+            'originalVideoUrl': originalLecture?.videoUrl,
+            'originalVideoLink': originalLecture?.videoLink,
+            'currentVideoContent.r2Url': lecture.videoContent?.r2Url,
+            'currentVideoUrl': lecture.videoUrl,
+            'currentVideoLink': lecture.videoLink,
             'final': videoUrl
           });
           
           return {
             ...lecture,
-            // Keep original nested structure
-            videoContent: lecture.videoContent ? {
+            // Keep original nested structure with original data
+            videoContent: originalLecture?.videoContent ? {
+              ...originalLecture.videoContent,
+              r2Url: originalLecture.videoContent.r2Url
+            } : (lecture.videoContent ? {
               ...lecture.videoContent,
               r2Url: lecture.videoContent.r2Url
-            } : null,
+            } : null),
             // CRITICAL: Provide flattened URLs for video players
-            r2VideoUrl: lecture.videoContent?.r2Url || null,
+            r2VideoUrl: originalLecture?.videoContent?.r2Url || lecture.videoContent?.r2Url || null,
             videoUrl: videoUrl,
             videoLink: videoUrl,
-            isRestricted: false
+            isRestricted: false,
+            // Ensure proper ID - use consistent pattern for frontend compatibility
+            id: originalLecture?.id || lecture.id || `module-${moduleIndex + 1}-lecture-${lectureIndex}`
           };
         })
       }));
     }
 
+    // DEBUG: Log the final course structure
+    console.log(`📋 Final course structure:`, {
+      title: filteredCourse.title,
+      modulesCount: filteredCourse.modules?.length || 0,
+      firstModule: filteredCourse.modules?.[0] ? {
+        title: filteredCourse.modules[0].title,
+        lecturesCount: filteredCourse.modules[0].lectures?.length || 0,
+        firstLecture: filteredCourse.modules[0].lectures?.[0] ? {
+          id: filteredCourse.modules[0].lectures[0].id,
+          title: filteredCourse.modules[0].lectures[0].title,
+          hasVideoContent: !!filteredCourse.modules[0].lectures[0].videoContent,
+          hasR2Url: !!filteredCourse.modules[0].lectures[0].videoContent?.r2Url,
+          isPreview: filteredCourse.modules[0].lectures[0].isPreview,
+          isRestricted: filteredCourse.modules[0].lectures[0].isRestricted
+        } : null
+      } : null
+    });
+    
+    // CRITICAL FIX: Ensure course data consistency between admin and student views
+    console.log(`🔧 Ensuring course data consistency for student view`);
+    
+    // Log the original course data for comparison
+    console.log(`📊 Original course data:`, {
+      title: course.title,
+      modulesCount: course.modules?.length || 0,
+      firstModule: course.modules?.[0] ? {
+        title: course.modules[0].title,
+        lecturesCount: course.modules[0].lectures?.length || 0,
+        firstLecture: course.modules[0].lectures?.[0] ? {
+          id: course.modules[0].lectures[0].id,
+          title: course.modules[0].lectures[0].title,
+          hasVideoContent: !!course.modules[0].lectures[0].videoContent,
+          hasR2Url: !!course.modules[0].lectures[0].videoContent?.r2Url
+        } : null
+      } : null
+    });
+
+    // CRITICAL FIX: Ensure data consistency - use original course data if filtered data is missing
+    const finalCourseData = {
+      ...filteredCourse,
+      // Ensure we have the original course data as fallback
+      originalCourseId: course._id,
+      originalTitle: course.title,
+      progress: progress ? progress.toObject() : null
+    };
+    
+    // Validate that we have proper course structure
+    if (!finalCourseData.modules || finalCourseData.modules.length === 0) {
+      console.log(`⚠️ No modules found in filtered course, using original course data`);
+      finalCourseData.modules = course.modules || [];
+    }
+    
+    // CRITICAL FIX: Ensure ALL lectures are visible and have proper video content
+    if (finalCourseData.modules?.[0]?.lectures) {
+      const originalModule = course.modules?.[0];
+      
+      console.log(`🔧 Restoring ALL lectures from original course data`);
+      console.log(`📊 Original lectures count: ${originalModule?.lectures?.length || 0}`);
+      console.log(`📊 Filtered lectures count: ${finalCourseData.modules[0].lectures.length}`);
+      
+      // Restore all lectures from original course data
+      if (originalModule?.lectures) {
+        console.log(`🔧 Before restoration - finalCourseData.modules[0].lectures.length: ${finalCourseData.modules[0].lectures.length}`);
+        console.log(`🔧 Before restoration - originalModule.lectures.length: ${originalModule.lectures.length}`);
+        
+        finalCourseData.modules[0].lectures = originalModule.lectures.map((originalLecture, index) => {
+          const existingLecture = finalCourseData.modules[0].lectures[index];
+          
+          if (existingLecture) {
+            // Merge existing filtered data with original data
+            return {
+              ...existingLecture,
+              // Restore original video content
+              videoContent: originalLecture.videoContent || existingLecture.videoContent,
+              videoUrl: originalLecture.videoContent?.r2Url || existingLecture.videoUrl,
+              r2VideoUrl: originalLecture.videoContent?.r2Url || existingLecture.r2VideoUrl,
+              videoLink: originalLecture.videoContent?.r2Url || existingLecture.videoLink,
+              // Ensure proper IDs and titles - use consistent pattern
+              id: originalLecture.id || existingLecture.id || `module-1-lecture-${index}`,
+              title: originalLecture.title || existingLecture.title,
+              // Mark first lecture as preview
+              isPreview: index === 0 ? true : (originalLecture.isPreview || false)
+            };
+          } else {
+            // Add missing lecture from original data
+            console.log(`➕ Adding missing lecture: ${originalLecture.title}`);
+            return {
+              ...originalLecture,
+              isPreview: index === 0 ? true : (originalLecture.isPreview || false),
+              videoUrl: originalLecture.videoContent?.r2Url,
+              r2VideoUrl: originalLecture.videoContent?.r2Url,
+              videoLink: originalLecture.videoContent?.r2Url,
+              // Ensure proper ID - use consistent pattern
+              id: originalLecture.id || `module-1-lecture-${index}`
+            };
+          }
+        });
+        
+        console.log(`✅ Restored ${finalCourseData.modules[0].lectures.length} lectures`);
+        console.log(`🔧 After restoration - finalCourseData.modules[0].lectures:`, finalCourseData.modules[0].lectures.map((lecture, idx) => ({
+          index: idx,
+          id: lecture.id,
+          title: lecture.title,
+          isPreview: lecture.isPreview,
+          isRestricted: lecture.isRestricted,
+          hasVideoContent: !!lecture.videoContent,
+          hasR2Url: !!lecture.videoContent?.r2Url
+        })));
+      }
+    }
+
+    // DEBUG: Log what we're sending to frontend
+    console.log(`📤 Sending course data to frontend:`, {
+      title: finalCourseData.title,
+      modulesCount: finalCourseData.modules?.length,
+      totalLectures: finalCourseData.modules?.reduce((total, module) => total + (module.lectures?.length || 0), 0),
+      firstModuleLectures: finalCourseData.modules?.[0]?.lectures?.length,
+      allLectures: finalCourseData.modules?.flatMap(module => module.lectures?.map(lecture => ({
+        id: lecture.id,
+        title: lecture.title,
+        isPreview: lecture.isPreview,
+        isRestricted: lecture.isRestricted,
+        hasVideoContent: !!lecture.videoContent,
+        hasR2Url: !!lecture.videoContent?.r2Url
+      })) || [])
+    });
+
     const response = {
       success: true,
       isEnrolled,
-      course: {
-        ...filteredCourse,
-        progress: progress ? progress.toObject() : null
-      }
+      course: finalCourseData
     };
     
     res.json(response);
@@ -379,6 +603,82 @@ export const getCourseContent = async (req, res) => {
       success: false,
       message: 'Failed to fetch course content',
       error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+};
+
+// Update lecture duration
+export const updateLectureDuration = async (req, res) => {
+  try {
+    const { courseId, lectureId } = req.params;
+    const { duration } = req.body;
+
+    if (!duration || duration <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Valid duration is required'
+      });
+    }
+
+    // Find the course
+    const course = await RealTimeCourse.findById(courseId);
+    if (!course) {
+      return res.status(404).json({
+        success: false,
+        message: 'Course not found'
+      });
+    }
+
+    // Find and update the lecture duration
+    let lectureUpdated = false;
+    console.log(`🔍 Looking for lectureId: ${lectureId} in course: ${courseId}`);
+    
+    if (course.modules && course.modules.length > 0) {
+      for (const module of course.modules) {
+        if (module.lectures && module.lectures.length > 0) {
+          for (const lecture of module.lectures) {
+            console.log(`🔍 Checking lecture:`, {
+              id: lecture.id,
+              _id: lecture._id,
+              title: lecture.title,
+              currentDuration: lecture.duration
+            });
+            
+            if ((lecture._id && lecture._id.toString() === lectureId) || lecture.id === lectureId) {
+              console.log(`✅ Found matching lecture, updating duration from ${lecture.duration} to ${duration}`);
+              lecture.duration = duration;
+              lectureUpdated = true;
+              break;
+            }
+          }
+        }
+        if (lectureUpdated) break;
+      }
+    }
+
+    if (!lectureUpdated) {
+      return res.status(404).json({
+        success: false,
+        message: 'Lecture not found'
+      });
+    }
+
+    // Save the course
+    await course.save();
+
+    console.log(`✅ Updated lecture duration: ${lectureId} -> ${duration} seconds`);
+
+    res.json({
+      success: true,
+      message: 'Lecture duration updated successfully',
+      duration: duration
+    });
+
+  } catch (error) {
+    console.error('Update lecture duration error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to update lecture duration'
     });
   }
 };

@@ -2,6 +2,7 @@ import Exam from '../models/Exam.js';
 import Question from '../models/Question.js';
 import QuestionPaper from '../models/QuestionPaper.js';
 import ExamAttempt from '../models/ExamAttempt.js';
+import ExamPaymentAttempt from '../models/ExamPaymentAttempt.js';
 import ExamRegistration from '../models/ExamRegistration.js';
 import RealTimeCourse from '../models/RealTimeCourse.js';
 import Payment from '../models/Payment.js';
@@ -90,8 +91,8 @@ const checkCoursePayment = async (studentId, courseId) => {
     }
 
     // Check RazorpayPayment model
-    const RazorpayPayment = (await import('../models/RazorpayPayment.js')).default;
-    const razorpayPayment = await RazorpayPayment.findOne({
+    // Payment model already imported at top
+    const razorpayPayment = await Payment.findOne({
       studentId: studentIdObj,
       courseId: courseIdObj,
       status: 'completed'
@@ -102,8 +103,8 @@ const checkCoursePayment = async (studentId, courseId) => {
     }
 
     // Check UserCourse model (enrollment)
-    const UserCourse = (await import('../models/UserCourse.js')).default;
-    const userCourse = await UserCourse.findOne({
+    const Enrollment = (await import('../models/Enrollment.js')).default;
+    const userCourse = await Enrollment.findOne({
       studentId: studentIdObj,
       courseId: courseIdObj,
       isActive: true
@@ -113,17 +114,7 @@ const checkCoursePayment = async (studentId, courseId) => {
       return { hasPaid: true, source: 'usercourse' };
     }
 
-    // Check Enrollment model (alternative enrollment tracking)
-    const Enrollment = (await import('../models/Enrollment.js')).default;
-    const enrollment = await Enrollment.findOne({
-      studentId: studentIdObj,
-      courseId: courseIdObj,
-      status: 'enrolled'
-    });
-
-    if (enrollment) {
-      return { hasPaid: true, source: 'enrollment' };
-    }
+    // Enrollment model already checked above, no need to duplicate
 
     return { hasPaid: false, source: null };
   } catch (error) {
@@ -134,7 +125,7 @@ const checkCoursePayment = async (studentId, courseId) => {
 // Helper function to check exam payment attempts
 const checkExamPaymentAttempts = async (studentId, examId) => {
   try {
-    const ExamPaymentAttempt = (await import('../models/ExamPaymentAttempt.js')).default;
+    // ExamPaymentAttempt model already imported at top
     
     // Get all paid attempts for this exam
     const paidAttempts = await ExamPaymentAttempt.hasPaidAttempts(studentId, examId);
@@ -574,7 +565,7 @@ export const registerForExam = async (req, res) => {
         }
       } else {
         // Tega Exam or standalone exam - check exam-specific payment attempts
-        const ExamPaymentAttempt = (await import('../models/ExamPaymentAttempt.js')).default;
+        // ExamPaymentAttempt model already imported at top
         const paymentAttempts = await ExamPaymentAttempt.getAvailableAttempts(studentId, examId);
         
         if (paymentAttempts.length > 0) {
@@ -893,7 +884,7 @@ export const startExam = async (req, res) => {
       
       // Mark the payment attempt as used if we have one
       if (availableAttempt) {
-        const ExamPaymentAttempt = (await import('../models/ExamPaymentAttempt.js')).default;
+        // ExamPaymentAttempt model already imported at top
         await ExamPaymentAttempt.findByIdAndUpdate(availableAttempt._id, {
           isUsed: true,
           usedAt: new Date(),
@@ -1553,7 +1544,7 @@ export const createExamPaymentAttempt = async (req, res) => {
     }
     
     // Get the next attempt number
-    const ExamPaymentAttempt = (await import('../models/ExamPaymentAttempt.js')).default;
+    // ExamPaymentAttempt model already imported at top
     const nextAttemptNumber = await ExamPaymentAttempt.getNextAttemptNumber(studentId, examId);
     
     // Create the payment attempt record
@@ -1596,7 +1587,7 @@ export const getExamPaymentAttempts = async (req, res) => {
     const { studentId } = req;
     
     
-    const ExamPaymentAttempt = (await import('../models/ExamPaymentAttempt.js')).default;
+    // ExamPaymentAttempt model already imported at top
     const paymentAttempts = await ExamPaymentAttempt.find({ studentId, examId })
       .populate('examId', 'title subject')
       .populate('courseId', 'courseName')
