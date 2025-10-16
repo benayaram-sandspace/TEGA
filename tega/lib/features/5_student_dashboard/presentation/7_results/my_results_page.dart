@@ -31,8 +31,6 @@ class _MyResultsPageState extends State<MyResultsPage>
     'Under Review',
   ];
 
-  final List<String> _sortOptions = ['Date', 'Subject', 'Score'];
-
   // Stats
   int _totalExams = 0;
   int _passedExams = 0;
@@ -203,396 +201,521 @@ class _MyResultsPageState extends State<MyResultsPage>
     final isTablet = screenWidth >= 600;
     final isDesktop = screenWidth >= 1024;
 
-    return Column(
-      children: [
-        Padding(
-          padding: EdgeInsets.all(
-            isDesktop
-                ? 24.0
-                : isTablet
-                ? 20.0
-                : 16.0,
-          ),
-          child: Column(
-            children: [
-              _buildSearchAndFilters(screenWidth, isDesktop, isTablet),
-              SizedBox(height: isDesktop ? 24 : 20),
-              if (!_isLoading && _errorMessage == null)
-                _buildStatsCards(screenWidth, isDesktop, isTablet),
-            ],
-          ),
-        ),
-        Expanded(
-          child: _isLoading
-              ? _buildLoadingState()
-              : _errorMessage != null
-              ? _buildErrorState(isDesktop, isTablet)
-              : _filteredResults.isEmpty
-              ? _buildEmptyState(isDesktop, isTablet)
-              : _buildResultsList(screenWidth, isDesktop, isTablet),
-        ),
+    return Scaffold(
+      backgroundColor: const Color(0xFFF5F5F5),
+      body: _isLoading
+          ? _buildLoadingState()
+          : _errorMessage != null
+          ? _buildErrorState(isDesktop, isTablet)
+          : _filteredResults.isEmpty
+          ? _buildEmptyState(isDesktop, isTablet)
+          : _buildModernResultsPage(isDesktop, isTablet),
+    );
+  }
+
+  Widget _buildModernResultsPage(bool isDesktop, bool isTablet) {
+    return CustomScrollView(
+      slivers: [
+        // Modern Header
+        _buildModernHeader(isDesktop, isTablet),
+
+        // Stats Overview
+        _buildStatsOverview(isDesktop, isTablet),
+
+        // Search and Filters
+        _buildModernSearchAndFilters(isDesktop, isTablet),
+
+        // Results List
+        _buildModernResultsList(isDesktop, isTablet),
+
+        // Bottom padding
+        SliverToBoxAdapter(child: SizedBox(height: isDesktop ? 40 : 32)),
       ],
     );
   }
 
-  Widget _buildSearchAndFilters(
-    double screenWidth,
-    bool isDesktop,
-    bool isTablet,
-  ) {
-    return Column(
-      children: [
-        // Search Bar
-        TextField(
-          controller: _searchController,
-          onChanged: (_) => _applyFilters(),
-          style: TextStyle(fontSize: isDesktop ? 16 : 14),
-          decoration: InputDecoration(
-            hintText: 'Search exams by name or subject...',
-            hintStyle: TextStyle(
-              color: Colors.grey[400],
-              fontSize: isDesktop ? 16 : 14,
-            ),
-            prefixIcon: Icon(
-              Icons.search,
-              color: const Color(0xFF6B5FFF),
-              size: isDesktop ? 24 : 20,
-            ),
-            suffixIcon: _searchController.text.isNotEmpty
-                ? IconButton(
-                    icon: const Icon(Icons.clear_rounded, size: 20),
-                    onPressed: () {
-                      _searchController.clear();
-                      _applyFilters();
-                    },
-                    color: Colors.grey[400],
-                  )
-                : null,
-            filled: true,
-            fillColor: Colors.white,
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(isDesktop ? 14 : 12),
-              borderSide: BorderSide.none,
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(isDesktop ? 14 : 12),
-              borderSide: BorderSide(color: Colors.grey[200]!),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(isDesktop ? 14 : 12),
-              borderSide: const BorderSide(color: Color(0xFF6B5FFF), width: 2),
-            ),
-            contentPadding: EdgeInsets.symmetric(
-              horizontal: isDesktop ? 20 : 16,
-              vertical: isDesktop ? 16 : 14,
-            ),
-          ),
+  Widget _buildModernHeader(bool isDesktop, bool isTablet) {
+    return SliverToBoxAdapter(
+      child: Container(
+        margin: EdgeInsets.all(
+          isDesktop
+              ? 24
+              : isTablet
+              ? 20
+              : 16,
         ),
-        SizedBox(height: isDesktop ? 16 : 14),
-
-        // Dropdown Filters
-        Row(
-          children: [
-            // Result Filter Dropdown
-            Expanded(
-              child: _buildDropdownFilter(
-                label: 'Filter by Result',
-                value: _selectedResultFilter,
-                items: _resultFilters,
-                onChanged: (value) {
-                  setState(() {
-                    _selectedResultFilter = value!;
-                    _applyFilters();
-                  });
-                },
-                icon: Icons.filter_list_rounded,
-                isDesktop: isDesktop,
-                isTablet: isTablet,
-              ),
+        padding: EdgeInsets.all(
+          isDesktop
+              ? 32
+              : isTablet
+              ? 28
+              : 24,
+        ),
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [Color(0xFF6B5FFF), Color(0xFF9C88FF), Color(0xFFB19CD9)],
+          ),
+          borderRadius: BorderRadius.circular(isDesktop ? 24 : 20),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFF6B5FFF).withOpacity(0.3),
+              blurRadius: isDesktop ? 20 : 16,
+              offset: Offset(0, isDesktop ? 8 : 6),
             ),
-            SizedBox(width: isDesktop ? 16 : 12),
-            // Sort Dropdown
-            Expanded(
-              child: _buildDropdownFilter(
-                label: 'Sort by',
-                value: _selectedSortOption,
-                items: _sortOptions,
-                onChanged: (value) {
-                  setState(() {
-                    _selectedSortOption = value!;
-                    _applyFilters();
-                  });
-                },
-                icon: Icons.sort_rounded,
-                isDesktop: isDesktop,
-                isTablet: isTablet,
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: EdgeInsets.all(isDesktop ? 16 : 12),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(isDesktop ? 16 : 12),
+                  ),
+                  child: Icon(
+                    Icons.assessment_rounded,
+                    color: Colors.white,
+                    size: isDesktop ? 32 : 28,
+                  ),
+                ),
+                SizedBox(width: isDesktop ? 16 : 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'My Results',
+                        style: TextStyle(
+                          fontSize: isDesktop ? 28 : 24,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                      SizedBox(height: isDesktop ? 4 : 2),
+                      Text(
+                        'Track your exam performance and progress',
+                        style: TextStyle(
+                          fontSize: isDesktop ? 16 : 14,
+                          color: Colors.white.withOpacity(0.9),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: isDesktop ? 24 : 20),
+            Container(
+              padding: EdgeInsets.symmetric(
+                horizontal: isDesktop ? 20 : 16,
+                vertical: isDesktop ? 12 : 10,
+              ),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.15),
+                borderRadius: BorderRadius.circular(isDesktop ? 12 : 10),
+                border: Border.all(
+                  color: Colors.white.withOpacity(0.2),
+                  width: 1,
+                ),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.trending_up_rounded,
+                    color: Colors.white,
+                    size: isDesktop ? 20 : 18,
+                  ),
+                  SizedBox(width: isDesktop ? 12 : 8),
+                  Expanded(
+                    child: Text(
+                      'View detailed analytics and performance insights',
+                      style: TextStyle(
+                        fontSize: isDesktop ? 14 : 12,
+                        color: Colors.white,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
           ],
         ),
-      ],
+      ),
     );
   }
 
-  Widget _buildDropdownFilter({
-    required String label,
-    required String value,
-    required List<String> items,
-    required ValueChanged<String?> onChanged,
-    required IconData icon,
-    required bool isDesktop,
-    required bool isTablet,
-  }) {
-    return Container(
-      padding: EdgeInsets.symmetric(
-        horizontal: isDesktop ? 16 : 12,
-        vertical: 4,
+  Widget _buildStatsOverview(bool isDesktop, bool isTablet) {
+    return SliverToBoxAdapter(
+      child: Container(
+        margin: EdgeInsets.symmetric(
+          horizontal: isDesktop
+              ? 24
+              : isTablet
+              ? 20
+              : 16,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Performance Overview',
+              style: TextStyle(
+                fontSize: isDesktop ? 22 : 20,
+                fontWeight: FontWeight.bold,
+                color: const Color(0xFF1A1A1A),
+              ),
+            ),
+            SizedBox(height: isDesktop ? 16 : 12),
+            _buildModernStatsRow(isDesktop, isTablet),
+          ],
+        ),
       ),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(isDesktop ? 14 : 12),
-        border: Border.all(color: Colors.grey[200]!),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.03),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: DropdownButtonHideUnderline(
-        child: DropdownButton<String>(
-          value: value,
-          isExpanded: true,
-          icon: Icon(
-            Icons.keyboard_arrow_down_rounded,
-            color: const Color(0xFF6B5FFF),
-            size: isDesktop ? 24 : 20,
-          ),
-          style: TextStyle(
-            fontSize: isDesktop ? 15 : 14,
-            color: const Color(0xFF333333),
-            fontWeight: FontWeight.w500,
-          ),
-          items: items.map((String item) {
-            return DropdownMenuItem<String>(
-              value: item,
-              child: Row(
-                children: [
-                  Icon(
-                    icon,
-                    size: isDesktop ? 18 : 16,
-                    color: value == item
-                        ? const Color(0xFF6B5FFF)
-                        : Colors.grey[600],
+    );
+  }
+
+  Widget _buildModernStatsRow(bool isDesktop, bool isTablet) {
+    return TweenAnimationBuilder<double>(
+      duration: const Duration(milliseconds: 800),
+      tween: Tween(begin: 0.0, end: 1.0),
+      builder: (context, value, child) {
+        return Transform.scale(
+          scale: 0.95 + (0.05 * value),
+          child: Opacity(
+            opacity: value,
+            child: Container(
+              padding: EdgeInsets.all(isDesktop ? 24 : 20),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(isDesktop ? 20 : 16),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: isDesktop ? 16 : 12,
+                    offset: Offset(0, isDesktop ? 6 : 4),
                   ),
-                  const SizedBox(width: 8),
-                  Expanded(child: Text(item, overflow: TextOverflow.ellipsis)),
                 ],
               ),
-            );
-          }).toList(),
-          onChanged: onChanged,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildStatsCards(double screenWidth, bool isDesktop, bool isTablet) {
-    final isSmallMobile = screenWidth < 360;
-
-    return GridView.count(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      crossAxisCount: isDesktop
-          ? 4
-          : isTablet
-          ? 2
-          : isSmallMobile
-          ? 1
-          : 2,
-      crossAxisSpacing: isDesktop
-          ? 16
-          : isTablet
-          ? 12
-          : 10,
-      mainAxisSpacing: isDesktop
-          ? 16
-          : isTablet
-          ? 12
-          : 10,
-      childAspectRatio: isDesktop
-          ? 1.5
-          : isTablet
-          ? 1.4
-          : isSmallMobile
-          ? 2.2
-          : 1.3,
-      children: [
-        _buildStatCard(
-          title: 'Total Exams',
-          value: _totalExams.toString(),
-          icon: Icons.assignment_rounded,
-          color: const Color(0xFF6B5FFF),
-          gradient: const LinearGradient(
-            colors: [Color(0xFF6B5FFF), Color(0xFF8F7FFF)],
-          ),
-          isDesktop: isDesktop,
-          isTablet: isTablet,
-        ),
-        _buildStatCard(
-          title: 'Passed',
-          value: _passedExams.toString(),
-          icon: Icons.check_circle_rounded,
-          color: const Color(0xFF4CAF50),
-          gradient: const LinearGradient(
-            colors: [Color(0xFF4CAF50), Color(0xFF66BB6A)],
-          ),
-          isDesktop: isDesktop,
-          isTablet: isTablet,
-        ),
-        _buildStatCard(
-          title: 'Qualified',
-          value: _qualifiedExams.toString(),
-          icon: Icons.workspace_premium_rounded,
-          color: const Color(0xFFFFD700),
-          gradient: const LinearGradient(
-            colors: [Color(0xFFFFD700), Color(0xFFFFA500)],
-          ),
-          isDesktop: isDesktop,
-          isTablet: isTablet,
-        ),
-        _buildStatCard(
-          title: 'Under Review',
-          value: _underReviewExams.toString(),
-          icon: Icons.pending_actions_rounded,
-          color: const Color(0xFFFF9800),
-          gradient: const LinearGradient(
-            colors: [Color(0xFFFF9800), Color(0xFFFFB74D)],
-          ),
-          isDesktop: isDesktop,
-          isTablet: isTablet,
-        ),
-      ],
-    );
-  }
-
-  Widget _buildStatCard({
-    required String title,
-    required String value,
-    required IconData icon,
-    required Color color,
-    required Gradient gradient,
-    required bool isDesktop,
-    required bool isTablet,
-  }) {
-    return Container(
-      padding: EdgeInsets.all(
-        isDesktop
-            ? 12
-            : isTablet
-            ? 10
-            : 8,
-      ),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        crossAxisAlignment: CrossAxisAlignment.center,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            padding: EdgeInsets.all(isDesktop ? 10 : 8),
-            decoration: BoxDecoration(
-              gradient: gradient,
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Icon(
-              icon,
-              color: Colors.white,
-              size: isDesktop
-                  ? 24
-                  : isTablet
-                  ? 20
-                  : 18,
-            ),
-          ),
-          SizedBox(height: isDesktop ? 10 : 6),
-          Flexible(
-            child: Text(
-              value,
-              style: TextStyle(
-                fontSize: isDesktop
-                    ? 32
-                    : isTablet
-                    ? 28
-                    : 24,
-                fontWeight: FontWeight.w700,
-                color: color,
+              child: Row(
+                children: [
+                  Expanded(
+                    child: _buildModernStatItem(
+                      icon: Icons.assignment_rounded,
+                      value: _totalExams.toString(),
+                      label: 'Total Exams',
+                      color: const Color(0xFF6B5FFF),
+                      isDesktop: isDesktop,
+                    ),
+                  ),
+                  Container(
+                    width: 1,
+                    height: isDesktop ? 60 : 50,
+                    color: Colors.grey[200],
+                  ),
+                  Expanded(
+                    child: _buildModernStatItem(
+                      icon: Icons.check_circle_rounded,
+                      value: _passedExams.toString(),
+                      label: 'Passed',
+                      color: const Color(0xFF4CAF50),
+                      isDesktop: isDesktop,
+                    ),
+                  ),
+                  Container(
+                    width: 1,
+                    height: isDesktop ? 60 : 50,
+                    color: Colors.grey[200],
+                  ),
+                  Expanded(
+                    child: _buildModernStatItem(
+                      icon: Icons.workspace_premium_rounded,
+                      value: _qualifiedExams.toString(),
+                      label: 'Qualified',
+                      color: const Color(0xFFFFD700),
+                      isDesktop: isDesktop,
+                    ),
+                  ),
+                  Container(
+                    width: 1,
+                    height: isDesktop ? 60 : 50,
+                    color: Colors.grey[200],
+                  ),
+                  Expanded(
+                    child: _buildModernStatItem(
+                      icon: Icons.pending_actions_rounded,
+                      value: _underReviewExams.toString(),
+                      label: 'Under Review',
+                      color: const Color(0xFFFF9800),
+                      isDesktop: isDesktop,
+                    ),
+                  ),
+                ],
               ),
-              overflow: TextOverflow.ellipsis,
-              maxLines: 1,
             ),
           ),
-          const SizedBox(height: 4),
-          Flexible(
-            child: Text(
-              title,
-              style: TextStyle(
-                fontSize: isDesktop
-                    ? 13
-                    : isTablet
-                    ? 12
-                    : 11,
-                color: Colors.grey[600],
-              ),
-              textAlign: TextAlign.center,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildResultsList(double screenWidth, bool isDesktop, bool isTablet) {
-    return ListView.builder(
-      padding: EdgeInsets.symmetric(
-        horizontal: isDesktop
-            ? 24
-            : isTablet
-            ? 20
-            : 16,
-        vertical: isDesktop ? 12 : 8,
-      ),
-      itemCount: _filteredResults.length,
-      itemBuilder: (context, index) {
-        final result = _filteredResults[index];
-        return _buildResultCard(
-          result,
-          index,
-          screenWidth,
-          isDesktop,
-          isTablet,
         );
       },
     );
   }
 
-  Widget _buildResultCard(
+  Widget _buildModernStatItem({
+    required IconData icon,
+    required String value,
+    required String label,
+    required Color color,
+    required bool isDesktop,
+  }) {
+    return Column(
+      children: [
+        Container(
+          padding: EdgeInsets.all(isDesktop ? 12 : 10),
+          decoration: BoxDecoration(
+            color: color.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(isDesktop ? 12 : 10),
+          ),
+          child: Icon(icon, color: color, size: isDesktop ? 24 : 20),
+        ),
+        SizedBox(height: isDesktop ? 12 : 8),
+        Text(
+          value,
+          style: TextStyle(
+            fontSize: isDesktop ? 24 : 20,
+            fontWeight: FontWeight.bold,
+            color: color,
+          ),
+        ),
+        SizedBox(height: isDesktop ? 4 : 2),
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: isDesktop ? 12 : 11,
+            color: Colors.grey[600],
+            fontWeight: FontWeight.w500,
+          ),
+          textAlign: TextAlign.center,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildModernSearchAndFilters(bool isDesktop, bool isTablet) {
+    return SliverToBoxAdapter(
+      child: Container(
+        margin: EdgeInsets.all(
+          isDesktop
+              ? 24
+              : isTablet
+              ? 20
+              : 16,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Exam Results',
+                  style: TextStyle(
+                    fontSize: isDesktop ? 22 : 20,
+                    fontWeight: FontWeight.bold,
+                    color: const Color(0xFF1A1A1A),
+                  ),
+                ),
+                Container(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: isDesktop ? 12 : 8,
+                    vertical: isDesktop ? 6 : 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF6B5FFF).withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(isDesktop ? 8 : 6),
+                  ),
+                  child: Text(
+                    '${_filteredResults.length} results',
+                    style: TextStyle(
+                      fontSize: isDesktop ? 12 : 10,
+                      fontWeight: FontWeight.w600,
+                      color: const Color(0xFF6B5FFF),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: isDesktop ? 16 : 12),
+
+            // Search Bar
+            Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(isDesktop ? 12 : 10),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: isDesktop ? 8 : 6,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: TextField(
+                controller: _searchController,
+                onChanged: (_) => _applyFilters(),
+                style: TextStyle(fontSize: isDesktop ? 16 : 14),
+                decoration: InputDecoration(
+                  hintText: 'Search exams by name or subject...',
+                  hintStyle: TextStyle(
+                    color: Colors.grey[400],
+                    fontSize: isDesktop ? 16 : 14,
+                  ),
+                  prefixIcon: Icon(
+                    Icons.search,
+                    color: const Color(0xFF6B5FFF),
+                    size: isDesktop ? 24 : 20,
+                  ),
+                  suffixIcon: _searchController.text.isNotEmpty
+                      ? IconButton(
+                          icon: const Icon(Icons.clear_rounded, size: 20),
+                          onPressed: () {
+                            _searchController.clear();
+                            _applyFilters();
+                          },
+                          color: Colors.grey[400],
+                        )
+                      : null,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(isDesktop ? 12 : 10),
+                    borderSide: BorderSide.none,
+                  ),
+                  contentPadding: EdgeInsets.symmetric(
+                    horizontal: isDesktop ? 20 : 16,
+                    vertical: isDesktop ? 16 : 14,
+                  ),
+                ),
+              ),
+            ),
+            SizedBox(height: isDesktop ? 16 : 12),
+
+            // Filter Chips
+            SizedBox(
+              height: isDesktop ? 44 : 40,
+              child: ListView.builder(
+                scrollDirection: Axis.horizontal,
+                itemCount: _resultFilters.length,
+                itemBuilder: (context, index) {
+                  final filter = _resultFilters[index];
+                  final isSelected = _selectedResultFilter == filter;
+                  return Padding(
+                    padding: EdgeInsets.only(right: isDesktop ? 10 : 8),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: isSelected
+                            ? const Color(0xFF6B5FFF)
+                            : Colors.white,
+                        borderRadius: BorderRadius.circular(isDesktop ? 10 : 8),
+                        border: Border.all(
+                          color: isSelected
+                              ? const Color(0xFF6B5FFF)
+                              : Colors.grey[300]!,
+                          width: 1,
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.05),
+                            blurRadius: isDesktop ? 6 : 4,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: Material(
+                        color: Colors.transparent,
+                        child: InkWell(
+                          onTap: () {
+                            setState(() {
+                              _selectedResultFilter = filter;
+                              _applyFilters();
+                            });
+                          },
+                          borderRadius: BorderRadius.circular(
+                            isDesktop ? 10 : 8,
+                          ),
+                          child: Padding(
+                            padding: EdgeInsets.symmetric(
+                              horizontal: isDesktop ? 16 : 12,
+                              vertical: isDesktop ? 10 : 8,
+                            ),
+                            child: Text(
+                              filter,
+                              style: TextStyle(
+                                fontSize: isDesktop ? 14 : 12,
+                                color: isSelected
+                                    ? Colors.white
+                                    : Colors.grey[700],
+                                fontWeight: isSelected
+                                    ? FontWeight.w600
+                                    : FontWeight.normal,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+            SizedBox(height: isDesktop ? 20 : 16),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildModernResultsList(bool isDesktop, bool isTablet) {
+    return SliverList(
+      delegate: SliverChildBuilderDelegate((context, index) {
+        final result = _filteredResults[index];
+        final delay = index * 100;
+        return TweenAnimationBuilder<double>(
+          duration: Duration(milliseconds: 600 + delay),
+          tween: Tween(begin: 0.0, end: 1.0),
+          builder: (context, value, child) {
+            return Transform.translate(
+              offset: Offset(0, 20 * (1 - value)),
+              child: Opacity(
+                opacity: value,
+                child: Container(
+                  margin: EdgeInsets.only(
+                    left: isDesktop
+                        ? 24
+                        : isTablet
+                        ? 20
+                        : 16,
+                    right: isDesktop
+                        ? 24
+                        : isTablet
+                        ? 20
+                        : 16,
+                    bottom: index == _filteredResults.length - 1
+                        ? 0
+                        : (isDesktop ? 16 : 12),
+                  ),
+                  child: _buildModernResultCard(result, isDesktop, isTablet),
+                ),
+              ),
+            );
+          },
+        );
+      }, childCount: _filteredResults.length),
+    );
+  }
+
+  Widget _buildModernResultCard(
     Map<String, dynamic> result,
-    int index,
-    double screenWidth,
     bool isDesktop,
     bool isTablet,
   ) {
@@ -602,434 +725,155 @@ class _MyResultsPageState extends State<MyResultsPage>
     final date = DateTime.tryParse(result['date']) ?? DateTime.now();
     final formattedDate = DateFormat('MMM dd, yyyy').format(date);
 
-    return TweenAnimationBuilder<double>(
-      tween: Tween(begin: 0.0, end: 1.0),
-      duration: Duration(milliseconds: 300 + (index * 50)),
-      curve: Curves.easeOutCubic,
-      builder: (context, value, child) {
-        return Transform.translate(
-          offset: Offset(0, 20 * (1 - value)),
-          child: Opacity(
-            opacity: value,
-            child: Container(
-              margin: EdgeInsets.only(bottom: isDesktop ? 16 : 14),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(isDesktop ? 16 : 14),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: Material(
-                color: Colors.transparent,
-                child: InkWell(
-                  onTap: () => _showResultDetails(result, isDesktop, isTablet),
-                  borderRadius: BorderRadius.circular(isDesktop ? 16 : 14),
-                  child: Padding(
-                    padding: EdgeInsets.all(
-                      isDesktop
-                          ? 20
-                          : isTablet
-                          ? 16
-                          : 14,
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Header Row
-                        Row(
-                          children: [
-                            // Status Badge
-                            Flexible(
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 12,
-                                  vertical: 6,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: statusColor.withOpacity(0.1),
-                                  borderRadius: BorderRadius.circular(8),
-                                  border: Border.all(
-                                    color: statusColor.withOpacity(0.3),
-                                    width: 1,
-                                  ),
-                                ),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Icon(
-                                      _getStatusIcon(status, percentage),
-                                      size: 16,
-                                      color: statusColor,
-                                    ),
-                                    const SizedBox(width: 6),
-                                    Flexible(
-                                      child: Text(
-                                        status,
-                                        style: TextStyle(
-                                          fontSize: isDesktop ? 13 : 12,
-                                          fontWeight: FontWeight.w600,
-                                          color: statusColor,
-                                        ),
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            // Date
-                            Flexible(
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(
-                                    Icons.calendar_today_rounded,
-                                    size: 14,
-                                    color: Colors.grey[600],
-                                  ),
-                                  const SizedBox(width: 6),
-                                  Flexible(
-                                    child: Text(
-                                      formattedDate,
-                                      style: TextStyle(
-                                        fontSize: isDesktop ? 13 : 12,
-                                        color: Colors.grey[600],
-                                      ),
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                        SizedBox(height: isDesktop ? 16 : 14),
-
-                        // Exam Title
-                        Text(
-                          result['examTitle'],
-                          style: TextStyle(
-                            fontSize: isDesktop
-                                ? 20
-                                : isTablet
-                                ? 18
-                                : 16,
-                            fontWeight: FontWeight.w700,
-                            color: const Color(0xFF333333),
-                          ),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        const SizedBox(height: 8),
-
-                        // Subject
-                        Row(
-                          children: [
-                            Icon(
-                              Icons.category_rounded,
-                              size: 16,
-                              color: const Color(0xFF6B5FFF),
-                            ),
-                            const SizedBox(width: 6),
-                            Expanded(
-                              child: Text(
-                                result['subject'],
-                                style: TextStyle(
-                                  fontSize: isDesktop ? 14 : 13,
-                                  color: Colors.grey[600],
-                                  fontWeight: FontWeight.w500,
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                          ],
-                        ),
-                        SizedBox(height: isDesktop ? 16 : 14),
-
-                        // Score Section
-                        screenWidth < 400
-                            ? Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  // Score Display
-                                  Row(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.baseline,
-                                    textBaseline: TextBaseline.alphabetic,
-                                    children: [
-                                      Flexible(
-                                        child: Text(
-                                          '${percentage.toStringAsFixed(1)}%',
-                                          style: TextStyle(
-                                            fontSize: 22,
-                                            fontWeight: FontWeight.w700,
-                                            color: statusColor,
-                                          ),
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                      ),
-                                      const SizedBox(width: 8),
-                                      Flexible(
-                                        child: Text(
-                                          '${result['score'].toStringAsFixed(0)}/${result['totalMarks'].toStringAsFixed(0)}',
-                                          style: TextStyle(
-                                            fontSize: 13,
-                                            color: Colors.grey[600],
-                                            fontWeight: FontWeight.w500,
-                                          ),
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 8),
-                                  // Progress Bar
-                                  ClipRRect(
-                                    borderRadius: BorderRadius.circular(4),
-                                    child: LinearProgressIndicator(
-                                      value: percentage / 100,
-                                      minHeight: 6,
-                                      backgroundColor: Colors.grey[200],
-                                      valueColor: AlwaysStoppedAnimation<Color>(
-                                        statusColor,
-                                      ),
-                                    ),
-                                  ),
-                                  const SizedBox(height: 12),
-                                  // Question Stats
-                                  Container(
-                                    width: double.infinity,
-                                    padding: const EdgeInsets.all(12),
-                                    decoration: BoxDecoration(
-                                      color: const Color(
-                                        0xFF6B5FFF,
-                                      ).withOpacity(0.05),
-                                      borderRadius: BorderRadius.circular(10),
-                                    ),
-                                    child: Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.center,
-                                      children: [
-                                        Icon(
-                                          Icons.quiz_rounded,
-                                          color: const Color(0xFF6B5FFF),
-                                          size: 20,
-                                        ),
-                                        const SizedBox(width: 8),
-                                        Text(
-                                          '${result['correctAnswers']}/${result['totalQuestions']}',
-                                          style: const TextStyle(
-                                            fontSize: 14,
-                                            fontWeight: FontWeight.w700,
-                                            color: Color(0xFF6B5FFF),
-                                          ),
-                                        ),
-                                        const SizedBox(width: 4),
-                                        Text(
-                                          'Correct',
-                                          style: TextStyle(
-                                            fontSize: 11,
-                                            color: Colors.grey[600],
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ],
-                              )
-                            : Row(
-                                children: [
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Row(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.baseline,
-                                          textBaseline: TextBaseline.alphabetic,
-                                          children: [
-                                            Flexible(
-                                              child: Text(
-                                                '${percentage.toStringAsFixed(1)}%',
-                                                style: TextStyle(
-                                                  fontSize: isDesktop
-                                                      ? 32
-                                                      : isTablet
-                                                      ? 28
-                                                      : 24,
-                                                  fontWeight: FontWeight.w700,
-                                                  color: statusColor,
-                                                ),
-                                                overflow: TextOverflow.ellipsis,
-                                              ),
-                                            ),
-                                            const SizedBox(width: 8),
-                                            Flexible(
-                                              child: Text(
-                                                '${result['score'].toStringAsFixed(0)}/${result['totalMarks'].toStringAsFixed(0)}',
-                                                style: TextStyle(
-                                                  fontSize: isDesktop ? 16 : 14,
-                                                  color: Colors.grey[600],
-                                                  fontWeight: FontWeight.w500,
-                                                ),
-                                                overflow: TextOverflow.ellipsis,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                        const SizedBox(height: 8),
-                                        // Progress Bar
-                                        ClipRRect(
-                                          borderRadius: BorderRadius.circular(
-                                            4,
-                                          ),
-                                          child: LinearProgressIndicator(
-                                            value: percentage / 100,
-                                            minHeight: 8,
-                                            backgroundColor: Colors.grey[200],
-                                            valueColor:
-                                                AlwaysStoppedAnimation<Color>(
-                                                  statusColor,
-                                                ),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                  SizedBox(width: isDesktop ? 20 : 16),
-                                  // Question Stats
-                                  Container(
-                                    padding: EdgeInsets.all(
-                                      isDesktop
-                                          ? 16
-                                          : isTablet
-                                          ? 14
-                                          : 12,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: const Color(
-                                        0xFF6B5FFF,
-                                      ).withOpacity(0.05),
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                    child: Column(
-                                      children: [
-                                        Icon(
-                                          Icons.quiz_rounded,
-                                          color: const Color(0xFF6B5FFF),
-                                          size: isDesktop ? 28 : 24,
-                                        ),
-                                        const SizedBox(height: 6),
-                                        Text(
-                                          '${result['correctAnswers']}/${result['totalQuestions']}',
-                                          style: TextStyle(
-                                            fontSize: isDesktop ? 16 : 14,
-                                            fontWeight: FontWeight.w700,
-                                            color: const Color(0xFF6B5FFF),
-                                          ),
-                                        ),
-                                        Text(
-                                          'Correct',
-                                          style: TextStyle(
-                                            fontSize: isDesktop ? 12 : 11,
-                                            color: Colors.grey[600],
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ],
-                              ),
-                        SizedBox(height: isDesktop ? 16 : 14),
-
-                        // Bottom Info
-                        Row(
-                          children: [
-                            Flexible(
-                              child: _buildInfoChip(
-                                icon: Icons.timer_outlined,
-                                label: result['timeTaken'],
-                                isDesktop: isDesktop,
-                                isTablet: isTablet,
-                              ),
-                            ),
-                            if (result['rank'] != null) ...[
-                              SizedBox(width: isDesktop ? 12 : 8),
-                              Flexible(
-                                child: _buildInfoChip(
-                                  icon: Icons.emoji_events_rounded,
-                                  label: 'Rank ${result['rank']}',
-                                  isDesktop: isDesktop,
-                                  isTablet: isTablet,
-                                ),
-                              ),
-                            ],
-                            const SizedBox(width: 8),
-                            Icon(
-                              Icons.arrow_forward_ios_rounded,
-                              size: isDesktop ? 16 : 14,
-                              color: const Color(0xFF6B5FFF),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildInfoChip({
-    required IconData icon,
-    required String label,
-    required bool isDesktop,
-    required bool isTablet,
-  }) {
     return Container(
-      padding: EdgeInsets.symmetric(
-        horizontal: isDesktop ? 10 : 8,
-        vertical: isDesktop ? 6 : 5,
-      ),
       decoration: BoxDecoration(
-        color: Colors.grey[100],
-        borderRadius: BorderRadius.circular(isDesktop ? 8 : 6),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: isDesktop ? 14 : 12, color: Colors.grey[600]),
-          SizedBox(width: isDesktop ? 6 : 4),
-          Flexible(
-            child: Text(
-              label,
-              style: TextStyle(
-                fontSize: isDesktop
-                    ? 12
-                    : isTablet
-                    ? 11
-                    : 10,
-                color: Colors.grey[600],
-                fontWeight: FontWeight.w500,
-              ),
-              overflow: TextOverflow.ellipsis,
-              maxLines: 1,
-            ),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(isDesktop ? 16 : 14),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: isDesktop ? 12 : 8,
+            offset: Offset(0, isDesktop ? 4 : 2),
           ),
         ],
       ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () => _showResultDetails(result, isDesktop, isTablet),
+          borderRadius: BorderRadius.circular(isDesktop ? 16 : 14),
+          child: Padding(
+            padding: EdgeInsets.all(isDesktop ? 20 : 16),
+            child: Row(
+              children: [
+                // Status Icon
+                Container(
+                  padding: EdgeInsets.all(isDesktop ? 16 : 12),
+                  decoration: BoxDecoration(
+                    color: statusColor.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(isDesktop ? 12 : 10),
+                  ),
+                  child: Icon(
+                    _getStatusIcon(status, percentage),
+                    size: isDesktop ? 28 : 24,
+                    color: statusColor,
+                  ),
+                ),
+                SizedBox(width: isDesktop ? 16 : 12),
+
+                // Content
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              result['examTitle'],
+                              style: TextStyle(
+                                fontSize: isDesktop ? 18 : 16,
+                                fontWeight: FontWeight.bold,
+                                color: const Color(0xFF1A1A1A),
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          Container(
+                            padding: EdgeInsets.symmetric(
+                              horizontal: isDesktop ? 8 : 6,
+                              vertical: isDesktop ? 4 : 2,
+                            ),
+                            decoration: BoxDecoration(
+                              color: statusColor.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(
+                                isDesktop ? 6 : 4,
+                              ),
+                            ),
+                            child: Text(
+                              status,
+                              style: TextStyle(
+                                fontSize: isDesktop ? 10 : 9,
+                                color: statusColor,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      SizedBox(height: isDesktop ? 6 : 4),
+                      Text(
+                        result['subject'],
+                        style: TextStyle(
+                          fontSize: isDesktop ? 14 : 12,
+                          color: Colors.grey[600],
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      SizedBox(height: isDesktop ? 12 : 8),
+                      Row(
+                        children: [
+                          _buildModernInfoChip(
+                            icon: Icons.percent_rounded,
+                            label: '${percentage.toStringAsFixed(1)}%',
+                            isDesktop: isDesktop,
+                          ),
+                          SizedBox(width: isDesktop ? 12 : 8),
+                          _buildModernInfoChip(
+                            icon: Icons.quiz_rounded,
+                            label:
+                                '${result['correctAnswers']}/${result['totalQuestions']}',
+                            isDesktop: isDesktop,
+                          ),
+                          const Spacer(),
+                          Text(
+                            formattedDate,
+                            style: TextStyle(
+                              fontSize: isDesktop ? 12 : 11,
+                              color: Colors.grey[600],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                SizedBox(width: isDesktop ? 12 : 8),
+                Icon(
+                  Icons.arrow_forward_ios_rounded,
+                  size: isDesktop ? 18 : 16,
+                  color: const Color(0xFF6B5FFF),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildModernInfoChip({
+    required IconData icon,
+    required String label,
+    required bool isDesktop,
+  }) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, size: isDesktop ? 14 : 12, color: Colors.grey[600]),
+        SizedBox(width: isDesktop ? 4 : 2),
+        Flexible(
+          child: Text(
+            label,
+            style: TextStyle(
+              fontSize: isDesktop ? 12 : 11,
+              color: Colors.grey[600],
+            ),
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+      ],
     );
   }
 

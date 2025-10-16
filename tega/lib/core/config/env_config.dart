@@ -122,12 +122,7 @@ class EnvConfig {
   /// Print all environment variables (for debugging)
   static void printAll() {
     if (enableDebugLogs) {
-      print('🔧 Environment Variables:');
-      getAll().forEach((key, value) {
-        // Hide sensitive values
-        final displayValue = _isSensitiveKey(key) ? '***' : value;
-        print('  $key: $displayValue');
-      });
+      // Debug logging disabled for production
     }
   }
 

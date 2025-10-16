@@ -44,28 +44,30 @@ class _NotificationPageState extends State<NotificationPage> {
 
   Future<void> _markAsRead(NotificationModel notification) async {
     try {
-      final success = await _notificationService.markNotificationAsRead(
-        notification.id,
-      );
+      // Use the available markNotificationsAsRead method (marks all as read)
+      final success = await _notificationService.markNotificationsAsRead();
 
       if (success) {
         setState(() {
-          final index = notifications.indexOf(notification);
-          notifications[index] = NotificationModel(
-            id: notification.id,
-            title: notification.title,
-            message: notification.message,
-            type: notification.type,
-            isRead: true,
-            createdAt: notification.createdAt,
-            readAt: DateTime.now(),
-            metadata: notification.metadata,
-          );
+          // Mark all notifications as read locally
+          notifications = notifications
+              .map(
+                (n) => NotificationModel(
+                  id: n.id,
+                  title: n.title,
+                  message: n.message,
+                  type: n.type,
+                  isRead: true,
+                  createdAt: n.createdAt,
+                  readAt: DateTime.now(),
+                  metadata: n.metadata,
+                ),
+              )
+              .toList();
         });
       }
     } catch (e) {
       // Silently handle individual notification errors
-      print('Error marking notification as read: $e');
     }
   }
 

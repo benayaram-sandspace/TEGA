@@ -105,10 +105,7 @@ class _StudentHomePageState extends State<StudentHomePage>
       });
 
       // Debug: Print profile data to see the actual structure (remove in production)
-      if (EnvConfig.enableDebugLogs) {
-        print('🔍 Profile data received: $prof');
-        print('🔍 Current user data: ${_currentUser?.toJson()}');
-      }
+      if (EnvConfig.enableDebugLogs) {}
       // Reinitialize pages with new data
       _initializePages();
     } catch (_) {
@@ -370,7 +367,7 @@ class _StudentHomePageState extends State<StudentHomePage>
                     _buildNavItem(
                       icon: Icons.person_rounded,
                       title: 'Profile',
-                      index: 15,
+                      index: 12,
                     ),
                   ],
                 ),

@@ -170,11 +170,9 @@ class CollegeService {
           .map((name) => CollegeInfo(id: name, name: name))
           .toList();
 
-      print('✅ Loaded ${colleges.length} colleges from local data');
       return colleges;
     } catch (e) {
       // Fallback to the original fallback data if something goes wrong
-      print('Error loading colleges data: $e');
       final fallback = fallbackColleges
           .map((name) => CollegeInfo(id: name, name: name))
           .toList();
@@ -197,7 +195,6 @@ class CollegeService {
 
       return _colleges;
     } catch (e) {
-      print('Error loading colleges: $e');
       return [];
     }
   }
@@ -229,7 +226,6 @@ class CollegeService {
       _colleges.add(college);
       return true;
     } catch (e) {
-      print('Error adding college: $e');
       return false;
     }
   }
@@ -245,7 +241,6 @@ class CollegeService {
       }
       return false;
     } catch (e) {
-      print('Error updating college: $e');
       return false;
     }
   }
@@ -255,7 +250,6 @@ class CollegeService {
       _colleges.removeWhere((college) => college.id == id);
       return true;
     } catch (e) {
-      print('Error deleting college: $e');
       return false;
     }
   }
@@ -295,7 +289,6 @@ class CollegeService {
       }
       return false;
     } catch (e) {
-      print('Error adding admin to college: $e');
       return false;
     }
   }
@@ -325,7 +318,6 @@ class CollegeService {
       }
       return false;
     } catch (e) {
-      print('Error adding student to college: $e');
       return false;
     }
   }

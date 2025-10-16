@@ -84,10 +84,6 @@ class _JobRecommendationScreenState extends State<JobRecommendationScreen>
       final jobs = await dashboardService.getJobs(headers);
 
       // Debug: Print what we got from backend
-      print('Jobs received from backend: ${jobs.length}');
-      if (jobs.isNotEmpty) {
-        print('First job data: ${jobs.first}');
-      }
 
       // Transform backend data to match UI needs
       _allJobs = jobs.map<Map<String, dynamic>>((job) {
@@ -162,9 +158,6 @@ class _JobRecommendationScreenState extends State<JobRecommendationScreen>
           0,
           (sum, job) => sum + (job['applicants'] as int),
         );
-        print('SUCCESS: Loaded ${_allJobs.length} jobs from backend');
-      } else {
-        print('INFO: No jobs found in database - showing empty state');
         _activeJobs = 0;
         _companies = 0;
         _happyCandidates = 0;
@@ -178,7 +171,6 @@ class _JobRecommendationScreenState extends State<JobRecommendationScreen>
         });
       }
     } catch (e) {
-      print('ERROR loading jobs: $e');
       if (mounted) {
         setState(() {
           _errorMessage = 'Unable to load jobs. Please try again. Error: $e';
@@ -225,9 +217,9 @@ class _JobRecommendationScreenState extends State<JobRecommendationScreen>
             ? 20.0
             : 16.0,
       ),
-          child: Column(
+      child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
+        children: [
           // Header Card
           _buildHeaderCard(isDesktop, isTablet),
           SizedBox(height: isDesktop ? 24 : 20),
@@ -287,8 +279,8 @@ class _JobRecommendationScreenState extends State<JobRecommendationScreen>
         children: [
           Expanded(
             child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
                 Text(
                   'Find Your Dream Job',
                   style: TextStyle(
@@ -318,8 +310,8 @@ class _JobRecommendationScreenState extends State<JobRecommendationScreen>
               size: isDesktop ? 60 : 50,
               color: Colors.white.withOpacity(0.3),
             ),
-          ],
-        ),
+        ],
+      ),
     );
   }
 
@@ -394,17 +386,17 @@ class _JobRecommendationScreenState extends State<JobRecommendationScreen>
             ? 18
             : 16,
       ),
-              decoration: BoxDecoration(
+      decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(isDesktop ? 16 : 14),
-                boxShadow: [
-                  BoxShadow(
+        boxShadow: [
+          BoxShadow(
             color: Colors.black.withOpacity(0.05),
-                    blurRadius: 10,
+            blurRadius: 10,
             offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
+          ),
+        ],
+      ),
       child: Row(
         children: [
           Container(
@@ -458,9 +450,9 @@ class _JobRecommendationScreenState extends State<JobRecommendationScreen>
             ),
           ),
         ],
-        ),
-      );
-    }
+      ),
+    );
+  }
 
   Widget _buildSearchAndFilters(bool isDesktop, bool isTablet) {
     return Column(
@@ -646,8 +638,8 @@ class _JobRecommendationScreenState extends State<JobRecommendationScreen>
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
               decoration: BoxDecoration(
                 color: const Color(0xFF6B5FFF).withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(20),
-                ),
+                borderRadius: BorderRadius.circular(20),
+              ),
               child: Text(
                 '${_filteredJobs.length} Jobs',
                 style: TextStyle(
@@ -690,11 +682,11 @@ class _JobRecommendationScreenState extends State<JobRecommendationScreen>
             opacity: value,
             child: Container(
               margin: EdgeInsets.only(bottom: isDesktop ? 16 : 14),
-      decoration: BoxDecoration(
-        color: Colors.white,
+              decoration: BoxDecoration(
+                color: Colors.white,
                 borderRadius: BorderRadius.circular(isDesktop ? 16 : 14),
-        boxShadow: [
-          BoxShadow(
+                boxShadow: [
+                  BoxShadow(
                     color: Colors.black.withOpacity(0.05),
                     blurRadius: 10,
                     offset: const Offset(0, 4),
@@ -720,16 +712,16 @@ class _JobRecommendationScreenState extends State<JobRecommendationScreen>
                           : isTablet
                           ? 18
                           : 16,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
                         // Header Row
-          Row(
-            children: [
-              Container(
+                        Row(
+                          children: [
+                            Container(
                               padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
+                              decoration: BoxDecoration(
                                 gradient: const LinearGradient(
                                   colors: [
                                     Color(0xFF6B5FFF),
@@ -749,7 +741,7 @@ class _JobRecommendationScreenState extends State<JobRecommendationScreen>
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-          Text(
+                                  Text(
                                     job['title'],
                                     style: TextStyle(
                                       fontSize: isDesktop
@@ -764,14 +756,14 @@ class _JobRecommendationScreenState extends State<JobRecommendationScreen>
                                     overflow: TextOverflow.ellipsis,
                                   ),
                                   const SizedBox(height: 4),
-          Text(
+                                  Text(
                                     job['company'],
-            style: TextStyle(
+                                    style: TextStyle(
                                       fontSize: isDesktop ? 14 : 13,
-              color: Colors.grey[600],
-              fontWeight: FontWeight.w500,
-            ),
-          ),
+                                      color: Colors.grey[600],
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
                                 ],
                               ),
                             ),
@@ -786,14 +778,14 @@ class _JobRecommendationScreenState extends State<JobRecommendationScreen>
                               ),
                               child: Text(
                                 job['workType'],
-            style: TextStyle(
+                                style: TextStyle(
                                   fontSize: isDesktop ? 12 : 11,
                                   fontWeight: FontWeight.w600,
                                   color: const Color(0xFF4CAF50),
                                 ),
-            ),
-          ),
-        ],
+                              ),
+                            ),
+                          ],
                         ),
                         SizedBox(height: isDesktop ? 16 : 14),
 
@@ -910,9 +902,9 @@ class _JobRecommendationScreenState extends State<JobRecommendationScreen>
                               ),
                             ),
                           ),
-                ),
-              ],
-            ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),
@@ -1155,13 +1147,13 @@ class _JobRecommendationScreenState extends State<JobRecommendationScreen>
       child: Padding(
         padding: const EdgeInsets.all(32.0),
         child: Column(
-      mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Container(
               padding: const EdgeInsets.all(24),
-          decoration: BoxDecoration(
+              decoration: BoxDecoration(
                 color: const Color(0xFF6B5FFF).withOpacity(0.1),
-            shape: BoxShape.circle,
+                shape: BoxShape.circle,
               ),
               child: Icon(
                 isFilteredEmpty

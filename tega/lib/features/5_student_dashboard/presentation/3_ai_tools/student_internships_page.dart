@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:tega/features/1_authentication/data/auth_repository.dart';
-import 'package:tega/features/5_student_dashboard/data/student_dashboard_service.dart';
 
 class InternshipsPage extends StatefulWidget {
   const InternshipsPage({super.key});
@@ -58,111 +56,14 @@ class _InternshipsPageState extends State<InternshipsPage> {
     });
 
     try {
-      final authService = AuthService();
-      final headers = authService.getAuthHeaders();
-      final dashboardService = StudentDashboardService();
+      // Note: Internship functionality is not yet implemented in the backend
+      // This is a placeholder implementation that shows the UI structure
+      // For now, show empty state with a message
+      _allInternships = [];
 
-      // Fetch internships from backend
-      final internships = await dashboardService.getInternships(headers);
-
-      // Debug: Print what we got from backend
-      print('Internships received from backend: ${internships.length}');
-      if (internships.isNotEmpty) {
-        print('First internship data: ${internships.first}');
-      }
-
-      // Transform backend data to match UI needs
-      _allInternships = internships.map<Map<String, dynamic>>((internship) {
-        // Extract category from field or tags
-        String category = 'Technology';
-        final categoryRaw = internship['category'] ?? internship['field'] ?? '';
-        if (categoryRaw.toString().toLowerCase().contains('market')) {
-          category = 'Marketing';
-        } else if (categoryRaw.toString().toLowerCase().contains('finance')) {
-          category = 'Finance';
-        } else if (categoryRaw.toString().toLowerCase().contains('design')) {
-          category = 'Design';
-        } else if (categoryRaw.toString().toLowerCase().contains('hr') ||
-            categoryRaw.toString().toLowerCase().contains('human')) {
-          category = 'Human Resources';
-        } else if (categoryRaw.toString().toLowerCase().contains('tech')) {
-          category = 'Technology';
-        }
-
-        // Format stipend
-        String stipend = internship['stipend']?.toString() ?? 'Unpaid';
-        if (!stipend.contains('₹') &&
-            stipend != 'Unpaid' &&
-            stipend != 'Not specified') {
-          stipend = '₹$stipend/month';
-        }
-
-        // Format posted date
-        String postedDate = 'Recently';
-        if (internship['createdAt'] != null) {
-          try {
-            final date = DateTime.parse(internship['createdAt']);
-            final now = DateTime.now();
-            final difference = now.difference(date);
-            if (difference.inDays == 0) {
-              postedDate = 'Today';
-            } else if (difference.inDays == 1) {
-              postedDate = '1 day ago';
-            } else if (difference.inDays < 7) {
-              postedDate = '${difference.inDays} days ago';
-            } else if (difference.inDays < 30) {
-              postedDate = '${(difference.inDays / 7).floor()} weeks ago';
-            } else {
-              postedDate = '${(difference.inDays / 30).floor()} months ago';
-            }
-          } catch (e) {
-            postedDate = 'Recently';
-          }
-        }
-
-        // Format duration
-        String duration = internship['duration']?.toString() ?? '3 months';
-        if (!duration.toLowerCase().contains('month') &&
-            !duration.toLowerCase().contains('week')) {
-          duration = '$duration months';
-        }
-
-        return {
-          'id': internship['_id'] ?? internship['id'] ?? '',
-          'title':
-              internship['title'] ??
-              internship['position'] ??
-              'Untitled Internship',
-          'company':
-              internship['company'] ?? internship['companyName'] ?? 'Company',
-          'location': internship['location'] ?? internship['city'] ?? 'Remote',
-          'category': category,
-          'stipend': stipend,
-          'duration': duration,
-          'description':
-              internship['description'] ??
-              internship['details'] ??
-              'No description available',
-          'postedDate': postedDate,
-          'applicants':
-              internship['applicants'] ?? internship['applicantCount'] ?? 0,
-          'requirements': internship['requirements'] ?? [],
-          'skills': internship['skills'] ?? [],
-        };
-      }).toList();
-
-      // Calculate stats from actual data
-      if (_allInternships.isNotEmpty) {
-        _activeInternships = _allInternships.where((i) => i['id'] != '').length;
-        _companies = _allInternships.map((i) => i['company']).toSet().length;
-        print(
-          'SUCCESS: Loaded ${_allInternships.length} internships from backend',
-        );
-      } else {
-        print('INFO: No internships found in database - showing empty state');
-        _activeInternships = 0;
-        _companies = 0;
-      }
+      // Set stats to 0 since no internships are available
+      _activeInternships = 0;
+      _companies = 0;
 
       if (mounted) {
         setState(() {
@@ -173,7 +74,6 @@ class _InternshipsPageState extends State<InternshipsPage> {
         });
       }
     } catch (e) {
-      print('ERROR loading internships: $e');
       if (mounted) {
         setState(() {
           _errorMessage =
@@ -822,7 +722,7 @@ class _InternshipsPageState extends State<InternshipsPage> {
             Text(
               isFilteredEmpty
                   ? 'No Internships Found'
-                  : 'No Internships Available',
+                  : 'Internship Feature Coming Soon',
               style: TextStyle(
                 fontSize: isDesktop ? 24 : 20,
                 fontWeight: FontWeight.w700,
@@ -834,7 +734,7 @@ class _InternshipsPageState extends State<InternshipsPage> {
             Text(
               isFilteredEmpty
                   ? 'Try adjusting your search or filter criteria to find more opportunities'
-                  : 'There are currently no internship postings available. Check back soon for new opportunities!',
+                  : 'The internship feature is currently under development. We\'re working hard to bring you exciting internship opportunities soon!',
               style: TextStyle(
                 fontSize: isDesktop ? 15 : 14,
                 color: Colors.grey[600],
@@ -945,39 +845,14 @@ class _InternshipsPageState extends State<InternshipsPage> {
   }
 
   Future<void> _applyForInternship(String internshipId) async {
-    try {
-      final authService = AuthService();
-      final headers = authService.getAuthHeaders();
-      final dashboardService = StudentDashboardService();
-
-      final result = await dashboardService.applyForInternship(
-        internshipId,
-        headers,
+    // Note: Internship application functionality is not yet implemented in the backend
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Internship application feature is coming soon!'),
+          backgroundColor: Colors.orange,
+        ),
       );
-
-      if (mounted) {
-        if (result['success'] == true) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Application submitted successfully!'),
-              backgroundColor: Colors.green,
-            ),
-          );
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(result['message'] ?? 'Failed to apply'),
-              backgroundColor: Colors.red,
-            ),
-          );
-        }
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
-        );
-      }
     }
   }
 }

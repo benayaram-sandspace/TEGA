@@ -35,7 +35,6 @@ class _AddStudentScreenState extends State<AddStudentScreen>
     await Future.delayed(const Duration(seconds: 2));
 
     // TODO: Backend implementation
-    print('Student submitted: ${student.toJson()}');
 
     setState(() => _isLoading = false);
 
@@ -62,7 +61,6 @@ class _AddStudentScreenState extends State<AddStudentScreen>
     await Future.delayed(const Duration(seconds: 3));
 
     // TODO: Backend implementation
-    print('Bulk import: ${students.length} students');
 
     setState(() => _isLoading = false);
 

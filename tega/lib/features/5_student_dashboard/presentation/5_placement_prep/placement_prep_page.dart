@@ -91,446 +91,454 @@ class _PlacementPrepPageState extends State<PlacementPrepPage> {
     final isTablet = screenWidth >= 600;
     final isDesktop = screenWidth >= 1024;
 
-    return SingleChildScrollView(
-      padding: EdgeInsets.all(
-        isDesktop
-            ? 24.0
-            : isTablet
-            ? 20.0
-            : 16.0,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Stats Cards - Compact Design
-          _buildCompactStats(isDesktop, isTablet),
-          SizedBox(
-            height: isDesktop
-                ? 24
-                : isTablet
-                ? 20
-                : 16,
-          ),
+    return Scaffold(
+      backgroundColor: const Color(0xFFF8FAFC),
+      body: CustomScrollView(
+        slivers: [
+          // Modern Header with Hero Section
+          _buildModernHeader(isDesktop, isTablet),
 
-          // Quick Actions Section Header
-          Text(
-            'Quick Actions',
-            style: TextStyle(
-              fontSize: isDesktop
-                  ? 20
-                  : isTablet
-                  ? 18
-                  : 16,
-              fontWeight: FontWeight.bold,
-              color: const Color(0xFF1A1A1A),
-            ),
-          ),
-          SizedBox(height: isDesktop ? 6 : 4),
-          Text(
-            'Choose an action to boost your placement readiness',
-            style: TextStyle(
-              fontSize: isDesktop
-                  ? 13
-                  : isTablet
-                  ? 12
-                  : 11,
-              color: Colors.grey[600],
-            ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-          SizedBox(
-            height: isDesktop
-                ? 20
-                : isTablet
-                ? 16
-                : 14,
-          ),
+          // Stats Overview Section
+          _buildStatsOverview(isDesktop, isTablet),
 
-          // Quick Actions - Large Cards
-          _buildQuickActionCards(isDesktop, isTablet),
-          SizedBox(
-            height: isDesktop
-                ? 24
-                : isTablet
-                ? 20
-                : 16,
-          ),
+          // Main Actions Section
+          _buildMainActionsSection(isDesktop, isTablet),
+
+          // Bottom Spacing
+          SliverToBoxAdapter(child: SizedBox(height: isDesktop ? 40 : 32)),
         ],
       ),
     );
   }
 
-  Widget _buildCompactStats(bool isDesktop, bool isTablet) {
+  Widget _buildModernHeader(bool isDesktop, bool isTablet) {
+    return SliverToBoxAdapter(
+      child: Container(
+        margin: EdgeInsets.all(
+          isDesktop
+              ? 24
+              : isTablet
+              ? 20
+              : 16,
+        ),
+        padding: EdgeInsets.all(
+          isDesktop
+              ? 32
+              : isTablet
+              ? 28
+              : 24,
+        ),
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [Color(0xFF6B5FFF), Color(0xFF9C88FF), Color(0xFFB19CD9)],
+          ),
+          borderRadius: BorderRadius.circular(isDesktop ? 24 : 20),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFF6B5FFF).withOpacity(0.3),
+              blurRadius: isDesktop ? 20 : 16,
+              offset: Offset(0, isDesktop ? 8 : 6),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: EdgeInsets.all(isDesktop ? 16 : 12),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(isDesktop ? 16 : 12),
+                  ),
+                  child: Icon(
+                    Icons.rocket_launch_rounded,
+                    color: Colors.white,
+                    size: isDesktop ? 32 : 28,
+                  ),
+                ),
+                SizedBox(width: isDesktop ? 16 : 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Placement Prep',
+                        style: TextStyle(
+                          fontSize: isDesktop ? 28 : 24,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                      SizedBox(height: isDesktop ? 4 : 2),
+                      Text(
+                        'Ready to land your dream job?',
+                        style: TextStyle(
+                          fontSize: isDesktop ? 16 : 14,
+                          color: Colors.white.withOpacity(0.9),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: isDesktop ? 24 : 20),
+            Container(
+              padding: EdgeInsets.symmetric(
+                horizontal: isDesktop ? 20 : 16,
+                vertical: isDesktop ? 12 : 10,
+              ),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.15),
+                borderRadius: BorderRadius.circular(isDesktop ? 12 : 10),
+                border: Border.all(
+                  color: Colors.white.withOpacity(0.2),
+                  width: 1,
+                ),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.trending_up_rounded,
+                    color: Colors.white,
+                    size: isDesktop ? 20 : 18,
+                  ),
+                  SizedBox(width: isDesktop ? 12 : 8),
+                  Text(
+                    'Track your progress and boost your skills',
+                    style: TextStyle(
+                      fontSize: isDesktop ? 14 : 12,
+                      color: Colors.white,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStatsOverview(bool isDesktop, bool isTablet) {
+    return SliverToBoxAdapter(
+      child: Container(
+        margin: EdgeInsets.symmetric(
+          horizontal: isDesktop
+              ? 24
+              : isTablet
+              ? 20
+              : 16,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Your Progress',
+              style: TextStyle(
+                fontSize: isDesktop ? 22 : 20,
+                fontWeight: FontWeight.bold,
+                color: const Color(0xFF1A1A1A),
+              ),
+            ),
+            SizedBox(height: isDesktop ? 16 : 12),
+            _buildModernStatsRow(isDesktop, isTablet),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildModernStatsRow(bool isDesktop, bool isTablet) {
     final stats = [
       {
         'value': '${_placementData['learningStreak'] ?? 0}',
         'label': 'Day Streak',
         'icon': Icons.local_fire_department_rounded,
         'color': const Color(0xFFFF6B6B),
+        'bgColor': const Color(0xFFFFF5F5),
       },
       {
         'value': '${_placementData['problemsSolved'] ?? 0}',
         'label': 'Problems Solved',
         'icon': Icons.check_circle_rounded,
         'color': const Color(0xFF4ECDC4),
+        'bgColor': const Color(0xFFF0FFFE),
       },
       {
         'value': '${_placementData['mockInterviews'] ?? 0}',
         'label': 'Mock Interviews',
         'icon': Icons.videocam_rounded,
         'color': const Color(0xFFFFBE0B),
+        'bgColor': const Color(0xFFFFFDF0),
       },
       {
         'value': '${_placementData['totalPoints'] ?? 0}',
         'label': 'Total Points',
         'icon': Icons.stars_rounded,
         'color': const Color(0xFF6B5FFF),
+        'bgColor': const Color(0xFFF8F5FF),
       },
     ];
 
-    return GridView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: isDesktop
-            ? 4
-            : isTablet
-            ? 4
-            : 2,
-        crossAxisSpacing: isDesktop
-            ? 10
-            : isTablet
-            ? 8
-            : 6,
-        mainAxisSpacing: isDesktop
-            ? 10
-            : isTablet
-            ? 8
-            : 6,
-        childAspectRatio: isDesktop
-            ? 2.0
-            : isTablet
-            ? 1.8
-            : 1.6,
-      ),
-      itemCount: stats.length,
-      itemBuilder: (context, index) {
-        final stat = stats[index];
-        return _buildCompactStatCard(
-          value: stat['value'] as String,
-          label: stat['label'] as String,
-          icon: stat['icon'] as IconData,
-          color: stat['color'] as Color,
-          isDesktop: isDesktop,
-          isTablet: isTablet,
-        );
-      },
-    );
-  }
-
-  Widget _buildCompactStatCard({
-    required String value,
-    required String label,
-    required IconData icon,
-    required Color color,
-    required bool isDesktop,
-    required bool isTablet,
-  }) {
-    return Container(
-      padding: EdgeInsets.all(
-        isDesktop
-            ? 12
-            : isTablet
-            ? 10
-            : 8,
-      ),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(
-          isDesktop
-              ? 12
-              : isTablet
-              ? 10
-              : 8,
-        ),
-        border: Border.all(
-          color: color.withOpacity(0.2),
-          width: isDesktop ? 1.2 : 1.0,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: color.withOpacity(0.06),
-            blurRadius: isDesktop ? 6 : 4,
-            offset: Offset(0, isDesktop ? 2 : 1),
-          ),
-        ],
-      ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        crossAxisAlignment: CrossAxisAlignment.center,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, color: color, size: isDesktop ? 32 : 28),
-          SizedBox(height: isDesktop ? 12 : 8),
-          FittedBox(
-            fit: BoxFit.scaleDown,
-            child: Text(
-              value,
-              style: TextStyle(
-                fontSize: isDesktop ? 28 : 24,
-                fontWeight: FontWeight.bold,
-                color: color,
+    return Row(
+      children: stats.map((stat) {
+        return Expanded(
+          child: Container(
+            margin: EdgeInsets.only(
+              right: stat == stats.last ? 0 : (isDesktop ? 12 : 8),
+            ),
+            padding: EdgeInsets.all(isDesktop ? 20 : 16),
+            decoration: BoxDecoration(
+              color: stat['bgColor'] as Color,
+              borderRadius: BorderRadius.circular(isDesktop ? 16 : 12),
+              border: Border.all(
+                color: (stat['color'] as Color).withOpacity(0.2),
+                width: 1,
               ),
             ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            label,
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: isDesktop ? 12 : 11,
-              color: Colors.grey[700],
-              fontWeight: FontWeight.w500,
+            child: Column(
+              children: [
+                Container(
+                  padding: EdgeInsets.all(isDesktop ? 12 : 10),
+                  decoration: BoxDecoration(
+                    color: stat['color'] as Color,
+                    borderRadius: BorderRadius.circular(isDesktop ? 12 : 10),
+                  ),
+                  child: Icon(
+                    stat['icon'] as IconData,
+                    color: Colors.white,
+                    size: isDesktop ? 24 : 20,
+                  ),
+                ),
+                SizedBox(height: isDesktop ? 12 : 8),
+                Text(
+                  stat['value'] as String,
+                  style: TextStyle(
+                    fontSize: isDesktop ? 24 : 20,
+                    fontWeight: FontWeight.bold,
+                    color: stat['color'] as Color,
+                  ),
+                ),
+                SizedBox(height: isDesktop ? 4 : 2),
+                Text(
+                  stat['label'] as String,
+                  style: TextStyle(
+                    fontSize: isDesktop ? 12 : 10,
+                    color: Colors.grey[600],
+                    fontWeight: FontWeight.w500,
+                  ),
+                  textAlign: TextAlign.center,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
             ),
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
           ),
-        ],
+        );
+      }).toList(),
+    );
+  }
+
+  Widget _buildMainActionsSection(bool isDesktop, bool isTablet) {
+    return SliverToBoxAdapter(
+      child: Container(
+        margin: EdgeInsets.all(
+          isDesktop
+              ? 24
+              : isTablet
+              ? 20
+              : 16,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Practice & Improve',
+              style: TextStyle(
+                fontSize: isDesktop ? 22 : 20,
+                fontWeight: FontWeight.bold,
+                color: const Color(0xFF1A1A1A),
+              ),
+            ),
+            SizedBox(height: isDesktop ? 16 : 12),
+            _buildModernActionCards(isDesktop, isTablet),
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildQuickActionCards(bool isDesktop, bool isTablet) {
+  Widget _buildModernActionCards(bool isDesktop, bool isTablet) {
     final actions = [
       {
         'title': 'Take Skill Assessment',
-        'description': 'Evaluate your technical skills',
+        'description':
+            'Evaluate your technical skills with comprehensive tests',
         'icon': Icons.assessment_rounded,
-        'gradient': const LinearGradient(
-          colors: [Color(0xFF667eea), Color(0xFF764ba2)],
-        ),
+        'color': const Color(0xFF667eea),
         'onTap': _handleTakeSkillAssessment,
+        'status': 'Coming Soon',
+        'isAvailable': false,
       },
       {
         'title': 'Company Specific Revision',
-        'description': 'Practice company-wise questions',
+        'description': 'Practice questions tailored for specific companies',
         'icon': Icons.business_center_rounded,
-        'gradient': const LinearGradient(
-          colors: [Color(0xFF11998e), Color(0xFF38ef7d)],
-        ),
+        'color': const Color(0xFF11998e),
         'onTap': _handleCompanySpecificRevision,
+        'status': 'Available',
+        'isAvailable': true,
       },
       {
         'title': 'Start Mock Interview',
-        'description': 'AI-powered interview practice',
+        'description': 'AI-powered interview practice with real-time feedback',
         'icon': Icons.videocam_rounded,
-        'gradient': const LinearGradient(
-          colors: [Color(0xFFee0979), Color(0xFFff6a00)],
-        ),
+        'color': const Color(0xFFee0979),
         'onTap': _handleStartMockInterview,
+        'status': 'Available',
+        'isAvailable': true,
       },
       {
         'title': 'Solve Coding Problems',
-        'description': 'Sharpen your coding skills',
+        'description': 'Sharpen your coding skills with algorithmic challenges',
         'icon': Icons.code_rounded,
-        'gradient': const LinearGradient(
-          colors: [Color(0xFF0575E6), Color(0xFF021B79)],
-        ),
+        'color': const Color(0xFF0575E6),
         'onTap': _handleSolveCodingProblems,
+        'status': 'Under Development',
+        'isAvailable': false,
       },
     ];
 
-    return GridView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: isDesktop
-            ? 2
-            : isTablet
-            ? 2
-            : 1,
-        crossAxisSpacing: isDesktop
-            ? 16
-            : isTablet
-            ? 14
-            : 12,
-        mainAxisSpacing: isDesktop
-            ? 16
-            : isTablet
-            ? 14
-            : 12,
-        childAspectRatio: isDesktop
-            ? 3.0
-            : isTablet
-            ? 2.5
-            : 3.2,
-      ),
-      itemCount: actions.length,
-      itemBuilder: (context, index) {
-        final action = actions[index];
-        return _buildQuickActionCard(
-          title: action['title'] as String,
-          description: action['description'] as String,
-          icon: action['icon'] as IconData,
-          gradient: action['gradient'] as Gradient,
-          onTap: action['onTap'] as VoidCallback,
-          isDesktop: isDesktop,
-          isTablet: isTablet,
+    return Column(
+      children: actions.map((action) {
+        return Container(
+          margin: EdgeInsets.only(
+            bottom: action == actions.last ? 0 : (isDesktop ? 16 : 12),
+          ),
+          child: _buildModernActionCard(
+            title: action['title'] as String,
+            description: action['description'] as String,
+            icon: action['icon'] as IconData,
+            color: action['color'] as Color,
+            onTap: action['onTap'] as VoidCallback,
+            status: action['status'] as String,
+            isAvailable: action['isAvailable'] as bool,
+            isDesktop: isDesktop,
+            isTablet: isTablet,
+          ),
         );
-      },
+      }).toList(),
     );
   }
 
-  Widget _buildQuickActionCard({
+  Widget _buildModernActionCard({
     required String title,
     required String description,
     required IconData icon,
-    required Gradient gradient,
+    required Color color,
     required VoidCallback onTap,
+    required String status,
+    required bool isAvailable,
     required bool isDesktop,
     required bool isTablet,
   }) {
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(isDesktop ? 18 : 16),
+        onTap: isAvailable ? onTap : null,
+        borderRadius: BorderRadius.circular(isDesktop ? 16 : 14),
         child: Container(
+          padding: EdgeInsets.all(isDesktop ? 20 : 16),
           decoration: BoxDecoration(
-            gradient: gradient,
-            borderRadius: BorderRadius.circular(isDesktop ? 18 : 16),
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(isDesktop ? 16 : 14),
+            border: Border.all(color: color.withOpacity(0.2), width: 1),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.12),
-                blurRadius: isDesktop ? 16 : 12,
-                offset: Offset(0, isDesktop ? 8 : 6),
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: isDesktop ? 12 : 8,
+                offset: Offset(0, isDesktop ? 4 : 2),
               ),
             ],
           ),
-          child: Stack(
+          child: Row(
             children: [
-              // Decorative circles
-              Positioned(
-                top: -25,
-                right: -25,
-                child: Container(
-                  width: isDesktop ? 80 : 60,
-                  height: isDesktop ? 80 : 60,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: Colors.white.withOpacity(0.1),
-                  ),
+              Container(
+                padding: EdgeInsets.all(isDesktop ? 16 : 12),
+                decoration: BoxDecoration(
+                  color: color.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(isDesktop ? 12 : 10),
                 ),
+                child: Icon(icon, color: color, size: isDesktop ? 28 : 24),
               ),
-              Positioned(
-                bottom: -15,
-                left: -15,
-                child: Container(
-                  width: isDesktop ? 60 : 50,
-                  height: isDesktop ? 60 : 50,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: Colors.white.withOpacity(0.05),
-                  ),
-                ),
-              ),
-              // Content
-              Padding(
-                padding: EdgeInsets.all(
-                  isDesktop
-                      ? 20
-                      : isTablet
-                      ? 16
-                      : 14,
-                ),
-                child: Row(
+              SizedBox(width: isDesktop ? 16 : 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Container(
-                      padding: EdgeInsets.all(
-                        isDesktop
-                            ? 12
-                            : isTablet
-                            ? 10
-                            : 9,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.25),
-                        borderRadius: BorderRadius.circular(
-                          isDesktop ? 14 : 12,
-                        ),
-                        border: Border.all(
-                          color: Colors.white.withOpacity(0.3),
-                          width: isDesktop ? 1.5 : 1.2,
-                        ),
-                      ),
-                      child: Icon(
-                        icon,
-                        color: Colors.white,
-                        size: isDesktop
-                            ? 28
-                            : isTablet
-                            ? 26
-                            : 24,
-                      ),
-                    ),
-                    SizedBox(
-                      width: isDesktop
-                          ? 16
-                          : isTablet
-                          ? 14
-                          : 12,
-                    ),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
                             title,
                             style: TextStyle(
-                              fontSize: isDesktop
-                                  ? 18
-                                  : isTablet
-                                  ? 17
-                                  : 15,
+                              fontSize: isDesktop ? 18 : 16,
                               fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                              height: 1.2,
+                              color: const Color(0xFF1A1A1A),
                             ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
                           ),
-                          SizedBox(height: isDesktop ? 4 : 2),
-                          Text(
-                            description,
+                        ),
+                        Container(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: isDesktop ? 8 : 6,
+                            vertical: isDesktop ? 4 : 2,
+                          ),
+                          decoration: BoxDecoration(
+                            color: isAvailable
+                                ? Colors.green.withOpacity(0.1)
+                                : Colors.orange.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(
+                              isDesktop ? 8 : 6,
+                            ),
+                          ),
+                          child: Text(
+                            status,
                             style: TextStyle(
-                              fontSize: isDesktop
-                                  ? 14
-                                  : isTablet
-                                  ? 13
-                                  : 11,
-                              color: Colors.white.withOpacity(0.9),
-                              height: 1.2,
+                              fontSize: isDesktop ? 10 : 9,
+                              fontWeight: FontWeight.w600,
+                              color: isAvailable
+                                  ? Colors.green[700]
+                                  : Colors.orange[700],
                             ),
-                            maxLines: isDesktop ? 2 : 1,
-                            overflow: TextOverflow.ellipsis,
                           ),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
-                    Icon(
-                      Icons.arrow_forward_ios_rounded,
-                      color: Colors.white.withOpacity(0.8),
-                      size: isDesktop
-                          ? 18
-                          : isTablet
-                          ? 16
-                          : 14,
+                    SizedBox(height: isDesktop ? 6 : 4),
+                    Text(
+                      description,
+                      style: TextStyle(
+                        fontSize: isDesktop ? 14 : 12,
+                        color: Colors.grey[600],
+                        height: 1.4,
+                      ),
                     ),
                   ],
                 ),
+              ),
+              SizedBox(width: isDesktop ? 12 : 8),
+              Icon(
+                isAvailable
+                    ? Icons.arrow_forward_ios_rounded
+                    : Icons.lock_rounded,
+                color: isAvailable ? color : Colors.grey[400],
+                size: isDesktop ? 18 : 16,
               ),
             ],
           ),

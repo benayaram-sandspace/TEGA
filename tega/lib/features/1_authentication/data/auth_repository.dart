@@ -529,16 +529,10 @@ class AuthService {
     }
 
     try {
-      print(
-        '🔍 [AUTH] Fetching user profile from: ${ApiEndpoints.studentProfile}',
-      );
       final response = await _makeGetRequest(
         ApiEndpoints.studentProfile,
         headers: getAuthHeaders(),
       );
-
-      print('🔍 [AUTH] Profile fetch response status: ${response.statusCode}');
-      print('🔍 [AUTH] Profile fetch response body: ${response.body}');
 
       _handleResponseErrors(response, 'Fetch profile');
       final profileData = json.decode(response.body);
@@ -565,19 +559,6 @@ class AuthService {
 
   /// Logout user and clear session
   Future<void> logout() async {
-    try {
-      if (_authToken != null) {
-        await _makePostRequest(
-          ApiEndpoints.logout,
-          {},
-          headers: getAuthHeaders(),
-        );
-      }
-    } catch (e) {
-      debugPrint('⚠️ Logout API call failed: $e');
-      // Continue with local logout even if API call fails
-    }
-
     _tokenRefreshTimer?.cancel();
     await _clearSession();
     debugPrint('✅ User logged out successfully');
