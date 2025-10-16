@@ -6,6 +6,7 @@ import {
   getEnrollmentStatus,
   enrollInCourse,
   updateLectureProgress,
+  updateLectureDuration,
   submitQuiz,
   getCourseAnalytics,
   updateHeartbeat,
@@ -27,13 +28,14 @@ router.post('/', verifyAdmin, createRealTimeCourse);
 
 // Public routes
 router.get('/', getRealTimeCourses);
-router.get('/:courseId', verifyStudent, getRealTimeCourse);
 
-// Student routes (require authentication)
+// Student routes (require authentication) - specific routes must come before generic ones
 router.get('/:courseId/content', verifyStudent, getCourseContent);
+router.get('/:courseId', verifyStudent, getRealTimeCourse);
 router.get('/:courseId/enrollment-status', verifyStudent, getEnrollmentStatus);
 router.post('/:courseId/enroll', verifyStudent, enrollInCourse);
 router.put('/:courseId/lectures/:lectureId/progress', verifyStudent, updateLectureProgress);
+router.put('/:courseId/lectures/:lectureId/duration', verifyStudent, updateLectureDuration);
 router.post('/:courseId/lectures/:lectureId/quiz', verifyStudent, submitQuiz);
 router.put('/:courseId/heartbeat', verifyStudent, updateHeartbeat);
 router.get('/:courseId/progress', verifyStudent, getStudentProgress);

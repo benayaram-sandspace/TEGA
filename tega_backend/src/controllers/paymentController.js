@@ -1,5 +1,6 @@
 import mongoose from 'mongoose';
 import Payment from '../models/Payment.js';
+import Enrollment from '../models/Enrollment.js';
 import RealTimeCourse from '../models/RealTimeCourse.js';
 import Student from '../models/Student.js';
 import Notification from '../models/Notification.js';
@@ -705,9 +706,9 @@ export const getPaymentHistory = async (req, res) => {
           .populate('studentId', 'username email firstName lastName');
         
         
-        // Get payments from new RazorpayPayment model
-        const RazorpayPayment = (await import('../models/RazorpayPayment.js')).default;
-        razorpayPayments = await RazorpayPayment.find({ studentId: userId })
+        // Get payments from new Payment model
+        // Payment model already imported at top
+        razorpayPayments = await Payment.find({ studentId: userId })
           .sort({ createdAt: -1 })
           .populate('studentId', 'username email firstName lastName');
         
@@ -743,7 +744,7 @@ export const getPaymentHistory = async (req, res) => {
       source: 'old_payment'
     }));
 
-    const normalizedRazorpayPayments = razorpayPayments.map(payment => ({
+    const normalizedPayments = razorpayPayments.map(payment => ({
       _id: payment._id,
       studentId: payment.studentId,
       courseId: payment.courseId,
@@ -765,7 +766,7 @@ export const getPaymentHistory = async (req, res) => {
     }));
 
     // Combine and sort by creation date
-    const allPayments = [...normalizedOldPayments, ...normalizedRazorpayPayments]
+    const allPayments = [...normalizedOldPayments, ...normalizedPayments]
       .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
 
@@ -807,15 +808,13 @@ export const checkCourseAccess = async (req, res) => {
     try {
       
       // Check all payments for this user
+      // Check all Payments for this user
+      // Payment model already imported at top
       const allUserPayments = await Payment.find({ studentId: userIdObj });
       
-      // Check all RazorpayPayments for this user
-      const RazorpayPayment = (await import('../models/RazorpayPayment.js')).default;
-      const allUserRazorpayPayments = await RazorpayPayment.find({ studentId: userIdObj });
-      
-      // Check all UserCourses for this user
-      const UserCourse = (await import('../models/UserCourse.js')).default;
-      const allUserCourses = await UserCourse.find({ studentId: userIdObj });
+      // Check all Enrollments for this user
+      // Enrollment model already imported at top
+      const allEnrollments = await Enrollment.find({ studentId: userIdObj });
       
     } catch (error) {
     }
@@ -831,11 +830,11 @@ export const checkCourseAccess = async (req, res) => {
     } catch (error) {
     }
 
-    // Check new Razorpay/UserCourse system
+    // Check new Razorpay/Enrollment system
     if (!hasAccess) {
       try {
-        const UserCourse = (await import('../models/UserCourse.js')).default;
-        const hasPaidNew = await UserCourse.hasAccess(userIdObj, courseIdObj);
+        // Enrollment model already imported at top
+        const hasPaidNew = await Enrollment.hasAccess(userIdObj, courseIdObj);
         if (hasPaidNew) {
           hasAccess = true;
           accessSource = 'razorpay_payment';
@@ -845,11 +844,11 @@ export const checkCourseAccess = async (req, res) => {
       }
     }
 
-    // Check RazorpayPayment model directly as fallback
+    // Check Payment model directly as fallback
     if (!hasAccess) {
       try {
-        const RazorpayPayment = (await import('../models/RazorpayPayment.js')).default;
-        const razorpayPayment = await RazorpayPayment.findOne({
+        // Payment model already imported at top
+        const razorpayPayment = await Payment.findOne({
           studentId: userIdObj,
           courseId: courseIdObj,
           status: 'completed'
@@ -880,7 +879,7 @@ export const checkCourseAccess = async (req, res) => {
   }
 };
 
-// Get user's paid courses (unified from both Payment and RazorpayPayment models)
+// Get user's paid courses (unified from both Payment and Payment models)
 export const getUserPaidCourses = async (req, res) => {
   try {
     const userId = req.studentId; // Changed from req.user.id
@@ -890,7 +889,7 @@ export const getUserPaidCourses = async (req, res) => {
     let oldPaidCourses = [];
     let razorpayPaidCourses = [];
     // Note: Do NOT shadow the imported in-memory map `userCourseAccess` from authController
-    // Use a differently named variable for the array of course IDs fetched from UserCourse model
+    // Use a differently named variable for the array of course IDs fetched from Enrollment model
     let userCourseAccessIds = [];
     
     if (isMongoConnected()) {
@@ -898,17 +897,17 @@ export const getUserPaidCourses = async (req, res) => {
         // Get paid courses from old Payment model
         oldPaidCourses = await Payment.getUserPaidCourses(userId);
         
-        // Get paid courses from new RazorpayPayment model
-        const RazorpayPayment = (await import('../models/RazorpayPayment.js')).default;
-        const razorpayPayments = await RazorpayPayment.find({ 
+        // Get paid courses from new Payment model
+        // Payment model already imported at top
+        const razorpayPayments = await Payment.find({ 
           studentId: userId, 
           status: 'completed' 
         });
         razorpayPaidCourses = razorpayPayments.map(payment => payment.courseId);
         
-        // Get paid courses from UserCourse model
-        const UserCourse = (await import('../models/UserCourse.js')).default;
-        const userCourses = await UserCourse.getActiveCourses(userId);
+        // Get paid courses from Enrollment model
+        // Enrollment model already imported at top
+        const userCourses = await Enrollment.getActiveCourses(userId);
         // Map to raw ids, handling populated documents
         userCourseAccessIds = userCourses
           .map(userCourse => (userCourse.courseId && userCourse.courseId._id) ? userCourse.courseId._id : userCourse.courseId)

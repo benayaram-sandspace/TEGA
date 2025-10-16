@@ -10,8 +10,7 @@ import { adminAuth } from '../middleware/adminAuth.js';
 import Notification from '../models/Notification.js';
 import RealTimeCourse from '../models/RealTimeCourse.js'; // Use RealTimeCourse only
 import UPISettings from '../models/UPISettings.js';
-import Payment from '../models/Payment.js'; // Added Payment model
-import RazorpayPayment from '../models/RazorpayPayment.js'; // Added RazorpayPayment model
+import Payment from '../models/Payment.js'; // Consolidated Payment model
 import { getPrincipalWelcomeTemplate } from '../utils/emailTemplates.js';
 
 // Ensure environment variables are loaded
@@ -1216,7 +1215,7 @@ router.get('/payment-notifications', adminAuth, async (req, res) => {
   }
 });
 
-// Get all payments for admin (unified from both Payment and RazorpayPayment models)
+// Get all payments for admin (unified from both Payment and Payment models)
 router.get('/payments', adminAuth, async (req, res) => {
   try {
 
@@ -1226,7 +1225,7 @@ router.get('/payments', adminAuth, async (req, res) => {
         .populate('studentId', 'username email firstName lastName')
         .populate('courseId', 'courseName price')
         .sort({ createdAt: -1 }),
-      RazorpayPayment.find()
+      Payment.find()
         .populate('studentId', 'username email firstName lastName')
         .populate('courseId', 'courseName price')
         .sort({ createdAt: -1 })
@@ -1263,7 +1262,7 @@ router.get('/payments', adminAuth, async (req, res) => {
       source: 'old_payment' // Explicitly set source for old payments
     }));
 
-    const normalizedRazorpayPayments = razorpayPayments.map(payment => ({
+    const normalizedPayments = razorpayPayments.map(payment => ({
       _id: payment._id,
       studentId: payment.studentId,
       courseId: payment.courseId,
@@ -1285,7 +1284,7 @@ router.get('/payments', adminAuth, async (req, res) => {
     }));
 
     // Combine and sort by creation date
-    const allPayments = [...normalizedOldPayments, ...normalizedRazorpayPayments]
+    const allPayments = [...normalizedOldPayments, ...normalizedPayments]
       .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
 

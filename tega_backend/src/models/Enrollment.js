@@ -8,7 +8,7 @@ const enrollmentSchema = new mongoose.Schema({
   },
   courseId: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'Course',
+    ref: 'RealTimeCourse',
     required: true
   },
   enrolledAt: {
@@ -42,6 +42,18 @@ const enrollmentSchema = new mongoose.Schema({
   isPaid: {
     type: Boolean,
     default: false
+  },
+  // Additional fields from UserCourse
+  courseName: {
+    type: String,
+    required: true
+  },
+  accessExpiresAt: {
+    type: Date
+  },
+  isActive: {
+    type: Boolean,
+    default: true
   }
 }, {
   timestamps: true
@@ -83,13 +95,42 @@ enrollmentSchema.methods.updateProgress = function(completedLectures, totalLectu
 // Static method to get student's enrollments
 enrollmentSchema.statics.getStudentEnrollments = function(studentId) {
   return this.find({ studentId, status: 'active' })
-    .populate('courseId', 'title description thumbnail price category')
+    .populate('courseId', 'title description thumbnail price category level')
     .sort({ lastAccessedAt: -1 });
 };
 
 // Static method to get course enrollment count
 enrollmentSchema.statics.getCourseEnrollmentCount = function(courseId) {
   return this.countDocuments({ courseId, status: 'active' });
+};
+
+// Static method to check if user has access to course (from UserCourse)
+enrollmentSchema.statics.hasAccess = async function(studentId, courseId) {
+  const enrollment = await this.findOne({
+    studentId,
+    courseId,
+    status: 'active',
+    isActive: true,
+    $or: [
+      { accessExpiresAt: { $exists: false } },
+      { accessExpiresAt: { $gt: new Date() } }
+    ]
+  });
+  
+  return !!enrollment;
+};
+
+// Static method to get user's active courses (from UserCourse)
+enrollmentSchema.statics.getActiveCourses = async function(studentId) {
+  return await this.find({
+    studentId,
+    status: 'active',
+    isActive: true,
+    $or: [
+      { accessExpiresAt: { $exists: false } },
+      { accessExpiresAt: { $gt: new Date() } }
+    ]
+  }).populate('courseId', 'title description price estimatedDuration category');
 };
 
 export default mongoose.model('Enrollment', enrollmentSchema);

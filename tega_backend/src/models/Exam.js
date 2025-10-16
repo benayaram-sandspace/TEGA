@@ -13,7 +13,7 @@ const examSchema = new mongoose.Schema({
   },
   courseId: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'Course',
+    ref: 'RealTimeCourse',
     required: true
   },
   description: {
