@@ -33,7 +33,7 @@ class _TransactionHistoryPageState extends State<TransactionHistoryPage> {
   Future<String> _getStudentName() async {
     try {
       final authService = AuthService();
-      final headers = await authService.getAuthHeaders();
+      final headers = authService.getAuthHeaders();
 
       final response = await http.get(
         Uri.parse(ApiEndpoints.studentProfile),
