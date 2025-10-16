@@ -140,10 +140,12 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                               ),
                             ),
                             validator: (v) {
-                              if (v == null || v.isEmpty)
+                              if (v == null || v.isEmpty) {
                                 return 'Enter a new password';
-                              if (v.length < 8)
+                              }
+                              if (v.length < 8) {
                                 return 'Must be at least 8 characters';
+                              }
                               return null;
                             },
                           ),
@@ -160,10 +162,12 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                                   setState(() => _showConfirm = !_showConfirm),
                             ),
                             validator: (v) {
-                              if (v == null || v.isEmpty)
+                              if (v == null || v.isEmpty) {
                                 return 'Confirm your password';
-                              if (v != _passwordController.text)
+                              }
+                              if (v != _passwordController.text) {
                                 return 'Passwords do not match';
+                              }
                               return null;
                             },
                           ),
