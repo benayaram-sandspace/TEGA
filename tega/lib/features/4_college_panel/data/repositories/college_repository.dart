@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/services.dart';
-import 'package:http/http.dart' as http;
-import 'package:tega/core/constants/api_constants.dart';
+import 'package:tega/data/colleges_fallback.dart';
+import 'package:tega/data/colleges_data.dart';
 
 class CollegeInfo {
   final String id;
@@ -164,20 +164,22 @@ class CollegeService {
   List<College> _colleges = [];
   Future<List<CollegeInfo>> fetchCollegeList() async {
     try {
-      final response = await http.get(Uri.parse(ApiEndpoints.colleges));
+      // Use the complete college data from the new data file
+      // This data is sourced from backend src/data/colleges.js
+      final colleges = collegesData
+          .map((name) => CollegeInfo(id: name, name: name))
+          .toList();
 
-      if (response.statusCode == 200) {
-        List<dynamic> body = json.decode(response.body);
-        List<CollegeInfo> colleges = body
-            .map((dynamic item) => CollegeInfo.fromJson(item))
-            .toList();
-        return colleges;
-      } else {
-        throw Exception('Failed to load colleges from server');
-      }
+      print('✅ Loaded ${colleges.length} colleges from local data');
+      return colleges;
     } catch (e) {
-      print('Error fetching colleges: $e');
-      throw Exception('Could not connect to the server');
+      // Fallback to the original fallback data if something goes wrong
+      print('Error loading colleges data: $e');
+      final fallback = fallbackColleges
+          .map((name) => CollegeInfo(id: name, name: name))
+          .toList();
+      if (fallback.isNotEmpty) return fallback;
+      throw Exception('Could not load college data');
     }
   }
 

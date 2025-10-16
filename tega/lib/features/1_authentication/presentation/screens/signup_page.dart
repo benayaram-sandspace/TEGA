@@ -1,8 +1,8 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:tega/features/1_authentication/data/auth_repository.dart';
+import 'package:tega/features/1_authentication/presentation/screens/otp_verification_page.dart';
 import 'package:tega/features/4_college_panel/data/repositories/college_repository.dart';
-import 'package:tega/features/5_student_dashboard/presentation/0_onboarding/on_boarding_page_1.dart';
 
 class SignUpPage extends StatefulWidget {
   const SignUpPage({super.key});
@@ -34,7 +34,7 @@ class _SignUpPageState extends State<SignUpPage> with TickerProviderStateMixin {
 
   bool _isPasswordVisible = false;
   bool _isConfirmPasswordVisible = false;
-  bool _agreeToTerms = false;
+
   bool _isLoading = false;
 
   late AnimationController _fadeController;
@@ -136,7 +136,7 @@ class _SignUpPageState extends State<SignUpPage> with TickerProviderStateMixin {
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(
-                  color: const Color(0xFFFF6B35).withOpacity(0.2),
+                  color: const Color(0xFF9C88FF).withOpacity(0.2),
                   width: 1,
                 ),
                 boxShadow: [
@@ -146,7 +146,7 @@ class _SignUpPageState extends State<SignUpPage> with TickerProviderStateMixin {
                     offset: const Offset(0, 10),
                   ),
                   BoxShadow(
-                    color: const Color(0xFFFF6B35).withOpacity(0.08),
+                    color: const Color(0xFF9C88FF).withOpacity(0.08),
                     blurRadius: 15,
                     offset: const Offset(0, 5),
                   ),
@@ -160,7 +160,7 @@ class _SignUpPageState extends State<SignUpPage> with TickerProviderStateMixin {
                           padding: EdgeInsets.all(20),
                           child: CircularProgressIndicator(
                             valueColor: AlwaysStoppedAnimation<Color>(
-                              Color(0xFFFF6B35),
+                              Color(0xFF9C88FF),
                             ),
                           ),
                         ),
@@ -224,7 +224,7 @@ class _SignUpPageState extends State<SignUpPage> with TickerProviderStateMixin {
                               ),
                               decoration: BoxDecoration(
                                 color: isSelected
-                                    ? const Color(0xFFFF6B35).withOpacity(0.08)
+                                    ? const Color(0xFF9C88FF).withOpacity(0.08)
                                     : Colors.transparent,
                               ),
                               child: Row(
@@ -236,8 +236,8 @@ class _SignUpPageState extends State<SignUpPage> with TickerProviderStateMixin {
                                       gradient: LinearGradient(
                                         colors: isSelected
                                             ? [
-                                                const Color(0xFFFF6B35),
-                                                const Color(0xFFFBB040),
+                                                const Color(0xFF9C88FF),
+                                                const Color(0xFF8B7BFF),
                                               ]
                                             : [
                                                 const Color(0xFFF5F5F5),
@@ -254,7 +254,7 @@ class _SignUpPageState extends State<SignUpPage> with TickerProviderStateMixin {
                                         style: TextStyle(
                                           color: isSelected
                                               ? Colors.white
-                                              : const Color(0xFFFF6B35),
+                                              : const Color(0xFF9C88FF),
                                           fontWeight: FontWeight.bold,
                                           fontSize: 16,
                                         ),
@@ -271,7 +271,7 @@ class _SignUpPageState extends State<SignUpPage> with TickerProviderStateMixin {
                                           college.name,
                                           style: TextStyle(
                                             color: isSelected
-                                                ? const Color(0xFFFF6B35)
+                                                ? const Color(0xFF9C88FF)
                                                 : const Color(0xFF2C3E50),
                                             fontSize: 14,
                                             fontWeight: isSelected
@@ -352,105 +352,85 @@ class _SignUpPageState extends State<SignUpPage> with TickerProviderStateMixin {
     super.dispose();
   }
 
+  /// Handle signup - Step 1: Send OTP to email
   Future<void> _handleSignUp() async {
     if (!(_formKey.currentState?.validate() ?? false)) return;
-    if (!_agreeToTerms) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text(
-            'You must agree to the Terms and Conditions to proceed.',
-          ),
-          backgroundColor: const Color(0xFFE74C3C),
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
-          ),
-        ),
-      );
-      return;
-    }
+
+    // No policies gating; proceed directly
+
+    // Dismiss keyboard
+    FocusScope.of(context).unfocus();
     setState(() => _isLoading = true);
 
-    debugPrint('--- [SIGNUP] Handling Sign Up ---');
-    final signupData = {
-      'firstName': _firstNameController.text.trim(),
-      'lastName': _lastNameController.text.trim(),
-      'email': _emailController.text.trim(),
-      'college': _selectedCollege?.name,
-    };
-    debugPrint('Data to be sent: $signupData');
+    debugPrint('🔐 [SIGNUP] Starting registration process...');
+    final email = _emailController.text.trim();
+    debugPrint('📧 Sending OTP to: $email');
 
     try {
-      final result = await _authService.signup(
+      // Step 1: Send OTP to email
+      final result = await _authService.sendRegistrationOTP(
+        email,
         firstName: _firstNameController.text.trim(),
         lastName: _lastNameController.text.trim(),
-        email: _emailController.text.trim(),
         password: _passwordController.text,
         college: _selectedCollege?.name,
       );
 
-      debugPrint('--- [SIGNUP] Received result from AuthService ---');
-      debugPrint('Result: $result');
-
       if (!mounted) return;
 
       if (result['success'] == true) {
-        debugPrint('--- [SIGNUP] Success path taken. Navigating... ---');
+        debugPrint('✅ [SIGNUP] OTP sent successfully');
 
-        // Show brief success message (optional)
+        // Show success message
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(result['message'] ?? 'Account created successfully!'),
+            content: Text(
+              result['message'] ?? 'Verification code sent to your email!',
+            ),
             backgroundColor: const Color(0xFF27AE60),
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(10),
             ),
-            duration: const Duration(seconds: 1), // Short duration
+            duration: const Duration(seconds: 2),
           ),
         );
 
-        // Small delay to let user see the success message, then navigate
-        // await Future.delayed(const Duration(milliseconds: 500));
+        // Navigate to OTP verification page with user data
+        await Future.delayed(const Duration(milliseconds: 500));
 
         if (mounted) {
-          Navigator.pushAndRemoveUntil(
+          Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => const CareerDiscoveryWelcome(),
+              builder: (context) => OTPVerificationPage(
+                email: email,
+                firstName: _firstNameController.text.trim(),
+                lastName: _lastNameController.text.trim(),
+                password: _passwordController.text,
+                college: _selectedCollege?.name,
+                isRegistration: true,
+              ),
             ),
-            (Route<dynamic> route) => false,
           );
         }
       } else {
-        debugPrint('--- [SIGNUP] Failure path taken. ---');
-        // Only show SnackBar for failures
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              result['message'] ?? 'Registration failed. Please try again.',
-            ),
-            backgroundColor: const Color(0xFFE74C3C),
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10),
-            ),
-          ),
+        debugPrint('❌ [SIGNUP] Failed to send OTP: ${result['message']}');
+        _showErrorMessage(
+          result['message'] ??
+              'Failed to send verification code. Please try again.',
         );
       }
-    } catch (e) {
-      debugPrint('--- [SIGNUP] CRITICAL ERROR CAUGHT in UI ---');
-      debugPrint('Error: $e');
+    } on AuthException catch (e) {
+      debugPrint('❌ [SIGNUP] Auth error: ${e.message}');
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('An unexpected error occurred: $e'),
-            backgroundColor: const Color(0xFFE74C3C),
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10),
-            ),
-          ),
+        _showErrorMessage(e.message);
+      }
+    } catch (e) {
+      debugPrint('❌ [SIGNUP] Unexpected error: $e');
+      if (mounted) {
+        _showErrorMessage(
+          'An unexpected error occurred. Please check your connection and try again.',
         );
       }
     } finally {
@@ -458,6 +438,19 @@ class _SignUpPageState extends State<SignUpPage> with TickerProviderStateMixin {
         setState(() => _isLoading = false);
       }
     }
+  }
+
+  /// Show error message as snackbar
+  void _showErrorMessage(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: const Color(0xFFE74C3C),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        duration: const Duration(seconds: 3),
+      ),
+    );
   }
 
   @override
@@ -469,9 +462,9 @@ class _SignUpPageState extends State<SignUpPage> with TickerProviderStateMixin {
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [
-              Color(0xFFFF6B35), // Orange
-              Color(0xFFF7931E), // Deep Orange
-              Color(0xFFFBB040), // Yellow-Orange
+              Color(0xFF9C88FF), // Light Purple
+              Color(0xFF8B7BFF), // Medium Light Purple
+              Color(0xFF7A6BFF), // Medium Purple
             ],
           ),
         ),
@@ -541,7 +534,7 @@ class _SignUpPageState extends State<SignUpPage> with TickerProviderStateMixin {
                   child: Icon(
                     Icons.flutter_dash,
                     size: 60,
-                    color: Color(0xFFFF6B35),
+                    color: Color(0xFF9C88FF),
                   ),
                 ),
               ),
@@ -633,7 +626,7 @@ class _SignUpPageState extends State<SignUpPage> with TickerProviderStateMixin {
             offset: const Offset(0, 15),
           ),
           BoxShadow(
-            color: const Color(0xFFFF6B35).withOpacity(0.1),
+            color: const Color(0xFF9C88FF).withOpacity(0.1),
             blurRadius: 20,
             offset: const Offset(0, 10),
           ),
@@ -657,7 +650,7 @@ class _SignUpPageState extends State<SignUpPage> with TickerProviderStateMixin {
                         color: Color(0xFF2C3E50),
                       ),
                       decoration: _inputDecoration(
-                        'John',
+                        'First name',
                         Icons.person_outline_rounded,
                       ),
                       validator: (v) => v!.isEmpty ? 'Required' : null,
@@ -679,7 +672,7 @@ class _SignUpPageState extends State<SignUpPage> with TickerProviderStateMixin {
                         color: Color(0xFF2C3E50),
                       ),
                       decoration: _inputDecoration(
-                        'Doe',
+                        'Last name',
                         Icons.person_outline_rounded,
                       ),
                       validator: (v) => v!.isEmpty ? 'Required' : null,
@@ -709,7 +702,7 @@ class _SignUpPageState extends State<SignUpPage> with TickerProviderStateMixin {
                     Icons.school_rounded,
                     color: _isCollegesLoading
                         ? Colors.grey.shade400
-                        : const Color(0xFFFF6B35),
+                        : const Color(0xFF9C88FF),
                     size: 22,
                   ),
                 ),
@@ -717,7 +710,7 @@ class _SignUpPageState extends State<SignUpPage> with TickerProviderStateMixin {
                     ? IconButton(
                         icon: const Icon(
                           Icons.arrow_drop_up_rounded,
-                          color: Color(0xFFFF6B35),
+                          color: Color(0xFF9C88FF),
                           size: 28,
                         ),
                         onPressed: () {
@@ -729,7 +722,7 @@ class _SignUpPageState extends State<SignUpPage> with TickerProviderStateMixin {
                           Icons.arrow_drop_down_rounded,
                           color: _isCollegesLoading
                               ? Colors.grey.shade400
-                              : const Color(0xFFFF6B35),
+                              : const Color(0xFF9C88FF),
                           size: 28,
                         ),
                         onPressed: _isCollegesLoading
@@ -749,7 +742,7 @@ class _SignUpPageState extends State<SignUpPage> with TickerProviderStateMixin {
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(14),
                   borderSide: const BorderSide(
-                    color: Color(0xFFFF6B35),
+                    color: Color(0xFF9C88FF),
                     width: 2,
                   ),
                 ),
@@ -800,7 +793,7 @@ class _SignUpPageState extends State<SignUpPage> with TickerProviderStateMixin {
             keyboardType: TextInputType.emailAddress,
             style: const TextStyle(fontSize: 15, color: Color(0xFF2C3E50)),
             decoration: _inputDecoration(
-              'john.doe@example.com',
+              'example@gmail.com',
               Icons.email_rounded,
             ),
             validator: (v) {
@@ -853,8 +846,7 @@ class _SignUpPageState extends State<SignUpPage> with TickerProviderStateMixin {
             },
           ),
           const SizedBox(height: 28),
-          _buildTermsAndConditions(),
-          const SizedBox(height: 36),
+          const SizedBox(height: 12),
           _buildSignUpButton(),
         ],
       ),
@@ -873,80 +865,13 @@ class _SignUpPageState extends State<SignUpPage> with TickerProviderStateMixin {
     );
   }
 
-  Widget _buildTermsAndConditions() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [const Color(0xFFFFF5E6), const Color(0xFFE8F5E9)],
-        ),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: const Color(0xFFFFD700).withOpacity(0.3),
-          width: 1,
-        ),
-      ),
-      child: Row(
-        children: [
-          SizedBox(
-            height: 24,
-            width: 24,
-            child: Checkbox(
-              value: _agreeToTerms,
-              onChanged: (value) =>
-                  setState(() => _agreeToTerms = value ?? false),
-              activeColor: const Color(0xFF27AE60),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(4),
-              ),
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: RichText(
-              text: TextSpan(
-                style: const TextStyle(
-                  color: Color(0xFF5D6D7E),
-                  fontSize: 13,
-                  height: 1.5,
-                ),
-                children: [
-                  const TextSpan(text: 'I agree to the '),
-                  TextSpan(
-                    text: 'Terms and Conditions',
-                    style: const TextStyle(
-                      color: Color(0xFFFF6B35),
-                      fontWeight: FontWeight.w600,
-                      decoration: TextDecoration.underline,
-                    ),
-                    recognizer: TapGestureRecognizer()..onTap = () {},
-                  ),
-                  const TextSpan(text: ' and '),
-                  TextSpan(
-                    text: 'Privacy Policy',
-                    style: const TextStyle(
-                      color: Color(0xFFFF6B35),
-                      fontWeight: FontWeight.w600,
-                      decoration: TextDecoration.underline,
-                    ),
-                    recognizer: TapGestureRecognizer()..onTap = () {},
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildSignUpButton() {
     return Container(
       width: double.infinity,
       height: 56,
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: _agreeToTerms && !_isLoading
+          colors: !_isLoading
               ? const [
                   Color(0xFF27AE60), // Green
                   Color(0xFF2ECC71), // Light Green
@@ -954,7 +879,7 @@ class _SignUpPageState extends State<SignUpPage> with TickerProviderStateMixin {
               : const [Color(0xFFBDC3C7), Color(0xFF95A5A6)],
         ),
         borderRadius: BorderRadius.circular(16),
-        boxShadow: _agreeToTerms && !_isLoading
+        boxShadow: !_isLoading
             ? [
                 BoxShadow(
                   color: const Color(0xFF27AE60).withOpacity(0.4),
@@ -967,7 +892,7 @@ class _SignUpPageState extends State<SignUpPage> with TickerProviderStateMixin {
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          onTap: _agreeToTerms && !_isLoading ? _handleSignUp : null,
+          onTap: !_isLoading ? _handleSignUp : null,
           borderRadius: BorderRadius.circular(16),
           child: Center(
             child: _isLoading
@@ -1070,7 +995,7 @@ class _SignUpPageState extends State<SignUpPage> with TickerProviderStateMixin {
       hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 14),
       prefixIcon: Container(
         margin: const EdgeInsets.only(left: 12, right: 8),
-        child: Icon(icon, color: const Color(0xFFFF6B35), size: 22),
+        child: Icon(icon, color: const Color(0xFF9C88FF), size: 22),
       ),
       suffixIcon: isPassword
           ? IconButton(
@@ -1106,7 +1031,7 @@ class _SignUpPageState extends State<SignUpPage> with TickerProviderStateMixin {
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(14),
-        borderSide: const BorderSide(color: Color(0xFFFF6B35), width: 2),
+        borderSide: const BorderSide(color: Color(0xFF9C88FF), width: 2),
       ),
       errorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(14),

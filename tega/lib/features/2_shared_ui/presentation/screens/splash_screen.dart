@@ -77,9 +77,9 @@ class _SplashScreenState extends State<SplashScreen> {
         Navigator.of(
           context,
         ).pushReplacement(_createFadeRoute(const AdminDashboard()));
-      } else if (_authService.hasRole(UserRole.moderator)) {
+      } else if (_authService.hasRole(UserRole.principal)) {
         _navigateToCollegeDashboard();
-      } else if (_authService.hasRole(UserRole.user)) {
+      } else if (_authService.hasRole(UserRole.student)) {
         Navigator.of(
           context,
         ).pushReplacement(_createFadeRoute(const StudentHomePage()));
