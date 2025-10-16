@@ -122,7 +122,6 @@ class _ProgressReportGeneratorPageState
         _isLoadingData = false;
       });
     } catch (e) {
-      print('Error loading data from JSON: $e');
       setState(() {
         _isLoadingData = false;
       });
@@ -1158,7 +1157,6 @@ class _ProgressReportGeneratorPageState
 
       return file;
     } catch (e) {
-      print('Error generating PDF: $e');
       return null;
     }
   }
@@ -1213,7 +1211,6 @@ class _ProgressReportGeneratorPageState
 
       return file;
     } catch (e) {
-      print('Error generating CSV: $e');
       return null;
     }
   }

@@ -18,12 +18,8 @@ class TransactionHistoryService {
       final headers = _authService.getAuthHeaders();
       final List<Transaction> allTransactions = [];
 
-      // Fetch from multiple payment sources
-      final futures = [
-        _fetchPaymentHistory(headers),
-        _fetchRazorpayHistory(headers),
-        _fetchTegaExamHistory(headers),
-      ];
+      // Fetch from payment history endpoint
+      final futures = [_fetchPaymentHistory(headers)];
 
       final results = await Future.wait(futures);
 
@@ -62,71 +58,6 @@ class TransactionHistoryService {
       return [];
     } catch (e) {
       debugPrint('Error fetching payment history: $e');
-      return [];
-    }
-  }
-
-  Future<List<Transaction>> _fetchRazorpayHistory(
-    Map<String, String> headers,
-  ) async {
-    try {
-      final response = await http.get(
-        Uri.parse(ApiEndpoints.razorpayPaymentHistory),
-        headers: headers,
-      );
-
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        if (data['success'] == true && data['data'] != null) {
-          final List<dynamic> transactionsJson = data['data'];
-          return transactionsJson
-              .map((json) => Transaction.fromRazorpayJson(json))
-              .toList();
-        }
-      }
-      return [];
-    } catch (e) {
-      debugPrint('Error fetching razorpay history: $e');
-      return [];
-    }
-  }
-
-  Future<List<Transaction>> _fetchTegaExamHistory(
-    Map<String, String> headers,
-  ) async {
-    try {
-      final response = await http.get(
-        Uri.parse(ApiEndpoints.tegaExamPaymentHistory),
-        headers: headers,
-      );
-
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        if (data['success'] == true && data['data'] != null) {
-          // Handle the nested structure: data.payments
-          if (data['data']['payments'] != null) {
-            final List<dynamic> transactionsJson = data['data']['payments'];
-            return transactionsJson
-                .map((json) => Transaction.fromTegaExamJson(json))
-                .toList();
-          }
-          // Handle direct array response
-          else if (data['data'] is List) {
-            final List<dynamic> transactionsJson = data['data'];
-            return transactionsJson
-                .map((json) => Transaction.fromTegaExamJson(json))
-                .toList();
-          }
-          // Handle single object response
-          else if (data['data'] is Map) {
-            final Map<String, dynamic> transactionJson = data['data'];
-            return [Transaction.fromTegaExamJson(transactionJson)];
-          }
-        }
-      }
-      return [];
-    } catch (e) {
-      debugPrint('Error fetching tega exam history: $e');
       return [];
     }
   }
@@ -201,50 +132,6 @@ class Transaction {
           : null,
       description: json['description'],
       source: json['source'] ?? 'payment',
-    );
-  }
-
-  factory Transaction.fromRazorpayJson(Map<String, dynamic> json) {
-    final course = json['courseId'] ?? {};
-    return Transaction(
-      id: json['_id'] ?? '',
-      courseId: json['courseId']?['_id'] ?? '',
-      courseName: course['name'] ?? 'Unknown Course',
-      amount:
-          (json['amount'] ?? 0).toDouble() / 100, // Razorpay stores in paise
-      currency: json['currency'] ?? 'INR',
-      paymentMethod: 'Razorpay',
-      status: json['status'] ?? 'pending',
-      transactionId: json['razorpay_payment_id'],
-      createdAt: json['createdAt'] != null
-          ? DateTime.parse(json['createdAt'])
-          : DateTime.now(),
-      paymentDate: json['createdAt'] != null
-          ? DateTime.parse(json['createdAt'])
-          : null,
-      description: 'Course Payment',
-      source: 'razorpay',
-    );
-  }
-
-  factory Transaction.fromTegaExamJson(Map<String, dynamic> json) {
-    return Transaction(
-      id: json['_id'] ?? '',
-      courseId: json['examId'] ?? '',
-      courseName: json['examName'] ?? 'TEGA Exam',
-      amount: (json['amount'] ?? 0).toDouble(),
-      currency: json['currency'] ?? 'INR',
-      paymentMethod: json['paymentMethod'] ?? 'TEGA Exam',
-      status: json['status'] ?? 'pending',
-      transactionId: json['transactionId'],
-      createdAt: json['createdAt'] != null
-          ? DateTime.parse(json['createdAt'])
-          : DateTime.now(),
-      paymentDate: json['createdAt'] != null
-          ? DateTime.parse(json['createdAt'])
-          : null,
-      description: 'Exam Payment',
-      source: 'tega_exam',
     );
   }
 

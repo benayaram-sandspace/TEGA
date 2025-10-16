@@ -1,10 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
-import 'package:tega/core/constants/api_constants.dart';
 import 'package:tega/features/1_authentication/data/auth_repository.dart';
 import 'package:tega/features/5_student_dashboard/data/student_dashboard_service.dart';
-import 'package:tega/features/5_student_dashboard/presentation/2_learning_hub/video_player_page.dart';
+import 'package:tega/features/5_student_dashboard/presentation/2_learning_hub/course_content_page.dart';
 
 class CoursesPage extends StatefulWidget {
   const CoursesPage({super.key});
@@ -252,61 +249,6 @@ class _CoursesPageState extends State<CoursesPage>
             ),
           ],
         ),
-        // Continue Learning FAB
-        if (!_isLoading && _courses.isNotEmpty)
-          Positioned(
-            bottom: isDesktop
-                ? 32
-                : isTablet
-                ? 24
-                : 16,
-            right: isDesktop
-                ? 32
-                : isTablet
-                ? 24
-                : 16,
-            child: FloatingActionButton.extended(
-              onPressed: () {
-                final ongoingCourse = _courses.firstWhere(
-                  (c) => (c['progress'] ?? 0) > 0,
-                  orElse: () => _courses.isNotEmpty ? _courses.first : {},
-                );
-                if (ongoingCourse.isNotEmpty) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(
-                        (ongoingCourse['progress'] ?? 0) > 0
-                            ? 'Resuming ${ongoingCourse['title']?.toString() ?? 'Course'}...'
-                            : 'Starting ${ongoingCourse['title']?.toString() ?? 'Course'}...',
-                      ),
-                      behavior: SnackBarBehavior.floating,
-                    ),
-                  );
-                } else {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('No courses available'),
-                      behavior: SnackBarBehavior.floating,
-                    ),
-                  );
-                }
-              },
-              backgroundColor: const Color(0xFF6B5FFF),
-              elevation: 6,
-              icon: const Icon(
-                Icons.play_circle_outline_rounded,
-                color: Colors.white,
-              ),
-              label: Text(
-                'Continue Learning',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w600,
-                  fontSize: isDesktop ? 16 : 14,
-                ),
-              ),
-            ),
-          ),
       ],
     );
   }
@@ -471,7 +413,12 @@ class _CoursesPageState extends State<CoursesPage>
               child: Material(
                 color: Colors.transparent,
                 child: InkWell(
-                  onTap: () => _openVideoPlayer(context, course),
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => CourseContentPage(course: course),
+                    ),
+                  ),
                   borderRadius: BorderRadius.circular(isDesktop ? 20 : 16),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -754,19 +701,7 @@ class _CoursesPageState extends State<CoursesPage>
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          onTap: () {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(
-                  '$buttonText for ${course['title']?.toString() ?? 'Course'}',
-                ),
-                behavior: SnackBarBehavior.floating,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
-              ),
-            );
-          },
+          onTap: () => _handleEnrollButton(course, buttonText),
           borderRadius: BorderRadius.circular(12),
           child: Center(
             child: Row(
@@ -790,142 +725,33 @@ class _CoursesPageState extends State<CoursesPage>
     );
   }
 
-  void _openVideoPlayer(BuildContext context, Map<String, dynamic> course) {
-    // Get video URL from course data - prioritize modules, then fallback to direct URLs
-    String videoUrl = '';
-
-    // First try to get video from modules (real-time course structure)
-    if (course['modules'] != null && course['modules'] is List) {
-      final modules = course['modules'] as List;
-      if (modules.isNotEmpty) {
-        final firstModule = modules[0];
-        if (firstModule['lectures'] != null &&
-            firstModule['lectures'] is List) {
-          final lectures = firstModule['lectures'] as List;
-          if (lectures.isNotEmpty) {
-            final firstLecture = lectures[0];
-            if (firstLecture['videoContent'] != null &&
-                firstLecture['videoContent']['r2Url'] != null) {
-              String originalUrl = firstLecture['videoContent']['r2Url']
-                  .toString();
-              // Fix the bucket URL - replace with correct bucket
-              videoUrl = originalUrl.replaceAll(
-                'pub-88c0c416e67148caa38eeb4c9ea15ea0.r2.dev',
-                'pub-a4efce68660b4473b2dcaacf3c4d578b.r2.dev',
-              );
-            } else {}
-          }
-        }
-      }
-    }
-
-    // Fallback to direct video URLs if no modules found
-    if (videoUrl.isEmpty) {
-      String fallbackUrl =
-          course['videoUrl'] ??
-          course['videoLink'] ??
-          course['previewVideo'] ??
-          '';
-      // Fix the bucket URL in fallback URLs too
-      if (fallbackUrl.isNotEmpty) {
-        videoUrl = fallbackUrl.replaceAll(
-          'pub-88c0c416e67148caa38eeb4c9ea15ea0.r2.dev',
-          'pub-a4efce68660b4473b2dcaacf3c4d578b.r2.dev',
-        );
-      }
-    }
-
-    // If still no video URL, try preview video from course root
-    if (videoUrl.isEmpty && course['previewVideo'] != null) {
-      String previewUrl = course['previewVideo'].toString();
-      // Fix the bucket URL in preview URLs too
-      videoUrl = previewUrl.replaceAll(
-        'pub-88c0c416e67148caa38eeb4c9ea15ea0.r2.dev',
-        'pub-a4efce68660b4473b2dcaacf3c4d578b.r2.dev',
+  void _handleEnrollButton(Map<String, dynamic> course, String buttonText) {
+    if (buttonText == 'Enroll Now' || buttonText == 'Start Free') {
+      // Navigate to course content page
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => CourseContentPage(course: course),
+        ),
       );
-    }
-
-    if (videoUrl.isEmpty) {
+    } else if (buttonText == 'Continue Learning') {
+      // Navigate to course content page for enrolled courses
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => CourseContentPage(course: course),
+        ),
+      );
+    } else {
+      // Show snackbar for other actions
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text('No video available for this course'),
+          content: Text(
+            '$buttonText for ${course['title']?.toString() ?? 'Course'}',
+          ),
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(10),
-          ),
-        ),
-      );
-      return;
-    }
-
-    // Test if the URL is accessible
-    _testVideoUrl(videoUrl).then((isAccessible) {
-      if (!isAccessible) {
-        // Try multiple alternative R2 URL formats
-        _tryMultipleR2Urls(context, course, videoUrl);
-        return;
-      } else {
-        _navigateToVideoPlayer(context, course, videoUrl);
-      }
-    });
-  }
-
-  void _navigateToVideoPlayer(
-    BuildContext context,
-    Map<String, dynamic> course,
-    String videoUrl,
-  ) {
-    final courseTitle = course['title']?.toString() ?? 'Untitled Course';
-    final instructorName = _getInstructorName(course);
-
-    // Check if it's a test video URL
-    if (videoUrl.contains('commondatastorage.googleapis.com')) {
-      // Show a dialog explaining why we're using a test video
-      showDialog(
-        context: context,
-        builder: (BuildContext context) {
-          return AlertDialog(
-            title: const Text('Video Configuration Required'),
-            content: const Text(
-              'The course video is not accessible due to R2 configuration issues. '
-              'A test video is being played instead. Please contact the administrator '
-              'to configure the video storage system.',
-            ),
-            actions: [
-              TextButton(
-                onPressed: () {
-                  Navigator.of(context).pop();
-                  // Navigate to video player with test video
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (context) => VideoPlayerPage(
-                        videoUrl: videoUrl,
-                        courseTitle: courseTitle,
-                        instructorName: instructorName,
-                        modules: course['modules'] ?? [],
-                      ),
-                    ),
-                  );
-                },
-                child: const Text('Continue with Test Video'),
-              ),
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(),
-                child: const Text('Cancel'),
-              ),
-            ],
-          );
-        },
-      );
-    } else {
-      // Navigate directly to video player
-      Navigator.of(context).push(
-        MaterialPageRoute(
-          builder: (context) => VideoPlayerPage(
-            videoUrl: videoUrl,
-            courseTitle: courseTitle,
-            instructorName: instructorName,
-            modules: course['modules'] ?? [],
           ),
         ),
       );
@@ -974,88 +800,6 @@ class _CoursesPageState extends State<CoursesPage>
     }
 
     return '0 hours';
-  }
-
-  Future<void> _tryMultipleR2Urls(
-    BuildContext context,
-    Map<String, dynamic> course,
-    String originalUrl,
-  ) async {
-    try {
-      final uri = Uri.parse(originalUrl);
-      final path = uri.path;
-      final filename = path.split('/').last;
-
-      // Use backend proxy to get signed URL
-      final signedUrl = await _getSignedVideoUrl(filename);
-
-      if (signedUrl != null && signedUrl.isNotEmpty) {
-        _navigateToVideoPlayer(context, course, signedUrl);
-        return;
-      }
-
-      // Fallback to test video
-      final testVideoUrl =
-          'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4';
-      _navigateToVideoPlayer(context, course, testVideoUrl);
-    } catch (e) {
-      // Fallback to test video
-      final testVideoUrl =
-          'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4';
-      _navigateToVideoPlayer(context, course, testVideoUrl);
-    }
-  }
-
-  Future<String?> _getSignedVideoUrl(String filename) async {
-    try {
-      // Get authentication headers
-      final authService = AuthService();
-      final headers = authService.getAuthHeaders();
-
-      // Call backend proxy endpoint
-      final response = await http.get(
-        Uri.parse(ApiEndpoints.videoSignedUrl(filename)),
-        headers: headers,
-      );
-
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        if (data['success'] == true) {
-          return data['signedUrl'];
-        }
-      }
-
-      // Check if it's a configuration error
-      if (response.statusCode == 404) {
-        final data = json.decode(response.body);
-        if (data['message'] == 'Video not found') {}
-      }
-
-      return null;
-    } catch (e) {
-      return null;
-    }
-  }
-
-  Future<bool> _testVideoUrl(String url) async {
-    try {
-      final response = await http.head(Uri.parse(url));
-
-      if (response.statusCode == 404) {}
-
-      return response.statusCode == 200;
-    } catch (e) {
-      // If it's an SSL error, try with a GET request instead of HEAD
-      if (e.toString().contains('HandshakeException') ||
-          e.toString().contains('SSL')) {
-        try {
-          final getResponse = await http.get(Uri.parse(url));
-          return getResponse.statusCode == 200;
-        } catch (getError) {}
-      }
-
-      return false;
-    }
   }
 
   String _formatStudentCount(dynamic count) {

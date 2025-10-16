@@ -50,11 +50,13 @@ class AdminRepository {
         activitiesByAdmin: Map<String, int>.from(
           jsonData['statistics']['activitiesByAdmin'] ?? {},
         ),
-        recentLogins: (jsonData['statistics']['recentLogins'] as List?)
+        recentLogins:
+            (jsonData['statistics']['recentLogins'] as List?)
                 ?.map((json) => AdminSession.fromJson(json))
                 .toList() ??
             [],
-        averageSessionsPerAdmin: jsonData['statistics']['averageSessionsPerAdmin'] ?? 0.0,
+        averageSessionsPerAdmin:
+            jsonData['statistics']['averageSessionsPerAdmin'] ?? 0.0,
         failedLoginAttempts: jsonData['statistics']['failedLoginAttempts'] ?? 0,
         performanceMetrics: Map<String, dynamic>.from(
           jsonData['statistics']['performanceMetrics'] ?? {},
@@ -62,9 +64,7 @@ class AdminRepository {
       );
 
       _isLoaded = true;
-    } catch (e) {
-      print('Error loading admin data: $e');
-    }
+    } catch (e) {}
   }
 
   // Admin Users Management
@@ -374,11 +374,12 @@ class AdminRepository {
     final sessionIndex = _activeSessions.indexWhere(
       (s) => s.adminId == adminId && s.status == 'active',
     );
-    
+
     if (sessionIndex != -1) {
       final session = _activeSessions[sessionIndex];
       if (!session.pagesAccessed.contains(pageName)) {
-        final updatedPages = List<String>.from(session.pagesAccessed)..add(pageName);
+        final updatedPages = List<String>.from(session.pagesAccessed)
+          ..add(pageName);
         _activeSessions[sessionIndex] = AdminSession(
           id: session.id,
           adminId: session.adminId,
@@ -405,7 +406,10 @@ class AdminRepository {
   }
 
   // Advanced Admin Operations
-  Future<bool> bulkUpdateAdminStatus(List<String> adminIds, String newStatus) async {
+  Future<bool> bulkUpdateAdminStatus(
+    List<String> adminIds,
+    String newStatus,
+  ) async {
     try {
       bool success = true;
       for (final adminId in adminIds) {
@@ -436,7 +440,7 @@ class AdminRepository {
           final index = _adminUsers.indexWhere((a) => a.id == adminId);
           if (index != -1) {
             _adminUsers[index] = updatedAdmin;
-            
+
             await _logActivity(
               adminId: _currentAdminId ?? 'current_admin',
               adminName: 'Current Admin',
@@ -466,10 +470,10 @@ class AdminRepository {
     try {
       // Remove old widgets for this admin
       _dashboardWidgets.removeWhere((w) => w.adminId == adminId);
-      
+
       // Add new widgets
       _dashboardWidgets.addAll(widgets);
-      
+
       await _logActivity(
         adminId: adminId,
         adminName: _getAdminNameById(adminId) ?? 'Unknown Admin',
@@ -478,7 +482,7 @@ class AdminRepository {
         details: 'Updated dashboard layout',
         actionType: 'preferences',
       );
-      
+
       return true;
     } catch (e) {
       return false;
@@ -486,20 +490,38 @@ class AdminRepository {
   }
 
   // Enhanced Analytics
-  Map<String, dynamic> getDetailedAnalytics(DateTime startDate, DateTime endDate) {
+  Map<String, dynamic> getDetailedAnalytics(
+    DateTime startDate,
+    DateTime endDate,
+  ) {
     final filteredLogs = _activityLogs
-        .where((log) => log.timestamp.isAfter(startDate) && log.timestamp.isBefore(endDate))
+        .where(
+          (log) =>
+              log.timestamp.isAfter(startDate) &&
+              log.timestamp.isBefore(endDate),
+        )
         .toList();
 
     return {
       'totalActivities': filteredLogs.length,
       'successfulActivities': filteredLogs.where((l) => l.isSuccess).length,
       'failedActivities': filteredLogs.where((l) => !l.isSuccess).length,
-      'activitiesByType': _groupActivitiesBy(filteredLogs, (log) => log.actionType),
-      'activitiesByAdmin': _groupActivitiesBy(filteredLogs, (log) => log.adminName),
-      'activitiesByCategory': _groupActivitiesBy(filteredLogs, (log) => log.category),
+      'activitiesByType': _groupActivitiesBy(
+        filteredLogs,
+        (log) => log.actionType,
+      ),
+      'activitiesByAdmin': _groupActivitiesBy(
+        filteredLogs,
+        (log) => log.adminName,
+      ),
+      'activitiesByCategory': _groupActivitiesBy(
+        filteredLogs,
+        (log) => log.category,
+      ),
       'topPerformingAdmins': _getTopPerformingAdmins(filteredLogs),
-      'securityIncidents': filteredLogs.where((l) => l.category == 'security' && !l.isSuccess).length,
+      'securityIncidents': filteredLogs
+          .where((l) => l.category == 'security' && !l.isSuccess)
+          .length,
       'avgResponseTime': _calculateAvgResponseTime(filteredLogs),
     };
   }
@@ -514,25 +536,36 @@ class AdminRepository {
   AdminStatistics calculateAdvancedStatistics() {
     final now = DateTime.now();
     final last24Hours = now.subtract(const Duration(hours: 24));
-    
+
     final recentActivities = _activityLogs
         .where((log) => log.timestamp.isAfter(last24Hours))
         .toList();
-
 
     return AdminStatistics(
       totalAdmins: _adminUsers.length,
       activeAdmins: _adminUsers.where((a) => a.status == 'active').length,
       inactiveAdmins: _adminUsers.where((a) => a.status == 'inactive').length,
       suspendedAdmins: _adminUsers.where((a) => a.status == 'suspended').length,
-      pendingInvites: _pendingInvites.where((i) => i.status == 'pending').length,
-      expiredInvites: _pendingInvites.where((i) => i.status == 'expired').length,
+      pendingInvites: _pendingInvites
+          .where((i) => i.status == 'pending')
+          .length,
+      expiredInvites: _pendingInvites
+          .where((i) => i.status == 'expired')
+          .length,
       totalActivities: _activityLogs.length,
-      activitiesByType: _groupActivitiesBy(_activityLogs, (log) => log.actionType),
+      activitiesByType: _groupActivitiesBy(
+        _activityLogs,
+        (log) => log.actionType,
+      ),
       activitiesByDay: _groupActivitiesByDays(_activityLogs, 30),
-      activitiesByAdmin: _groupActivitiesBy(_activityLogs, (log) => log.adminName),
+      activitiesByAdmin: _groupActivitiesBy(
+        _activityLogs,
+        (log) => log.adminName,
+      ),
       recentLogins: _activeSessions,
-      averageSessionsPerAdmin: _adminUsers.isNotEmpty ? _activeSessions.length / _adminUsers.length : 0.0,
+      averageSessionsPerAdmin: _adminUsers.isNotEmpty
+          ? _activeSessions.length / _adminUsers.length
+          : 0.0,
       failedLoginAttempts: recentActivities
           .where((log) => log.action == 'Login' && !log.isSuccess)
           .length,
@@ -549,7 +582,10 @@ class AdminRepository {
     }
   }
 
-  Map<String, int> _groupActivitiesBy(List<ActivityLog> logs, String Function(ActivityLog) getter) {
+  Map<String, int> _groupActivitiesBy(
+    List<ActivityLog> logs,
+    String Function(ActivityLog) getter,
+  ) {
     final Map<String, int> result = {};
     for (final log in logs) {
       final key = getter(log);
@@ -561,43 +597,55 @@ class AdminRepository {
   Map<String, int> _groupActivitiesByDays(List<ActivityLog> logs, int days) {
     final now = DateTime.now();
     final Map<String, int> result = {};
-    
+
     for (int i = 0; i < days; i++) {
       final date = now.subtract(Duration(days: i));
-      final dateKey = '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
-      final dayLogs = logs.where((log) => 
-        log.timestamp.year == date.year &&
-        log.timestamp.month == date.month &&
-        log.timestamp.day == date.day
-      ).length;
+      final dateKey =
+          '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+      final dayLogs = logs
+          .where(
+            (log) =>
+                log.timestamp.year == date.year &&
+                log.timestamp.month == date.month &&
+                log.timestamp.day == date.day,
+          )
+          .length;
       result[dateKey] = dayLogs;
     }
-    
+
     return result;
   }
 
   List<Map<String, dynamic>> _getTopPerformingAdmins(List<ActivityLog> logs) {
     final adminStats = <String, Map<String, int>>{};
-    
+
     for (final log in logs) {
       if (!adminStats.keys.contains(log.adminName)) {
         adminStats[log.adminName] = {'total': 0, 'successful': 0};
       }
-      
-      adminStats[log.adminName]!['total'] = (adminStats[log.adminName]!['total'] ?? 0) + 1;
+
+      adminStats[log.adminName]!['total'] =
+          (adminStats[log.adminName]!['total'] ?? 0) + 1;
       if (log.isSuccess) {
-        adminStats[log.adminName]!['successful'] = (adminStats[log.adminName]!['successful'] ?? 0) + 1;
+        adminStats[log.adminName]!['successful'] =
+            (adminStats[log.adminName]!['successful'] ?? 0) + 1;
       }
     }
-    
+
     return adminStats.entries
-        .map((entry) => {
-              'adminName': entry.key,
-              'totalActivities': entry.value['total'],
-              'successRate': entry.value['successful']! / entry.value['total']!,
-            })
+        .map(
+          (entry) => {
+            'adminName': entry.key,
+            'totalActivities': entry.value['total'],
+            'successRate': entry.value['successful']! / entry.value['total']!,
+          },
+        )
         .toList()
-        ..sort((a, b) => (b['totalActivities'] as int).compareTo(a['totalActivities'] as int));
+      ..sort(
+        (a, b) => (b['totalActivities'] as int).compareTo(
+          a['totalActivities'] as int,
+        ),
+      );
   }
 
   double _calculateAvgResponseTime(List<ActivityLog> logs) {
@@ -605,23 +653,28 @@ class AdminRepository {
         .where((log) => log.metadata.containsKey('responseTime'))
         .map((log) => log.metadata['responseTime'] as double)
         .toList();
-    
+
     if (responseTimes.isEmpty) return 0.0;
     return responseTimes.reduce((a, b) => a + b) / responseTimes.length;
   }
 
-
   Map<String, double> _calculatePerformanceMetrics() {
     final totalActivities = _activityLogs.length;
     final successfulActivities = _activityLogs.where((l) => l.isSuccess).length;
-    final avgActionsPerSession = _activeSessions.isEmpty ? 0.0 : 
-        _activeSessions.map((s) => s.activityCount).reduce((a, b) => a + b) / _activeSessions.length;
-    
+    final avgActionsPerSession = _activeSessions.isEmpty
+        ? 0.0
+        : _activeSessions.map((s) => s.activityCount).reduce((a, b) => a + b) /
+              _activeSessions.length;
+
     return {
-      'successRate': totalActivities > 0 ? successfulActivities / totalActivities : 0.0,
+      'successRate': totalActivities > 0
+          ? successfulActivities / totalActivities
+          : 0.0,
       'averageActivitiesPerSession': avgActionsPerSession,
       'securityIncidentRate': avgActionsPerSession,
-      'adminEfficiency': successfulActivities / (_adminUsers.isNotEmpty ? _adminUsers.length : 1),
+      'adminEfficiency':
+          successfulActivities /
+          (_adminUsers.isNotEmpty ? _adminUsers.length : 1),
     };
   }
 
@@ -666,5 +719,4 @@ class AdminRepository {
   //   _activityLogs.insert(0, log);
   //   _updateStatistics();
   // }
-
 }

@@ -14,7 +14,7 @@ class NotificationService {
   /// Get all notifications for the current student
   Future<List<NotificationModel>> getStudentNotifications() async {
     try {
-      final headers = _authService.getAuthHeaders();
+      final headers = await _authService.getAuthHeaders();
       final response = await http.get(
         Uri.parse(ApiEndpoints.studentNotifications),
         headers: headers,
@@ -43,12 +43,12 @@ class NotificationService {
     }
   }
 
-  /// Mark a notification as read
-  Future<bool> markNotificationAsRead(String notificationId) async {
+  /// Mark notifications as read (using the mark-read endpoint)
+  Future<bool> markNotificationsAsRead() async {
     try {
-      final headers = _authService.getAuthHeaders();
+      final headers = await _authService.getAuthHeaders();
       final response = await http.patch(
-        Uri.parse('${ApiEndpoints.studentNotifications}/$notificationId/read'),
+        Uri.parse(ApiEndpoints.studentMarkNotificationsRead),
         headers: headers,
       );
 
@@ -60,32 +60,7 @@ class NotificationService {
       } else {
         final errorData = json.decode(response.body);
         throw Exception(
-          errorData['message'] ?? 'Failed to mark notification as read',
-        );
-      }
-    } catch (e) {
-      throw Exception('Network error: ${e.toString()}');
-    }
-  }
-
-  /// Delete a notification
-  Future<bool> deleteNotification(String notificationId) async {
-    try {
-      final headers = _authService.getAuthHeaders();
-      final response = await http.delete(
-        Uri.parse('${ApiEndpoints.studentNotifications}/$notificationId'),
-        headers: headers,
-      );
-
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        return data['success'] == true;
-      } else if (response.statusCode == 401) {
-        throw Exception('Authentication required');
-      } else {
-        final errorData = json.decode(response.body);
-        throw Exception(
-          errorData['message'] ?? 'Failed to delete notification',
+          errorData['message'] ?? 'Failed to mark notifications as read',
         );
       }
     } catch (e) {

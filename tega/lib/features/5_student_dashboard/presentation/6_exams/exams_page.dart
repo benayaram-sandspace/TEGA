@@ -118,62 +118,178 @@ class _ExamsPageState extends State<ExamsPage>
         ? const Center(
             child: CircularProgressIndicator(color: Color(0xFF6B5FFF)),
           )
-        : SingleChildScrollView(
-            padding: EdgeInsets.all(
-              isDesktop
-                  ? 24
-                  : isTablet
-                  ? 20
-                  : 16,
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Tega Main Exam - Featured
-                _buildTegaMainExam(isDesktop, isTablet),
-                SizedBox(height: isDesktop ? 40 : 32),
+        : Scaffold(
+            backgroundColor: const Color(0xFFF8FAFC),
+            body: CustomScrollView(
+              slivers: [
+                // Modern Header with Hero Section
+                _buildModernHeader(isDesktop, isTablet),
+
+                // Main Exam Section
+                _buildMainExamSection(isDesktop, isTablet),
 
                 // Course Exams Section
                 if (_courseExams.isNotEmpty) ...[
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        'Course Exams',
-                        style: TextStyle(
-                          fontSize: isDesktop ? 24 : 20,
-                          fontWeight: FontWeight.bold,
-                          color: const Color(0xFF1A1A1A),
-                        ),
-                      ),
-                      Text(
-                        '${_filteredExams.length} exams',
-                        style: TextStyle(
-                          fontSize: isDesktop ? 14 : 13,
-                          color: Colors.grey[600],
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Search and Filters
-                  _buildSearchAndFilters(isDesktop, isTablet),
-                  SizedBox(height: isDesktop ? 24 : 20),
-
-                  // Exams Grid
-                  _filteredExams.isNotEmpty
-                      ? _buildCourseExams(isDesktop, isTablet)
-                      : _buildNoResultsFound(isDesktop, isTablet),
+                  _buildCourseExamsSection(isDesktop, isTablet),
                 ] else ...[
-                  _buildNoCourseExams(isDesktop, isTablet),
+                  _buildNoCourseExamsSection(isDesktop, isTablet),
                 ],
+
+                // Bottom Spacing
+                SliverToBoxAdapter(
+                  child: SizedBox(height: isDesktop ? 40 : 32),
+                ),
               ],
             ),
           );
   }
 
-  Widget _buildTegaMainExam(bool isDesktop, bool isTablet) {
+  Widget _buildModernHeader(bool isDesktop, bool isTablet) {
+    return SliverToBoxAdapter(
+      child: Container(
+        margin: EdgeInsets.all(
+          isDesktop
+              ? 24
+              : isTablet
+              ? 20
+              : 16,
+        ),
+        padding: EdgeInsets.all(
+          isDesktop
+              ? 32
+              : isTablet
+              ? 28
+              : 24,
+        ),
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [Color(0xFF6B5FFF), Color(0xFF9C88FF), Color(0xFFB19CD9)],
+          ),
+          borderRadius: BorderRadius.circular(isDesktop ? 24 : 20),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFF6B5FFF).withOpacity(0.3),
+              blurRadius: isDesktop ? 20 : 16,
+              offset: Offset(0, isDesktop ? 8 : 6),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: EdgeInsets.all(isDesktop ? 16 : 12),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(isDesktop ? 16 : 12),
+                  ),
+                  child: Icon(
+                    Icons.quiz_rounded,
+                    color: Colors.white,
+                    size: isDesktop ? 32 : 28,
+                  ),
+                ),
+                SizedBox(width: isDesktop ? 16 : 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Exams & Assessments',
+                        style: TextStyle(
+                          fontSize: isDesktop ? 28 : 24,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                      SizedBox(height: isDesktop ? 4 : 2),
+                      Text(
+                        'Test your knowledge and earn certifications',
+                        style: TextStyle(
+                          fontSize: isDesktop ? 16 : 14,
+                          color: Colors.white.withOpacity(0.9),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: isDesktop ? 24 : 20),
+            Container(
+              padding: EdgeInsets.symmetric(
+                horizontal: isDesktop ? 20 : 16,
+                vertical: isDesktop ? 12 : 10,
+              ),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.15),
+                borderRadius: BorderRadius.circular(isDesktop ? 12 : 10),
+                border: Border.all(
+                  color: Colors.white.withOpacity(0.2),
+                  width: 1,
+                ),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.emoji_events_rounded,
+                    color: Colors.white,
+                    size: isDesktop ? 20 : 18,
+                  ),
+                  SizedBox(width: isDesktop ? 12 : 8),
+                  Expanded(
+                    child: Text(
+                      'Complete exams to unlock achievements and certificates',
+                      style: TextStyle(
+                        fontSize: isDesktop ? 14 : 12,
+                        color: Colors.white,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMainExamSection(bool isDesktop, bool isTablet) {
+    return SliverToBoxAdapter(
+      child: Container(
+        margin: EdgeInsets.symmetric(
+          horizontal: isDesktop
+              ? 24
+              : isTablet
+              ? 20
+              : 16,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Featured Exam',
+              style: TextStyle(
+                fontSize: isDesktop ? 22 : 20,
+                fontWeight: FontWeight.bold,
+                color: const Color(0xFF1A1A1A),
+              ),
+            ),
+            SizedBox(height: isDesktop ? 16 : 12),
+            _buildModernMainExam(isDesktop, isTablet),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildModernMainExam(bool isDesktop, bool isTablet) {
     return TweenAnimationBuilder<double>(
       duration: const Duration(milliseconds: 600),
       tween: Tween(begin: 0.0, end: 1.0),
@@ -193,12 +309,12 @@ class _ExamsPageState extends State<ExamsPage>
                     Color(0xFFB39DFF),
                   ],
                 ),
-                borderRadius: BorderRadius.circular(isDesktop ? 24 : 20),
+                borderRadius: BorderRadius.circular(isDesktop ? 20 : 16),
                 boxShadow: [
                   BoxShadow(
-                    color: const Color(0xFF6B5FFF).withOpacity(0.4),
-                    blurRadius: 24,
-                    offset: const Offset(0, 8),
+                    color: const Color(0xFF6B5FFF).withOpacity(0.3),
+                    blurRadius: isDesktop ? 20 : 16,
+                    offset: Offset(0, isDesktop ? 8 : 6),
                   ),
                 ],
               ),
@@ -207,26 +323,21 @@ class _ExamsPageState extends State<ExamsPage>
                 child: InkWell(
                   onTap: () =>
                       _showMainExamDialog(context, isDesktop, isTablet),
-                  borderRadius: BorderRadius.circular(isDesktop ? 24 : 20),
+                  borderRadius: BorderRadius.circular(isDesktop ? 20 : 16),
                   child: Padding(
-                    padding: EdgeInsets.all(
-                      isDesktop
-                          ? 40
-                          : isTablet
-                          ? 32
-                          : 24,
-                    ),
+                    padding: EdgeInsets.all(isDesktop ? 28 : 24),
                     child: Column(
                       children: [
-                        // Icon and Title
+                        // Header
                         Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             Container(
-                              padding: EdgeInsets.all(isDesktop ? 12 : 10),
+                              padding: EdgeInsets.all(isDesktop ? 16 : 12),
                               decoration: BoxDecoration(
                                 color: Colors.white.withOpacity(0.2),
-                                shape: BoxShape.circle,
+                                borderRadius: BorderRadius.circular(
+                                  isDesktop ? 16 : 12,
+                                ),
                               ),
                               child: Icon(
                                 Icons.workspace_premium_rounded,
@@ -234,97 +345,104 @@ class _ExamsPageState extends State<ExamsPage>
                                 color: Colors.white,
                               ),
                             ),
-                            const SizedBox(width: 16),
-                            Flexible(
+                            SizedBox(width: isDesktop ? 16 : 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Tega Main Exam',
+                                    style: TextStyle(
+                                      fontSize: isDesktop ? 24 : 20,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                  SizedBox(height: isDesktop ? 4 : 2),
+                                  Text(
+                                    'Comprehensive assessment across all domains',
+                                    style: TextStyle(
+                                      fontSize: isDesktop ? 14 : 12,
+                                      color: Colors.white.withOpacity(0.9),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            Container(
+                              padding: EdgeInsets.symmetric(
+                                horizontal: isDesktop ? 12 : 8,
+                                vertical: isDesktop ? 6 : 4,
+                              ),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFFFD700).withOpacity(0.2),
+                                borderRadius: BorderRadius.circular(
+                                  isDesktop ? 8 : 6,
+                                ),
+                              ),
                               child: Text(
-                                'Tega Main Exam',
+                                'Premium',
                                 style: TextStyle(
-                                  fontSize: isDesktop
-                                      ? 32
-                                      : isTablet
-                                      ? 28
-                                      : 24,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.white,
+                                  fontSize: isDesktop ? 12 : 10,
+                                  fontWeight: FontWeight.w600,
+                                  color: const Color(0xFFFFD700),
                                 ),
                               ),
                             ),
                           ],
                         ),
-                        SizedBox(height: isDesktop ? 20 : 16),
-
-                        // Divider
-                        Container(
-                          height: 3,
-                          width: isDesktop ? 100 : 80,
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFFFD700),
-                            borderRadius: BorderRadius.circular(2),
-                          ),
-                        ),
                         SizedBox(height: isDesktop ? 24 : 20),
 
-                        // Description
-                        Text(
-                          'Welcome to the comprehensive Tega Main Exam - your gateway to demonstrating mastery across all core technical domains. This flagship assessment evaluates your proficiency in programming, web development, artificial intelligence, cloud computing, cybersecurity, and office productivity tools.',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontSize: isDesktop
-                                ? 16
-                                : isTablet
-                                ? 15
-                                : 14,
-                            color: Colors.white.withOpacity(0.95),
-                            height: 1.5,
-                          ),
-                        ),
-                        SizedBox(height: isDesktop ? 32 : 24),
-
-                        // Features Grid
-                        Wrap(
-                          alignment: WrapAlignment.center,
-                          spacing: isDesktop ? 24 : 16,
-                          runSpacing: 16,
+                        // Features
+                        Row(
                           children: [
-                            _buildFeatureCard(
-                              icon: Icons.library_books_rounded,
-                              title: 'Comprehensive Coverage',
-                              description:
-                                  'Tests knowledge across 6 major technical domains with 200+ carefully crafted questions',
-                              isDesktop: isDesktop,
-                              isTablet: isTablet,
+                            Expanded(
+                              child: _buildModernFeatureCard(
+                                icon: Icons.library_books_rounded,
+                                title: '200+ Questions',
+                                subtitle: 'Comprehensive coverage',
+                                isDesktop: isDesktop,
+                                isTablet: isTablet,
+                              ),
                             ),
-                            _buildFeatureCard(
-                              icon: Icons.timer_rounded,
-                              title: 'Extended Duration',
-                              description:
-                                  '3-hour comprehensive exam with adaptive difficulty based on your performance',
-                              isDesktop: isDesktop,
-                              isTablet: isTablet,
+                            SizedBox(width: isDesktop ? 12 : 8),
+                            Expanded(
+                              child: _buildModernFeatureCard(
+                                icon: Icons.timer_rounded,
+                                title: '3 Hours',
+                                subtitle: 'Extended duration',
+                                isDesktop: isDesktop,
+                                isTablet: isTablet,
+                              ),
                             ),
-                            _buildFeatureCard(
-                              icon: Icons.emoji_events_rounded,
-                              title: 'Premium Certification',
-                              description:
-                                  'Earn the prestigious Tega Master Certification upon successful completion',
-                              isDesktop: isDesktop,
-                              isTablet: isTablet,
+                            SizedBox(width: isDesktop ? 12 : 8),
+                            Expanded(
+                              child: _buildModernFeatureCard(
+                                icon: Icons.emoji_events_rounded,
+                                title: 'Certificate',
+                                subtitle: 'Master certification',
+                                isDesktop: isDesktop,
+                                isTablet: isTablet,
+                              ),
                             ),
                           ],
                         ),
-                        SizedBox(height: isDesktop ? 32 : 24),
+                        SizedBox(height: isDesktop ? 24 : 20),
 
                         // Start Button
                         Container(
+                          width: double.infinity,
                           decoration: BoxDecoration(
                             gradient: const LinearGradient(
                               colors: [Color(0xFFFFD700), Color(0xFFFFA500)],
                             ),
-                            borderRadius: BorderRadius.circular(12),
+                            borderRadius: BorderRadius.circular(
+                              isDesktop ? 12 : 10,
+                            ),
                             boxShadow: [
                               BoxShadow(
-                                color: const Color(0xFFFFD700).withOpacity(0.5),
-                                blurRadius: 16,
+                                color: const Color(0xFFFFD700).withOpacity(0.4),
+                                blurRadius: isDesktop ? 12 : 8,
                                 offset: const Offset(0, 4),
                               ),
                             ],
@@ -337,25 +455,27 @@ class _ExamsPageState extends State<ExamsPage>
                                 isDesktop,
                                 isTablet,
                               ),
-                              borderRadius: BorderRadius.circular(12),
+                              borderRadius: BorderRadius.circular(
+                                isDesktop ? 12 : 10,
+                              ),
                               child: Padding(
                                 padding: EdgeInsets.symmetric(
-                                  horizontal: isDesktop ? 48 : 40,
-                                  vertical: isDesktop ? 18 : 16,
+                                  horizontal: isDesktop ? 24 : 20,
+                                  vertical: isDesktop ? 16 : 14,
                                 ),
                                 child: Row(
-                                  mainAxisSize: MainAxisSize.min,
+                                  mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
                                     const Icon(
                                       Icons.play_arrow_rounded,
                                       color: Colors.black87,
                                       size: 24,
                                     ),
-                                    const SizedBox(width: 8),
+                                    SizedBox(width: isDesktop ? 8 : 6),
                                     Text(
                                       'Start Tega Main Exam',
                                       style: TextStyle(
-                                        fontSize: isDesktop ? 18 : 16,
+                                        fontSize: isDesktop ? 16 : 14,
                                         fontWeight: FontWeight.bold,
                                         color: Colors.black87,
                                       ),
@@ -364,16 +484,6 @@ class _ExamsPageState extends State<ExamsPage>
                                 ),
                               ),
                             ),
-                          ),
-                        ),
-                        SizedBox(height: isDesktop ? 16 : 12),
-
-                        // Exam Info
-                        Text(
-                          'Estimated time: 3 hours • 200 questions • Advanced difficulty',
-                          style: TextStyle(
-                            fontSize: isDesktop ? 14 : 13,
-                            color: Colors.white.withOpacity(0.8),
                           ),
                         ),
                       ],
@@ -388,101 +498,156 @@ class _ExamsPageState extends State<ExamsPage>
     );
   }
 
-  Widget _buildFeatureCard({
+  Widget _buildModernFeatureCard({
     required IconData icon,
     required String title,
-    required String description,
+    required String subtitle,
     required bool isDesktop,
     required bool isTablet,
   }) {
     return Container(
-      width: isDesktop
-          ? 280
-          : isTablet
-          ? 240
-          : double.infinity,
-      padding: EdgeInsets.all(isDesktop ? 20 : 16),
+      padding: EdgeInsets.all(isDesktop ? 16 : 12),
       decoration: BoxDecoration(
         color: Colors.white.withOpacity(0.15),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white.withOpacity(0.3), width: 1),
+        borderRadius: BorderRadius.circular(isDesktop ? 12 : 10),
+        border: Border.all(color: Colors.white.withOpacity(0.2), width: 1),
       ),
       child: Column(
         children: [
-          Icon(icon, size: isDesktop ? 40 : 36, color: const Color(0xFFFFD700)),
-          const SizedBox(height: 12),
+          Icon(icon, size: isDesktop ? 24 : 20, color: const Color(0xFFFFD700)),
+          SizedBox(height: isDesktop ? 8 : 6),
           Text(
             title,
             style: TextStyle(
-              fontSize: isDesktop ? 16 : 15,
+              fontSize: isDesktop ? 14 : 12,
               fontWeight: FontWeight.bold,
               color: Colors.white,
             ),
             textAlign: TextAlign.center,
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: isDesktop ? 2 : 1),
           Text(
-            description,
+            subtitle,
             style: TextStyle(
-              fontSize: isDesktop ? 13 : 12,
-              color: Colors.white.withOpacity(0.9),
-              height: 1.4,
+              fontSize: isDesktop ? 11 : 10,
+              color: Colors.white.withOpacity(0.8),
             ),
             textAlign: TextAlign.center,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
         ],
       ),
     );
   }
 
-  Widget _buildSearchAndFilters(bool isDesktop, bool isTablet) {
+  Widget _buildCourseExamsSection(bool isDesktop, bool isTablet) {
+    return SliverToBoxAdapter(
+      child: Container(
+        margin: EdgeInsets.all(
+          isDesktop
+              ? 24
+              : isTablet
+              ? 20
+              : 16,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Course Exams',
+                  style: TextStyle(
+                    fontSize: isDesktop ? 22 : 20,
+                    fontWeight: FontWeight.bold,
+                    color: const Color(0xFF1A1A1A),
+                  ),
+                ),
+                Container(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: isDesktop ? 12 : 8,
+                    vertical: isDesktop ? 6 : 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF6B5FFF).withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(isDesktop ? 8 : 6),
+                  ),
+                  child: Text(
+                    '${_filteredExams.length} exams',
+                    style: TextStyle(
+                      fontSize: isDesktop ? 12 : 10,
+                      fontWeight: FontWeight.w600,
+                      color: const Color(0xFF6B5FFF),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: isDesktop ? 16 : 12),
+
+            // Search and Filters
+            _buildModernSearchAndFilters(isDesktop, isTablet),
+            SizedBox(height: isDesktop ? 20 : 16),
+
+            // Exams List
+            _filteredExams.isNotEmpty
+                ? _buildModernCourseExams(isDesktop, isTablet)
+                : _buildNoResultsFound(isDesktop, isTablet),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildModernSearchAndFilters(bool isDesktop, bool isTablet) {
     return Column(
       children: [
         // Search Bar
-        TextField(
-          controller: _searchController,
-          onChanged: (_) => _applyFilters(),
-          style: TextStyle(fontSize: isDesktop ? 16 : 14),
-          decoration: InputDecoration(
-            hintText: 'Search exams...',
-            hintStyle: TextStyle(
-              color: Colors.grey[400],
-              fontSize: isDesktop ? 16 : 14,
-            ),
-            prefixIcon: Icon(
-              Icons.search,
-              color: const Color(0xFF6B5FFF),
-              size: isDesktop ? 24 : 20,
-            ),
-            filled: true,
-            fillColor: Colors.white,
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(isDesktop ? 14 : 12),
-              borderSide: BorderSide.none,
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(isDesktop ? 14 : 12),
-              borderSide: BorderSide(color: Colors.grey[200]!),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(isDesktop ? 14 : 12),
-              borderSide: const BorderSide(color: Color(0xFF6B5FFF), width: 2),
-            ),
-            contentPadding: EdgeInsets.symmetric(
-              horizontal: isDesktop ? 20 : 16,
-              vertical: isDesktop ? 16 : 14,
+        Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(isDesktop ? 12 : 10),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: isDesktop ? 8 : 6,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: TextField(
+            controller: _searchController,
+            onChanged: (_) => _applyFilters(),
+            style: TextStyle(fontSize: isDesktop ? 16 : 14),
+            decoration: InputDecoration(
+              hintText: 'Search exams...',
+              hintStyle: TextStyle(
+                color: Colors.grey[400],
+                fontSize: isDesktop ? 16 : 14,
+              ),
+              prefixIcon: Icon(
+                Icons.search,
+                color: const Color(0xFF6B5FFF),
+                size: isDesktop ? 24 : 20,
+              ),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(isDesktop ? 12 : 10),
+                borderSide: BorderSide.none,
+              ),
+              contentPadding: EdgeInsets.symmetric(
+                horizontal: isDesktop ? 20 : 16,
+                vertical: isDesktop ? 16 : 14,
+              ),
             ),
           ),
         ),
-        SizedBox(height: isDesktop ? 16 : 14),
+        SizedBox(height: isDesktop ? 16 : 12),
 
         // Category Filters
         SizedBox(
-          height: isDesktop
-              ? 44
-              : isTablet
-              ? 42
-              : 40,
+          height: isDesktop ? 44 : 40,
           child: ListView.builder(
             scrollDirection: Axis.horizontal,
             itemCount: _filters.length,
@@ -491,35 +656,51 @@ class _ExamsPageState extends State<ExamsPage>
               final isSelected = _selectedFilter == filter;
               return Padding(
                 padding: EdgeInsets.only(right: isDesktop ? 10 : 8),
-                child: FilterChip(
-                  label: Text(filter),
-                  selected: isSelected,
-                  onSelected: (selected) {
-                    setState(() {
-                      _selectedFilter = filter;
-                      _applyFilters();
-                    });
-                  },
-                  backgroundColor: Colors.white,
-                  selectedColor: const Color(0xFF6B5FFF).withOpacity(0.2),
-                  labelStyle: TextStyle(
-                    fontSize: isDesktop ? 14 : 13,
-                    color: isSelected
-                        ? const Color(0xFF6B5FFF)
-                        : Colors.grey[700],
-                    fontWeight: isSelected
-                        ? FontWeight.w600
-                        : FontWeight.normal,
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: isSelected ? const Color(0xFF6B5FFF) : Colors.white,
+                    borderRadius: BorderRadius.circular(isDesktop ? 10 : 8),
+                    border: Border.all(
+                      color: isSelected
+                          ? const Color(0xFF6B5FFF)
+                          : Colors.grey[300]!,
+                      width: 1,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.05),
+                        blurRadius: isDesktop ? 6 : 4,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
                   ),
-                  side: BorderSide(
-                    color: isSelected
-                        ? const Color(0xFF6B5FFF)
-                        : Colors.grey[300]!,
-                    width: 1.5,
-                  ),
-                  padding: EdgeInsets.symmetric(
-                    horizontal: isDesktop ? 16 : 12,
-                    vertical: isDesktop ? 10 : 8,
+                  child: Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      onTap: () {
+                        setState(() {
+                          _selectedFilter = filter;
+                          _applyFilters();
+                        });
+                      },
+                      borderRadius: BorderRadius.circular(isDesktop ? 10 : 8),
+                      child: Padding(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: isDesktop ? 16 : 12,
+                          vertical: isDesktop ? 10 : 8,
+                        ),
+                        child: Text(
+                          filter,
+                          style: TextStyle(
+                            fontSize: isDesktop ? 14 : 12,
+                            color: isSelected ? Colors.white : Colors.grey[700],
+                            fontWeight: isSelected
+                                ? FontWeight.w600
+                                : FontWeight.normal,
+                          ),
+                        ),
+                      ),
+                    ),
                   ),
                 ),
               );
@@ -530,27 +711,10 @@ class _ExamsPageState extends State<ExamsPage>
     );
   }
 
-  Widget _buildCourseExams(bool isDesktop, bool isTablet) {
-    return GridView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: isDesktop
-            ? 3
-            : isTablet
-            ? 2
-            : 1,
-        crossAxisSpacing: 16,
-        mainAxisSpacing: 16,
-        childAspectRatio: isDesktop
-            ? 1.3
-            : isTablet
-            ? 1.2
-            : 1.4,
-      ),
-      itemCount: _filteredExams.length,
-      itemBuilder: (context, index) {
-        final exam = _filteredExams[index];
+  Widget _buildModernCourseExams(bool isDesktop, bool isTablet) {
+    return Column(
+      children: _filteredExams.map((exam) {
+        final index = _filteredExams.indexOf(exam);
         final delay = index * 100;
         return TweenAnimationBuilder<double>(
           duration: Duration(milliseconds: 600 + delay),
@@ -560,16 +724,23 @@ class _ExamsPageState extends State<ExamsPage>
               offset: Offset(0, 20 * (1 - value)),
               child: Opacity(
                 opacity: value,
-                child: _buildExamCard(exam, isDesktop, isTablet),
+                child: Container(
+                  margin: EdgeInsets.only(
+                    bottom: index == _filteredExams.length - 1
+                        ? 0
+                        : (isDesktop ? 16 : 12),
+                  ),
+                  child: _buildModernExamCard(exam, isDesktop, isTablet),
+                ),
               ),
             );
           },
         );
-      },
+      }).toList(),
     );
   }
 
-  Widget _buildExamCard(
+  Widget _buildModernExamCard(
     Map<String, dynamic> exam,
     bool isDesktop,
     bool isTablet,
@@ -595,12 +766,12 @@ class _ExamsPageState extends State<ExamsPage>
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(isDesktop ? 16 : 14),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+            blurRadius: isDesktop ? 12 : 8,
+            offset: Offset(0, isDesktop ? 4 : 2),
           ),
         ],
       ),
@@ -608,61 +779,65 @@ class _ExamsPageState extends State<ExamsPage>
         color: Colors.transparent,
         child: InkWell(
           onTap: () => _showExamDialog(context, exam, isDesktop, isTablet),
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(isDesktop ? 16 : 14),
           child: Padding(
             padding: EdgeInsets.all(isDesktop ? 20 : 16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            child: Row(
               children: [
-                // Header
-                Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [
-                            const Color(0xFF6B5FFF),
-                            const Color(0xFF8F7FFF),
-                          ],
-                        ),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Icon(
-                        Icons.assignment_rounded,
-                        size: isDesktop ? 24 : 20,
-                        color: Colors.white,
-                      ),
+                // Icon
+                Container(
+                  padding: EdgeInsets.all(isDesktop ? 16 : 12),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        const Color(0xFF6B5FFF),
+                        const Color(0xFF8F7FFF),
+                      ],
                     ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                    borderRadius: BorderRadius.circular(isDesktop ? 12 : 10),
+                  ),
+                  child: Icon(
+                    Icons.assignment_rounded,
+                    size: isDesktop ? 28 : 24,
+                    color: Colors.white,
+                  ),
+                ),
+                SizedBox(width: isDesktop ? 16 : 12),
+
+                // Content
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
                         children: [
-                          Text(
-                            exam['courseName'],
-                            style: TextStyle(
-                              fontSize: isDesktop ? 12 : 11,
-                              color: Colors.grey[600],
-                              fontWeight: FontWeight.w500,
+                          Expanded(
+                            child: Text(
+                              exam['title'],
+                              style: TextStyle(
+                                fontSize: isDesktop ? 18 : 16,
+                                fontWeight: FontWeight.bold,
+                                color: const Color(0xFF1A1A1A),
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                             ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
                           ),
-                          const SizedBox(height: 2),
                           Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 2,
+                            padding: EdgeInsets.symmetric(
+                              horizontal: isDesktop ? 8 : 6,
+                              vertical: isDesktop ? 4 : 2,
                             ),
                             decoration: BoxDecoration(
                               color: difficultyColor.withOpacity(0.1),
-                              borderRadius: BorderRadius.circular(4),
+                              borderRadius: BorderRadius.circular(
+                                isDesktop ? 6 : 4,
+                              ),
                             ),
                             child: Text(
                               exam['difficulty'],
                               style: TextStyle(
-                                fontSize: 10,
+                                fontSize: isDesktop ? 10 : 9,
                                 color: difficultyColor,
                                 fontWeight: FontWeight.w600,
                               ),
@@ -670,60 +845,54 @@ class _ExamsPageState extends State<ExamsPage>
                           ),
                         ],
                       ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-
-                // Title
-                Text(
-                  exam['title'],
-                  style: TextStyle(
-                    fontSize: isDesktop ? 16 : 15,
-                    fontWeight: FontWeight.bold,
-                    color: const Color(0xFF1A1A1A),
-                  ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const Spacer(),
-
-                // Exam Info
-                Wrap(
-                  spacing: 12,
-                  runSpacing: 8,
-                  children: [
-                    _buildInfoChip(
-                      icon: Icons.timer_outlined,
-                      label: exam['duration'],
-                      isDesktop: isDesktop,
-                    ),
-                    _buildInfoChip(
-                      icon: Icons.quiz_outlined,
-                      label: exam['questions'],
-                      isDesktop: isDesktop,
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-
-                // Progress
-                Row(
-                  children: [
-                    Text(
-                      'Attempts: ${exam['attempts']}/${exam['maxAttempts']}',
-                      style: TextStyle(
-                        fontSize: isDesktop ? 12 : 11,
-                        color: Colors.grey[600],
+                      SizedBox(height: isDesktop ? 6 : 4),
+                      Text(
+                        exam['courseName'],
+                        style: TextStyle(
+                          fontSize: isDesktop ? 14 : 12,
+                          color: Colors.grey[600],
+                          fontWeight: FontWeight.w500,
+                        ),
                       ),
-                    ),
-                    const Spacer(),
-                    Icon(
-                      Icons.arrow_forward_ios_rounded,
-                      size: 16,
-                      color: const Color(0xFF6B5FFF),
-                    ),
-                  ],
+                      SizedBox(height: isDesktop ? 12 : 8),
+                      Row(
+                        children: [
+                          Flexible(
+                            child: _buildModernInfoChip(
+                              icon: Icons.timer_outlined,
+                              label: exam['duration'],
+                              isDesktop: isDesktop,
+                            ),
+                          ),
+                          SizedBox(width: isDesktop ? 12 : 8),
+                          Flexible(
+                            child: _buildModernInfoChip(
+                              icon: Icons.quiz_outlined,
+                              label: exam['questions'],
+                              isDesktop: isDesktop,
+                            ),
+                          ),
+                          const Spacer(),
+                          Flexible(
+                            child: Text(
+                              '${exam['attempts']}/${exam['maxAttempts']} attempts',
+                              style: TextStyle(
+                                fontSize: isDesktop ? 12 : 11,
+                                color: Colors.grey[600],
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                SizedBox(width: isDesktop ? 12 : 8),
+                Icon(
+                  Icons.arrow_forward_ios_rounded,
+                  size: isDesktop ? 18 : 16,
+                  color: const Color(0xFF6B5FFF),
                 ),
               ],
             ),
@@ -733,7 +902,7 @@ class _ExamsPageState extends State<ExamsPage>
     );
   }
 
-  Widget _buildInfoChip({
+  Widget _buildModernInfoChip({
     required IconData icon,
     required String label,
     required bool isDesktop,
@@ -742,15 +911,33 @@ class _ExamsPageState extends State<ExamsPage>
       mainAxisSize: MainAxisSize.min,
       children: [
         Icon(icon, size: isDesktop ? 14 : 12, color: Colors.grey[600]),
-        const SizedBox(width: 4),
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: isDesktop ? 12 : 11,
-            color: Colors.grey[600],
+        SizedBox(width: isDesktop ? 4 : 2),
+        Flexible(
+          child: Text(
+            label,
+            style: TextStyle(
+              fontSize: isDesktop ? 12 : 11,
+              color: Colors.grey[600],
+            ),
+            overflow: TextOverflow.ellipsis,
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildNoCourseExamsSection(bool isDesktop, bool isTablet) {
+    return SliverToBoxAdapter(
+      child: Container(
+        margin: EdgeInsets.all(
+          isDesktop
+              ? 24
+              : isTablet
+              ? 20
+              : 16,
+        ),
+        child: _buildNoCourseExams(isDesktop, isTablet),
+      ),
     );
   }
 
