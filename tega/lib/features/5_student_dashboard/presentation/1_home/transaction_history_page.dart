@@ -134,17 +134,20 @@ class _TransactionHistoryPageState extends State<TransactionHistoryPage> {
   }
 
   Widget _buildContent() {
-    return Column(
-      children: [
-        // Combined Header and Stats Section
-        _buildCombinedHeaderAndStats(),
-        const SizedBox(height: 16),
-        // Search and Filter Section
-        _buildSearchAndFilters(),
-        const SizedBox(height: 16),
-        // Transaction List
-        Expanded(child: _buildTransactionList()),
-      ],
+    return SingleChildScrollView(
+      child: Column(
+        children: [
+          // Combined Header and Stats Section
+          _buildCombinedHeaderAndStats(),
+          const SizedBox(height: 16),
+          // Search and Filter Section
+          _buildSearchAndFilters(),
+          const SizedBox(height: 16),
+          // Transaction List
+          _buildTransactionList(),
+          const SizedBox(height: 20), // Bottom padding for better scrolling
+        ],
+      ),
     );
   }
 
@@ -696,13 +699,49 @@ class _TransactionHistoryPageState extends State<TransactionHistoryPage> {
 
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 20),
-      child: ListView.separated(
-        itemCount: filteredTransactions.length,
-        separatorBuilder: (context, index) => const SizedBox(height: 12),
-        itemBuilder: (context, index) {
-          final transaction = filteredTransactions[index];
-          return _buildTransactionCard(transaction);
-        },
+      child: Column(
+        children: [
+          // Section Header
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF9C88FF).withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(
+                  Icons.receipt_long,
+                  color: Color(0xFF9C88FF),
+                  size: 16,
+                ),
+              ),
+              const SizedBox(width: 8),
+              const Text(
+                'Transaction History',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF2C3E50),
+                ),
+              ),
+              const Spacer(),
+              Text(
+                '${filteredTransactions.length} transactions',
+                style: const TextStyle(
+                  fontSize: 12,
+                  color: Color(0xFF6C757D),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          // Transaction Cards
+          ...filteredTransactions.map((transaction) => Padding(
+            padding: const EdgeInsets.only(bottom: 12),
+            child: _buildTransactionCard(transaction),
+          )),
+        ],
       ),
     );
   }
@@ -820,7 +859,8 @@ class _TransactionHistoryPageState extends State<TransactionHistoryPage> {
   }
 
   Widget _buildEmptyState() {
-    return SingleChildScrollView(
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 20),
       child: Center(
         child: Container(
           padding: const EdgeInsets.all(32),
