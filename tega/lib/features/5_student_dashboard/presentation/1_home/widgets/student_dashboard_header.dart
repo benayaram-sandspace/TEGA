@@ -2,20 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:tega/features/5_student_dashboard/presentation/1_home/student_notification_page.dart';
 import 'package:tega/features/5_student_dashboard/presentation/4_profile_and_settings/student_avatar_screen.dart';
-import 'package:tega/features/5_student_dashboard/presentation/shared/widgets/profile_picture_widget.dart';
 
 class StudentDashboardHeader extends StatelessWidget {
   final VoidCallback onMenuTap;
   final int notificationCount;
   final String title;
-  final Map<String, dynamic>? profileData;
 
   const StudentDashboardHeader({
     super.key,
     required this.onMenuTap,
     this.notificationCount = 0,
     this.title = 'Dashboard',
-    this.profileData,
   });
 
   IconData _getIconForTitle(String title) {
@@ -208,20 +205,50 @@ class StudentDashboardHeader extends StatelessWidget {
           ),
           const SizedBox(width: 12),
           // Profile Avatar with elegant design
-          Hero(
-            tag: 'avatarHero',
-            child: ProfilePictureWidget(
-              profilePhotoUrl: profileData?['profilePhoto'],
-              username: profileData?['username'] ?? profileData?['email'],
-              firstName: profileData?['firstName'],
-              lastName: profileData?['lastName'],
-              radius: 17,
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const AvatarScreen()),
-                );
-              },
+          GestureDetector(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const AvatarScreen()),
+              );
+            },
+            child: Hero(
+              tag: 'avatarHero',
+              child: Container(
+                padding: const EdgeInsets.all(2),
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: const LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [Color(0xFF6B5FFF), Color(0xFF5E4FDB)],
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFF6B5FFF).withOpacity(0.3),
+                      spreadRadius: 0,
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Container(
+                  decoration: const BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: Colors.white,
+                  ),
+                  padding: const EdgeInsets.all(2),
+                  child: CircleAvatar(
+                    radius: 17,
+                    backgroundColor: const Color(0xFF6B5FFF).withOpacity(0.1),
+                    child: const Icon(
+                      Icons.person_rounded,
+                      color: Color(0xFF6B5FFF),
+                      size: 20,
+                    ),
+                  ),
+                ),
+              ),
             ),
           ),
         ],

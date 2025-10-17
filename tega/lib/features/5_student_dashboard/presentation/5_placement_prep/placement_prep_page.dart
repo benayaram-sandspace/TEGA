@@ -180,8 +180,6 @@ class _PlacementPrepPageState extends State<PlacementPrepPage> {
                           fontSize: isDesktop ? 16 : 14,
                           color: Colors.white.withOpacity(0.9),
                         ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
                       ),
                     ],
                   ),
@@ -210,16 +208,12 @@ class _PlacementPrepPageState extends State<PlacementPrepPage> {
                     size: isDesktop ? 20 : 18,
                   ),
                   SizedBox(width: isDesktop ? 12 : 8),
-                  Expanded(
-                    child: Text(
-                      'Track your progress and boost your skills',
-                      style: TextStyle(
-                        fontSize: isDesktop ? 14 : 12,
-                        color: Colors.white,
-                        fontWeight: FontWeight.w500,
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
+                  Text(
+                    'Track your progress and boost your skills',
+                    style: TextStyle(
+                      fontSize: isDesktop ? 14 : 12,
+                      color: Colors.white,
+                      fontWeight: FontWeight.w500,
                     ),
                   ),
                 ],
@@ -498,8 +492,6 @@ class _PlacementPrepPageState extends State<PlacementPrepPage> {
                               fontWeight: FontWeight.bold,
                               color: const Color(0xFF1A1A1A),
                             ),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
                           ),
                         ),
                         Container(
@@ -536,8 +528,6 @@ class _PlacementPrepPageState extends State<PlacementPrepPage> {
                         color: Colors.grey[600],
                         height: 1.4,
                       ),
-                      maxLines: 3,
-                      overflow: TextOverflow.ellipsis,
                     ),
                   ],
                 ),
