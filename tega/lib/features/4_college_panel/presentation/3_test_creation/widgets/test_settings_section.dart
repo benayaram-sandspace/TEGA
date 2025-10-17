@@ -176,7 +176,7 @@ class TestSettingsSection extends StatelessWidget {
             ],
           ),
         ),
-        Switch(value: value, onChanged: onChanged, activeThumbColor: activeColor),
+        Switch(value: value, onChanged: onChanged, activeColor: activeColor),
       ],
     );
   }

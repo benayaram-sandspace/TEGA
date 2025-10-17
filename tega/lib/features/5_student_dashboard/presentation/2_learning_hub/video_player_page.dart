@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:video_player/video_player.dart';
+import 'package:tega/core/utils/logging_config.dart';
 
 class VideoPlayerPage extends StatefulWidget {
   final String videoUrl;

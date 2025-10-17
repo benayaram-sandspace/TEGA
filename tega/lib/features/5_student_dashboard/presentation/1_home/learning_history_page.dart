@@ -104,39 +104,20 @@ class _LearningHistoryPageState extends State<LearningHistoryPage> {
   Widget _buildHeroSection() {
     final stats = _learningStats!;
     final completionRate = stats.completionRate / 100;
-    
-    // Get screen width for responsive design
-    final screenWidth = MediaQuery.of(context).size.width;
-    final isTablet = screenWidth >= 600;
-    final isDesktop = screenWidth >= 1024;
-    final isLargeDesktop = screenWidth >= 1440;
-    final isSmallScreen = screenWidth < 400;
 
     return Container(
-      padding: EdgeInsets.all(
-        isLargeDesktop 
-            ? 40 
-            : isDesktop 
-            ? 36 
-            : isTablet 
-            ? 32 
-            : isSmallScreen 
-            ? 24 
-            : 28
-      ),
+      padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [Color(0xFF9C88FF), Color(0xFF7A6BFF)],
         ),
-        borderRadius: BorderRadius.circular(
-          isLargeDesktop ? 28 : isDesktop ? 26 : isTablet ? 24 : isSmallScreen ? 20 : 22
-        ),
+        borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
             color: const Color(0xFF9C88FF).withOpacity(0.3),
-            blurRadius: isLargeDesktop ? 24 : isDesktop ? 20 : isTablet ? 18 : isSmallScreen ? 12 : 16,
+            blurRadius: 20,
             offset: const Offset(0, 10),
           ),
         ],
@@ -148,46 +129,14 @@ class _LearningHistoryPageState extends State<LearningHistoryPage> {
             children: [
               // Circular Progress Ring
               SizedBox(
-                width: isLargeDesktop 
-                    ? 160 
-                    : isDesktop 
-                    ? 140 
-                    : isTablet 
-                    ? 120 
-                    : isSmallScreen 
-                    ? 100 
-                    : 110,
-                height: isLargeDesktop 
-                    ? 160 
-                    : isDesktop 
-                    ? 140 
-                    : isTablet 
-                    ? 120 
-                    : isSmallScreen 
-                    ? 100 
-                    : 110,
+                width: 120,
+                height: 120,
                 child: Stack(
                   children: [
                     // Background Circle
                     Container(
-                      width: isLargeDesktop 
-                          ? 160 
-                          : isDesktop 
-                          ? 140 
-                          : isTablet 
-                          ? 120 
-                          : isSmallScreen 
-                          ? 100 
-                          : 110,
-                      height: isLargeDesktop 
-                          ? 160 
-                          : isDesktop 
-                          ? 140 
-                          : isTablet 
-                          ? 120 
-                          : isSmallScreen 
-                          ? 100 
-                          : 110,
+                      width: 120,
+                      height: 120,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
                         color: Colors.white.withOpacity(0.2),
@@ -197,15 +146,7 @@ class _LearningHistoryPageState extends State<LearningHistoryPage> {
                     Positioned.fill(
                       child: CircularProgressIndicator(
                         value: completionRate,
-                        strokeWidth: isLargeDesktop 
-                            ? 12 
-                            : isDesktop 
-                            ? 10 
-                            : isTablet 
-                            ? 9 
-                            : isSmallScreen 
-                            ? 7 
-                            : 8,
+                        strokeWidth: 8,
                         backgroundColor: Colors.white.withOpacity(0.3),
                         valueColor: const AlwaysStoppedAnimation<Color>(
                           Colors.white,
@@ -219,32 +160,16 @@ class _LearningHistoryPageState extends State<LearningHistoryPage> {
                         children: [
                           Text(
                             '${stats.completionRate.toStringAsFixed(0)}%',
-                            style: TextStyle(
-                              fontSize: isLargeDesktop 
-                                  ? 36 
-                                  : isDesktop 
-                                  ? 32 
-                                  : isTablet 
-                                  ? 28 
-                                  : isSmallScreen 
-                                  ? 22 
-                                  : 24,
+                            style: const TextStyle(
+                              fontSize: 24,
                               fontWeight: FontWeight.bold,
                               color: Colors.white,
                             ),
                           ),
-                          Text(
+                          const Text(
                             'Complete',
                             style: TextStyle(
-                              fontSize: isLargeDesktop 
-                                  ? 18 
-                                  : isDesktop 
-                                  ? 16 
-                                  : isTablet 
-                                  ? 14 
-                                  : isSmallScreen 
-                                  ? 12 
-                                  : 13,
+                              fontSize: 12,
                               color: Colors.white70,
                             ),
                           ),
@@ -254,41 +179,33 @@ class _LearningHistoryPageState extends State<LearningHistoryPage> {
                   ],
                 ),
               ),
-              SizedBox(width: isLargeDesktop ? 32 : isDesktop ? 28 : isTablet ? 24 : isSmallScreen ? 16 : 20),
+              const SizedBox(width: 24),
               // Stats Info
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
+                    const Text(
                       'Learning Progress',
                       style: TextStyle(
-                        fontSize: isLargeDesktop 
-                            ? 32 
-                            : isDesktop 
-                            ? 28 
-                            : isTablet 
-                            ? 24 
-                            : isSmallScreen 
-                            ? 20 
-                            : 22,
+                        fontSize: 20,
                         fontWeight: FontWeight.bold,
                         color: Colors.white,
                       ),
                     ),
-                    SizedBox(height: isLargeDesktop ? 14 : isDesktop ? 12 : isTablet ? 10 : isSmallScreen ? 6 : 8),
+                    const SizedBox(height: 8),
                     _buildStatRow(
                       Icons.school_outlined,
                       '${stats.coursesEnrolled} Courses',
                       'Enrolled',
                     ),
-                    SizedBox(height: isLargeDesktop ? 12 : isDesktop ? 10 : isTablet ? 8 : isSmallScreen ? 5 : 6),
+                    const SizedBox(height: 6),
                     _buildStatRow(
                       Icons.check_circle_outline,
                       '${stats.completedLectures} Completed',
                       'Lectures',
                     ),
-                    SizedBox(height: isLargeDesktop ? 12 : isDesktop ? 10 : isTablet ? 8 : isSmallScreen ? 5 : 6),
+                    const SizedBox(height: 6),
                     _buildStatRow(
                       Icons.access_time,
                       stats.formattedTimeSpent,
@@ -299,46 +216,25 @@ class _LearningHistoryPageState extends State<LearningHistoryPage> {
               ),
             ],
           ),
-          SizedBox(height: isLargeDesktop ? 32 : isDesktop ? 28 : isTablet ? 24 : 20),
+          const SizedBox(height: 20),
           // Achievement Badge
           Container(
-            padding: EdgeInsets.symmetric(
-              horizontal: isLargeDesktop ? 28 : isDesktop ? 24 : isTablet ? 20 : isSmallScreen ? 16 : 18,
-              vertical: isLargeDesktop ? 14 : isDesktop ? 12 : isTablet ? 10 : isSmallScreen ? 8 : 9
-            ),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             decoration: BoxDecoration(
               color: Colors.white.withOpacity(0.2),
-              borderRadius: BorderRadius.circular(
-                isLargeDesktop ? 28 : isDesktop ? 24 : isTablet ? 22 : isSmallScreen ? 20 : 22
-              ),
+              borderRadius: BorderRadius.circular(20),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(
-                  Icons.emoji_events, 
-                  color: Colors.white, 
-                  size: isLargeDesktop ? 22 : isDesktop ? 20 : isTablet ? 18 : isSmallScreen ? 16 : 17
-                ),
-                            SizedBox(width: isLargeDesktop ? 14 : isDesktop ? 12 : isTablet ? 10 : 8),
-                Flexible(
-                  child: Text(
-                    'Keep up the great work!',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: isLargeDesktop 
-                          ? 20 
-                          : isDesktop 
-                          ? 18 
-                          : isTablet 
-                          ? 16 
-                          : isSmallScreen 
-                          ? 14 
-                          : 15,
-                      fontWeight: FontWeight.w500,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+                const Icon(Icons.emoji_events, color: Colors.white, size: 16),
+                const SizedBox(width: 8),
+                const Text(
+                  'Keep up the great work!',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
                   ),
                 ),
               ],
@@ -350,91 +246,34 @@ class _LearningHistoryPageState extends State<LearningHistoryPage> {
   }
 
   Widget _buildStatRow(IconData icon, String value, String label) {
-    // Get screen width for responsive design
-    final screenWidth = MediaQuery.of(context).size.width;
-    final isTablet = screenWidth >= 600;
-    final isDesktop = screenWidth >= 1024;
-    final isLargeDesktop = screenWidth >= 1440;
-    final isSmallScreen = screenWidth < 400;
-    
     return Row(
       children: [
-        Icon(
-          icon, 
-          color: Colors.white70, 
-          size: isLargeDesktop 
-              ? 22 
-              : isDesktop 
-              ? 20 
-              : isTablet 
-              ? 18 
-              : isSmallScreen 
-              ? 16 
-              : 17
-        ),
-                            SizedBox(width: isLargeDesktop ? 14 : isDesktop ? 12 : isTablet ? 10 : 8),
-        Flexible(
-          child: Text(
-            value,
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: isLargeDesktop 
-                  ? 20 
-                  : isDesktop 
-                  ? 18 
-                  : isTablet 
-                  ? 16 
-                  : isSmallScreen 
-                  ? 14 
-                  : 15,
-              fontWeight: FontWeight.w600,
-            ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
+        Icon(icon, color: Colors.white70, size: 16),
+        const SizedBox(width: 8),
+        Text(
+          value,
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
           ),
         ),
-        SizedBox(width: isLargeDesktop ? 10 : isDesktop ? 8 : isTablet ? 6 : isSmallScreen ? 4 : 5),
-        Flexible(
-          child: Text(
-            label,
-            style: TextStyle(
-              color: Colors.white70, 
-              fontSize: isLargeDesktop 
-                  ? 18 
-                  : isDesktop 
-                  ? 16 
-                  : isTablet 
-                  ? 14 
-                  : isSmallScreen 
-                  ? 12 
-                  : 13
-            ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
+        const SizedBox(width: 4),
+        Text(
+          label,
+          style: const TextStyle(color: Colors.white70, fontSize: 12),
         ),
       ],
     );
   }
 
   Widget _buildFilterChip(String label, bool isSelected) {
-    // Get screen width for responsive design
-    final screenWidth = MediaQuery.of(context).size.width;
-    final isTablet = screenWidth >= 600;
-    final isDesktop = screenWidth >= 1024;
-    final isLargeDesktop = screenWidth >= 1440;
-    final isSmallScreen = screenWidth < 400;
-    
     return Container(
-      height: isLargeDesktop ? 40 : isDesktop ? 36 : isTablet ? 34 : isSmallScreen ? 30 : 32,
-      padding: EdgeInsets.symmetric(
-        horizontal: isLargeDesktop ? 18 : isDesktop ? 16 : isTablet ? 14 : isSmallScreen ? 10 : 12
-      ),
+      height: 36,
+      padding: const EdgeInsets.symmetric(horizontal: 16),
       decoration: BoxDecoration(
         color: isSelected ? const Color(0xFF9C88FF) : const Color(0xFFF8F9FA),
-        borderRadius: BorderRadius.circular(
-          isLargeDesktop ? 20 : isDesktop ? 18 : isTablet ? 16 : isSmallScreen ? 14 : 16
-        ),
+        borderRadius: BorderRadius.circular(18),
         border: Border.all(
           color: isSelected ? const Color(0xFF9C88FF) : const Color(0xFFE9ECEF),
           width: 1,
@@ -445,19 +284,9 @@ class _LearningHistoryPageState extends State<LearningHistoryPage> {
           label,
           style: TextStyle(
             color: isSelected ? Colors.white : const Color(0xFF6C757D),
-            fontSize: isLargeDesktop 
-                ? 14 
-                : isDesktop 
-                ? 12 
-                : isTablet 
-                ? 11 
-                : isSmallScreen 
-                ? 9 
-                : 10,
+            fontSize: 12,
             fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
           ),
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
         ),
       ),
     );
@@ -538,31 +367,15 @@ class _LearningHistoryPageState extends State<LearningHistoryPage> {
   }
 
   Widget _buildSearchAndFilters() {
-    // Get screen width for responsive design
-    final screenWidth = MediaQuery.of(context).size.width;
-    final isTablet = screenWidth >= 600;
-    final isDesktop = screenWidth >= 1024;
-    final isLargeDesktop = screenWidth >= 1440;
-    
     return Container(
-      padding: EdgeInsets.all(
-        isLargeDesktop 
-            ? 24 
-            : isDesktop 
-            ? 20 
-            : isTablet 
-            ? 18 
-            : 16
-      ),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(
-          isLargeDesktop ? 20 : isDesktop ? 16 : isTablet ? 14 : 15
-        ),
+        borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.08),
-            blurRadius: isLargeDesktop ? 16 : isDesktop ? 12 : isTablet ? 10 : 10,
+            blurRadius: 12,
             offset: const Offset(0, 4),
           ),
         ],
@@ -574,95 +387,69 @@ class _LearningHistoryPageState extends State<LearningHistoryPage> {
           Row(
             children: [
               Container(
-                padding: EdgeInsets.all(
-                  isLargeDesktop ? 10 : isDesktop ? 8 : isTablet ? 7 : 6
-                ),
+                padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
                   color: const Color(0xFF9C88FF).withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(
-                    isLargeDesktop ? 10 : isDesktop ? 8 : isTablet ? 7 : 8
-                  ),
+                  borderRadius: BorderRadius.circular(8),
                 ),
-                child: Icon(
+                child: const Icon(
                   Icons.tune,
-                  color: const Color(0xFF9C88FF),
-                  size: isLargeDesktop ? 22 : isDesktop ? 20 : isTablet ? 18 : 17,
+                  color: Color(0xFF9C88FF),
+                  size: 20,
                 ),
               ),
-              SizedBox(width: isLargeDesktop ? 14 : isDesktop ? 12 : isTablet ? 10 : 9),
-              Expanded(
-                child: Text(
-                  'Filter & Search',
-                  style: TextStyle(
-                    fontSize: isLargeDesktop 
-                        ? 20 
-                        : isDesktop 
-                        ? 18 
-                        : isTablet 
-                        ? 17 
-                        : 16,
-                    fontWeight: FontWeight.bold,
-                    color: const Color(0xFF2C3E50),
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+              const SizedBox(width: 12),
+              const Text(
+                'Filter & Search',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF2C3E50),
                 ),
               ),
             ],
           ),
-          SizedBox(height: isLargeDesktop ? 32 : isDesktop ? 28 : isTablet ? 24 : 20),
+          const SizedBox(height: 20),
           // Search Bar with enhanced styling
           Container(
-            height: isLargeDesktop ? 52 : isDesktop ? 48 : isTablet ? 44 : 42,
+            height: 48,
             decoration: BoxDecoration(
               color: const Color(0xFFF8F9FA),
-              borderRadius: BorderRadius.circular(
-                isLargeDesktop ? 14 : isDesktop ? 12 : isTablet ? 11 : 11
-              ),
+              borderRadius: BorderRadius.circular(12),
               border: Border.all(color: const Color(0xFFE9ECEF), width: 1),
             ),
             child: TextField(
               decoration: InputDecoration(
                 hintText: 'Search learning activities...',
-                hintStyle: TextStyle(
-                  color: const Color(0xFF6C757D),
-                  fontSize: isLargeDesktop 
-                      ? 16 
-                      : isDesktop 
-                      ? 14 
-                      : isTablet 
-                      ? 13 
-                      : 12,
+                hintStyle: const TextStyle(
+                  color: Color(0xFF6C757D),
+                  fontSize: 14,
                 ),
                 prefixIcon: Container(
-                  padding: EdgeInsets.all(
-                    isLargeDesktop ? 14 : isDesktop ? 12 : isTablet ? 11 : 10
-                  ),
-                  child: Icon(
+                  padding: const EdgeInsets.all(12),
+                  child: const Icon(
                     Icons.search_rounded,
-                    color: const Color(0xFF9C88FF),
-                    size: isLargeDesktop ? 22 : isDesktop ? 20 : isTablet ? 18 : 17,
+                    color: Color(0xFF9C88FF),
+                    size: 20,
                   ),
                 ),
                 suffixIcon: Container(
-                  padding: EdgeInsets.all(
-                    isLargeDesktop ? 14 : isDesktop ? 12 : isTablet ? 11 : 10
-                  ),
-                  child: Icon(
+                  padding: const EdgeInsets.all(12),
+                  child: const Icon(
                     Icons.filter_list_rounded,
-                    color: const Color(0xFF6C757D),
-                    size: isLargeDesktop ? 22 : isDesktop ? 20 : isTablet ? 18 : 17,
+                    color: Color(0xFF6C757D),
+                    size: 20,
                   ),
                 ),
                 border: InputBorder.none,
-                contentPadding: EdgeInsets.symmetric(
-                  horizontal: isLargeDesktop ? 18 : isDesktop ? 16 : isTablet ? 14 : 13,
-                  vertical: isLargeDesktop ? 14 : isDesktop ? 12 : isTablet ? 11 : 10,
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
                 ),
               ),
             ),
           ),
-          SizedBox(height: isLargeDesktop ? 20 : isDesktop ? 16 : isTablet ? 14 : 12),
+          const SizedBox(height: 16),
           // Filter Chips Row
           Row(
             children: [
@@ -672,88 +459,72 @@ class _LearningHistoryPageState extends State<LearningHistoryPage> {
                   child: Row(
                     children: [
                       _buildFilterChip('All Activities', true),
-                      SizedBox(width: isLargeDesktop ? 14 : isDesktop ? 12 : isTablet ? 10 : 8),
+                      const SizedBox(width: 8),
                       _buildFilterChip('Lectures', false),
-                      SizedBox(width: isLargeDesktop ? 14 : isDesktop ? 12 : isTablet ? 10 : 8),
+                      const SizedBox(width: 8),
                       _buildFilterChip('Quizzes', false),
-                      SizedBox(width: isLargeDesktop ? 14 : isDesktop ? 12 : isTablet ? 10 : 8),
+                      const SizedBox(width: 8),
                       _buildFilterChip('Assignments', false),
-                      SizedBox(width: isLargeDesktop ? 14 : isDesktop ? 12 : isTablet ? 10 : 8),
+                      const SizedBox(width: 8),
                       _buildFilterChip('Certificates', false),
                     ],
                   ),
                 ),
               ),
-              SizedBox(width: isLargeDesktop ? 14 : isDesktop ? 12 : isTablet ? 10 : 9),
+              const SizedBox(width: 12),
               // Sort Button
               Container(
-                height: isLargeDesktop ? 40 : isDesktop ? 36 : isTablet ? 34 : 32,
-                padding: EdgeInsets.symmetric(
-                  horizontal: isLargeDesktop ? 14 : isDesktop ? 12 : isTablet ? 10 : 9
-                ),
+                height: 36,
+                padding: const EdgeInsets.symmetric(horizontal: 12),
                 decoration: BoxDecoration(
                   color: const Color(0xFFF8F9FA),
-                  borderRadius: BorderRadius.circular(
-                    isLargeDesktop ? 20 : isDesktop ? 18 : isTablet ? 16 : 16
-                  ),
+                  borderRadius: BorderRadius.circular(18),
                   border: Border.all(color: const Color(0xFFE9ECEF), width: 1),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(
+                    const Icon(
                       Icons.sort_rounded,
-                      color: const Color(0xFF6C757D),
-                      size: isLargeDesktop ? 18 : isDesktop ? 16 : isTablet ? 15 : 14,
+                      color: Color(0xFF6C757D),
+                      size: 16,
                     ),
-                    SizedBox(width: isLargeDesktop ? 8 : isDesktop ? 6 : isTablet ? 5 : 4),
-                    Flexible(
-                      child: Text(
-                        'Newest',
-                        style: TextStyle(
-                          color: const Color(0xFF6C757D),
-                          fontSize: isLargeDesktop 
-                              ? 14 
-                              : isDesktop 
-                              ? 12 
-                              : isTablet 
-                              ? 11 
-                              : 10,
-                          fontWeight: FontWeight.w500,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
+                    const SizedBox(width: 6),
+                    const Text(
+                      'Newest',
+                      style: TextStyle(
+                        color: Color(0xFF6C757D),
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
                       ),
                     ),
-                    SizedBox(width: isLargeDesktop ? 10 : isDesktop ? 8 : isTablet ? 6 : 5),
-                    Icon(
+                    const SizedBox(width: 4),
+                    const Icon(
                       Icons.keyboard_arrow_down_rounded,
-                      color: const Color(0xFF6C757D),
-                      size: isLargeDesktop ? 18 : isDesktop ? 16 : isTablet ? 15 : 14,
+                      color: Color(0xFF6C757D),
+                      size: 16,
                     ),
                   ],
                 ),
               ),
             ],
           ),
-          SizedBox(height: isLargeDesktop ? 20 : isDesktop ? 16 : isTablet ? 14 : 12),
+          const SizedBox(height: 16),
           // Action Buttons Row
           Row(
             children: [
               Expanded(
                 child: Container(
-                  height: isLargeDesktop ? 48 : isDesktop ? 44 : isTablet ? 42 : 40,
+                  height: 44,
                   decoration: BoxDecoration(
                     gradient: const LinearGradient(
                       colors: [Color(0xFF9C88FF), Color(0xFF7A6BFF)],
                     ),
-                    borderRadius: BorderRadius.circular(
-                      isLargeDesktop ? 14 : isDesktop ? 12 : isTablet ? 11 : 11
-                    ),
+                    borderRadius: BorderRadius.circular(12),
                     boxShadow: [
                       BoxShadow(
                         color: const Color(0xFF9C88FF).withOpacity(0.3),
-                        blurRadius: isLargeDesktop ? 10 : isDesktop ? 8 : isTablet ? 7 : 6,
+                        blurRadius: 8,
                         offset: const Offset(0, 4),
                       ),
                     ],
@@ -761,36 +532,24 @@ class _LearningHistoryPageState extends State<LearningHistoryPage> {
                   child: Material(
                     color: Colors.transparent,
                     child: InkWell(
-                      borderRadius: BorderRadius.circular(
-                        isLargeDesktop ? 14 : isDesktop ? 12 : isTablet ? 11 : 11
-                      ),
+                      borderRadius: BorderRadius.circular(12),
                       onTap: () {},
-                      child: Center(
+                      child: const Center(
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             Icon(
                               Icons.analytics_rounded,
                               color: Colors.white,
-                              size: isLargeDesktop ? 20 : isDesktop ? 18 : isTablet ? 17 : 16,
+                              size: 18,
                             ),
-                            SizedBox(width: isLargeDesktop ? 14 : isDesktop ? 12 : isTablet ? 10 : 8),
-                            Flexible(
-                              child: Text(
-                                'View Analytics',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: isLargeDesktop 
-                                      ? 16 
-                                      : isDesktop 
-                                      ? 14 
-                                      : isTablet 
-                                      ? 13 
-                                      : 12,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
+                            SizedBox(width: 8),
+                            Text(
+                              'View Analytics',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
                               ),
                             ),
                           ],
@@ -800,29 +559,25 @@ class _LearningHistoryPageState extends State<LearningHistoryPage> {
                   ),
                 ),
               ),
-              SizedBox(width: isLargeDesktop ? 14 : isDesktop ? 12 : isTablet ? 10 : 9),
+              const SizedBox(width: 12),
               Container(
-                height: isLargeDesktop ? 48 : isDesktop ? 44 : isTablet ? 42 : 40,
-                width: isLargeDesktop ? 48 : isDesktop ? 44 : isTablet ? 42 : 40,
+                height: 44,
+                width: 44,
                 decoration: BoxDecoration(
                   color: const Color(0xFFF8F9FA),
-                  borderRadius: BorderRadius.circular(
-                    isLargeDesktop ? 14 : isDesktop ? 12 : isTablet ? 11 : 11
-                  ),
+                  borderRadius: BorderRadius.circular(12),
                   border: Border.all(color: const Color(0xFFE9ECEF), width: 1),
                 ),
                 child: Material(
                   color: Colors.transparent,
                   child: InkWell(
-                    borderRadius: BorderRadius.circular(
-                      isLargeDesktop ? 14 : isDesktop ? 12 : isTablet ? 11 : 11
-                    ),
+                    borderRadius: BorderRadius.circular(12),
                     onTap: () {},
-                    child: Center(
+                    child: const Center(
                       child: Icon(
                         Icons.refresh_rounded,
-                        color: const Color(0xFF6C757D),
-                        size: isLargeDesktop ? 22 : isDesktop ? 20 : isTablet ? 18 : 17,
+                        color: Color(0xFF6C757D),
+                        size: 20,
                       ),
                     ),
                   ),

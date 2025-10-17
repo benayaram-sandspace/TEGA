@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:tega/core/constants/app_colors.dart';
+import 'package:tega/features/3_admin_panel/presentation/0_dashboard/admin_dashboard.dart';
 import 'package:tega/features/3_admin_panel/presentation/0_dashboard/admin_dashboard_styles.dart';
 
 class AnalyticsPage extends StatefulWidget {
