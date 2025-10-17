@@ -584,7 +584,7 @@ class _CoursesPageState extends State<CoursesPage>
                                 Expanded(
                                   child: _buildModernInfoChip(
                                     Icons.people_outline_rounded,
-                                    '${_formatStudentCount(course['students'])}',
+                                    _formatStudentCount(course['students']),
                                     const Color(0xFF4CAF50),
                                   ),
                                 ),

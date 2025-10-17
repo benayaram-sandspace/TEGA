@@ -82,7 +82,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
 
   Future<void> _loadProfileData() async {
     try {
-      final headers = await _authService.getAuthHeaders();
+      final headers = _authService.getAuthHeaders();
       final response = await http.get(
         Uri.parse(ApiEndpoints.studentProfile),
         headers: headers,
@@ -156,7 +156,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
     });
 
     try {
-      final headers = await _authService.getAuthHeaders();
+      final headers = _authService.getAuthHeaders();
       final profileData = {
         'firstName': _firstNameController.text.trim(),
         'lastName': _lastNameController.text.trim(),
@@ -608,7 +608,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
     required void Function(String?) onChanged,
   }) {
     return DropdownButtonFormField<String>(
-      value: value,
+      initialValue: value,
       decoration: InputDecoration(
         labelText: label,
         labelStyle: const TextStyle(color: Colors.black54),

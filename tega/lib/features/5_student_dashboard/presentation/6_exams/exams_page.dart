@@ -506,6 +506,7 @@ class _ExamsPageState extends State<ExamsPage>
     required bool isTablet,
   }) {
     return Container(
+      height: isDesktop ? 120 : 100, // Fixed height for all cards
       padding: EdgeInsets.all(isDesktop ? 16 : 12),
       decoration: BoxDecoration(
         color: Colors.white.withOpacity(0.15),
@@ -513,6 +514,7 @@ class _ExamsPageState extends State<ExamsPage>
         border: Border.all(color: Colors.white.withOpacity(0.2), width: 1),
       ),
       child: Column(
+        mainAxisAlignment: MainAxisAlignment.center, // Center content vertically
         children: [
           Icon(icon, size: isDesktop ? 24 : 20, color: const Color(0xFFFFD700)),
           SizedBox(height: isDesktop ? 8 : 6),
@@ -524,6 +526,8 @@ class _ExamsPageState extends State<ExamsPage>
               color: Colors.white,
             ),
             textAlign: TextAlign.center,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
           SizedBox(height: isDesktop ? 2 : 1),
           Text(
@@ -533,7 +537,7 @@ class _ExamsPageState extends State<ExamsPage>
               color: Colors.white.withOpacity(0.8),
             ),
             textAlign: TextAlign.center,
-            maxLines: 1,
+            maxLines: 2,
             overflow: TextOverflow.ellipsis,
           ),
         ],

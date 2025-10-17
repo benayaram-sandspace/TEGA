@@ -293,8 +293,33 @@ class _InternshipsPageState extends State<InternshipsPage> {
     required String label,
     required bool isDesktop,
   }) {
+    // Get screen width for better responsive design
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isTablet = screenWidth >= 600;
+    final isLargeDesktop = screenWidth >= 1440;
+    final isSmallScreen = screenWidth < 400;
+    
     return Container(
-      padding: EdgeInsets.all(isDesktop ? 20 : 16),
+      height: isLargeDesktop 
+          ? 140 
+          : isDesktop 
+          ? 120 
+          : isTablet 
+          ? 110 
+          : isSmallScreen 
+          ? 90 
+          : 100, // Responsive height
+      padding: EdgeInsets.all(
+        isLargeDesktop 
+            ? 24 
+            : isDesktop 
+            ? 20 
+            : isTablet 
+            ? 18 
+            : isSmallScreen 
+            ? 12 
+            : 16
+      ),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
@@ -303,7 +328,17 @@ class _InternshipsPageState extends State<InternshipsPage> {
       child: Row(
         children: [
           Container(
-            padding: const EdgeInsets.all(12),
+            padding: EdgeInsets.all(
+              isLargeDesktop 
+                  ? 16 
+                  : isDesktop 
+                  ? 14 
+                  : isTablet 
+                  ? 12 
+                  : isSmallScreen 
+                  ? 8 
+                  : 12
+            ),
             decoration: BoxDecoration(
               color: const Color(0xFF6B5FFF).withOpacity(0.1),
               borderRadius: BorderRadius.circular(8),
@@ -311,29 +346,61 @@ class _InternshipsPageState extends State<InternshipsPage> {
             child: Icon(
               icon,
               color: const Color(0xFF6B5FFF),
-              size: isDesktop ? 24 : 20,
+              size: isLargeDesktop 
+                  ? 28 
+                  : isDesktop 
+                  ? 24 
+                  : isTablet 
+                  ? 22 
+                  : isSmallScreen 
+                  ? 18 
+                  : 20,
             ),
           ),
-          const SizedBox(width: 12),
+          SizedBox(width: isLargeDesktop ? 16 : isDesktop ? 14 : isTablet ? 12 : isSmallScreen ? 8 : 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Text(
-                  value,
-                  style: TextStyle(
-                    fontSize: isDesktop ? 24 : 20,
-                    fontWeight: FontWeight.w700,
-                    color: const Color(0xFF333333),
+                Flexible(
+                  child: Text(
+                    value,
+                    style: TextStyle(
+                      fontSize: isLargeDesktop 
+                          ? 28 
+                          : isDesktop 
+                          ? 24 
+                          : isTablet 
+                          ? 22 
+                          : isSmallScreen 
+                          ? 18 
+                          : 20,
+                      fontWeight: FontWeight.w700,
+                      color: const Color(0xFF333333),
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
-                const SizedBox(height: 2),
-                Text(
-                  label,
-                  style: TextStyle(
-                    fontSize: isDesktop ? 14 : 12,
-                    color: Colors.grey[600],
+                SizedBox(height: isLargeDesktop ? 6 : isDesktop ? 4 : isTablet ? 3 : isSmallScreen ? 2 : 4),
+                Flexible(
+                  child: Text(
+                    label,
+                    style: TextStyle(
+                      fontSize: isLargeDesktop 
+                          ? 16 
+                          : isDesktop 
+                          ? 14 
+                          : isTablet 
+                          ? 13 
+                          : isSmallScreen 
+                          ? 10 
+                          : 12,
+                      color: Colors.grey[600],
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
               ],
