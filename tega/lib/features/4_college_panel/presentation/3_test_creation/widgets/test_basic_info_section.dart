@@ -221,7 +221,7 @@ class _TestBasicInfoSectionState extends State<TestBasicInfoSection> {
             ),
             const SizedBox(height: 16),
             DropdownButtonFormField<String>(
-              initialValue: widget.selectedCourse,
+              value: widget.selectedCourse,
               isExpanded: true,
               icon: const Icon(
                 Icons.keyboard_arrow_down_rounded,

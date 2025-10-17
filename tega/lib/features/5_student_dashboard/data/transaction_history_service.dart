@@ -15,7 +15,7 @@ class TransactionHistoryService {
   /// Get user's payment history from all sources
   Future<List<Transaction>> getTransactionHistory() async {
     try {
-      final headers = _authService.getAuthHeaders();
+      final headers = await _authService.getAuthHeaders();
       final List<Transaction> allTransactions = [];
 
       // Fetch from payment history endpoint

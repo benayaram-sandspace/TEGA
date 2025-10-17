@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:tega/core/constants/app_colors.dart';
 import 'package:tega/features/3_admin_panel/presentation/0_dashboard/admin_dashboard_styles.dart';
 import 'package:tega/features/3_admin_panel/presentation/1_management/students/student_profile_page.dart';

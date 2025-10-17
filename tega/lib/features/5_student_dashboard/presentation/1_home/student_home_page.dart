@@ -209,7 +209,6 @@ class _StudentHomePageState extends State<StudentHomePage>
                   onMenuTap: _toggleSidebar,
                   notificationCount: _sidebarCounts['notifications'] ?? 0,
                   title: _pageTitles[_selectedIndex],
-                  profileData: _profile,
                 ),
                 // Page content area
                 Expanded(

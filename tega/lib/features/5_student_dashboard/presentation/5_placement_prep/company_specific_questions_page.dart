@@ -13,7 +13,7 @@ class _CompanySpecificQuestionsPageState
     extends State<CompanySpecificQuestionsPage> {
   String _selectedCategory = 'All';
   String _selectedDifficulty = 'All';
-  final bool _isLoading = false;
+  bool _isLoading = false;
 
   final List<String> _categories = [
     'All',

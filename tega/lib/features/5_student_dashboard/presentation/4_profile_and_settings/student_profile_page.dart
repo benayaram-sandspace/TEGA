@@ -25,7 +25,7 @@ class _StudentProfilePageState extends State<StudentProfilePage> {
 
   Future<void> _loadProfileData() async {
     try {
-      final headers = _authService.getAuthHeaders();
+      final headers = await _authService.getAuthHeaders();
       final response = await http.get(
         Uri.parse(ApiEndpoints.studentProfile),
         headers: headers,
