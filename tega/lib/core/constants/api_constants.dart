@@ -318,12 +318,12 @@ class ApiEndpoints {
   static String adminPrincipalById(String id) =>
       '${EnvConfig.baseUrl}/api/admin/principals/$id';
   static String get adminRegisterPrincipal =>
-      '${EnvConfig.baseUrl}/api/admin/principals/register';
+      '${EnvConfig.baseUrl}/api/admin/register-principal';
   static String get adminStudents => '${EnvConfig.baseUrl}/api/admin/students';
   static String adminStudentById(String id) =>
       '${EnvConfig.baseUrl}/api/admin/students/$id';
   static String get adminCreateStudent =>
-      '${EnvConfig.baseUrl}/api/admin/students/create';
+      '${EnvConfig.baseUrl}/api/admin/create-student';
   static String get adminBulkImportStudents =>
       '${EnvConfig.baseUrl}/api/admin/students/bulk-import';
   static String get adminNotifications =>
@@ -331,7 +331,10 @@ class ApiEndpoints {
   static String adminNotificationById(String id) =>
       '${EnvConfig.baseUrl}/api/admin/notifications/$id';
   static String get adminPayments => '${EnvConfig.baseUrl}/api/admin/payments';
-  static String get adminCourses => '${EnvConfig.baseUrl}/api/admin/courses';
+  static String get adminCourses =>
+      '${EnvConfig.baseUrl}/api/real-time-courses/admin';
+  static String adminCourseById(String id) =>
+      '${EnvConfig.baseUrl}/api/real-time-courses/$id';
   static String get adminUPISettings =>
       '${EnvConfig.baseUrl}/api/admin/upi-settings';
 

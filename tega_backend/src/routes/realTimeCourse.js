@@ -46,4 +46,8 @@ router.delete('/:courseId', verifyAdmin, deleteRealTimeCourse);
 router.put('/:courseId/publish', verifyAdmin, publishRealTimeCourse);
 router.get('/:courseId/analytics', verifyAdmin, getCourseAnalytics);
 
+// Admin routes - video validation and fixing (functions to be implemented)
+// router.get('/:courseId/validate-videos', verifyAdmin, validateCourseVideos);
+// router.post('/:courseId/fix-duplicate-videos', verifyAdmin, fixDuplicateVideos);
+
 export default router;

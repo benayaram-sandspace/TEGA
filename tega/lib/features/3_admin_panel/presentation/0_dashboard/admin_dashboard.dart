@@ -7,16 +7,10 @@ import 'package:tega/features/1_authentication/data/auth_repository.dart';
 import 'package:tega/features/1_authentication/presentation/screens/login_page.dart';
 import 'package:tega/features/3_admin_panel/presentation/0_dashboard/admin_dashboard_styles.dart';
 import 'package:tega/features/3_admin_panel/presentation/0_dashboard/tabs/dashboard_home_tab.dart';
-import 'package:tega/features/3_admin_panel/presentation/1_management/colleges/admins_management_page.dart';
-import 'package:tega/features/3_admin_panel/presentation/1_management/colleges/colleges_page.dart';
-import 'package:tega/features/3_admin_panel/presentation/1_management/colleges/add_college_page.dart';
 import 'package:tega/features/3_admin_panel/presentation/1_management/students/students_page.dart';
-import 'package:tega/features/3_admin_panel/presentation/2_content/content_page.dart';
-import 'package:tega/features/3_admin_panel/presentation/3_reports_and_analytics/analytics_page.dart';
-import 'package:tega/features/3_admin_panel/presentation/3_reports_and_analytics/report_export_page.dart';
+import 'package:tega/features/3_admin_panel/presentation/1_management/courses/course_management_page.dart';
 import 'package:tega/features/3_admin_panel/presentation/4_settings_and_misc/notification_manager_page.dart';
-import 'package:tega/features/3_admin_panel/presentation/4_settings_and_misc/settings_page.dart';
-import 'package:tega/features/6_support_system/presentation/admin_view/support_page.dart';
+import 'package:tega/features/3_admin_panel/presentation/placeholder_pages/placeholder_page.dart';
 
 class AdminDashboard extends StatefulWidget {
   const AdminDashboard({super.key});
@@ -35,15 +29,16 @@ class _AdminDashboardState extends State<AdminDashboard>
   static final Map<String, Map<String, String>> _translations = {
     'EN': {
       'dashboard': 'Dashboard',
-      'colleges': 'Colleges',
+      'course_management': 'Course Management',
+      'offer_management': 'Offer Management',
       'students': 'Students',
-      'analytics': 'Analytics',
-      'content': 'Content',
-      'support': 'Support & Feedback',
-      'admin_management': 'Admins Management',
-      'settings': 'Settings',
-      'notification_manager': 'Notification Manager',
-      'reports': 'Reports & Export',
+      'principals': 'Principals',
+      'notifications': 'Notifications',
+      'schedule_assessment': 'Schedule Assessment',
+      'job_dashboard': 'Job Dashboard',
+      'placement_prep': 'Placement Prep',
+      'company_questions': 'Company Questions',
+      'exam_results': 'Exam Results',
       'logout': 'Logout',
       'logout_confirm_title': 'Logout',
       'logout_confirm_body': 'Are you sure you want to logout?',
@@ -66,28 +61,63 @@ class _AdminDashboardState extends State<AdminDashboard>
 
     _pages = [
       DashboardHomeTab(authService: _authService),
-      const CollegesPage(),
+      const CourseManagementPage(),
+      const PlaceholderPage(
+        title: 'Offer Management',
+        description:
+            'Create and manage special offers, discounts, and promotional campaigns.',
+        icon: Icons.percent,
+      ),
       const StudentsPage(),
-      const AnalyticsPage(),
-      const ContentPage(),
-      const SupportPage(),
-      const AdminManagementPage(),
-      const SettingsPage(),
+      const PlaceholderPage(
+        title: 'Principals',
+        description:
+            'Manage college principals and their access to the platform.',
+        icon: Icons.admin_panel_settings,
+      ),
       const NotificationManagerPage(),
-      const ReportsExportCenterPage(),
+      const PlaceholderPage(
+        title: 'Schedule Assessment',
+        description: 'Schedule and manage assessments, exams, and evaluations.',
+        icon: Icons.calendar_today,
+      ),
+      const PlaceholderPage(
+        title: 'Job Dashboard',
+        description:
+            'Monitor job postings, applications, and placement statistics.',
+        icon: Icons.work_outline,
+      ),
+      const PlaceholderPage(
+        title: 'Placement Prep',
+        description: 'Manage placement preparation materials and resources.',
+        icon: Icons.gps_fixed,
+      ),
+      const PlaceholderPage(
+        title: 'Company Questions',
+        description:
+            'Manage company-specific interview questions and practice materials.',
+        icon: Icons.quiz_outlined,
+      ),
+      const PlaceholderPage(
+        title: 'Exam Results',
+        description:
+            'View and manage exam results, scores, and performance analytics.',
+        icon: Icons.emoji_events_outlined,
+      ),
     ];
 
     _pageTitles = [
       _tr('dashboard'),
-      _tr('colleges'),
+      _tr('course_management'),
+      _tr('offer_management'),
       _tr('students'),
-      _tr('analytics'),
-      _tr('content'),
-      _tr('support'),
-      _tr('admin_management'),
-      _tr('settings'),
-      _tr('notification_manager'),
-      _tr('reports'),
+      _tr('principals'),
+      _tr('notifications'),
+      _tr('schedule_assessment'),
+      _tr('job_dashboard'),
+      _tr('placement_prep'),
+      _tr('company_questions'),
+      _tr('exam_results'),
     ];
   }
 
@@ -202,13 +232,16 @@ class _AdminDashboardState extends State<AdminDashboard>
               transitionBuilder: (child, animation) => FadeTransition(
                 opacity: animation,
                 child: SlideTransition(
-                  position: Tween<Offset>(
-                    begin: const Offset(0.1, 0),
-                    end: Offset.zero,
-                  ).animate(CurvedAnimation(
-                    parent: animation,
-                    curve: AdminDashboardStyles.defaultCurve,
-                  )),
+                  position:
+                      Tween<Offset>(
+                        begin: const Offset(0.1, 0),
+                        end: Offset.zero,
+                      ).animate(
+                        CurvedAnimation(
+                          parent: animation,
+                          curve: AdminDashboardStyles.defaultCurve,
+                        ),
+                      ),
                   child: child,
                 ),
               ),
@@ -271,44 +304,7 @@ class _AdminDashboardState extends State<AdminDashboard>
           ),
         ),
       ),
-      actions: _selectedIndex == 1 ? [
-        // Show Add New College button only when on Colleges page
-        Padding(
-          padding: const EdgeInsets.only(right: 8.0),
-          child: TextButton.icon(
-            onPressed: () {
-              Navigator.of(context)
-                  .push(
-                    MaterialPageRoute(
-                      builder: (context) => const AddCollegePage(),
-                    ),
-                  )
-                  .then((_) {
-                    // Refresh colleges list if needed
-                    if (mounted) {
-                      setState(() {});
-                    }
-                  });
-            },
-            icon: const Icon(Icons.add, color: Colors.white),
-            label: const Text(
-              'Add New College',
-              style: TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.w600,
-                fontSize: 14,
-              ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-            style: TextButton.styleFrom(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-          ),
-        ),
-      ] : null,
+      actions: null,
     );
   }
 
@@ -338,50 +334,54 @@ class _AdminDashboardState extends State<AdminDashboard>
                       index: 0,
                     ),
                     _buildNavItem(
-                      icon: Icons.school_rounded,
-                      title: _tr('colleges'),
+                      icon: Icons.movie_creation_outlined,
+                      title: _tr('course_management'),
                       index: 1,
+                    ),
+                    _buildNavItem(
+                      icon: Icons.percent,
+                      title: _tr('offer_management'),
+                      index: 2,
                     ),
                     _buildNavItem(
                       icon: Icons.people_rounded,
                       title: _tr('students'),
-                      index: 2,
-                    ),
-                    _buildNavItem(
-                      icon: Icons.analytics_rounded,
-                      title: _tr('analytics'),
                       index: 3,
                     ),
                     _buildNavItem(
-                      icon: Icons.content_copy_rounded,
-                      title: _tr('content'),
+                      icon: Icons.admin_panel_settings,
+                      title: _tr('principals'),
                       index: 4,
                     ),
                     _buildNavItem(
-                      icon: Icons.support_agent_rounded,
-                      title: _tr('support'),
+                      icon: Icons.notifications_rounded,
+                      title: _tr('notifications'),
                       index: 5,
                     ),
-                    const Divider(height: 24),
                     _buildNavItem(
-                      icon: Icons.admin_panel_settings_rounded,
-                      title: _tr('admin_management'),
+                      icon: Icons.calendar_today,
+                      title: _tr('schedule_assessment'),
                       index: 6,
                     ),
                     _buildNavItem(
-                      icon: Icons.settings_rounded,
-                      title: _tr('settings'),
+                      icon: Icons.work_outline,
+                      title: _tr('job_dashboard'),
                       index: 7,
                     ),
                     _buildNavItem(
-                      icon: Icons.notifications_rounded,
-                      title: _tr('notification_manager'),
+                      icon: Icons.gps_fixed,
+                      title: _tr('placement_prep'),
                       index: 8,
                     ),
                     _buildNavItem(
-                      icon: Icons.assessment_rounded,
-                      title: _tr('reports'),
+                      icon: Icons.quiz_outlined,
+                      title: _tr('company_questions'),
                       index: 9,
+                    ),
+                    _buildNavItem(
+                      icon: Icons.emoji_events_outlined,
+                      title: _tr('exam_results'),
+                      index: 10,
                     ),
                   ],
                 ),
@@ -429,30 +429,41 @@ class _AdminDashboardState extends State<AdminDashboard>
                 color: AdminDashboardStyles.primary,
               ),
             ),
-          ).animate().scale(duration: 500.ms, curve: AdminDashboardStyles.bounceCurve),
+          ).animate().scale(
+            duration: 500.ms,
+            curve: AdminDashboardStyles.bounceCurve,
+          ),
           const SizedBox(height: 12),
           Text(
-            _authService.currentUser?.name ?? 'Admin User',
-            style: const TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.bold,
-              fontSize: 16,
-            ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ).animate().fadeIn(duration: 300.ms, delay: 200.ms).slideX(begin: 0.3),
+                _authService.currentUser?.name ?? 'Admin User',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              )
+              .animate()
+              .fadeIn(duration: 300.ms, delay: 200.ms)
+              .slideX(begin: 0.3),
           const SizedBox(height: 4),
           Text(
-            _authService.currentUserRole != null
-                ? _authService.getRoleDisplayName(_authService.currentUserRole!)
-                : 'Administrator',
-            style: TextStyle(
-              color: Colors.white.withValues(alpha: 0.8),
-              fontSize: 12,
-            ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ).animate().fadeIn(duration: 300.ms, delay: 400.ms).slideX(begin: 0.3),
+                _authService.currentUserRole != null
+                    ? _authService.getRoleDisplayName(
+                        _authService.currentUserRole!,
+                      )
+                    : 'Administrator',
+                style: TextStyle(
+                  color: Colors.white.withValues(alpha: 0.8),
+                  fontSize: 12,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              )
+              .animate()
+              .fadeIn(duration: 300.ms, delay: 400.ms)
+              .slideX(begin: 0.3),
         ],
       ),
     );
@@ -465,80 +476,94 @@ class _AdminDashboardState extends State<AdminDashboard>
   }) {
     final isSelected = _selectedIndex == index;
     return Material(
-      color: isSelected
-          ? AdminDashboardStyles.primary.withValues(alpha: 0.1)
-          : Colors.transparent,
-      borderRadius: BorderRadius.circular(12),
-      child: InkWell(
-        onTap: () {
-          if (_selectedIndex != index) {
-            HapticFeedback.selectionClick();
-            setState(() {
-              _selectedIndex = index;
-            });
-          }
-          _toggleSidebar();
-        },
-        borderRadius: BorderRadius.circular(12),
-        splashColor: AdminDashboardStyles.primary.withValues(alpha: 0.2),
-        highlightColor: AdminDashboardStyles.primary.withValues(alpha: 0.2),
-        child: AnimatedContainer(
-          duration: AdminDashboardStyles.shortAnimation,
-          curve: AdminDashboardStyles.defaultCurve,
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-          decoration: BoxDecoration(
+          color: isSelected
+              ? AdminDashboardStyles.primary.withValues(alpha: 0.1)
+              : Colors.transparent,
+          borderRadius: BorderRadius.circular(12),
+          child: InkWell(
+            onTap: () {
+              if (_selectedIndex != index) {
+                HapticFeedback.selectionClick();
+                setState(() {
+                  _selectedIndex = index;
+                });
+              }
+              _toggleSidebar();
+            },
             borderRadius: BorderRadius.circular(12),
-            color: isSelected 
-                ? AdminDashboardStyles.primary.withValues(alpha: 0.1)
-                : Colors.transparent,
-            border: isSelected 
-                ? Border.all(
-                    color: AdminDashboardStyles.primary.withValues(alpha: 0.3),
-                    width: 1,
-                  )
-                : null,
-          ),
-          child: Row(
-            children: [
-              AnimatedContainer(
-                duration: AdminDashboardStyles.shortAnimation,
-                padding: const EdgeInsets.all(6),
-                decoration: BoxDecoration(
-                  color: isSelected 
-                      ? AdminDashboardStyles.primary.withValues(alpha: 0.2)
-                      : Colors.grey.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Icon(
-                  icon,
-                  color: isSelected ? AdminDashboardStyles.primary : Colors.grey,
-                  size: 18,
-                ),
+            splashColor: AdminDashboardStyles.primary.withValues(alpha: 0.2),
+            highlightColor: AdminDashboardStyles.primary.withValues(alpha: 0.2),
+            child: AnimatedContainer(
+              duration: AdminDashboardStyles.shortAnimation,
+              curve: AdminDashboardStyles.defaultCurve,
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(12),
+                color: isSelected
+                    ? AdminDashboardStyles.primary.withValues(alpha: 0.1)
+                    : Colors.transparent,
+                border: isSelected
+                    ? Border.all(
+                        color: AdminDashboardStyles.primary.withValues(
+                          alpha: 0.3,
+                        ),
+                        width: 1,
+                      )
+                    : null,
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  title,
-                  style: TextStyle(
-                    color: isSelected ? AdminDashboardStyles.primary : Colors.black,
-                    fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-                    fontSize: 13,
+              child: Row(
+                children: [
+                  AnimatedContainer(
+                    duration: AdminDashboardStyles.shortAnimation,
+                    padding: const EdgeInsets.all(6),
+                    decoration: BoxDecoration(
+                      color: isSelected
+                          ? AdminDashboardStyles.primary.withValues(alpha: 0.2)
+                          : Colors.grey.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Icon(
+                      icon,
+                      color: isSelected
+                          ? AdminDashboardStyles.primary
+                          : Colors.grey,
+                      size: 18,
+                    ),
                   ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      title,
+                      style: TextStyle(
+                        color: isSelected
+                            ? AdminDashboardStyles.primary
+                            : Colors.black,
+                        fontWeight: isSelected
+                            ? FontWeight.bold
+                            : FontWeight.w500,
+                        fontSize: 13,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  if (isSelected)
+                    Icon(
+                      Icons.arrow_forward_ios,
+                      color: AdminDashboardStyles.primary,
+                      size: 14,
+                    ),
+                ],
               ),
-              if (isSelected)
-                Icon(
-                  Icons.arrow_forward_ios,
-                  color: AdminDashboardStyles.primary,
-                  size: 14,
-                ),
-            ],
+            ),
           ),
-        ),
-      ),
-    ).animate().fadeIn(duration: 300.ms, delay: Duration(milliseconds: index * 50)).slideX(begin: 0.2);
+        )
+        .animate()
+        .fadeIn(
+          duration: 300.ms,
+          delay: Duration(milliseconds: index * 50),
+        )
+        .slideX(begin: 0.2);
   }
 
   Widget _buildLogoutTile() {

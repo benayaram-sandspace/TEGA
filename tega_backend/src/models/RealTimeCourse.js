@@ -334,6 +334,14 @@ const realTimeCourseSchema = new mongoose.Schema({
       isActive: {
         type: Boolean,
         default: true
+      },
+      isPremium: {
+        type: Boolean,
+        default: false
+      },
+      requiresEnrollment: {
+        type: Boolean,
+        default: true
       }
     }]
   }],

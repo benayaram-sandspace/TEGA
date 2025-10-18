@@ -1,10 +1,12 @@
 import express from 'express';
 import mongoose from 'mongoose';
 import cors from 'cors';
+import cookieParser from 'cookie-parser';
 import dotenv from 'dotenv';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
 import jobRoutes from './routes/jobRoutes.js';
+import { initializeRedis } from './config/redis.js';
 
 // Import AI Assistant routes
 import aiAssistantRoutes from './routes/aiAssistant.js';
@@ -63,6 +65,7 @@ app.set('io', io);
 
 // Middleware
 app.use(cors(corsOptions));
+app.use(cookieParser()); // Enable cookie parsing
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
@@ -77,17 +80,21 @@ const connectDB = async () => {
     
     const mongoURI = process.env.MONGODB_URI || 'mongodb://localhost:27017/tega-auth-starter';
     
-    // MongoDB connection options - production optimized
+    // MongoDB connection options - optimized for 10,000+ users
     const options = {
       serverSelectionTimeoutMS: 30000, // 30 seconds
       socketTimeoutMS: 45000, // 45 seconds
       bufferCommands: false,
-      maxPoolSize: 10,
-      minPoolSize: 5,
+      // Increased pool size for high concurrent users
+      maxPoolSize: 50, // Maintain up to 50 socket connections
+      minPoolSize: 10,  // Maintain at least 10 socket connections
       maxIdleTimeMS: 30000,
       retryWrites: true, // Retry failed writes
       retryReads: true, // Retry failed reads
       autoIndex: process.env.NODE_ENV !== 'production', // Disable in production for performance
+      // Additional optimization settings
+      connectTimeoutMS: 10000, // 10 second connection timeout
+      maxStalenessSeconds: 90, // Allow reads from secondary with up to 90s lag
     };
     
     await mongoose.connect(mongoURI, options);
@@ -96,6 +103,9 @@ const connectDB = async () => {
     mongoose.connection.on('error', (err) => {
       console.error('❌ MongoDB Connection Error:', err);
     });
+    
+    // Initialize Redis (optional - will fallback to memory cache if not available)
+    await initializeRedis();
     
     mongoose.connection.on('disconnected', () => {
       console.warn('⚠️  MongoDB Disconnected. Attempting to reconnect...');
@@ -182,7 +192,6 @@ import imageRoutes from './routes/imageRoutes.js';
 import r2UploadRoutes from './routes/r2Upload.js';
 import certificateRoutes from './routes/certificate.js';
 import realTimeCourseRoutes from './routes/realTimeCourse.js';
-import videoAccessRoutes from './routes/videoAccessRoutes.js';
 import videoDeliveryRoutes from './routes/videoDeliveryRoutes.js';
 import contactRoutes from './routes/contactRoutes.js';
 
@@ -208,7 +217,6 @@ app.use('/api/real-time-courses', realTimeCourseRoutes);
 app.use('/api/courses', realTimeCourseRoutes); // Alias for backward compatibility
 app.use('/api/r2', r2UploadRoutes);
 app.use('/api/certificates', certificateRoutes);
-app.use('/api/video-access', videoAccessRoutes);
 app.use('/api/video-delivery', videoDeliveryRoutes);
 app.use('/api/enrollments', enrollmentRoutes);
 app.use('/api/offers', offerRoutes);
@@ -220,8 +228,7 @@ app.use('/api/images', imageRoutes);
 app.use('/api/ai-assistant', aiAssistantRoutes);
 app.use('/api/contact', contactRoutes);
 
-// Serve uploaded files
-app.use('/uploads', express.static('uploads'));
+// Static file serving is already configured above
 
 // Note: All course access now handled by realTimeCourse.js (R2-based system only)
 

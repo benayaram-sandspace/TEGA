@@ -1,31 +1,62 @@
-// Production-ready rate limiting middleware
+// Production-ready rate limiting middleware with Redis support
 import rateLimit from 'express-rate-limit';
+import { cacheHelpers, cacheKeys, isRedisAvailable } from '../config/redis.js';
 
-// Memory store for rate limiting (use Redis in production)
+// Memory store for rate limiting (fallback when Redis unavailable)
 const store = new Map();
 
-// Custom store implementation
+// Redis-backed store implementation with memory fallback
 const customStore = {
-  increment: (key, windowMs) => {
+  increment: async (key, windowMs) => {
     const now = Date.now();
     const window = Math.floor(now / windowMs);
-    const keyWithWindow = `${key}:${window}`;
+    const keyWithWindow = `ratelimit:${key}:${window}`;
     
-    const current = store.get(keyWithWindow) || { count: 0, resetTime: (window + 1) * windowMs };
-    current.count++;
-    store.set(keyWithWindow, current);
-    
-    // Clean up old entries
-    for (const [k, v] of store.entries()) {
-      if (v.resetTime < now) {
-        store.delete(k);
+    try {
+      // Try Redis first if available
+      if (isRedisAvailable()) {
+        const count = await cacheHelpers.incr(keyWithWindow, Math.ceil(windowMs / 1000));
+        return {
+          totalHits: count,
+          resetTime: new Date((window + 1) * windowMs)
+        };
+      } else {
+        // Use memory store fallback
+        const current = store.get(keyWithWindow) || { count: 0, resetTime: (window + 1) * windowMs };
+        current.count++;
+        store.set(keyWithWindow, current);
+        
+        // Clean up old entries
+        for (const [k, v] of store.entries()) {
+          if (v.resetTime < now) {
+            store.delete(k);
+          }
+        }
+        
+        return {
+          totalHits: current.count,
+          resetTime: new Date(current.resetTime)
+        };
       }
+    } catch (error) {
+      console.log('Rate limiter falling back to memory store');
+      // Fallback to memory store
+      const current = store.get(keyWithWindow) || { count: 0, resetTime: (window + 1) * windowMs };
+      current.count++;
+      store.set(keyWithWindow, current);
+      
+      // Clean up old entries
+      for (const [k, v] of store.entries()) {
+        if (v.resetTime < now) {
+          store.delete(k);
+        }
+      }
+      
+      return {
+        totalHits: current.count,
+        resetTime: new Date(current.resetTime)
+      };
     }
-    
-    return {
-      totalHits: current.count,
-      resetTime: new Date(current.resetTime)
-    };
   }
 };
 

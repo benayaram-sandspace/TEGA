@@ -2,13 +2,12 @@ import { generatePresignedDownloadUrl } from '../config/r2.js';
 import Enrollment from '../models/Enrollment.js';
 // Enrollment functionality now in Enrollment model
 import RealTimeCourse from '../models/RealTimeCourse.js';
+import { cacheHelpers, cacheKeys } from '../config/redis.js';
 import NodeCache from 'node-cache';
 
-// Cache for signed URLs (2 minutes TTL - shorter for security)
-const signedUrlCache = new NodeCache({ stdTTL: 120, checkperiod: 30 });
-
-// Cache for enrollment status (5 minutes TTL)
-const enrollmentCache = new NodeCache({ stdTTL: 300, checkperiod: 60 });
+// Fallback cache for when Redis is unavailable
+const fallbackCache = new NodeCache({ stdTTL: 120, checkperiod: 30 });
+const fallbackEnrollmentCache = new NodeCache({ stdTTL: 300, checkperiod: 60 });
 
 // Track video access attempts for security
 const accessAttempts = new Map();
@@ -57,9 +56,16 @@ export const getScalableSignedVideoUrl = async (req, res) => {
       });
     }
 
-    // Step 2: Check cache for existing signed URL
-    const cacheKey = `${studentId}-${courseId}-${lectureId}`;
-    const cachedUrl = signedUrlCache.get(cacheKey);
+    // Step 2: Check cache for existing signed URL (Redis with fallback)
+    const cacheKey = cacheKeys.signedVideoUrl(studentId, courseId, lectureId);
+    let cachedUrl = null;
+    
+    try {
+      cachedUrl = await cacheHelpers.get(cacheKey);
+    } catch (error) {
+      console.log('Redis unavailable, using fallback cache');
+      cachedUrl = fallbackCache.get(cacheKey);
+    }
     
     if (cachedUrl) {
       return res.json({
@@ -237,8 +243,13 @@ export const getScalableSignedVideoUrl = async (req, res) => {
           }
         };
 
-        // Cache the result
-        signedUrlCache.set(cacheKey, response);
+        // Cache the result (Redis with fallback)
+        try {
+          await cacheHelpers.set(cacheKey, response, 120); // 2 minutes TTL
+        } catch (error) {
+          console.log('Redis unavailable, using fallback cache');
+          fallbackCache.set(cacheKey, response);
+        }
         
         return res.json(response);
       } else {
@@ -256,7 +267,7 @@ export const getScalableSignedVideoUrl = async (req, res) => {
 
     // Step 6: Check enrollment status (with caching)
     const enrollmentCacheKey = `${studentId}-${courseId}`;
-    let enrollmentStatus = enrollmentCache.get(enrollmentCacheKey);
+    let enrollmentStatus = fallbackEnrollmentCache.get(enrollmentCacheKey);
 
     if (!enrollmentStatus) {
       // Check enrollment in database
@@ -279,7 +290,7 @@ export const getScalableSignedVideoUrl = async (req, res) => {
       };
 
       // Cache enrollment status
-      enrollmentCache.set(enrollmentCacheKey, enrollmentStatus);
+      fallbackEnrollmentCache.set(enrollmentCacheKey, enrollmentStatus);
     }
 
     if (!enrollmentStatus.isEnrolled) {
@@ -322,8 +333,13 @@ export const getScalableSignedVideoUrl = async (req, res) => {
       }
     };
 
-    // Cache the result
-    signedUrlCache.set(cacheKey, response);
+    // Cache the result (Redis with fallback)
+    try {
+      await cacheHelpers.set(cacheKey, response, 120); // 2 minutes TTL
+    } catch (error) {
+      console.log('Redis unavailable, using fallback cache');
+      fallbackCache.set(cacheKey, response);
+    }
 
     res.json(response);
 
@@ -364,10 +380,17 @@ export const getBatchSignedVideoUrls = async (req, res) => {
     const results = {};
     const uncachedLectures = [];
 
-    // Check cache for existing URLs
+    // Check cache for existing URLs (Redis with fallback)
     for (const lectureId of lectureIds) {
-      const cacheKey = `${studentId}-${courseId}-${lectureId}`;
-      const cachedUrl = signedUrlCache.get(cacheKey);
+      const cacheKey = cacheKeys.signedVideoUrl(studentId, courseId, lectureId);
+      let cachedUrl = null;
+      
+      try {
+        cachedUrl = await cacheHelpers.get(cacheKey);
+      } catch (error) {
+        console.log('Redis unavailable, using fallback cache');
+        cachedUrl = fallbackCache.get(cacheKey);
+      }
       
       if (cachedUrl) {
         results[lectureId] = {
@@ -414,7 +437,7 @@ export const getBatchSignedVideoUrls = async (req, res) => {
           isPaid: !!(enrollment?.isPaid || userCourse?.paymentStatus === 'completed')
         };
 
-        enrollmentCache.set(enrollmentCacheKey, enrollmentStatus);
+        fallbackEnrollmentCache.set(enrollmentCacheKey, enrollmentStatus);
       }
 
       // Process each uncached lecture
@@ -478,9 +501,14 @@ export const getBatchSignedVideoUrls = async (req, res) => {
                 }
               };
 
-              // Cache the result
-              const cacheKey = `${studentId}-${courseId}-${lectureId}`;
-              signedUrlCache.set(cacheKey, response);
+              // Cache the result (Redis with fallback)
+              const cacheKey = cacheKeys.signedVideoUrl(studentId, courseId, lectureId);
+              try {
+                await cacheHelpers.set(cacheKey, response, 120); // 2 minutes TTL
+              } catch (error) {
+                console.log('Redis unavailable, using fallback cache');
+                fallbackCache.set(cacheKey, response);
+              }
               
               results[lectureId] = response;
             } else {
