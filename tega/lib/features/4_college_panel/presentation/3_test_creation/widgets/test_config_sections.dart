@@ -96,7 +96,7 @@ class TestConfigAndScheduleSections extends StatelessWidget {
                   SizedBox(
                     width: itemWidth,
                     child: DropdownButtonFormField<String>(
-                      value: selectedDifficulty,
+                      initialValue: selectedDifficulty,
                       decoration: InputDecoration(
                         labelText: 'Difficulty',
                         prefixIcon: Icon(

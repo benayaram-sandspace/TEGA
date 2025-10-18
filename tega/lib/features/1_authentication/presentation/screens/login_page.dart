@@ -88,20 +88,20 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
       'remember_me': 'Remember Me',
       'forgot_password': 'Forgot Password?',
       'login_button': 'Sign In',
-      'or_divider': 'Or',
-      'google_button': 'Continue with Google',
       'no_account': "Don't have an account? ",
       'signup': 'Sign Up',
       'validation_email': 'Please enter your email',
       'validation_password': 'Please enter your password',
       'login_failed_title': 'Login Failed',
       'ok_button': 'OK',
-      'demo_title': 'Demo Credentials (Tap to fill)',
-      'demo_admin': 'Admin: admin@tega.com / admin123',
-      'demo_principal': 'Principal: college@tega.com / college123',
-      'demo_student': 'Student: user@tega.com / user123',
       'logging_in': 'Signing in...',
       'invalid_email': 'Please enter a valid email address',
+      'remember_me_title': 'Save Credentials',
+      'remember_me_message': 'Do you want to save your login credentials to this device?',
+      'save_credentials': 'Save to Device',
+      'dont_save': 'Don\'t Save',
+      'credentials_saved': 'Credentials saved successfully!',
+      'credentials_cleared': 'Saved credentials cleared.',
     },
     'TE': {
       'tagline': 'ఉద్యోగానికి సిద్ధమవ్వడానికి మీ మార్గం',
@@ -114,21 +114,21 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
       'remember_me': 'నన్ను గుర్తుంచుకో',
       'forgot_password': 'పాస్‌వర్డ్ మర్చిపోయారా?',
       'login_button': 'సైన్ ఇన్',
-      'or_divider': 'లేదా',
-      'google_button': 'Google తో కొనసాగించండి',
       'no_account': 'ఖాతా లేదా? ',
       'signup': 'సైన్ అప్',
       'validation_email': 'దయచేసి మీ ఇమెయిల్ నమోదు చేయండి',
       'validation_password': 'దయచేసి మీ పాస్‌వర్డ్‌ను నమోదు చేయండి',
       'login_failed_title': 'లాగిన్ విఫలమైంది',
       'ok_button': 'సరే',
-      'demo_title': 'డెమో ఆధారాలు (నింపడానికి నొక్కండి)',
-      'demo_admin': 'అడ్మిన్: admin@tega.com / admin123',
-      'demo_principal': 'ప్రిన్సిపాల్: college@tega.com / college123',
-      'demo_student': 'విద్యార్థి: user@tega.com / user123',
       'logging_in': 'సైన్ ఇన్ అవుతోంది...',
       'invalid_email':
           'దయచేసి చెల్లుబాటు అయ్యే ఇమెయిల్ చిరునామాను నమోదు చేయండి',
+      'remember_me_title': 'ఆధారాలను సేవ్ చేయండి',
+      'remember_me_message': 'మీ లాగిన్ ఆధారాలను ఈ పరికరంలో సేవ్ చేయాలనుకుంటున్నారా?',
+      'save_credentials': 'పరికరంలో సేవ్ చేయండి',
+      'dont_save': 'సేవ్ చేయవద్దు',
+      'credentials_saved': 'ఆధారాలు విజయవంతంగా సేవ్ చేయబడ్డాయి!',
+      'credentials_cleared': 'సేవ్ చేయబడిన ఆధారాలు క్లియర్ చేయబడ్డాయి.',
     },
   };
 
@@ -227,42 +227,216 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
     super.dispose();
   }
 
-  /// Helper function to parse and fill demo credentials
-  void _fillDemoCredentials(String credentialLine) {
-    try {
-      // Example: "Admin: admin@tega.com / admin123"
-      final parts = credentialLine.split(' / ');
-      if (parts.length != 2) return;
-
-      final password = parts.last.trim();
-      final emailPart = parts.first.split(': ');
-      if (emailPart.length != 2) return;
-
-      final email = emailPart.last.trim();
-
-      setState(() {
-        _emailController.text = email;
-        _passwordController.text = password;
-        // Uncheck remember me for demo credentials (security best practice)
-        _rememberMe = false;
-      });
-
-      debugPrint("✅ Demo credentials filled: $email");
-    } catch (e) {
-      debugPrint("❌ Error parsing demo credentials: $e");
-    }
-  }
 
   /// Handle remember me checkbox toggle
   void _handleRememberMeToggle(bool? value) {
-    setState(() {
-      _rememberMe = value ?? false;
-    });
-
-    // If unchecked, clear saved credentials immediately
-    if (!_rememberMe) {
+    if (value == true) {
+      // Show bottom sheet to confirm saving credentials
+      _showRememberMeBottomSheet();
+    } else {
+      setState(() {
+        _rememberMe = false;
+      });
+      // Clear saved credentials immediately
       _clearSavedCredentials();
     }
+  }
+
+  /// Show bottom sheet for Remember Me functionality
+  void _showRememberMeBottomSheet() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => _buildRememberMeBottomSheet(),
+    );
+  }
+
+  /// Build the Remember Me bottom sheet
+  Widget _buildRememberMeBottomSheet() {
+    final bottomPadding = MediaQuery.of(context).viewInsets.bottom;
+    
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: const BorderRadius.only(
+          topLeft: Radius.circular(24),
+          topRight: Radius.circular(24),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 20,
+            offset: const Offset(0, -5),
+          ),
+        ],
+      ),
+      child: Padding(
+        padding: EdgeInsets.only(
+          left: 24,
+          right: 24,
+          top: 24,
+          bottom: bottomPadding + 24,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Handle bar
+            Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Colors.grey.shade300,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(height: 24),
+            
+            // Icon
+            Container(
+              width: 80,
+              height: 80,
+              decoration: BoxDecoration(
+                color: const Color(0xFF9C88FF).withOpacity(0.1),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.save_rounded,
+                size: 40,
+                color: Color(0xFF9C88FF),
+              ),
+            ),
+            const SizedBox(height: 20),
+            
+            // Title
+            Text(
+              _tr('remember_me_title'),
+              style: const TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF2C3E50),
+              ),
+            ),
+            const SizedBox(height: 12),
+            
+            // Message
+            Text(
+              _tr('remember_me_message'),
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 16,
+                color: Colors.grey.shade600,
+                height: 1.4,
+              ),
+            ),
+            const SizedBox(height: 32),
+            
+            // Action buttons
+            Row(
+              children: [
+                // Don't Save button
+                Expanded(
+                  child: Container(
+                    height: 50,
+                    decoration: BoxDecoration(
+                      border: Border.all(color: Colors.grey.shade300),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: TextButton(
+                      onPressed: () {
+                        Navigator.of(context).pop();
+                        setState(() {
+                          _rememberMe = false;
+                        });
+                        _clearSavedCredentials();
+                        _showSnackBar(_tr('credentials_cleared'));
+                      },
+                      style: TextButton.styleFrom(
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      child: Text(
+                        _tr('dont_save'),
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF5D6D7E),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 16),
+                
+                // Save button
+                Expanded(
+                  child: Container(
+                    height: 50,
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [
+                          Color(0xFF9C88FF),
+                          Color(0xFF8B7BFF),
+                        ],
+                      ),
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0xFF9C88FF).withOpacity(0.3),
+                          blurRadius: 10,
+                          offset: const Offset(0, 5),
+                        ),
+                      ],
+                    ),
+                    child: TextButton(
+                      onPressed: () {
+                        Navigator.of(context).pop();
+                        setState(() {
+                          _rememberMe = true;
+                        });
+                        _saveCredentials();
+                        _showSnackBar(_tr('credentials_saved'));
+                      },
+                      style: TextButton.styleFrom(
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      child: Text(
+                        _tr('save_credentials'),
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Show snackbar with message
+  void _showSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: const Color(0xFF27AE60),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(10),
+        ),
+        margin: const EdgeInsets.all(16),
+        duration: const Duration(seconds: 2),
+      ),
+    );
   }
 
   /// Validate email format
@@ -450,11 +624,6 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
           child: Form(key: _formKey, child: _buildLoginFormCard()),
         ),
         SizedBox(height: isMobile ? 20 : 24),
-        ConstrainedBox(
-          constraints: BoxConstraints(maxWidth: maxFormWidth),
-          child: _buildDemoCredentials(),
-        ),
-        SizedBox(height: isMobile ? 20 : 24),
         _buildSignupLink(),
         const SizedBox(height: 20),
         _buildLanguageSelector(),
@@ -476,11 +645,6 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
               _buildLogoSection(),
               const SizedBox(height: 40),
               _buildTitle(),
-              const SizedBox(height: 40),
-              ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 500),
-                child: _buildDemoCredentials(),
-              ),
             ],
           ),
         ),
@@ -723,10 +887,6 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
           _buildRememberMeAndForgotPassword(),
           SizedBox(height: isMobile ? 24 : 32),
           _buildLoginButton(),
-          SizedBox(height: isMobile ? 20 : 24),
-          _buildDivider(),
-          SizedBox(height: isMobile ? 20 : 24),
-          _buildGoogleButton(),
         ],
       ),
     );
@@ -858,264 +1018,8 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
     );
   }
 
-  Widget _buildDivider() {
-    return Row(
-      children: [
-        Expanded(
-          child: Container(
-            height: 1,
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  Colors.transparent,
-                  const Color(0xFFE8E8E8),
-                  Colors.transparent,
-                ],
-              ),
-            ),
-          ),
-        ),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            decoration: BoxDecoration(
-              color: const Color(0xFFFAFAFA),
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: const Color(0xFFE8E8E8)),
-            ),
-            child: Text(
-              _tr('or_divider'),
-              style: const TextStyle(
-                color: Color(0xFF5D6D7E),
-                fontSize: 12,
-                fontWeight: FontWeight.w500,
-                letterSpacing: 0.5,
-              ),
-            ),
-          ),
-        ),
-        Expanded(
-          child: Container(
-            height: 1,
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  Colors.transparent,
-                  const Color(0xFFE8E8E8),
-                  Colors.transparent,
-                ],
-              ),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
 
-  Widget _buildGoogleButton() {
-    final buttonHeight = isMobile ? 50.0 : 56.0;
-    final iconSize = isMobile ? 22.0 : 24.0;
-    final fontSize = isMobile ? 15.0 : 16.0;
 
-    return Container(
-      width: double.infinity,
-      height: buttonHeight,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(isMobile ? 14 : 16),
-        border: Border.all(color: const Color(0xFFE8E8E8), width: 1.5),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 5),
-          ),
-        ],
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: () {
-            // Handle Google sign in
-          },
-          borderRadius: BorderRadius.circular(isMobile ? 14 : 16),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Container(
-                width: iconSize,
-                height: iconSize,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(4),
-                ),
-                child: Image.asset(
-                  'assets/google_logo.png',
-                  width: iconSize,
-                  height: iconSize,
-                  errorBuilder: (_, __, ___) => Icon(
-                    Icons.g_mobiledata,
-                    size: iconSize,
-                    color: const Color(0xFF4285F4),
-                  ),
-                ),
-              ),
-              SizedBox(width: isMobile ? 10 : 12),
-              Text(
-                _tr('google_button'),
-                style: TextStyle(
-                  fontSize: fontSize,
-                  fontWeight: FontWeight.w600,
-                  color: const Color(0xFF2C3E50),
-                  letterSpacing: 0.5,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildDemoCredentials() {
-    final cardPadding = isMobile ? 14.0 : 16.0;
-    final borderRadius = isMobile ? 14.0 : 16.0;
-
-    return Container(
-      width: double.infinity,
-      padding: EdgeInsets.all(cardPadding),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            const Color(0xFF3498DB).withOpacity(0.1),
-            const Color(0xFF2980B9).withOpacity(0.05),
-          ],
-        ),
-        borderRadius: BorderRadius.circular(borderRadius),
-        border: Border.all(
-          color: const Color(0xFF3498DB).withOpacity(0.2),
-          width: 1,
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                padding: EdgeInsets.all(isMobile ? 5 : 6),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF3498DB).withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Icon(
-                  Icons.info_outline_rounded,
-                  size: isMobile ? 14 : 16,
-                  color: const Color(0xFF3498DB),
-                ),
-              ),
-              SizedBox(width: isMobile ? 6 : 8),
-              Flexible(
-                child: Text(
-                  _tr('demo_title'),
-                  style: TextStyle(
-                    fontWeight: FontWeight.w600,
-                    fontSize: isMobile ? 13 : 14,
-                    color: const Color(0xFF3498DB),
-                    letterSpacing: 0.5,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          SizedBox(height: isMobile ? 10 : 12),
-          // Admin credentials
-          GestureDetector(
-            onTap: () => _fillDemoCredentials(_tr('demo_admin')),
-            child: _buildDemoCredentialItem(
-              _tr('demo_admin'),
-              Icons.admin_panel_settings_rounded,
-              const Color(0xFFE74C3C),
-            ),
-          ),
-          SizedBox(height: isMobile ? 5 : 6),
-          // Principal credentials
-          GestureDetector(
-            onTap: () => _fillDemoCredentials(_tr('demo_principal')),
-            child: _buildDemoCredentialItem(
-              _tr('demo_principal'),
-              Icons.school_rounded,
-              const Color(0xFF9C88FF),
-            ),
-          ),
-          SizedBox(height: isMobile ? 5 : 6),
-          // Student credentials
-          GestureDetector(
-            onTap: () => _fillDemoCredentials(_tr('demo_student')),
-            child: _buildDemoCredentialItem(
-              _tr('demo_student'),
-              Icons.person_rounded,
-              const Color(0xFF3498DB),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildDemoCredentialItem(String text, IconData icon, Color color) {
-    final itemPadding = isMobile ? 8.0 : 10.0;
-    final iconSize = isMobile ? 14.0 : 16.0;
-    final fontSize = isMobile ? 11.0 : 12.0;
-
-    return Container(
-      padding: EdgeInsets.symmetric(
-        horizontal: isMobile ? 10 : 12,
-        vertical: itemPadding,
-      ),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.8),
-        borderRadius: BorderRadius.circular(isMobile ? 8 : 10),
-        border: Border.all(color: color.withOpacity(0.3), width: 1.5),
-        boxShadow: [
-          BoxShadow(
-            color: color.withOpacity(0.1),
-            blurRadius: 4,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: EdgeInsets.all(isMobile ? 5 : 6),
-            decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(6),
-            ),
-            child: Icon(icon, size: iconSize, color: color),
-          ),
-          SizedBox(width: isMobile ? 8 : 10),
-          Expanded(
-            child: Text(
-              text,
-              style: TextStyle(
-                fontSize: fontSize,
-                color: const Color(0xFF2C3E50),
-                fontWeight: FontWeight.w500,
-                fontFamily: 'monospace',
-              ),
-            ),
-          ),
-          Icon(
-            Icons.touch_app_rounded,
-            size: isMobile ? 12 : 14,
-            color: color.withOpacity(0.5),
-          ),
-        ],
-      ),
-    );
-  }
 
   Widget _buildSignupLink() {
     return Container(

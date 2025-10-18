@@ -15,7 +15,7 @@ class LearningHistoryService {
   /// Get student's overall learning progress
   Future<LearningStats> getLearningStats() async {
     try {
-      final headers = await _authService.getAuthHeaders();
+      final headers = _authService.getAuthHeaders();
       final response = await http.get(
         Uri.parse(ApiEndpoints.studentDashboard),
         headers: headers,
@@ -68,7 +68,7 @@ class LearningHistoryService {
   /// Get student's progress for all courses
   Future<List<CourseProgress>> getAllCourseProgress() async {
     try {
-      final headers = await _authService.getAuthHeaders();
+      final headers = _authService.getAuthHeaders();
       final response = await http.get(
         Uri.parse(ApiEndpoints.studentDashboard),
         headers: headers,
@@ -128,7 +128,7 @@ class LearningHistoryService {
   /// Get student's learning history (recent activities)
   Future<List<LearningActivity>> getLearningHistory() async {
     try {
-      final headers = await _authService.getAuthHeaders();
+      final headers = _authService.getAuthHeaders();
       final response = await http.get(
         Uri.parse(ApiEndpoints.studentDashboard),
         headers: headers,
