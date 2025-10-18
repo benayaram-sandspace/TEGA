@@ -8,6 +8,7 @@ import 'package:tega/features/1_authentication/presentation/screens/login_page.d
 import 'package:tega/features/3_admin_panel/presentation/0_dashboard/admin_dashboard_styles.dart';
 import 'package:tega/features/3_admin_panel/presentation/0_dashboard/tabs/dashboard_home_tab.dart';
 import 'package:tega/features/3_admin_panel/presentation/1_management/students/students_page.dart';
+import 'package:tega/features/3_admin_panel/presentation/1_management/principals/principals_page.dart';
 import 'package:tega/features/3_admin_panel/presentation/1_management/courses/course_management_page.dart';
 import 'package:tega/features/3_admin_panel/presentation/4_settings_and_misc/notification_manager_page.dart';
 import 'package:tega/features/3_admin_panel/presentation/placeholder_pages/placeholder_page.dart';
@@ -69,12 +70,7 @@ class _AdminDashboardState extends State<AdminDashboard>
         icon: Icons.percent,
       ),
       const StudentsPage(),
-      const PlaceholderPage(
-        title: 'Principals',
-        description:
-            'Manage college principals and their access to the platform.',
-        icon: Icons.admin_panel_settings,
-      ),
+      const PrincipalsPage(),
       const NotificationManagerPage(),
       const PlaceholderPage(
         title: 'Schedule Assessment',
