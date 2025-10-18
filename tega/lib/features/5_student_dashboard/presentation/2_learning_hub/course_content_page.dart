@@ -3,7 +3,9 @@ import 'package:flutter/services.dart';
 import 'package:video_player/video_player.dart';
 import 'package:tega/features/1_authentication/data/auth_repository.dart';
 import 'package:tega/core/constants/api_constants.dart';
+import 'package:tega/features/5_student_dashboard/data/payment_service.dart';
 import 'package:http/http.dart' as http;
+import 'package:razorpay_flutter/razorpay_flutter.dart';
 import 'dart:convert';
 
 class CourseContentPage extends StatefulWidget {
@@ -36,16 +38,22 @@ class _CourseContentPageState extends State<CourseContentPage> {
   // Performance optimization
   bool _isVideoLoading = false;
 
+  // Payment service
+  final PaymentService _paymentService = PaymentService();
+  bool _isPaymentLoading = false;
+
   @override
   void initState() {
     super.initState();
     _loadCourseContent();
+    _initializeRazorpay();
   }
 
   @override
   void dispose() {
     _videoController?.removeListener(_videoListener);
     _videoController?.dispose();
+    _paymentService.dispose();
     // Reset system UI when leaving the page
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
     SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
@@ -454,46 +462,428 @@ class _CourseContentPageState extends State<CourseContentPage> {
     }
   }
 
+  void _initializeRazorpay() {
+    _paymentService.initializeRazorpay(
+      onSuccess: _handlePaymentSuccess,
+      onError: _handlePaymentError,
+      onExternalWallet: _handleExternalWallet,
+    );
+  }
+
+  void _handlePaymentSuccess(PaymentSuccessResponse response) async {
+    try {
+      // Verify payment with backend
+      final result = await _paymentService.verifyPayment(
+        orderId: response.orderId!,
+        paymentId: response.paymentId!,
+        signature: response.signature!,
+      );
+
+      if (result['success'] == true) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                'Payment successful! You now have access to the course.',
+              ),
+              backgroundColor: Colors.green,
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+
+          // Reload course content to reflect enrollment
+          _loadCourseContent();
+        }
+      } else {
+        throw Exception(result['message'] ?? 'Payment verification failed');
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Payment verification failed: $e'),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } finally {
+      setState(() {
+        _isPaymentLoading = false;
+      });
+    }
+  }
+
+  void _handlePaymentError(PaymentFailureResponse response) {
+    setState(() {
+      _isPaymentLoading = false;
+    });
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Payment failed: ${response.message}'),
+        backgroundColor: Colors.red,
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
+  void _handleExternalWallet(ExternalWalletResponse response) {
+    setState(() {
+      _isPaymentLoading = false;
+    });
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('External wallet selected: ${response.walletName}'),
+        backgroundColor: Colors.blue,
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
+  Future<void> _startPayment() async {
+    try {
+      setState(() {
+        _isPaymentLoading = true;
+      });
+
+      // Create Razorpay order
+      final orderResult = await _paymentService.createOrder(
+        courseId: widget.course['_id'] ?? widget.course['id'] ?? '',
+      );
+
+      if (orderResult['success'] == true) {
+        // Get user details for prefill
+        final authService = AuthService();
+        final user = authService.currentUser;
+
+        // Open Razorpay payment
+        _paymentService.openPayment(
+          orderId: orderResult['orderId'],
+          keyId: orderResult['keyId'], // Get key from backend response
+          name: 'TEGA Learning Platform',
+          description:
+              'Course Enrollment - ${widget.course['title'] ?? 'Course'}',
+          amount: orderResult['chargedAmount'],
+          currency: 'INR',
+          prefillEmail: user?.email ?? '',
+          prefillContact: user?.phone ?? '',
+          notes: {
+            'courseId': widget.course['_id'] ?? widget.course['id'] ?? '',
+            'courseName': widget.course['title'] ?? 'Course',
+          },
+        );
+      } else {
+        throw Exception(
+          orderResult['message'] ?? 'Failed to create payment order',
+        );
+      }
+    } catch (e) {
+      setState(() {
+        _isPaymentLoading = false;
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Payment failed: $e'),
+          backgroundColor: Colors.red,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+  }
+
   void _showEnrollmentPrompt() {
     showDialog(
       context: context,
+      barrierDismissible: true,
       builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Row(
-            children: [
-              Icon(Icons.lock, color: Colors.orange),
-              SizedBox(width: 8),
-              Text('Premium Content'),
-            ],
-          ),
-          content: const Text(
-            'This lecture is available for enrolled students only. Enroll in this course to access all lectures and unlock your learning potential!',
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Maybe Later'),
+        return Dialog(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          child: Container(
+            constraints: const BoxConstraints(maxWidth: 400),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(24),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.1),
+                  blurRadius: 30,
+                  offset: const Offset(0, 10),
+                ),
+                BoxShadow(
+                  color: const Color(0xFF6B5FFF).withOpacity(0.1),
+                  blurRadius: 20,
+                  offset: const Offset(0, 5),
+                ),
+              ],
             ),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-                // TODO: Navigate to enrollment page
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Enrollment feature coming soon!'),
-                    backgroundColor: Colors.orange,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Header with gradient background
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(24),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        const Color(0xFF6B5FFF),
+                        const Color(0xFF6B5FFF).withOpacity(0.8),
+                      ],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: const BorderRadius.only(
+                      topLeft: Radius.circular(24),
+                      topRight: Radius.circular(24),
+                    ),
                   ),
-                );
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF6B5FFF),
-                foregroundColor: Colors.white,
-              ),
-              child: const Text('Enroll Now'),
+                  child: Column(
+                    children: [
+                      // Premium icon with glow effect
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.2),
+                          shape: BoxShape.circle,
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.white.withOpacity(0.3),
+                              blurRadius: 20,
+                              spreadRadius: 2,
+                            ),
+                          ],
+                        ),
+                        child: const Icon(
+                          Icons.diamond_outlined,
+                          size: 32,
+                          color: Colors.white,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      const Text(
+                        'Premium Content',
+                        style: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Unlock your learning potential',
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: Colors.white.withOpacity(0.9),
+                          fontWeight: FontWeight.w400,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                // Content section
+                Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Column(
+                    children: [
+                      // Course info
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF6B5FFF).withOpacity(0.05),
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(
+                            color: const Color(0xFF6B5FFF).withOpacity(0.1),
+                            width: 1,
+                          ),
+                        ),
+                        child: Row(
+                          children: [
+                            Container(
+                              width: 50,
+                              height: 50,
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF6B5FFF).withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: const Icon(
+                                Icons.play_circle_outline,
+                                color: Color(0xFF6B5FFF),
+                                size: 24,
+                              ),
+                            ),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    widget.course['title'] ?? 'Course',
+                                    style: const TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w600,
+                                      color: Color(0xFF1A1A1A),
+                                    ),
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    'Premium Course',
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      color: const Color(0xFF6B5FFF),
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      const SizedBox(height: 20),
+
+                      // Benefits list
+                      Column(
+                        children: [
+                          _buildBenefitItem(
+                            Icons.video_library_outlined,
+                            'Access to all premium lectures',
+                          ),
+                          _buildBenefitItem(
+                            Icons.workspace_premium_outlined,
+                            'Course completion certificate',
+                          ),
+                          _buildBenefitItem(
+                            Icons.support_agent_outlined,
+                            '24/7 learning support',
+                          ),
+                        ],
+                      ),
+
+                      const SizedBox(height: 24),
+
+                      // Action button
+                      Container(
+                        width: double.infinity,
+                        height: 56,
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(
+                            colors: [Color(0xFF6B5FFF), Color(0xFF8B7FFF)],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                          borderRadius: BorderRadius.circular(12),
+                          boxShadow: [
+                            BoxShadow(
+                              color: const Color(0xFF6B5FFF).withOpacity(0.3),
+                              blurRadius: 12,
+                              offset: const Offset(0, 6),
+                            ),
+                          ],
+                        ),
+                        child: Material(
+                          color: Colors.transparent,
+                          child: InkWell(
+                            onTap: () {
+                              Navigator.of(context).pop();
+                              _startPayment();
+                            },
+                            borderRadius: BorderRadius.circular(12),
+                            child: Center(
+                              child: _isPaymentLoading
+                                  ? const Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: [
+                                        SizedBox(
+                                          width: 20,
+                                          height: 20,
+                                          child: CircularProgressIndicator(
+                                            color: Colors.white,
+                                            strokeWidth: 2,
+                                          ),
+                                        ),
+                                        SizedBox(width: 8),
+                                        Text(
+                                          'Processing...',
+                                          style: TextStyle(
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.w600,
+                                            color: Colors.white,
+                                          ),
+                                        ),
+                                      ],
+                                    )
+                                  : const Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: [
+                                        Icon(
+                                          Icons.shopping_cart_rounded,
+                                          color: Colors.white,
+                                          size: 20,
+                                        ),
+                                        SizedBox(width: 8),
+                                        Text(
+                                          'Enroll Now',
+                                          style: TextStyle(
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.w600,
+                                            color: Colors.white,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
-          ],
+          ),
         );
       },
+    );
+  }
+
+  Widget _buildBenefitItem(IconData icon, String text) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Row(
+        children: [
+          Container(
+            width: 32,
+            height: 32,
+            decoration: BoxDecoration(
+              color: const Color(0xFF6B5FFF).withOpacity(0.1),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(icon, size: 18, color: const Color(0xFF6B5FFF)),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              text,
+              style: const TextStyle(
+                fontSize: 14,
+                color: Color(0xFF4A4A4A),
+                fontWeight: FontWeight.w400,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
