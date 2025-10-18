@@ -32,7 +32,6 @@ class PDFGenerator {
 
       return filePath;
     } catch (e) {
-      debugPrint('Error generating PDF: $e');
       return null;
     }
   }
@@ -47,7 +46,6 @@ class PDFGenerator {
 
       return byteData?.buffer.asUint8List();
     } catch (e) {
-      debugPrint('Error capturing widget: $e');
       return null;
     }
   }
@@ -56,7 +54,6 @@ class PDFGenerator {
     try {
       await Share.shareXFiles([XFile(filePath)], text: 'My Resume');
     } catch (e) {
-      debugPrint('Error sharing PDF: $e');
     }
   }
 
@@ -75,7 +72,6 @@ class PDFGenerator {
       }
       return false;
     } catch (e) {
-      debugPrint('Error saving to downloads: $e');
       return false;
     }
   }

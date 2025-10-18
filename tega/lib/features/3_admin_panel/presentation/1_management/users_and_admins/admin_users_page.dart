@@ -58,25 +58,34 @@ class _AdminUsersPageState extends State<AdminUsersPage>
     );
 
     _scaleAnimations = _itemAnimationControllers
-        .map((controller) => Tween<double>(begin: 0.95, end: 1.0).animate(
-              CurvedAnimation(parent: controller, curve: Curves.easeOutBack),
-            ))
+        .map(
+          (controller) => Tween<double>(begin: 0.95, end: 1.0).animate(
+            CurvedAnimation(parent: controller, curve: Curves.easeOutBack),
+          ),
+        )
         .toList();
 
     _slideAnimations = _itemAnimationControllers
-        .map((controller) => Tween<Offset>(
-              begin: const Offset(0, 0.2),
-              end: Offset.zero,
-            ).animate(
-              CurvedAnimation(parent: controller, curve: Curves.easeOutCubic),
-            ))
+        .map(
+          (controller) =>
+              Tween<Offset>(
+                begin: const Offset(0, 0.2),
+                end: Offset.zero,
+              ).animate(
+                CurvedAnimation(parent: controller, curve: Curves.easeOutCubic),
+              ),
+        )
         .toList();
 
     _animationController.forward();
   }
 
   void _startStaggeredAnimations() {
-    for (int i = 0; i < _itemAnimationControllers.length && i < _filteredAdmins.length; i++) {
+    for (
+      int i = 0;
+      i < _itemAnimationControllers.length && i < _filteredAdmins.length;
+      i++
+    ) {
       Future.delayed(Duration(milliseconds: i * 100), () {
         if (mounted) {
           _itemAnimationControllers[i].forward();
@@ -132,7 +141,6 @@ class _AdminUsersPageState extends State<AdminUsersPage>
     _startStaggeredAnimations();
   }
 
-  // ignore: unused_element
   void _clearFilters() {
     setState(() {
       _searchController.clear();
@@ -149,119 +157,126 @@ class _AdminUsersPageState extends State<AdminUsersPage>
       body: FadeTransition(
         opacity: _fadeAnimation,
         child: _isLoading
-          ? const Center(
-              child: CircularProgressIndicator(color: AdminDashboardStyles.primary),
-            )
-          : Column(
-              children: [
-                // Search and Filter Section
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    children: [
-                      // Search Bar
-                      TextField(
-                        controller: _searchController,
-                        onChanged: (_) => _applyFilters(),
-                        decoration: InputDecoration(
-                          hintText: 'Search by name or email...',
-                          hintStyle: TextStyle(color: AdminDashboardStyles.textLight),
-                          prefixIcon: Icon(
-                            Icons.search,
-                            color: AdminDashboardStyles.textLight,
-                          ),
-                          filled: true,
-                          fillColor: AdminDashboardStyles.cardBackground,
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide.none,
-                          ),
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 12,
+            ? const Center(
+                child: CircularProgressIndicator(
+                  color: AdminDashboardStyles.primary,
+                ),
+              )
+            : Column(
+                children: [
+                  // Search and Filter Section
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      children: [
+                        // Search Bar
+                        TextField(
+                          controller: _searchController,
+                          onChanged: (_) => _applyFilters(),
+                          decoration: InputDecoration(
+                            hintText: 'Search by name or email...',
+                            hintStyle: TextStyle(
+                              color: AdminDashboardStyles.textLight,
+                            ),
+                            prefixIcon: Icon(
+                              Icons.search,
+                              color: AdminDashboardStyles.textLight,
+                            ),
+                            filled: true,
+                            fillColor: AdminDashboardStyles.cardBackground,
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide.none,
+                            ),
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 12,
+                            ),
                           ),
                         ),
-                      ),
-                      const SizedBox(height: 12),
-                      // Filter Buttons
-                      Row(
-                        children: [
-                          Expanded(
-                            child: _buildFilterDropdown(
-                              'Filter by Role',
-                              _selectedRole,
-                              _adminService.getAvailableRoles(),
-                              (value) {
-                                setState(() => _selectedRole = value ?? '');
-                                _applyFilters();
-                              },
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: _buildFilterDropdown(
-                              'Filter by Status',
-                              _selectedStatus,
-                              _adminService.getAvailableStatuses(),
-                              (value) {
-                                setState(() => _selectedStatus = value ?? '');
-                                _applyFilters();
-                              },
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-                // Admin Users List
-                Expanded(
-                  child: _filteredAdmins.isEmpty
-                      ? Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(
-                                Icons.admin_panel_settings_outlined,
-                                size: 64,
-                                color: AdminDashboardStyles.textLight,
+                        const SizedBox(height: 12),
+                        // Filter Buttons
+                        Row(
+                          children: [
+                            Expanded(
+                              child: _buildFilterDropdown(
+                                'Filter by Role',
+                                _selectedRole,
+                                _adminService.getAvailableRoles(),
+                                (value) {
+                                  setState(() => _selectedRole = value ?? '');
+                                  _applyFilters();
+                                },
                               ),
-                              const SizedBox(height: 16),
-                              Text(
-                                'No admins found',
-                                style: TextStyle(
-                                  fontSize: 18,
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: _buildFilterDropdown(
+                                'Filter by Status',
+                                _selectedStatus,
+                                _adminService.getAvailableStatuses(),
+                                (value) {
+                                  setState(() => _selectedStatus = value ?? '');
+                                  _applyFilters();
+                                },
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  // Admin Users List
+                  Expanded(
+                    child: _filteredAdmins.isEmpty
+                        ? Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.admin_panel_settings_outlined,
+                                  size: 64,
                                   color: AdminDashboardStyles.textLight,
                                 ),
-                              ),
-                            ],
+                                const SizedBox(height: 16),
+                                Text(
+                                  'No admins found',
+                                  style: TextStyle(
+                                    fontSize: 18,
+                                    color: AdminDashboardStyles.textLight,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          )
+                        : ListView.builder(
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                            itemCount: _filteredAdmins.length,
+                            itemBuilder: (context, index) {
+                              final admin = _filteredAdmins[index];
+                              if (index < _itemAnimationControllers.length) {
+                                return AnimatedBuilder(
+                                  animation: Listenable.merge([
+                                    _scaleAnimations[index],
+                                    _slideAnimations[index],
+                                  ]),
+                                  builder: (context, child) {
+                                    return Transform.scale(
+                                      scale: _scaleAnimations[index].value,
+                                      child: SlideTransition(
+                                        position: _slideAnimations[index],
+                                        child: _buildAdminCard(admin),
+                                      ),
+                                    );
+                                  },
+                                );
+                              }
+                              return _buildAdminCard(admin);
+                            },
                           ),
-                        )
-                      : ListView.builder(
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
-                          itemCount: _filteredAdmins.length,
-                          itemBuilder: (context, index) {
-                            final admin = _filteredAdmins[index];
-                            if (index < _itemAnimationControllers.length) {
-                              return AnimatedBuilder(
-                                animation: Listenable.merge([_scaleAnimations[index], _slideAnimations[index]]),
-                                builder: (context, child) {
-                                  return Transform.scale(
-                                    scale: _scaleAnimations[index].value,
-                                    child: SlideTransition(
-                                      position: _slideAnimations[index],
-                                      child: _buildAdminCard(admin),
-                                    ),
-                                  );
-                                },
-                              );
-                            }
-                            return _buildAdminCard(admin);
-                          },
-                        ),
-                ),
-              ],
-            ),
+                  ),
+                ],
+              ),
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _showAddAdminModal(),
@@ -269,10 +284,7 @@ class _AdminUsersPageState extends State<AdminUsersPage>
         icon: const Icon(Icons.add, color: Colors.white),
         label: const Text(
           'Add New Admin',
-          style: TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.w600,
-          ),
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
         ),
       ),
     );
@@ -527,9 +539,7 @@ class _AdminUsersPageState extends State<AdminUsersPage>
   void _showAdminDetails(AdminUser admin) {
     Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (context) => AdminProfilePage(admin: admin),
-      ),
+      MaterialPageRoute(builder: (context) => AdminProfilePage(admin: admin)),
     );
   }
 
@@ -583,7 +593,9 @@ class _AdminUsersPageState extends State<AdminUsersPage>
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Delete Admin'),
-        content: Text('Are you sure you want to permanently delete ${admin.name}? This action cannot be undone.'),
+        content: Text(
+          'Are you sure you want to permanently delete ${admin.name}? This action cannot be undone.',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
@@ -608,7 +620,7 @@ class _AdminUsersPageState extends State<AdminUsersPage>
   Future<void> _deleteAdmin(AdminUser admin) async {
     try {
       final success = await _adminService.deleteAdmin(admin.id);
-      
+
       if (success) {
         _loadAdmins(); // Refresh the list
         ScaffoldMessenger.of(context).showSnackBar(

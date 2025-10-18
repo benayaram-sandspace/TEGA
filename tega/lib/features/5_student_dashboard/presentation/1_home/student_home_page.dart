@@ -104,7 +104,6 @@ class _StudentHomePageState extends State<StudentHomePage>
         _isLoading = false;
       });
 
-      // Debug: Print profile data to see the actual structure (remove in production)
       if (EnvConfig.enableDebugLogs) {}
       // Reinitialize pages with new data
       _initializePages();

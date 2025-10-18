@@ -175,7 +175,6 @@ class AuthService {
   static const Duration _requestTimeout = Duration(seconds: 30);
   static const int _maxRetries = 3;
   static const Duration _tokenRefreshBuffer = Duration(minutes: 5);
-  static const bool _useDemoMode = false; // Set to false in production
 
   // State
   User? _currentUser;
@@ -226,9 +225,6 @@ class AuthService {
       return response;
     } on TimeoutException {
       if (retryCount < _maxRetries) {
-        debugPrint(
-          'Request timeout, retrying... (${retryCount + 1}/$_maxRetries)',
-        );
         await Future.delayed(Duration(seconds: retryCount + 1));
         return _makePostRequest(
           url,
@@ -262,9 +258,6 @@ class AuthService {
       return response;
     } on TimeoutException {
       if (retryCount < _maxRetries) {
-        debugPrint(
-          'Request timeout, retrying... (${retryCount + 1}/$_maxRetries)',
-        );
         await Future.delayed(Duration(seconds: retryCount + 1));
         return _makeGetRequest(
           url,
@@ -335,7 +328,6 @@ class AuthService {
 
       _tokenRefreshTimer = Timer(timeUntilRefresh, () {
         refreshAuthToken().catchError((error) {
-          debugPrint('Token refresh failed: $error');
           return false;
         });
       });
@@ -366,9 +358,6 @@ class AuthService {
         if (college != null) 'college': college,
       };
 
-      debugPrint('🔍 [AUTH] Signup request data: $signupData');
-      debugPrint('🔍 [AUTH] Signup URL: ${ApiEndpoints.register}');
-
       final response = await _makePostRequest(
         ApiEndpoints.register,
         signupData,
@@ -381,15 +370,7 @@ class AuthService {
         _authToken = responseData['token'];
         _refreshToken = responseData['refreshToken'];
 
-        // Debug: Print the raw user data from backend
-        debugPrint(
-          '🔍 [AUTH] Raw user data from signup: ${responseData['user']}',
-        );
-
         _currentUser = User.fromJson(responseData['user']);
-
-        // Debug: Print the parsed user object
-        debugPrint('🔍 [AUTH] Parsed user object: ${_currentUser?.toJson()}');
 
         _isLoggedIn = true;
         _loginTime = DateTime.now();
@@ -400,8 +381,6 @@ class AuthService {
 
         await _saveSession();
         _startTokenRefreshTimer();
-
-        debugPrint('✅ Signup successful for: $email');
 
         return {
           'success': true,
@@ -415,29 +394,8 @@ class AuthService {
         'message': responseData['message'] ?? 'Signup failed',
       };
     } on AuthException catch (e) {
-      debugPrint('❌ Signup error: ${e.message}');
-      if (_useDemoMode) {
-        debugPrint('⚠️ Falling back to demo mode');
-        return _fakeSignup(
-          firstName: firstName,
-          lastName: lastName,
-          email: email,
-          password: password,
-          phone: phone,
-        );
-      }
       return {'success': false, 'message': e.message};
     } catch (e) {
-      debugPrint('❌ Unexpected signup error: $e');
-      if (_useDemoMode) {
-        return _fakeSignup(
-          firstName: firstName,
-          lastName: lastName,
-          email: email,
-          password: password,
-          phone: phone,
-        );
-      }
       return {
         'success': false,
         'message': 'An unexpected error occurred. Please try again.',
@@ -447,24 +405,8 @@ class AuthService {
 
   /// Login user with email and password
   Future<Map<String, dynamic>> login(String email, String password) async {
-    // Check for demo mode
-    if (_useDemoMode) {
-      const demoEmails = [
-        'admin@tega.com',
-        'college@tega.com',
-        'user@tega.com',
-      ];
-      if (demoEmails.contains(email.toLowerCase().trim())) {
-        debugPrint("⚠️ Demo mode: Using fake login for $email");
-        return _fakeLogin(email, password);
-      }
-    }
-
     try {
       final loginData = {'email': email, 'password': password};
-
-      debugPrint('🔍 [AUTH] Login request data: $loginData');
-      debugPrint('🔍 [AUTH] Login URL: ${ApiEndpoints.login}');
 
       final response = await _makePostRequest(ApiEndpoints.login, loginData);
 
@@ -475,15 +417,7 @@ class AuthService {
         _authToken = responseData['token'];
         _refreshToken = responseData['refreshToken'];
 
-        // Debug: Print the raw user data from backend
-        debugPrint(
-          '🔍 [AUTH] Raw user data from login: ${responseData['user']}',
-        );
-
         _currentUser = User.fromJson(responseData['user']);
-
-        // Debug: Print the parsed user object
-        debugPrint('🔍 [AUTH] Parsed user object: ${_currentUser?.toJson()}');
 
         _isLoggedIn = true;
         _loginTime = DateTime.now();
@@ -492,8 +426,6 @@ class AuthService {
 
         await _saveSession();
         _startTokenRefreshTimer();
-
-        debugPrint('✅ Login successful for: $email');
 
         return {
           'success': true,
@@ -507,14 +439,8 @@ class AuthService {
         'message': responseData['message'] ?? 'Login failed',
       };
     } on AuthException catch (e) {
-      debugPrint('❌ Login error: ${e.message}');
-      if (_useDemoMode && e.statusCode == null) {
-        debugPrint('⚠️ Network error, falling back to demo mode');
-        return _fakeLogin(email, password);
-      }
       return {'success': false, 'message': e.message};
     } catch (e) {
-      debugPrint('❌ Unexpected login error: $e');
       return {
         'success': false,
         'message': 'Could not connect to server. Please try again.',
@@ -537,22 +463,10 @@ class AuthService {
       _handleResponseErrors(response, 'Fetch profile');
       final profileData = json.decode(response.body);
 
-      // Debug: Print the raw profile data from backend
-      debugPrint('🔍 [AUTH] Raw profile data from fetch: $profileData');
-
       _currentUser = User.fromJson(profileData);
 
-      // Debug: Print the updated user object
-      debugPrint('🔍 [AUTH] Updated user object: ${_currentUser?.toJson()}');
-
       await _saveSession();
-
-      debugPrint('✅ User profile updated');
-    } on AuthException catch (e) {
-      debugPrint('❌ Fetch profile error: ${e.message}');
-      rethrow;
     } catch (e) {
-      debugPrint('❌ Unexpected profile error: $e');
       throw AuthException('Failed to load profile: ${e.toString()}');
     }
   }
@@ -561,7 +475,6 @@ class AuthService {
   Future<void> logout() async {
     _tokenRefreshTimer?.cancel();
     await _clearSession();
-    debugPrint('✅ User logged out successfully');
   }
 
   /// Check if email is available for registration
@@ -623,14 +536,11 @@ class AuthService {
         };
       }
 
-      debugPrint('✅ OTP sent to: $email');
-
       return {
         'success': true,
         'message': responseData['message'] ?? 'OTP sent successfully',
       };
     } on AuthException catch (e) {
-      debugPrint('❌ Send OTP error: ${e.message}');
       return {'success': false, 'message': e.message};
     } catch (e) {
       return {
@@ -654,15 +564,12 @@ class AuthService {
       _handleResponseErrors(response, 'Verify OTP');
       final responseData = json.decode(response.body);
 
-      debugPrint('✅ OTP verified for: $email');
-
       return {
         'success': true,
         'message': responseData['message'] ?? 'OTP verified successfully',
         'verified': responseData['verified'] ?? true,
       };
     } on AuthException catch (e) {
-      debugPrint('❌ Verify OTP error: ${e.message}');
       return {'success': false, 'message': e.message, 'verified': false};
     } catch (e) {
       return {
@@ -702,11 +609,8 @@ class AuthService {
             result['otp'] = responseData['otp'];
           }
         }
-        if (ok) debugPrint('✅ Password reset email sent to: $email');
         return result;
       }
-
-      debugPrint('✅ Password reset email sent to: $email');
 
       return {
         'success': true,
@@ -715,7 +619,6 @@ class AuthService {
             'Password reset instructions sent to your email',
       };
     } on AuthException catch (e) {
-      debugPrint('❌ Forgot password error: ${e.message}');
       return {'success': false, 'message': e.message};
     } catch (e) {
       return {
@@ -736,15 +639,12 @@ class AuthService {
       _handleResponseErrors(response, 'Verify OTP');
       final responseData = json.decode(response.body);
 
-      debugPrint('✅ Password reset OTP verified for: $email');
-
       return {
         'success': true,
         'message': responseData['message'] ?? 'OTP verified successfully',
         'verified': responseData['verified'] ?? true,
       };
     } on AuthException catch (e) {
-      debugPrint('❌ Verify OTP error: ${e.message}');
       return {'success': false, 'message': e.message, 'verified': false};
     } catch (e) {
       return {
@@ -771,14 +671,11 @@ class AuthService {
       _handleResponseErrors(response, 'Reset password');
       final responseData = json.decode(response.body);
 
-      debugPrint('✅ Password reset successful for: $email');
-
       return {
         'success': true,
         'message': responseData['message'] ?? 'Password reset successful',
       };
     } on AuthException catch (e) {
-      debugPrint('❌ Reset password error: ${e.message}');
       return {'success': false, 'message': e.message};
     } catch (e) {
       return {
@@ -791,7 +688,6 @@ class AuthService {
   /// Refresh authentication token
   Future<bool> refreshAuthToken() async {
     if (_refreshToken == null) {
-      debugPrint('⚠️ No refresh token available');
       return false;
     }
 
@@ -813,21 +709,17 @@ class AuthService {
         await _saveSession();
         _startTokenRefreshTimer();
 
-        debugPrint('✅ Token refreshed successfully');
         return true;
       }
 
-      debugPrint('❌ Token refresh failed - no token in response');
       return false;
     } on AuthException catch (e) {
-      debugPrint('❌ Token refresh error: ${e.message}');
       if (e.statusCode == 401) {
         // Refresh token expired, logout user
         await logout();
       }
       return false;
     } catch (e) {
-      debugPrint('❌ Unexpected token refresh error: $e');
       return false;
     }
   }
@@ -923,26 +815,20 @@ class AuthService {
 
         // Check if token is expired
         if (isTokenExpired) {
-          debugPrint('⚠️ Token expired, attempting refresh...');
           final refreshed = await refreshAuthToken();
           if (!refreshed) {
-            debugPrint('❌ Token refresh failed, clearing session');
             await _clearSession();
             return;
           }
         } else if (isTokenExpiringSoon) {
-          debugPrint('⚠️ Token expiring soon, refreshing...');
           refreshAuthToken().catchError((error) {
-            debugPrint('⚠️ Background token refresh failed: $error');
             return false;
           });
         }
 
         _startTokenRefreshTimer();
-        debugPrint('✅ Session initialized for: ${_currentUser?.email}');
       }
     } catch (e) {
-      debugPrint('❌ Error initializing session: $e');
       await _clearSession();
     }
   }
@@ -976,11 +862,7 @@ class AuthService {
           _tokenExpiryTime!.toIso8601String(),
         );
       }
-
-      debugPrint('💾 Session saved successfully');
-    } catch (e) {
-      debugPrint('❌ Error saving session: $e');
-    }
+    } catch (e) {}
   }
 
   /// Clear all session data
@@ -1000,133 +882,10 @@ class AuthService {
     await _prefs!.remove('refreshToken');
     await _prefs!.remove('loginTime');
     await _prefs!.remove('tokenExpiry');
-
-    debugPrint('🗑️ Session cleared');
   }
 
   /// Cleanup resources (call when app is disposing)
   void dispose() {
     _tokenRefreshTimer?.cancel();
-    debugPrint('🧹 AuthService disposed');
-  }
-
-  /// Demo/Fake login for testing
-  Future<Map<String, dynamic>> _fakeLogin(String email, String password) async {
-    await Future.delayed(const Duration(seconds: 1));
-    final fakeUsers = {
-      'admin@tega.com': {
-        'password': 'admin123',
-        'user': User(
-          id: '1',
-          firstName: 'Admin',
-          lastName: 'User',
-          email: 'admin@tega.com',
-          role: UserRole.admin,
-          createdAt: DateTime.now(),
-          gender: 'Male',
-        ),
-      },
-      'college@tega.com': {
-        'password': 'college123',
-        'user': User(
-          id: '2',
-          firstName: 'College',
-          lastName: 'Principal',
-          email: 'college@tega.com',
-          role: UserRole.principal,
-          createdAt: DateTime.now(),
-          university: 'Aditya University',
-          gender: 'Male',
-        ),
-      },
-      'user@tega.com': {
-        'password': 'user123',
-        'user': User(
-          id: '3',
-          firstName: 'Test',
-          lastName: 'Student',
-          email: 'user@tega.com',
-          role: UserRole.student,
-          createdAt: DateTime.now(),
-          studentId: 'TEGA2024001',
-          college: 'Aditya Engineering College',
-          course: 'B.Tech CSE',
-          year: '3',
-          phone: '+91 9876543210',
-        ),
-      },
-    };
-
-    final cleanEmail = email.toLowerCase().trim();
-    if (fakeUsers.containsKey(cleanEmail)) {
-      final userData = fakeUsers[cleanEmail]!;
-      if (userData['password'] == password) {
-        _currentUser = userData['user'] as User;
-        _isLoggedIn = true;
-        _loginTime = DateTime.now();
-        _tokenExpiryTime = DateTime.now().add(const Duration(days: 30));
-        _authToken = 'demo_token_${DateTime.now().millisecondsSinceEpoch}';
-        _refreshToken = 'demo_refresh_${DateTime.now().millisecondsSinceEpoch}';
-        _userPermissions = _currentUser?.permissions ?? [];
-
-        await _saveSession();
-        _startTokenRefreshTimer();
-
-        debugPrint('✅ Demo login successful for: $email');
-
-        return {
-          'success': true,
-          'message': 'Login successful (Demo Mode)',
-          'user': _currentUser,
-        };
-      } else {
-        return {'success': false, 'message': 'Invalid password'};
-      }
-    } else {
-      return {'success': false, 'message': 'User not found'};
-    }
-  }
-
-  /// Demo/Fake signup for testing
-  Future<Map<String, dynamic>> _fakeSignup({
-    required String firstName,
-    required String lastName,
-    required String email,
-    required String password,
-    String? phone,
-  }) async {
-    await Future.delayed(const Duration(seconds: 2));
-
-    if (email == 'admin@tega.com' ||
-        email == 'college@tega.com' ||
-        email == 'user@tega.com') {
-      return {'success': false, 'message': 'Email already exists'};
-    }
-
-    _currentUser = User(
-      id: DateTime.now().millisecondsSinceEpoch.toString(),
-      firstName: firstName,
-      lastName: lastName,
-      email: email,
-      role: UserRole.student,
-      createdAt: DateTime.now(),
-      phone: phone,
-    );
-    _isLoggedIn = true;
-    _loginTime = DateTime.now();
-    _tokenExpiryTime = DateTime.now().add(const Duration(days: 30));
-    _authToken = 'demo_token_${DateTime.now().millisecondsSinceEpoch}';
-    _refreshToken = 'demo_refresh_${DateTime.now().millisecondsSinceEpoch}';
-
-    await _saveSession();
-    _startTokenRefreshTimer();
-
-    debugPrint('✅ Demo signup successful for: $email');
-
-    return {
-      'success': true,
-      'message': 'Account created successfully (Demo Mode)',
-      'user': _currentUser,
-    };
   }
 }

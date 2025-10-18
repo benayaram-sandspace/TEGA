@@ -97,7 +97,8 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
       'logging_in': 'Signing in...',
       'invalid_email': 'Please enter a valid email address',
       'remember_me_title': 'Save Credentials',
-      'remember_me_message': 'Do you want to save your login credentials to this device?',
+      'remember_me_message':
+          'Do you want to save your login credentials to this device?',
       'save_credentials': 'Save to Device',
       'dont_save': 'Don\'t Save',
       'credentials_saved': 'Credentials saved successfully!',
@@ -124,7 +125,8 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
       'invalid_email':
           'దయచేసి చెల్లుబాటు అయ్యే ఇమెయిల్ చిరునామాను నమోదు చేయండి',
       'remember_me_title': 'ఆధారాలను సేవ్ చేయండి',
-      'remember_me_message': 'మీ లాగిన్ ఆధారాలను ఈ పరికరంలో సేవ్ చేయాలనుకుంటున్నారా?',
+      'remember_me_message':
+          'మీ లాగిన్ ఆధారాలను ఈ పరికరంలో సేవ్ చేయాలనుకుంటున్నారా?',
       'save_credentials': 'పరికరంలో సేవ్ చేయండి',
       'dont_save': 'సేవ్ చేయవద్దు',
       'credentials_saved': 'ఆధారాలు విజయవంతంగా సేవ్ చేయబడ్డాయి!',
@@ -180,11 +182,8 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
           _passwordController.text = savedPassword;
           _rememberMe = true;
         });
-        debugPrint('✅ Loaded saved credentials for: $savedEmail');
       }
-    } catch (e) {
-      debugPrint('⚠️ Error loading saved credentials: $e');
-    }
+    } catch (e) {}
   }
 
   /// Save credentials to SharedPreferences
@@ -196,13 +195,10 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
         await prefs.setString('remembered_email', _emailController.text.trim());
         await prefs.setString('remembered_password', _passwordController.text);
         await prefs.setBool('remember_me', true);
-        debugPrint('💾 Saved credentials for: ${_emailController.text.trim()}');
       } else {
         await _clearSavedCredentials();
       }
-    } catch (e) {
-      debugPrint('⚠️ Error saving credentials: $e');
-    }
+    } catch (e) {}
   }
 
   /// Clear saved credentials from SharedPreferences
@@ -212,10 +208,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
       await prefs.remove('remembered_email');
       await prefs.remove('remembered_password');
       await prefs.setBool('remember_me', false);
-      debugPrint('🗑️ Cleared saved credentials');
-    } catch (e) {
-      debugPrint('⚠️ Error clearing credentials: $e');
-    }
+    } catch (e) {}
   }
 
   @override
@@ -226,7 +219,6 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
     _slideController.dispose();
     super.dispose();
   }
-
 
   /// Handle remember me checkbox toggle
   void _handleRememberMeToggle(bool? value) {
@@ -255,7 +247,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
   /// Build the Remember Me bottom sheet
   Widget _buildRememberMeBottomSheet() {
     final bottomPadding = MediaQuery.of(context).viewInsets.bottom;
-    
+
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -291,7 +283,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
               ),
             ),
             const SizedBox(height: 24),
-            
+
             // Icon
             Container(
               width: 80,
@@ -307,7 +299,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
               ),
             ),
             const SizedBox(height: 20),
-            
+
             // Title
             Text(
               _tr('remember_me_title'),
@@ -318,7 +310,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
               ),
             ),
             const SizedBox(height: 12),
-            
+
             // Message
             Text(
               _tr('remember_me_message'),
@@ -330,7 +322,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
               ),
             ),
             const SizedBox(height: 32),
-            
+
             // Action buttons
             Row(
               children: [
@@ -368,17 +360,14 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                   ),
                 ),
                 const SizedBox(width: 16),
-                
+
                 // Save button
                 Expanded(
                   child: Container(
                     height: 50,
                     decoration: BoxDecoration(
                       gradient: const LinearGradient(
-                        colors: [
-                          Color(0xFF9C88FF),
-                          Color(0xFF8B7BFF),
-                        ],
+                        colors: [Color(0xFF9C88FF), Color(0xFF8B7BFF)],
                       ),
                       borderRadius: BorderRadius.circular(12),
                       boxShadow: [
@@ -430,9 +419,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
         content: Text(message),
         backgroundColor: const Color(0xFF27AE60),
         behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(10),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         margin: const EdgeInsets.all(16),
         duration: const Duration(seconds: 2),
       ),
@@ -460,15 +447,11 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
       final email = _emailController.text.trim();
       final password = _passwordController.text;
 
-      debugPrint('🔐 Attempting login for: $email');
-
       final result = await _authService.login(email, password);
 
       if (!mounted) return;
 
       if (result['success'] == true) {
-        debugPrint('✅ Login successful, navigating based on role...');
-
         // Save credentials if "Remember Me" is checked
         await _saveCredentials();
 
@@ -490,18 +473,15 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
           );
         }
       } else {
-        debugPrint('❌ Login failed: ${result['message']}');
         _showErrorDialog(
           result['message'] ?? 'Login failed. Please try again.',
         );
       }
     } on AuthException catch (e) {
-      debugPrint('❌ Auth error: ${e.message}');
       if (mounted) {
         _showErrorDialog(e.message);
       }
     } catch (e) {
-      debugPrint('❌ Unexpected error during login: $e');
       if (mounted) {
         _showErrorDialog(
           'An unexpected error occurred. Please check your connection and try again.',
@@ -1017,9 +997,6 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
       ),
     );
   }
-
-
-
 
   Widget _buildSignupLink() {
     return Container(

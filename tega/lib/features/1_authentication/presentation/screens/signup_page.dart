@@ -361,9 +361,7 @@ class _SignUpPageState extends State<SignUpPage> with TickerProviderStateMixin {
     FocusScope.of(context).unfocus();
     setState(() => _isLoading = true);
 
-    debugPrint('🔐 [SIGNUP] Starting registration process...');
     final email = _emailController.text.trim();
-    debugPrint('📧 Sending OTP to: $email');
 
     try {
       // Step 1: Send OTP to email
@@ -378,8 +376,6 @@ class _SignUpPageState extends State<SignUpPage> with TickerProviderStateMixin {
       if (!mounted) return;
 
       if (result['success'] == true) {
-        debugPrint('✅ [SIGNUP] OTP sent successfully');
-
         // Show success message
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -414,19 +410,16 @@ class _SignUpPageState extends State<SignUpPage> with TickerProviderStateMixin {
           );
         }
       } else {
-        debugPrint('❌ [SIGNUP] Failed to send OTP: ${result['message']}');
         _showErrorMessage(
           result['message'] ??
               'Failed to send verification code. Please try again.',
         );
       }
     } on AuthException catch (e) {
-      debugPrint('❌ [SIGNUP] Auth error: ${e.message}');
       if (mounted) {
         _showErrorMessage(e.message);
       }
     } catch (e) {
-      debugPrint('❌ [SIGNUP] Unexpected error: $e');
       if (mounted) {
         _showErrorMessage(
           'An unexpected error occurred. Please check your connection and try again.',

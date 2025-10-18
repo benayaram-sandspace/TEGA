@@ -14,8 +14,6 @@ class CollegeAdminsPage extends StatefulWidget {
 
 class _CollegeAdminsPageState extends State<CollegeAdminsPage>
     with TickerProviderStateMixin {
-  // final CollegeService _collegeService = CollegeService(); // Unused for now
-  
   // Animation controllers
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
@@ -31,11 +29,14 @@ class _CollegeAdminsPageState extends State<CollegeAdminsPage>
     _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(parent: _animationController, curve: Curves.easeOutCubic),
     );
-    _slideAnimation = Tween<Offset>(
-      begin: const Offset(0, 0.3),
-      end: Offset.zero,
-    ).animate(CurvedAnimation(parent: _animationController, curve: Curves.easeOutCubic));
-    
+    _slideAnimation =
+        Tween<Offset>(begin: const Offset(0, 0.3), end: Offset.zero).animate(
+          CurvedAnimation(
+            parent: _animationController,
+            curve: Curves.easeOutCubic,
+          ),
+        );
+
     _animationController.forward();
   }
 
@@ -56,120 +57,122 @@ class _CollegeAdminsPageState extends State<CollegeAdminsPage>
           child: Column(
             children: [
               // Header
-          Container(
-            padding: const EdgeInsets.all(20),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Assigned Admins',
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.textPrimary,
-                        ),
+              Container(
+                padding: const EdgeInsets.all(20),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Assigned Admins',
+                            style: TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.textPrimary,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            '${widget.college.admins.length} admin(s) assigned',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: AppColors.textSecondary,
+                            ),
+                          ),
+                        ],
                       ),
-                      const SizedBox(height: 4),
-                      Text(
-                        '${widget.college.admins.length} admin(s) assigned',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: AppColors.textSecondary,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                TextButton.icon(
-                  onPressed: () {
-                    Navigator.of(context)
-                        .push(
-                          MaterialPageRoute(
-                            builder: (context) =>
-                                AddCollegeAdminPage(college: widget.college),
-                          ),
-                        )
-                        .then((_) => setState(() {}));
-                  },
-                  icon: const Icon(Icons.add, color: AppColors.primary),
-                  label: const Text(
-                    'Add Admin',
-                    style: TextStyle(color: AppColors.primary),
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          // Admins List
-          Expanded(
-            child: widget.college.admins.isEmpty
-                ? Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.admin_panel_settings_outlined,
-                          size: 64,
-                          color: AppColors.textSecondary,
-                        ),
-                        const SizedBox(height: 16),
-                        Text(
-                          'No admins assigned',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.textSecondary,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Add an admin to manage this college',
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: AppColors.textSecondary,
-                          ),
-                        ),
-                        const SizedBox(height: 20),
-                        ElevatedButton.icon(
-                          onPressed: () {
-                            Navigator.of(context)
-                                .push(
-                                  MaterialPageRoute(
-                                    builder: (context) => AddCollegeAdminPage(
-                                      college: widget.college,
-                                    ),
-                                  ),
-                                )
-                                .then((_) => setState(() {}));
-                          },
-                          icon: const Icon(Icons.add),
-                          label: const Text('Add Admin'),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.primary,
-                            foregroundColor: AppColors.pureWhite,
-                          ),
-                        ),
-                      ],
                     ),
-                  )
-                : ListView.builder(
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
-                    itemCount: widget.college.admins.length,
-                    itemBuilder: (context, index) {
-                      final admin = widget.college.admins[index];
-                      return _buildAdminCard(admin);
-                    },
-                  ),
+                    TextButton.icon(
+                      onPressed: () {
+                        Navigator.of(context)
+                            .push(
+                              MaterialPageRoute(
+                                builder: (context) => AddCollegeAdminPage(
+                                  college: widget.college,
+                                ),
+                              ),
+                            )
+                            .then((_) => setState(() {}));
+                      },
+                      icon: const Icon(Icons.add, color: AppColors.primary),
+                      label: const Text(
+                        'Add Admin',
+                        style: TextStyle(color: AppColors.primary),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              // Admins List
+              Expanded(
+                child: widget.college.admins.isEmpty
+                    ? Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.admin_panel_settings_outlined,
+                              size: 64,
+                              color: AppColors.textSecondary,
+                            ),
+                            const SizedBox(height: 16),
+                            Text(
+                              'No admins assigned',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.textSecondary,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              'Add an admin to manage this college',
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: AppColors.textSecondary,
+                              ),
+                            ),
+                            const SizedBox(height: 20),
+                            ElevatedButton.icon(
+                              onPressed: () {
+                                Navigator.of(context)
+                                    .push(
+                                      MaterialPageRoute(
+                                        builder: (context) =>
+                                            AddCollegeAdminPage(
+                                              college: widget.college,
+                                            ),
+                                      ),
+                                    )
+                                    .then((_) => setState(() {}));
+                              },
+                              icon: const Icon(Icons.add),
+                              label: const Text('Add Admin'),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppColors.primary,
+                                foregroundColor: AppColors.pureWhite,
+                              ),
+                            ),
+                          ],
+                        ),
+                      )
+                    : ListView.builder(
+                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                        itemCount: widget.college.admins.length,
+                        itemBuilder: (context, index) {
+                          final admin = widget.college.admins[index];
+                          return _buildAdminCard(admin);
+                        },
+                      ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
-    ),
-    ),
-  );
+    );
   }
 
   Widget _buildAdminCard(CollegeAdmin admin) {

@@ -185,7 +185,6 @@ class _AiInterviewPageState extends State<AiInterviewPage>
         await _controller!.initialize();
         if (mounted) setState(() {});
       } catch (e) {
-        debugPrint("Camera initialization error: $e");
       }
     }
   }
