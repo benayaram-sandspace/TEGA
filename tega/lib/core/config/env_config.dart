@@ -125,19 +125,4 @@ class EnvConfig {
       // Debug logging disabled for production
     }
   }
-
-  /// Check if a key contains sensitive information
-  static bool _isSensitiveKey(String key) {
-    final sensitiveKeys = [
-      'SECRET',
-      'KEY',
-      'PASSWORD',
-      'TOKEN',
-      'PRIVATE',
-      'ENCRYPTION',
-    ];
-    return sensitiveKeys.any(
-      (sensitive) => key.toUpperCase().contains(sensitive),
-    );
-  }
 }
