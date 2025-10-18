@@ -1,5 +1,4 @@
 import mongoose from 'mongoose';
-import { getNextSequence } from './Counter.js';
 
 // Format: TEGA + 10 random digits
 // Example: TEGA1909250006, TEGA8473920156, etc.

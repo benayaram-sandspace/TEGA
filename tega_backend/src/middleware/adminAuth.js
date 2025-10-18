@@ -3,7 +3,12 @@ import Admin from '../models/Admin.js';
 
 const adminAuth = async (req, res, next) => {
   try {
-    const token = req.header('Authorization')?.replace('Bearer ', '');
+    // Try to get token from cookie first (production), then from header (development)
+    let token = req.cookies.authToken;
+    
+    if (!token) {
+      token = req.header('Authorization')?.replace('Bearer ', '');
+    }
     
     if (!token) {
       return res.status(401).json({

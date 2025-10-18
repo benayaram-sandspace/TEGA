@@ -103,6 +103,29 @@ const paymentSchema = new mongoose.Schema({
   failureReason: {
     type: String,
     trim: true
+  },
+  // Enhanced refund tracking
+  refundDetails: {
+    refundId: {
+      type: String,
+      trim: true
+    },
+    refundAmount: {
+      type: Number,
+      min: 0
+    },
+    refundReason: {
+      type: String,
+      trim: true
+    },
+    refundDate: {
+      type: Date
+    },
+    refundStatus: {
+      type: String,
+      enum: ['initiated', 'processed', 'failed'],
+      default: 'initiated'
+    }
   }
 }, {
   timestamps: true
@@ -144,6 +167,64 @@ paymentSchema.statics.findByOrderId = async function(orderId) {
 // Static method to find payment by Razorpay payment ID
 paymentSchema.statics.findByPaymentId = async function(paymentId) {
   return await this.findOne({ razorpayPaymentId: paymentId });
+};
+
+// Static method to get payment analytics
+paymentSchema.statics.getPaymentAnalytics = async function(dateRange = 30) {
+  const startDate = new Date();
+  startDate.setDate(startDate.getDate() - dateRange);
+  
+  const analytics = await this.aggregate([
+    {
+      $match: {
+        paymentDate: { $gte: startDate }
+      }
+    },
+    {
+      $group: {
+        _id: null,
+        totalRevenue: { $sum: '$amount' },
+        totalTransactions: { $sum: 1 },
+        completedPayments: {
+          $sum: { $cond: [{ $eq: ['$status', 'completed'] }, 1, 0] }
+        },
+        failedPayments: {
+          $sum: { $cond: [{ $eq: ['$status', 'failed'] }, 1, 0] }
+        },
+        refundedPayments: {
+          $sum: { $cond: [{ $eq: ['$status', 'refunded'] }, 1, 0] }
+        },
+        avgTransactionValue: { $avg: '$amount' }
+      }
+    },
+    {
+      $project: {
+        _id: 0,
+        totalRevenue: 1,
+        totalTransactions: 1,
+        completedPayments: 1,
+        failedPayments: 1,
+        refundedPayments: 1,
+        avgTransactionValue: { $round: ['$avgTransactionValue', 2] },
+        successRate: {
+          $round: [
+            { $multiply: [{ $divide: ['$completedPayments', '$totalTransactions'] }, 100] },
+            2
+          ]
+        }
+      }
+    }
+  ]);
+  
+  return analytics[0] || {
+    totalRevenue: 0,
+    totalTransactions: 0,
+    completedPayments: 0,
+    failedPayments: 0,
+    refundedPayments: 0,
+    avgTransactionValue: 0,
+    successRate: 0
+  };
 };
 
 // Index for efficient querying

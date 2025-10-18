@@ -191,7 +191,7 @@ export const getCourseContent = async (req, res) => {
     // If student is authenticated, check enrollment
     let isEnrolled = false;
     if (studentId) {
-      console.log(`🔍 Checking enrollment for studentId: ${studentId}, courseId: ${courseId}`);
+      // Checking enrollment for studentId
       
       // Check enrollment with multiple possible statuses
       const enrollment = await Enrollment.findOne({ 
@@ -204,24 +204,19 @@ export const getCourseContent = async (req, res) => {
         ]
       });
       
-      console.log(`📊 Enrollment found:`, enrollment ? {
-        id: enrollment._id,
-        status: enrollment.status,
-        isPaid: enrollment.isPaid,
-        enrolledAt: enrollment.enrolledAt
-      } : 'No enrollment found');
+      // Enrollment found
       
       isEnrolled = !!enrollment;
       if (enrollment) {
         
         // CRITICAL: Only mark as enrolled if payment is verified
         // For paid courses, isPaid must be true
-        console.log(`💰 Payment check: course.isFree=${course.isFree}, course.price=${course.price}, enrollment.isPaid=${enrollment.isPaid}`);
+        // Payment check
         if (!course.isFree && course.price > 0 && !enrollment.isPaid) {
-          console.log(`❌ Student not enrolled: Payment required for paid course`);
+          // Student not enrolled: Payment required for paid course
           isEnrolled = false;
         } else {
-          console.log(`✅ Student enrolled: Payment verified or free course`);
+          // Student enrolled: Payment verified or free course
         }
       }
       
@@ -246,7 +241,7 @@ export const getCourseContent = async (req, res) => {
       
       // CRITICAL FIX: Auto-enroll students for free courses
       if (!isEnrolled && course.isFree && course.price === 0) {
-        console.log(`🆓 Auto-enrolling student in free course: ${course.title}`);
+        // Auto-enrolling student in free course
         try {
           const autoEnrollment = new Enrollment({
             studentId,
@@ -257,16 +252,16 @@ export const getCourseContent = async (req, res) => {
           });
           await autoEnrollment.save();
           isEnrolled = true;
-          console.log(`✅ Auto-enrollment successful`);
+          // Auto-enrollment successful
         } catch (enrollmentError) {
-          console.log(`❌ Auto-enrollment failed:`, enrollmentError.message);
+          // Auto-enrollment failed
         }
       }
       
       // Final enrollment decision logged above
-      console.log(`🎯 Final enrollment decision: isEnrolled=${isEnrolled}`);
+      // Final enrollment decision
     } else {
-      console.log(`❌ No studentId provided - treating as not enrolled`);
+      // No studentId provided - treating as not enrolled
     }
 
     // Get or create student progress (only if enrolled and authenticated)
@@ -314,8 +309,7 @@ export const getCourseContent = async (req, res) => {
     // RULE: First lecture of first module is ALWAYS free (introduction video)
     const filteredCourse = course.toObject();
     
-    console.log(`📹 Filtering course content. isEnrolled: ${isEnrolled}, studentId: ${studentId}`);
-    console.log(`📚 Course has ${filteredCourse.modules?.length || 0} modules`);
+    // Filtering course content
     
     // CRITICAL FIX: Ensure all modules are properly structured
     if (!filteredCourse.modules || filteredCourse.modules.length === 0) {
@@ -333,7 +327,7 @@ export const getCourseContent = async (req, res) => {
     if (filteredCourse.modules?.[0]?.lectures?.[0]) {
       const firstLecture = filteredCourse.modules[0].lectures[0];
       const originalFirstLecture = course.modules[0].lectures[0];
-      console.log(`🎯 Ensuring first lecture "${firstLecture.title}" is always accessible`);
+      // Ensuring first lecture is always accessible
       
       // Force first lecture to have video access regardless of enrollment
       if (originalFirstLecture.videoContent) {
@@ -347,7 +341,7 @@ export const getCourseContent = async (req, res) => {
       // CRITICAL FIX: Ensure first lecture has proper ID
       if (!firstLecture.id || firstLecture.id === 'lecture-1' || firstLecture.id === 'undefined') {
         firstLecture.id = `module-1-lecture-0`; // Use 0-based indexing to match frontend
-        console.log(`🔄 Generated fallback ID for first lecture: ${firstLecture.id}`);
+        // Generated fallback ID for first lecture
       }
       firstLecture.isPreview = true;
       firstLecture.isRestricted = false;
@@ -362,7 +356,7 @@ export const getCourseContent = async (req, res) => {
     }
     
     if (!isEnrolled) {
-      console.log(`🔒 Student not enrolled - filtering content for preview access only`);
+      // Student not enrolled - filtering content for preview access only
       // Remove video URLs from non-preview lectures
       filteredCourse.modules = filteredCourse.modules.map((module, moduleIndex) => ({
         ...module,
@@ -370,16 +364,17 @@ export const getCourseContent = async (req, res) => {
           // First lecture of first module is ALWAYS free for everyone (introduction)
           const isIntroductionVideo = moduleIndex === 0 && lectureIndex === 0;
           
-          console.log(`📹 Processing lecture "${lecture.title}": isPreview=${lecture.isPreview}, isIntroductionVideo=${isIntroductionVideo}`);
+          // Processing lecture
           
           // If lecture is marked as preview OR it's the introduction video, keep video URL
           if (lecture.isPreview || isIntroductionVideo) {
-            console.log(`✅ Keeping video URL for "${lecture.title}" (preview/introduction)`);
+            // Keeping video URL for preview/introduction
             // CRITICAL FIX: Flatten video URLs for frontend compatibility
             const videoUrl = lecture.videoContent?.r2Url || lecture.videoUrl || lecture.videoLink;
             return {
               ...lecture,
               isPreview: true, // Ensure it's marked as preview
+              isPremium: false, // Preview lectures are not premium
               // Provide video URLs in multiple formats for frontend compatibility
               videoContent: lecture.videoContent ? {
                 ...lecture.videoContent,
@@ -394,17 +389,18 @@ export const getCourseContent = async (req, res) => {
             };
           }
           
-          // For non-preview lectures, remove video content
-          console.log(`🔒 Restricting video access for "${lecture.title}" - enrollment required`);
+          // For non-preview lectures, remove video content and mark as premium
+          // Restricting video access - enrollment required
           return {
             ...lecture,
+            isPremium: true, // Mark as premium content
             videoContent: lecture.videoContent ? {
               ...lecture.videoContent,
               r2Url: null, // Hide direct URL
               r2Key: lecture.videoContent.r2Key, // Keep key for signed URL generation
               // Keep metadata but hide actual video URL
               restricted: true,
-              message: 'Enroll to access this video'
+              message: course.isFree ? 'Enroll to access this video' : 'Premium access required'
             } : null,
             // Also remove any direct video URLs
             videoUrl: null,
@@ -419,7 +415,7 @@ export const getCourseContent = async (req, res) => {
       }));
     } else {
       // CRITICAL FIX: For enrolled students, ensure all video URLs are flattened and accessible
-      console.log(`✅ Student is enrolled. Providing full video access.`);
+      // Student is enrolled. Providing full video access.
       filteredCourse.modules = filteredCourse.modules.map((module, moduleIndex) => ({
         ...module,
         lectures: module.lectures.map((lecture, lectureIndex) => {
@@ -456,6 +452,9 @@ export const getCourseContent = async (req, res) => {
             videoUrl: videoUrl,
             videoLink: videoUrl,
             isRestricted: false,
+            // Mark premium status based on lecture settings
+            isPremium: lectureIndex === 0 ? false : (originalLecture?.isPremium || false),
+            isPreview: lectureIndex === 0 ? true : (originalLecture?.isPreview || false),
             // Ensure proper ID - use consistent pattern for frontend compatibility
             id: originalLecture?.id || lecture.id || `module-${moduleIndex + 1}-lecture-${lectureIndex}`
           };

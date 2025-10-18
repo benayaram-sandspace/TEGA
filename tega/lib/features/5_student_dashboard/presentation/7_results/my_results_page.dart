@@ -204,11 +204,11 @@ class _MyResultsPageState extends State<MyResultsPage>
     return Scaffold(
       backgroundColor: const Color(0xFFF5F5F5),
       body: _isLoading
-          ? _buildLoadingState()
-          : _errorMessage != null
-          ? _buildErrorState(isDesktop, isTablet)
-          : _filteredResults.isEmpty
-          ? _buildEmptyState(isDesktop, isTablet)
+              ? _buildLoadingState()
+              : _errorMessage != null
+              ? _buildErrorState(isDesktop, isTablet)
+              : _filteredResults.isEmpty
+              ? _buildEmptyState(isDesktop, isTablet)
           : _buildModernResultsPage(isDesktop, isTablet),
     );
   }
@@ -269,8 +269,8 @@ class _MyResultsPageState extends State<MyResultsPage>
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              children: [
+        Row(
+          children: [
                 Container(
                   padding: EdgeInsets.all(isDesktop ? 16 : 12),
                   decoration: BoxDecoration(
@@ -281,10 +281,10 @@ class _MyResultsPageState extends State<MyResultsPage>
                     Icons.assessment_rounded,
                     color: Colors.white,
                     size: isDesktop ? 32 : 28,
-                  ),
-                ),
-                SizedBox(width: isDesktop ? 16 : 12),
-                Expanded(
+              ),
+            ),
+            SizedBox(width: isDesktop ? 16 : 12),
+            Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -302,20 +302,20 @@ class _MyResultsPageState extends State<MyResultsPage>
                         style: TextStyle(
                           fontSize: isDesktop ? 16 : 14,
                           color: Colors.white.withOpacity(0.9),
-                        ),
-                      ),
-                    ],
+              ),
+            ),
+          ],
                   ),
                 ),
               ],
             ),
             SizedBox(height: isDesktop ? 24 : 20),
             Container(
-              padding: EdgeInsets.symmetric(
+      padding: EdgeInsets.symmetric(
                 horizontal: isDesktop ? 20 : 16,
                 vertical: isDesktop ? 12 : 10,
-              ),
-              decoration: BoxDecoration(
+      ),
+      decoration: BoxDecoration(
                 color: Colors.white.withOpacity(0.15),
                 borderRadius: BorderRadius.circular(isDesktop ? 12 : 10),
                 border: Border.all(
@@ -334,11 +334,11 @@ class _MyResultsPageState extends State<MyResultsPage>
                   Expanded(
                     child: Text(
                       'View detailed analytics and performance insights',
-                      style: TextStyle(
+          style: TextStyle(
                         fontSize: isDesktop ? 14 : 12,
                         color: Colors.white,
-                        fontWeight: FontWeight.w500,
-                      ),
+            fontWeight: FontWeight.w500,
+          ),
                     ),
                   ),
                 ],
@@ -356,13 +356,13 @@ class _MyResultsPageState extends State<MyResultsPage>
         margin: EdgeInsets.symmetric(
           horizontal: isDesktop
               ? 24
-              : isTablet
+          : isTablet
               ? 20
               : 16,
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
+      children: [
             Text(
               'Performance Overview',
               style: TextStyle(
@@ -405,11 +405,11 @@ class _MyResultsPageState extends State<MyResultsPage>
                 children: [
                   Expanded(
                     child: _buildModernStatItem(
-                      icon: Icons.assignment_rounded,
+          icon: Icons.assignment_rounded,
                       value: _totalExams.toString(),
                       label: 'Total Exams',
-                      color: const Color(0xFF6B5FFF),
-                      isDesktop: isDesktop,
+          color: const Color(0xFF6B5FFF),
+          isDesktop: isDesktop,
                     ),
                   ),
                   Container(
@@ -419,11 +419,11 @@ class _MyResultsPageState extends State<MyResultsPage>
                   ),
                   Expanded(
                     child: _buildModernStatItem(
-                      icon: Icons.check_circle_rounded,
+          icon: Icons.check_circle_rounded,
                       value: _passedExams.toString(),
                       label: 'Passed',
-                      color: const Color(0xFF4CAF50),
-                      isDesktop: isDesktop,
+          color: const Color(0xFF4CAF50),
+          isDesktop: isDesktop,
                     ),
                   ),
                   Container(
@@ -433,11 +433,11 @@ class _MyResultsPageState extends State<MyResultsPage>
                   ),
                   Expanded(
                     child: _buildModernStatItem(
-                      icon: Icons.workspace_premium_rounded,
+          icon: Icons.workspace_premium_rounded,
                       value: _qualifiedExams.toString(),
                       label: 'Qualified',
-                      color: const Color(0xFFFFD700),
-                      isDesktop: isDesktop,
+          color: const Color(0xFFFFD700),
+          isDesktop: isDesktop,
                     ),
                   ),
                   Container(
@@ -447,14 +447,14 @@ class _MyResultsPageState extends State<MyResultsPage>
                   ),
                   Expanded(
                     child: _buildModernStatItem(
-                      icon: Icons.pending_actions_rounded,
+          icon: Icons.pending_actions_rounded,
                       value: _underReviewExams.toString(),
                       label: 'Under Review',
-                      color: const Color(0xFFFF9800),
-                      isDesktop: isDesktop,
+          color: const Color(0xFFFF9800),
+          isDesktop: isDesktop,
                     ),
-                  ),
-                ],
+        ),
+      ],
               ),
             ),
           ),
@@ -507,9 +507,9 @@ class _MyResultsPageState extends State<MyResultsPage>
     return SliverToBoxAdapter(
       child: Container(
         margin: EdgeInsets.all(
-          isDesktop
+        isDesktop
               ? 24
-              : isTablet
+            : isTablet
               ? 20
               : 16,
         ),
@@ -551,17 +551,17 @@ class _MyResultsPageState extends State<MyResultsPage>
 
             // Search Bar
             Container(
-              decoration: BoxDecoration(
-                color: Colors.white,
+      decoration: BoxDecoration(
+        color: Colors.white,
                 borderRadius: BorderRadius.circular(isDesktop ? 12 : 10),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
                     blurRadius: isDesktop ? 8 : 6,
                     offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
+          ),
+        ],
+      ),
               child: TextField(
                 controller: _searchController,
                 onChanged: (_) => _applyFilters(),
@@ -612,7 +612,7 @@ class _MyResultsPageState extends State<MyResultsPage>
                   return Padding(
                     padding: EdgeInsets.only(right: isDesktop ? 10 : 8),
                     child: Container(
-                      decoration: BoxDecoration(
+            decoration: BoxDecoration(
                         color: isSelected
                             ? const Color(0xFF6B5FFF)
                             : Colors.white,
@@ -648,9 +648,9 @@ class _MyResultsPageState extends State<MyResultsPage>
                               horizontal: isDesktop ? 16 : 12,
                               vertical: isDesktop ? 10 : 8,
                             ),
-                            child: Text(
+            child: Text(
                               filter,
-                              style: TextStyle(
+              style: TextStyle(
                                 fontSize: isDesktop ? 14 : 12,
                                 color: isSelected
                                     ? Colors.white
@@ -691,10 +691,10 @@ class _MyResultsPageState extends State<MyResultsPage>
                 child: Container(
                   margin: EdgeInsets.only(
                     left: isDesktop
-                        ? 24
-                        : isTablet
-                        ? 20
-                        : 16,
+            ? 24
+            : isTablet
+            ? 20
+            : 16,
                     right: isDesktop
                         ? 24
                         : isTablet
@@ -726,38 +726,38 @@ class _MyResultsPageState extends State<MyResultsPage>
     final formattedDate = DateFormat('MMM dd, yyyy').format(date);
 
     return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(isDesktop ? 16 : 14),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(isDesktop ? 16 : 14),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
             blurRadius: isDesktop ? 12 : 8,
             offset: Offset(0, isDesktop ? 4 : 2),
-          ),
-        ],
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: () => _showResultDetails(result, isDesktop, isTablet),
-          borderRadius: BorderRadius.circular(isDesktop ? 16 : 14),
-          child: Padding(
+                  ),
+                ],
+              ),
+              child: Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: () => _showResultDetails(result, isDesktop, isTablet),
+                  borderRadius: BorderRadius.circular(isDesktop ? 16 : 14),
+                  child: Padding(
             padding: EdgeInsets.all(isDesktop ? 20 : 16),
             child: Row(
-              children: [
+                      children: [
                 // Status Icon
                 Container(
                   padding: EdgeInsets.all(isDesktop ? 16 : 12),
-                  decoration: BoxDecoration(
-                    color: statusColor.withOpacity(0.1),
+                                decoration: BoxDecoration(
+                                  color: statusColor.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(isDesktop ? 12 : 10),
                   ),
                   child: Icon(
-                    _getStatusIcon(status, percentage),
+                                      _getStatusIcon(status, percentage),
                     size: isDesktop ? 28 : 24,
-                    color: statusColor,
-                  ),
+                                      color: statusColor,
+                                    ),
                 ),
                 SizedBox(width: isDesktop ? 16 : 12),
 
@@ -766,20 +766,20 @@ class _MyResultsPageState extends State<MyResultsPage>
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Text(
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Text(
                               result['examTitle'],
-                              style: TextStyle(
+                                style: TextStyle(
                                 fontSize: isDesktop ? 18 : 16,
                                 fontWeight: FontWeight.bold,
                                 color: const Color(0xFF1A1A1A),
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
                               ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
                             ),
-                          ),
                           Container(
                             padding: EdgeInsets.symmetric(
                               horizontal: isDesktop ? 8 : 6,
@@ -791,29 +791,29 @@ class _MyResultsPageState extends State<MyResultsPage>
                                 isDesktop ? 6 : 4,
                               ),
                             ),
-                            child: Text(
+                                        child: Text(
                               status,
-                              style: TextStyle(
+                                          style: TextStyle(
                                 fontSize: isDesktop ? 10 : 9,
                                 color: statusColor,
                                 fontWeight: FontWeight.w600,
                               ),
-                            ),
-                          ),
-                        ],
-                      ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
                       SizedBox(height: isDesktop ? 6 : 4),
-                      Text(
+                                        Text(
                         result['subject'],
-                        style: TextStyle(
+                                          style: TextStyle(
                           fontSize: isDesktop ? 14 : 12,
-                          color: Colors.grey[600],
+                                            color: Colors.grey[600],
                           fontWeight: FontWeight.w500,
                         ),
                       ),
                       SizedBox(height: isDesktop ? 12 : 8),
                       Row(
-                        children: [
+                                          children: [
                           _buildModernInfoChip(
                             icon: Icons.percent_rounded,
                             label: '${percentage.toStringAsFixed(1)}%',
@@ -823,33 +823,33 @@ class _MyResultsPageState extends State<MyResultsPage>
                           _buildModernInfoChip(
                             icon: Icons.quiz_rounded,
                             label:
-                                '${result['correctAnswers']}/${result['totalQuestions']}',
+                                          '${result['correctAnswers']}/${result['totalQuestions']}',
                             isDesktop: isDesktop,
-                          ),
+                                          ),
                           const Spacer(),
-                          Text(
+                                        Text(
                             formattedDate,
-                            style: TextStyle(
-                              fontSize: isDesktop ? 12 : 11,
-                              color: Colors.grey[600],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
+                                          style: TextStyle(
+                                            fontSize: isDesktop ? 12 : 11,
+                                            color: Colors.grey[600],
+                                          ),
+                                        ),
+                                      ],
+                                  ),
+                                ],
+                              ),
                 ),
-                SizedBox(width: isDesktop ? 12 : 8),
-                Icon(
-                  Icons.arrow_forward_ios_rounded,
+                              SizedBox(width: isDesktop ? 12 : 8),
+                            Icon(
+                              Icons.arrow_forward_ios_rounded,
                   size: isDesktop ? 18 : 16,
-                  color: const Color(0xFF6B5FFF),
+                              color: const Color(0xFF6B5FFF),
+                            ),
+                          ],
                 ),
-              ],
+              ),
             ),
           ),
-        ),
-      ),
     );
   }
 
@@ -859,21 +859,21 @@ class _MyResultsPageState extends State<MyResultsPage>
     required bool isDesktop,
   }) {
     return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(icon, size: isDesktop ? 14 : 12, color: Colors.grey[600]),
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: isDesktop ? 14 : 12, color: Colors.grey[600]),
         SizedBox(width: isDesktop ? 4 : 2),
-        Flexible(
-          child: Text(
-            label,
-            style: TextStyle(
+          Flexible(
+            child: Text(
+              label,
+              style: TextStyle(
               fontSize: isDesktop ? 12 : 11,
-              color: Colors.grey[600],
+                color: Colors.grey[600],
+              ),
+              overflow: TextOverflow.ellipsis,
             ),
-            overflow: TextOverflow.ellipsis,
           ),
-        ),
-      ],
+        ],
     );
   }
 

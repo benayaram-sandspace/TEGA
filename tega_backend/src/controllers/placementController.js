@@ -635,6 +635,43 @@ export const getPlacementStats = async (req, res) => {
       lastActivityDate: { $gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) }
     });
 
+    // Calculate completion rate
+    const totalStudentsWithProgress = await PlacementProgress.countDocuments();
+    const completedModulesCount = await PlacementProgress.aggregate([
+      { $unwind: '$moduleProgress' },
+      { $match: { 'moduleProgress.status': 'completed' } },
+      { $count: 'completedCount' }
+    ]);
+    
+    const totalPossibleCompletions = totalStudentsWithProgress * totalModules;
+    const completionRate = totalPossibleCompletions > 0 
+      ? Math.round(((completedModulesCount[0]?.completedCount || 0) / totalPossibleCompletions) * 100)
+      : 0;
+
+    // Calculate top performer score
+    const topScoreResult = await PlacementProgress.aggregate([
+      { $unwind: '$questionAttempts' },
+      { $group: { _id: '$studentId', maxScore: { $max: '$questionAttempts.pointsEarned' } } },
+      { $sort: { maxScore: -1 } },
+      { $limit: 1 }
+    ]);
+    const topScore = topScoreResult.length > 0 ? Math.round(topScoreResult[0].maxScore) : 0;
+
+    // Calculate average time per assessment
+    const avgTimeResult = await PlacementProgress.aggregate([
+      { $unwind: '$questionAttempts' },
+      { $match: { 'questionAttempts.timeTaken': { $exists: true, $gt: 0 } } },
+      { $group: { _id: null, avgTime: { $avg: '$questionAttempts.timeTaken' } } }
+    ]);
+    const averageTime = avgTimeResult.length > 0 ? Math.round(avgTimeResult[0].avgTime) : 0;
+
+    // Calculate average score across all attempts
+    const avgScoreResult = await PlacementProgress.aggregate([
+      { $unwind: '$questionAttempts' },
+      { $group: { _id: null, avgScore: { $avg: '$questionAttempts.pointsEarned' } } }
+    ]);
+    const averageScore = avgScoreResult.length > 0 ? Math.round(avgScoreResult[0].avgScore) : 0;
+
     const questionsByCategory = await PlacementQuestion.aggregate([
       { $group: { _id: '$category', count: { $sum: 1 } } }
     ]);
@@ -649,6 +686,10 @@ export const getPlacementStats = async (req, res) => {
         totalQuestions,
         totalModules,
         activeStudents,
+        completionRate,
+        topScore,
+        averageTime,
+        averageScore,
         questionsByCategory,
         questionsByDifficulty
       }

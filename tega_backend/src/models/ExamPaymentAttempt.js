@@ -18,7 +18,7 @@ const examPaymentAttemptSchema = new mongoose.Schema({
   },
   paymentId: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'RazorpayPayment',
+    ref: 'Payment',
     required: true
   },
   attemptNumber: {
