@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:tega/features/3_admin_panel/data/services/admin_dashboard_service.dart';
+import 'package:tega/features/3_admin_panel/data/models/course_model.dart';
 import 'package:tega/features/3_admin_panel/presentation/0_dashboard/admin_dashboard_styles.dart';
 import 'package:tega/features/3_admin_panel/presentation/1_management/courses/create_course_page.dart';
 import 'package:tega/features/3_admin_panel/presentation/1_management/courses/edit_course_page.dart';
@@ -15,7 +16,7 @@ class CourseManagementPage extends StatefulWidget {
 class _CourseManagementPageState extends State<CourseManagementPage>
     with TickerProviderStateMixin {
   final AdminDashboardService _dashboardService = AdminDashboardService();
-  List<Map<String, dynamic>> _courses = [];
+  List<Course> _courses = [];
   bool _isLoading = true;
   String? _errorMessage;
 
@@ -75,11 +76,14 @@ class _CourseManagementPageState extends State<CourseManagementPage>
         _errorMessage = null;
       });
 
-      final result = await _dashboardService.getCourses();
+      final result = await _dashboardService.getAllCourses();
 
       if (result['success'] == true) {
         setState(() {
-          _courses = List<Map<String, dynamic>>.from(result['data'] ?? []);
+          final coursesData = result['courses'] as List<dynamic>;
+          _courses = coursesData
+              .map((course) => Course.fromJson(course))
+              .toList();
           _isLoading = false;
         });
         _startStaggeredAnimations();
@@ -137,13 +141,13 @@ class _CourseManagementPageState extends State<CourseManagementPage>
     }
   }
 
-  void _showDeleteConfirmation(Map<String, dynamic> course) {
+  void _showDeleteConfirmation(Course course) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Delete Course'),
         content: Text(
-          'Are you sure you want to delete "${course['courseName']}"? This action cannot be undone.',
+          'Are you sure you want to delete "${course.title}"? This action cannot be undone.',
         ),
         actions: [
           TextButton(
@@ -153,7 +157,7 @@ class _CourseManagementPageState extends State<CourseManagementPage>
           TextButton(
             onPressed: () {
               Navigator.of(context).pop();
-              _deleteCourse(course['_id']);
+              _deleteCourse(course.id!);
             },
             style: TextButton.styleFrom(foregroundColor: Colors.red),
             child: const Text('Delete'),
@@ -166,7 +170,7 @@ class _CourseManagementPageState extends State<CourseManagementPage>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
+      backgroundColor: const Color(0xFFF8FAFC), // Light background
       body: _buildContent(),
       floatingActionButton: _buildCreateCourseFAB(),
     );
@@ -174,7 +178,11 @@ class _CourseManagementPageState extends State<CourseManagementPage>
 
   Widget _buildContent() {
     if (_isLoading) {
-      return const Center(child: CircularProgressIndicator());
+      return const Center(
+        child: CircularProgressIndicator(
+          valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF3B82F6)),
+        ),
+      );
     }
 
     if (_errorMessage != null) {
@@ -208,7 +216,7 @@ class _CourseManagementPageState extends State<CourseManagementPage>
               icon: const Icon(Icons.refresh_rounded),
               label: const Text('Retry'),
               style: ElevatedButton.styleFrom(
-                backgroundColor: AdminDashboardStyles.primary,
+                backgroundColor: const Color(0xFF3B82F6),
                 foregroundColor: Colors.white,
               ),
             ),
@@ -243,7 +251,7 @@ class _CourseManagementPageState extends State<CourseManagementPage>
               icon: const Icon(Icons.add_rounded),
               label: const Text('Create Course'),
               style: ElevatedButton.styleFrom(
-                backgroundColor: AdminDashboardStyles.primary,
+                backgroundColor: const Color(0xFF3B82F6),
                 foregroundColor: Colors.white,
               ),
             ),
@@ -279,26 +287,22 @@ class _CourseManagementPageState extends State<CourseManagementPage>
     );
   }
 
-  Widget _buildCourseCard(Map<String, dynamic> course) {
+  Widget _buildCourseCard(Course course) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 20),
+      margin: const EdgeInsets.only(bottom: 24),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [Colors.white, Colors.grey[50]!],
-        ),
-        borderRadius: BorderRadius.circular(20),
+        color: Colors.white, // Light background
+        borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 25,
-            offset: const Offset(0, 10),
+            color: Colors.black.withOpacity(0.08),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
           ),
           BoxShadow(
-            color: AdminDashboardStyles.primary.withOpacity(0.1),
-            blurRadius: 15,
-            offset: const Offset(0, 5),
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
           ),
         ],
         border: Border.all(color: Colors.grey[200]!, width: 1),
@@ -306,296 +310,503 @@ class _CourseManagementPageState extends State<CourseManagementPage>
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(16),
           onTap: () => _navigateToEditCourse(course),
-          child: Container(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Header Row
-                Row(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Thumbnail Header Section
+              _buildThumbnailHeader(course),
+              // Content Section
+              Padding(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Course Icon with enhanced styling
-                    Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                          colors: [
-                            AdminDashboardStyles.primary,
-                            AdminDashboardStyles.primary.withOpacity(0.8),
-                          ],
-                        ),
-                        borderRadius: BorderRadius.circular(16),
-                        boxShadow: [
-                          BoxShadow(
-                            color: AdminDashboardStyles.primary.withOpacity(
-                              0.3,
-                            ),
-                            blurRadius: 10,
-                            offset: const Offset(0, 4),
-                          ),
-                        ],
+                    // Course Title
+                    Text(
+                      course.title,
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF1A202C),
+                        height: 1.2,
                       ),
-                      child: const Icon(
-                        Icons.school_rounded,
-                        color: Colors.white,
-                        size: 28,
-                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                    const SizedBox(width: 20),
-                    // Course Title and Description
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            course['title'] ??
-                                course['courseName'] ??
-                                'Untitled Course',
-                            style: const TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                              color: Color(0xFF1A202C),
-                              letterSpacing: -0.5,
-                            ),
-                          ),
-                          const SizedBox(height: 6),
-                          Text(
-                            course['description'] ?? 'No description available',
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: Colors.grey[600],
-                              height: 1.4,
-                            ),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ],
+                    const SizedBox(height: 8),
+                    // Course Description
+                    Text(
+                      course.description,
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.grey[600],
+                        height: 1.4,
                       ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                    // Actions Menu
-                    _buildCourseActions(course),
+                    const SizedBox(height: 16),
+                    // Course Tags and Info
+                    _buildCourseInfoRow(course),
+                    const SizedBox(height: 16),
+                    // Price and Enrollment
+                    _buildPriceAndEnrollmentRow(course),
+                    const SizedBox(height: 20),
+                    // Action Buttons
+                    _buildActionButtons(course),
                   ],
                 ),
-                const SizedBox(height: 20),
-                // Course Info Chips
-                Wrap(
-                  spacing: 12,
-                  runSpacing: 12,
-                  children: [
-                    _buildEnhancedCourseInfoChip(
-                      icon: Icons.category_rounded,
-                      label: course['category'] ?? 'Uncategorized',
-                      color: const Color(0xFF3B82F6),
-                    ),
-                    _buildEnhancedCourseInfoChip(
-                      icon: Icons.trending_up_rounded,
-                      label: course['level'] ?? 'Beginner',
-                      color: const Color(0xFF10B981),
-                    ),
-                    _buildEnhancedCourseInfoChip(
-                      icon: Icons.access_time_rounded,
-                      label:
-                          '${course['estimatedDuration']?['hours'] ?? course['duration'] ?? 0} hours',
-                      color: const Color(0xFFF59E0B),
-                    ),
-                    if (course['enrollmentCount'] != null)
-                      _buildEnhancedCourseInfoChip(
-                        icon: Icons.people_rounded,
-                        label: '${course['enrollmentCount']} students',
-                        color: const Color(0xFF8B5CF6),
-                      ),
-                  ],
-                ),
-                const SizedBox(height: 20),
-                // Bottom Row with Price and Status
-                Row(
-                  children: [
-                    // Price Badge
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 10,
-                      ),
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                          colors: [
-                            AdminDashboardStyles.primary,
-                            AdminDashboardStyles.primary.withOpacity(0.8),
-                          ],
-                        ),
-                        borderRadius: BorderRadius.circular(25),
-                        boxShadow: [
-                          BoxShadow(
-                            color: AdminDashboardStyles.primary.withOpacity(
-                              0.3,
-                            ),
-                            blurRadius: 8,
-                            offset: const Offset(0, 4),
-                          ),
-                        ],
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(
-                            Icons.currency_rupee_rounded,
-                            color: Colors.white,
-                            size: 16,
-                          ),
-                          Text(
-                            '${course['price'] ?? 0}',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 16,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const Spacer(),
-                    // Status Badge
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 6,
-                      ),
-                      decoration: BoxDecoration(
-                        color: _getStatusColor(
-                          course['status'],
-                        ).withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(
-                          color: _getStatusColor(
-                            course['status'],
-                          ).withOpacity(0.3),
-                          width: 1,
-                        ),
-                      ),
-                      child: Text(
-                        _getStatusLabel(course['status']),
-                        style: TextStyle(
-                          color: _getStatusColor(course['status']),
-                          fontWeight: FontWeight.w600,
-                          fontSize: 12,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                // Instructor Info
-                if (course['instructor'] != null) ...[
-                  const SizedBox(height: 16),
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: Colors.grey[50],
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.grey[200]!, width: 1),
-                    ),
-                    child: Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: Colors.grey[200],
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Icon(
-                            Icons.person_rounded,
-                            size: 16,
-                            color: Colors.grey[600],
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Instructor',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: Colors.grey[500],
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                              Text(
-                                course['instructor'] is Map
-                                    ? course['instructor']['name'] ?? 'Unknown'
-                                    : course['instructor'].toString(),
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  color: Colors.grey[700],
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),
     );
   }
 
-  Widget _buildEnhancedCourseInfoChip({
-    required IconData icon,
-    required String label,
-    required Color color,
-  }) {
+  Widget _buildThumbnailHeader(Course course) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      height: 200,
       decoration: BoxDecoration(
+        borderRadius: const BorderRadius.only(
+          topLeft: Radius.circular(16),
+          topRight: Radius.circular(16),
+        ),
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [color.withOpacity(0.1), color.withOpacity(0.05)],
+          colors: [
+            const Color(0xFF3B82F6).withOpacity(0.1),
+            const Color(0xFF8B5CF6).withOpacity(0.05),
+          ],
         ),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: color.withOpacity(0.2), width: 1),
-        boxShadow: [
-          BoxShadow(
-            color: color.withOpacity(0.1),
-            blurRadius: 4,
-            offset: const Offset(0, 2),
+      ),
+      child: Stack(
+        children: [
+          // Background Pattern
+          Positioned.fill(
+            child: Container(
+              decoration: BoxDecoration(
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(16),
+                  topRight: Radius.circular(16),
+                ),
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    const Color(0xFF3B82F6).withOpacity(0.05),
+                    const Color(0xFF8B5CF6).withOpacity(0.02),
+                  ],
+                ),
+              ),
+            ),
           ),
+          // Status Badge
+          Positioned(
+            top: 16,
+            right: 16,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              decoration: BoxDecoration(
+                color: _getStatusColor(course.status),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Text(
+                _getStatusLabel(course.status),
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 10,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ),
+          // Course Thumbnail
+          if (course.thumbnail != null &&
+              course.thumbnail!.isNotEmpty &&
+              course.thumbnail!.startsWith('http'))
+            Positioned.fill(
+              child: ClipRRect(
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(16),
+                  topRight: Radius.circular(16),
+                ),
+                child: Image.network(
+                  course.thumbnail!,
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) {
+                    return Container(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [
+                            const Color(0xFF3B82F6).withOpacity(0.1),
+                            const Color(0xFF8B5CF6).withOpacity(0.05),
+                          ],
+                        ),
+                      ),
+                      child: Center(
+                        child: Container(
+                          width: 80,
+                          height: 80,
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(
+                              color: const Color(0xFF3B82F6).withOpacity(0.2),
+                              width: 2,
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.1),
+                                blurRadius: 10,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
+                          ),
+                          child: Icon(
+                            Icons.school_rounded,
+                            color: const Color(0xFF3B82F6),
+                            size: 40,
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                  loadingBuilder: (context, child, loadingProgress) {
+                    if (loadingProgress == null) return child;
+                    return Container(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [
+                            const Color(0xFF3B82F6).withOpacity(0.1),
+                            const Color(0xFF8B5CF6).withOpacity(0.05),
+                          ],
+                        ),
+                      ),
+                      child: Center(
+                        child: CircularProgressIndicator(
+                          value: loadingProgress.expectedTotalBytes != null
+                              ? loadingProgress.cumulativeBytesLoaded /
+                                    loadingProgress.expectedTotalBytes!
+                              : null,
+                          valueColor: const AlwaysStoppedAnimation<Color>(
+                            Color(0xFF3B82F6),
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            )
+          else
+            // Fallback to icon when no thumbnail
+            Center(
+              child: Container(
+                width: 80,
+                height: 80,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: const Color(0xFF3B82F6).withOpacity(0.2),
+                    width: 2,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.1),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Icon(
+                  Icons.school_rounded,
+                  color: const Color(0xFF3B82F6),
+                  size: 40,
+                ),
+              ),
+            ),
+          // Instructor Avatar (if available)
+          if (course.instructor.avatar != null &&
+              course.instructor.avatar!.isNotEmpty &&
+              course.instructor.avatar!.startsWith('http'))
+            Positioned(
+              bottom: 16,
+              right: 16,
+              child: Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: Colors.white, width: 2),
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(18),
+                  child: Image.network(
+                    course.instructor.avatar!,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) {
+                      return Icon(
+                        Icons.person,
+                        color: Colors.grey[600],
+                        size: 20,
+                      );
+                    },
+                  ),
+                ),
+              ),
+            ),
         ],
       ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(4),
-            decoration: BoxDecoration(
-              color: color.withOpacity(0.2),
-              borderRadius: BorderRadius.circular(8),
+    );
+  }
+
+  Widget _buildCourseInfoRow(Course course) {
+    return Row(
+      children: [
+        // Level Badge
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+          decoration: BoxDecoration(
+            color: const Color(0xFF10B981).withOpacity(0.2),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: const Color(0xFF10B981).withOpacity(0.3),
+              width: 1,
             ),
-            child: Icon(icon, size: 14, color: color),
           ),
-          const SizedBox(width: 8),
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 13,
-              color: color,
+          child: Text(
+            course.level,
+            style: const TextStyle(
+              color: Color(0xFF10B981),
+              fontSize: 12,
               fontWeight: FontWeight.w600,
             ),
           ),
-        ],
-      ),
+        ),
+        const SizedBox(width: 8),
+        // Duration
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+          decoration: BoxDecoration(
+            color: const Color(0xFFF59E0B).withOpacity(0.2),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: const Color(0xFFF59E0B).withOpacity(0.3),
+              width: 1,
+            ),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.access_time, color: const Color(0xFFF59E0B), size: 12),
+              const SizedBox(width: 4),
+              Text(
+                course.estimatedDuration.formattedDuration,
+                style: const TextStyle(
+                  color: Color(0xFFF59E0B),
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+        ),
+        const Spacer(),
+        // Modules Count
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+          decoration: BoxDecoration(
+            color: Colors.grey[100],
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Colors.grey[300]!, width: 1),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.menu_book, color: Colors.grey[600], size: 12),
+              const SizedBox(width: 4),
+              Text(
+                '${course.modules?.length ?? 0} modules',
+                style: TextStyle(
+                  color: Colors.grey[600],
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildPriceAndEnrollmentRow(Course course) {
+    return Row(
+      children: [
+        // Price
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          decoration: BoxDecoration(
+            color: const Color(0xFF3B82F6),
+            borderRadius: BorderRadius.circular(8),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFF3B82F6).withOpacity(0.3),
+                blurRadius: 8,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.currency_rupee, color: Colors.white, size: 16),
+              Text(
+                '${course.price.toInt()}',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+        ),
+        const Spacer(),
+        // Enrollment Count
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          decoration: BoxDecoration(
+            color: Colors.grey[100],
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: Colors.grey[300]!, width: 1),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.people, color: Colors.grey[600], size: 16),
+              const SizedBox(width: 6),
+              Text(
+                '${course.enrollmentCount ?? 0}',
+                style: TextStyle(
+                  color: Colors.grey[600],
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(width: 12),
+        // Date
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          decoration: BoxDecoration(
+            color: Colors.grey[100],
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: Colors.grey[300]!, width: 1),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.schedule, color: Colors.grey[600], size: 16),
+              const SizedBox(width: 6),
+              Text(
+                course.createdAt != null
+                    ? '${course.createdAt!.day}/${course.createdAt!.month}/${course.createdAt!.year}'
+                    : 'N/A',
+                style: TextStyle(
+                  color: Colors.grey[600],
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildActionButtons(Course course) {
+    return Row(
+      children: [
+        // Edit Button
+        Expanded(
+          child: Container(
+            height: 40,
+            decoration: BoxDecoration(
+              color: const Color(0xFF3B82F6),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Material(
+              color: Colors.transparent,
+              child: InkWell(
+                borderRadius: BorderRadius.circular(8),
+                onTap: () => _navigateToEditCourse(course),
+                child: const Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.edit, color: Colors.white, size: 16),
+                    SizedBox(width: 6),
+                    Text(
+                      'Edit',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(width: 12),
+        // Delete Button
+        Expanded(
+          child: Container(
+            height: 40,
+            decoration: BoxDecoration(
+              color: const Color(0xFFEF4444),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Material(
+              color: Colors.transparent,
+              child: InkWell(
+                borderRadius: BorderRadius.circular(8),
+                onTap: () => _showDeleteConfirmation(course),
+                child: const Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.delete, color: Colors.white, size: 16),
+                    SizedBox(width: 6),
+                    Text(
+                      'Delete',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 
@@ -623,44 +834,6 @@ class _CourseManagementPageState extends State<CourseManagementPage>
       default:
         return 'Unknown';
     }
-  }
-
-  Widget _buildCourseActions(Map<String, dynamic> course) {
-    return PopupMenuButton<String>(
-      icon: Icon(Icons.more_vert_rounded, color: Colors.grey[600]),
-      onSelected: (value) {
-        switch (value) {
-          case 'edit':
-            _navigateToEditCourse(course);
-            break;
-          case 'delete':
-            _showDeleteConfirmation(course);
-            break;
-        }
-      },
-      itemBuilder: (context) => [
-        const PopupMenuItem(
-          value: 'edit',
-          child: Row(
-            children: [
-              Icon(Icons.edit_rounded, size: 18),
-              SizedBox(width: 8),
-              Text('Edit'),
-            ],
-          ),
-        ),
-        const PopupMenuItem(
-          value: 'delete',
-          child: Row(
-            children: [
-              Icon(Icons.delete_rounded, size: 18, color: Colors.red),
-              SizedBox(width: 8),
-              Text('Delete', style: TextStyle(color: Colors.red)),
-            ],
-          ),
-        ),
-      ],
-    );
   }
 
   Widget _buildCreateCourseFAB() {
@@ -703,11 +876,11 @@ class _CourseManagementPageState extends State<CourseManagementPage>
         });
   }
 
-  void _navigateToEditCourse(Map<String, dynamic> course) {
+  void _navigateToEditCourse(Course course) {
     Navigator.of(context)
         .push(
           MaterialPageRoute(
-            builder: (context) => EditCoursePage(course: course),
+            builder: (context) => EditCoursePage(course: course.toJson()),
           ),
         )
         .then((_) {

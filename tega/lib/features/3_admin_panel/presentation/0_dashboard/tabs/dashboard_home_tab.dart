@@ -625,7 +625,7 @@ class _DashboardHomeTabState extends State<DashboardHomeTab> {
             )
           else
             Container(
-              constraints: const BoxConstraints(maxHeight: 350),
+              constraints: const BoxConstraints(maxHeight: 550),
               child: ListView.separated(
                 shrinkWrap: true,
                 physics: const BouncingScrollPhysics(),
@@ -634,8 +634,44 @@ class _DashboardHomeTabState extends State<DashboardHomeTab> {
                     const SizedBox(height: 12),
                 itemBuilder: (context, index) {
                   final student = _recentStudents[index];
+
+                  // Extract data from API response
+                  final username = student['username'] ?? 'N/A';
+                  final firstName = student['firstName'] ?? '';
+                  final lastName = student['lastName'] ?? '';
+                  final fullName = firstName.isNotEmpty && lastName.isNotEmpty
+                      ? '$firstName $lastName'
+                      : username;
+                  final email = student['email'] ?? 'N/A';
+                  final institute = student['institute'] ?? 'No Institute';
+                  final studentId = student['studentId'] ?? 'N/A';
+                  final createdAt = student['createdAt'] ?? '';
+
+                  // Format date
+                  String registrationDate = 'Recently';
+                  if (createdAt.isNotEmpty) {
+                    try {
+                      final date = DateTime.parse(createdAt);
+                      final now = DateTime.now();
+                      final difference = now.difference(date);
+
+                      if (difference.inDays == 0) {
+                        registrationDate = 'Today';
+                      } else if (difference.inDays == 1) {
+                        registrationDate = 'Yesterday';
+                      } else if (difference.inDays < 7) {
+                        registrationDate = '${difference.inDays} days ago';
+                      } else {
+                        registrationDate =
+                            '${date.day}/${date.month}/${date.year}';
+                      }
+                    } catch (e) {
+                      registrationDate = 'Recently';
+                    }
+                  }
+
                   return Container(
-                    padding: const EdgeInsets.all(18),
+                    padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(14),
@@ -651,74 +687,235 @@ class _DashboardHomeTabState extends State<DashboardHomeTab> {
                         ),
                       ],
                     ),
-                    child: Row(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text(
-                                student['username'] ?? 'N/A',
-                                style: const TextStyle(
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.w600,
-                                  color: Color(0xFF2D3748),
-                                  height: 1.2,
+                        // Header Row: Name + Student ID
+                        Row(
+                          children: [
+                            // Avatar Circle
+                            Container(
+                              width: 44,
+                              height: 44,
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  colors: [
+                                    AdminDashboardStyles.primary.withOpacity(
+                                      0.8,
+                                    ),
+                                    AdminDashboardStyles.primaryLight,
+                                  ],
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
                                 ),
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
+                                shape: BoxShape.circle,
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: AdminDashboardStyles.primary
+                                        .withOpacity(0.3),
+                                    blurRadius: 8,
+                                    offset: const Offset(0, 2),
+                                  ),
+                                ],
                               ),
-                              const SizedBox(height: 4),
-                              Text(
-                                student['email'] ?? 'N/A',
-                                style: const TextStyle(
-                                  fontSize: 13,
-                                  color: Color(0xFF718096),
-                                  height: 1.2,
+                              child: Center(
+                                child: Text(
+                                  fullName.isNotEmpty
+                                      ? fullName[0].toUpperCase()
+                                      : 'S',
+                                  style: const TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.white,
+                                  ),
                                 ),
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
                               ),
-                            ],
-                          ),
+                            ),
+                            const SizedBox(width: 12),
+                            // Name and Username
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    fullName,
+                                    style: const TextStyle(
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.w700,
+                                      color: Color(0xFF2D3748),
+                                      height: 1.3,
+                                    ),
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  const SizedBox(height: 3),
+                                  Text(
+                                    '@$username',
+                                    style: const TextStyle(
+                                      fontSize: 12,
+                                      color: Color(0xFF718096),
+                                      fontWeight: FontWeight.w500,
+                                      height: 1.2,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            // Student ID Badge
+                            Flexible(
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 10,
+                                  vertical: 6,
+                                ),
+                                decoration: BoxDecoration(
+                                  gradient: LinearGradient(
+                                    colors: [
+                                      const Color(0xFFE6FFFA),
+                                      const Color(0xFFB2F5EA),
+                                    ],
+                                    begin: Alignment.topLeft,
+                                    end: Alignment.bottomRight,
+                                  ),
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(
+                                    color: const Color(0xFF38B2AC),
+                                    width: 1,
+                                  ),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: const Color(
+                                        0xFF38B2AC,
+                                      ).withOpacity(0.15),
+                                      blurRadius: 4,
+                                      offset: const Offset(0, 1),
+                                    ),
+                                  ],
+                                ),
+                                child: Text(
+                                  studentId,
+                                  style: const TextStyle(
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w700,
+                                    color: Color(0xFF2C7A7B),
+                                    letterSpacing: 0.5,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
-                        const SizedBox(width: 16),
+                        const SizedBox(height: 12),
+
+                        // Divider
                         Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 4,
-                          ),
+                          height: 1,
                           decoration: BoxDecoration(
                             gradient: LinearGradient(
                               colors: [
-                                const Color(0xFFE6FFFA),
-                                const Color(0xFFB2F5EA),
+                                const Color(0xFFE2E8F0).withOpacity(0.1),
+                                const Color(0xFFE2E8F0),
+                                const Color(0xFFE2E8F0).withOpacity(0.1),
                               ],
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
                             ),
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(
-                              color: const Color(0xFF38B2AC),
-                              width: 1,
-                            ),
-                            boxShadow: [
-                              BoxShadow(
-                                color: const Color(0xFF38B2AC).withOpacity(0.1),
-                                blurRadius: 4,
-                                offset: const Offset(0, 1),
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+
+                        // Info Row: Email
+                        Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(6),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFF7FAFC),
+                                borderRadius: BorderRadius.circular(6),
                               ),
-                            ],
-                          ),
-                          child: Text(
-                            student['studentId'] ?? 'N/A',
-                            style: const TextStyle(
-                              fontSize: 9,
-                              fontWeight: FontWeight.w600,
-                              color: Color(0xFF2C7A7B),
+                              child: const Icon(
+                                Icons.email_outlined,
+                                size: 14,
+                                color: Color(0xFF4299E1),
+                              ),
                             ),
-                          ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                email,
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  color: Color(0xFF4A5568),
+                                  fontWeight: FontWeight.w500,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+
+                        // Info Row: Institute
+                        Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(6),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFF7FAFC),
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: const Icon(
+                                Icons.school_outlined,
+                                size: 14,
+                                color: Color(0xFF9F7AEA),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                institute,
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  color: Color(0xFF4A5568),
+                                  fontWeight: FontWeight.w500,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+
+                        // Info Row: Registration Date
+                        Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(6),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFF7FAFC),
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: const Icon(
+                                Icons.calendar_today_outlined,
+                                size: 14,
+                                color: Color(0xFF48BB78),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              'Registered $registrationDate',
+                              style: const TextStyle(
+                                fontSize: 12,
+                                color: Color(0xFF48BB78),
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
                         ),
                       ],
                     ),

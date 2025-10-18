@@ -8,6 +8,10 @@ class ApiEndpoints {
   // ==================== AUTHENTICATION ====================
   static String get register => '${EnvConfig.baseUrl}/api/auth/register';
   static String get login => '${EnvConfig.baseUrl}/api/auth/login';
+  static String get logout => '${EnvConfig.baseUrl}/api/auth/logout';
+  static String get verifyAuth => '${EnvConfig.baseUrl}/api/auth/verify';
+  static String get refreshToken => '${EnvConfig.baseUrl}/api/auth/refresh';
+  static String get csrfToken => '${EnvConfig.baseUrl}/api/auth/csrf-token';
   static String get forgotPassword =>
       '${EnvConfig.baseUrl}/api/auth/forgot-password';
   static String get verifyOTP => '${EnvConfig.baseUrl}/api/auth/verify-otp';
@@ -17,9 +21,8 @@ class ApiEndpoints {
       '${EnvConfig.baseUrl}/api/auth/register/send-otp';
   static String get verifyRegistrationOTP =>
       '${EnvConfig.baseUrl}/api/auth/register/verify-otp';
-  static String get refreshToken =>
-      '${EnvConfig.baseUrl}/api/auth/refresh-token';
   static String get checkEmail => '${EnvConfig.baseUrl}/api/auth/check-email';
+  static String get authTest => '${EnvConfig.baseUrl}/api/auth/test';
 
   // ==================== STUDENT DASHBOARD & PROFILE ====================
   static String get studentDashboard =>
@@ -36,6 +39,18 @@ class ApiEndpoints {
       '${EnvConfig.baseUrl}/api/student/profile/photo';
   static String get studentRemovePhoto =>
       '${EnvConfig.baseUrl}/api/student/profile/photo';
+
+  // ==================== PRINCIPAL PORTAL ====================
+  static String get principalLogin =>
+      '${EnvConfig.baseUrl}/api/principal/login';
+  static String get principalForgotPassword =>
+      '${EnvConfig.baseUrl}/api/principal/forgot-password';
+  static String get principalResetPassword =>
+      '${EnvConfig.baseUrl}/api/principal/reset-password';
+  static String get principalDashboard =>
+      '${EnvConfig.baseUrl}/api/principal/dashboard';
+  static String get principalStudents =>
+      '${EnvConfig.baseUrl}/api/principal/students';
 
   // ==================== REAL-TIME COURSES ====================
   // Public routes
@@ -84,6 +99,25 @@ class ApiEndpoints {
   static String adminRealTimeCourseAnalytics(String id) =>
       '${EnvConfig.baseUrl}/api/real-time-courses/$id/analytics';
 
+  // ==================== ENROLLMENTS ====================
+  static String get studentEnrollments =>
+      '${EnvConfig.baseUrl}/api/enrollments/student/enrollments';
+  static String enrollmentCheck(String courseId) =>
+      '${EnvConfig.baseUrl}/api/enrollments/check/$courseId';
+  static String enrollmentCheckPost(String courseId) =>
+      '${EnvConfig.baseUrl}/api/enrollments/check/$courseId';
+  static String enrollInCourse(String courseId) =>
+      '${EnvConfig.baseUrl}/api/enrollments/$courseId/enroll';
+  static String enrollmentCheckAlt(String courseId) =>
+      '${EnvConfig.baseUrl}/api/enrollments/$courseId/check';
+  static String enrollmentLectureAccess(String courseId, String lectureId) =>
+      '${EnvConfig.baseUrl}/api/enrollments/$courseId/lectures/$lectureId/access';
+  static String unenrollFromCourse(String courseId) =>
+      '${EnvConfig.baseUrl}/api/enrollments/$courseId/unenroll';
+  static String get enrollments => '${EnvConfig.baseUrl}/api/enrollments';
+  static String get completedEnrollments =>
+      '${EnvConfig.baseUrl}/api/enrollments/completed';
+
   // ==================== PAYMENTS ====================
   // Public routes
   static String get paymentCourses =>
@@ -124,6 +158,28 @@ class ApiEndpoints {
       '${EnvConfig.baseUrl}/api/payments/admin/courses';
   static String get adminPaymentPricing =>
       '${EnvConfig.baseUrl}/api/payments/admin/pricing';
+
+  // ==================== RAZORPAY PAYMENT ====================
+  static String get razorpayCreateOrder =>
+      '${EnvConfig.baseUrl}/api/razorpay/create-order';
+  static String get razorpayVerifyPayment =>
+      '${EnvConfig.baseUrl}/api/razorpay/verify-payment';
+  static String razorpayOrderStatus(String orderId) =>
+      '${EnvConfig.baseUrl}/api/razorpay/status/$orderId';
+  static String get razorpayPaymentHistory =>
+      '${EnvConfig.baseUrl}/api/razorpay/history';
+  static String get razorpayWebhook =>
+      '${EnvConfig.baseUrl}/api/razorpay/webhook';
+
+  // ==================== TEGA EXAM PAYMENTS ====================
+  static String get tegaExamPaymentCreateOrder =>
+      '${EnvConfig.baseUrl}/api/tega-exam-payments/create-order';
+  static String get tegaExamPaymentProcessDummy =>
+      '${EnvConfig.baseUrl}/api/tega-exam-payments/process-dummy';
+  static String tegaExamPaymentCheck(String examId) =>
+      '${EnvConfig.baseUrl}/api/tega-exam-payments/check/$examId';
+  static String get tegaExamPaymentHistory =>
+      '${EnvConfig.baseUrl}/api/tega-exam-payments/history';
 
   // ==================== EXAMS ====================
   // Admin routes
@@ -169,8 +225,64 @@ class ApiEndpoints {
   static String studentExamResultById(String examId) =>
       '${EnvConfig.baseUrl}/api/exams/$examId/result';
 
-  // ==================== PLACEMENT ====================
+  // ==================== QUESTION PAPERS ====================
   // Admin routes
+  static String get adminQuestionPapersAll =>
+      '${EnvConfig.baseUrl}/api/question-papers/admin/all';
+  static String adminQuestionPapersByCourse(String courseId) =>
+      '${EnvConfig.baseUrl}/api/question-papers/admin/course/$courseId';
+  static String get adminQuestionPaperUpload =>
+      '${EnvConfig.baseUrl}/api/question-papers/admin/upload';
+  static String adminQuestionPaperDelete(String id) =>
+      '${EnvConfig.baseUrl}/api/question-papers/admin/$id';
+  static String get adminQuestionPaperTemplate =>
+      '${EnvConfig.baseUrl}/api/question-papers/admin/template';
+  static String adminQuestionPaperDetails(String id) =>
+      '${EnvConfig.baseUrl}/api/question-papers/admin/$id';
+
+  // ==================== COMPANY QUESTIONS ====================
+  // Admin routes - PDF Upload & Processing
+  static String get adminCompanyQuestionsUploadPDF =>
+      '${EnvConfig.baseUrl}/api/company-questions/admin/upload-pdf';
+  static String get adminCompanyQuestionsSave =>
+      '${EnvConfig.baseUrl}/api/company-questions/admin/save-questions';
+
+  // Admin routes - CRUD Operations
+  static String get adminCompanyQuestionsCreate =>
+      '${EnvConfig.baseUrl}/api/company-questions/admin/questions';
+  static String get adminCompanyQuestionsAll =>
+      '${EnvConfig.baseUrl}/api/company-questions/admin/questions';
+  static String adminCompanyQuestionUpdate(String id) =>
+      '${EnvConfig.baseUrl}/api/company-questions/admin/questions/$id';
+  static String adminCompanyQuestionDelete(String id) =>
+      '${EnvConfig.baseUrl}/api/company-questions/admin/questions/$id';
+
+  // Admin routes - Company List
+  static String get adminCompanyList =>
+      '${EnvConfig.baseUrl}/api/company-questions/admin/companies';
+
+  // Student routes - Company Questions
+  static String get companyQuestionsList =>
+      '${EnvConfig.baseUrl}/api/company-questions/companies';
+  static String companyQuestions(String companyName) =>
+      '${EnvConfig.baseUrl}/api/company-questions/companies/$companyName/questions';
+
+  // Student routes - Quiz Operations
+  static String get companyQuizStart =>
+      '${EnvConfig.baseUrl}/api/company-questions/quiz/start';
+  static String get companyQuizSubmitAnswer =>
+      '${EnvConfig.baseUrl}/api/company-questions/quiz/submit-answer';
+  static String get companyQuizSubmit =>
+      '${EnvConfig.baseUrl}/api/company-questions/quiz/submit';
+
+  // Student routes - Progress & Leaderboard
+  static String companyProgress(String companyName) =>
+      '${EnvConfig.baseUrl}/api/company-questions/progress/$companyName';
+  static String companyLeaderboard(String companyName) =>
+      '${EnvConfig.baseUrl}/api/company-questions/leaderboard/$companyName';
+
+  // ==================== PLACEMENT ====================
+  // Admin routes - Questions
   static String get adminPlacementQuestions =>
       '${EnvConfig.baseUrl}/api/placement/admin/questions';
   static String adminPlacementQuestionById(String id) =>
@@ -183,6 +295,8 @@ class ApiEndpoints {
       '${EnvConfig.baseUrl}/api/placement/admin/questions/$id';
   static String get adminBulkUploadQuestions =>
       '${EnvConfig.baseUrl}/api/placement/admin/questions/bulk';
+
+  // Admin routes - Modules
   static String get adminPlacementModules =>
       '${EnvConfig.baseUrl}/api/placement/admin/modules';
   static String adminPlacementModuleById(String id) =>
@@ -193,18 +307,24 @@ class ApiEndpoints {
       '${EnvConfig.baseUrl}/api/placement/admin/modules/$id';
   static String adminDeletePlacementModule(String id) =>
       '${EnvConfig.baseUrl}/api/placement/admin/modules/$id';
+
+  // Admin routes - Statistics
   static String get adminPlacementStats =>
       '${EnvConfig.baseUrl}/api/placement/admin/stats';
 
-  // Student routes
+  // Student routes - Modules
   static String get studentPlacementModules =>
       '${EnvConfig.baseUrl}/api/placement/modules';
   static String studentPlacementModuleQuestions(String moduleId) =>
       '${EnvConfig.baseUrl}/api/placement/modules/$moduleId/questions';
+
+  // Student routes - Progress
   static String get studentPlacementProgress =>
       '${EnvConfig.baseUrl}/api/placement/progress';
   static String get studentUpdateModuleProgress =>
       '${EnvConfig.baseUrl}/api/placement/progress/module';
+
+  // Student routes - Answers & Interviews
   static String get studentSubmitAnswer =>
       '${EnvConfig.baseUrl}/api/placement/submit-answer';
   static String get studentCreateMockInterview =>
@@ -232,7 +352,7 @@ class ApiEndpoints {
       '${EnvConfig.baseUrl}/api/jobs/$id/apply';
 
   // ==================== OFFERS ====================
-  // Admin routes
+  // Admin routes - Statistics & Resources
   static String get adminOffersStats =>
       '${EnvConfig.baseUrl}/api/offers/admin/stats';
   static String get adminOffersCourses =>
@@ -241,6 +361,8 @@ class ApiEndpoints {
       '${EnvConfig.baseUrl}/api/offers/admin/tega-exams';
   static String get adminOffersInstitutes =>
       '${EnvConfig.baseUrl}/api/offers/admin/institutes';
+
+  // Admin routes - CRUD Operations
   static String get adminOffers => '${EnvConfig.baseUrl}/api/offers/admin';
   static String adminOfferById(String id) =>
       '${EnvConfig.baseUrl}/api/offers/admin/$id';
@@ -292,10 +414,21 @@ class ApiEndpoints {
       '${EnvConfig.baseUrl}/api/ai-assistant/chat';
   static String get aiAssistantStatus =>
       '${EnvConfig.baseUrl}/api/ai-assistant/status';
+  static String get aiAssistantDebug =>
+      '${EnvConfig.baseUrl}/api/ai-assistant/debug';
   static String get aiAssistantConversations =>
       '${EnvConfig.baseUrl}/api/ai-assistant/conversations';
+  static String aiAssistantConversationById(String id) =>
+      '${EnvConfig.baseUrl}/api/ai-assistant/conversations/$id';
   static String aiAssistantDeleteConversation(String id) =>
       '${EnvConfig.baseUrl}/api/ai-assistant/conversations/$id';
+
+  // ==================== CHATBOT ====================
+  static String get chatbotMessage =>
+      '${EnvConfig.baseUrl}/api/chatbot/message';
+  static String get chatbotStatus => '${EnvConfig.baseUrl}/api/chatbot/status';
+  static String get chatbotQuickReplies =>
+      '${EnvConfig.baseUrl}/api/chatbot/quick-replies';
 
   // ==================== CONTACT ====================
   static String get contactSubmit => '${EnvConfig.baseUrl}/api/contact/submit';
@@ -310,49 +443,121 @@ class ApiEndpoints {
   static String adminDeleteContactSubmission(String id) =>
       '${EnvConfig.baseUrl}/api/contact/admin/submissions/$id';
 
+  // ==================== NOTIFICATIONS ====================
+  // Admin notifications
+  static String get adminNotificationsAll =>
+      '${EnvConfig.baseUrl}/api/notifications/admin';
+  static String get adminPaymentNotifications =>
+      '${EnvConfig.baseUrl}/api/notifications/admin/payments';
+  static String adminNotificationMarkRead(String id) =>
+      '${EnvConfig.baseUrl}/api/notifications/admin/$id/read';
+
+  // User/Student notifications
+  static String get userNotifications =>
+      '${EnvConfig.baseUrl}/api/notifications/user';
+  static String userNotificationMarkRead(String id) =>
+      '${EnvConfig.baseUrl}/api/notifications/user/$id/read';
+  static String userNotificationDelete(String id) =>
+      '${EnvConfig.baseUrl}/api/notifications/user/$id';
+  static String get userNotificationCreate =>
+      '${EnvConfig.baseUrl}/api/notifications/user';
+
   // ==================== ADMIN DASHBOARD ====================
   static String get adminDashboard =>
       '${EnvConfig.baseUrl}/api/admin/dashboard';
+
+  // Admin - Principals Management
   static String get adminPrincipals =>
       '${EnvConfig.baseUrl}/api/admin/principals';
   static String adminPrincipalById(String id) =>
       '${EnvConfig.baseUrl}/api/admin/principals/$id';
   static String get adminRegisterPrincipal =>
       '${EnvConfig.baseUrl}/api/admin/register-principal';
+  static String get adminBulkImportPrincipals =>
+      '${EnvConfig.baseUrl}/api/admin/principals/bulk-import';
+  static String adminPrincipalTest(String id) =>
+      '${EnvConfig.baseUrl}/api/admin/principals/test/$id';
+
+  // Admin - Students Management
   static String get adminStudents => '${EnvConfig.baseUrl}/api/admin/students';
+  static String adminStudentsByCollege(String collegeName) =>
+      '${EnvConfig.baseUrl}/api/admin/students/college/$collegeName';
   static String adminStudentById(String id) =>
       '${EnvConfig.baseUrl}/api/admin/students/$id';
   static String get adminCreateStudent =>
       '${EnvConfig.baseUrl}/api/admin/create-student';
   static String get adminBulkImportStudents =>
       '${EnvConfig.baseUrl}/api/admin/students/bulk-import';
+  static String get adminBulkImport =>
+      '${EnvConfig.baseUrl}/api/admin/bulk-import';
+
+  // Admin - Users Management (generic)
+  static String adminUserById(String userId) =>
+      '${EnvConfig.baseUrl}/api/admin/users/$userId';
+
+  // Admin - Notifications & Payments
   static String get adminNotifications =>
       '${EnvConfig.baseUrl}/api/admin/notifications';
   static String adminNotificationById(String id) =>
       '${EnvConfig.baseUrl}/api/admin/notifications/$id';
+  static String get adminPaymentNotificationsList =>
+      '${EnvConfig.baseUrl}/api/admin/payment-notifications';
   static String get adminPayments => '${EnvConfig.baseUrl}/api/admin/payments';
-  static String get adminCourses =>
-      '${EnvConfig.baseUrl}/api/real-time-courses/admin';
+
+  // Admin - Courses Management
+  static String get adminCourses => '${EnvConfig.baseUrl}/api/admin/courses';
   static String adminCourseById(String id) =>
-      '${EnvConfig.baseUrl}/api/real-time-courses/$id';
+      '${EnvConfig.baseUrl}/api/admin/courses/$id';
+
+  // Admin - UPI Settings
   static String get adminUPISettings =>
       '${EnvConfig.baseUrl}/api/admin/upi-settings';
 
   // ==================== ADMIN EXAM RESULTS ====================
   static String get adminExamResults =>
-      '${EnvConfig.baseUrl}/api/admin/exam-results';
+      '${EnvConfig.baseUrl}/api/admin/exam-results/results';
   static String get adminPublishExamResults =>
       '${EnvConfig.baseUrl}/api/admin/exam-results/publish';
   static String get adminUnpublishExamResults =>
       '${EnvConfig.baseUrl}/api/admin/exam-results/unpublish';
   static String adminStudentResultDetails(String attemptId) =>
-      '${EnvConfig.baseUrl}/api/admin/exam-results/student/$attemptId';
+      '${EnvConfig.baseUrl}/api/admin/exam-results/result/$attemptId';
   static String get adminPublishAllResultsForDate =>
       '${EnvConfig.baseUrl}/api/admin/exam-results/publish-all-date';
 
-  // ==================== HEALTH & TEST ====================
-  static String get health => '${EnvConfig.baseUrl}/api/health';
-  static String get test => '${EnvConfig.baseUrl}/api/test';
+  // ==================== R2 CLOUD STORAGE ====================
+  // Admin routes - Video uploads
+  static String get r2GenerateVideoUploadUrl =>
+      '${EnvConfig.baseUrl}/api/r2/generate-video-upload-url';
+  static String get r2ConfirmVideoUpload =>
+      '${EnvConfig.baseUrl}/api/r2/confirm-video-upload';
+
+  // Admin routes - Document uploads
+  static String get r2GenerateDocumentUploadUrl =>
+      '${EnvConfig.baseUrl}/api/r2/generate-document-upload-url';
+  static String get r2ConfirmDocumentUpload =>
+      '${EnvConfig.baseUrl}/api/r2/confirm-document-upload';
+  static String get r2UploadMaterial =>
+      '${EnvConfig.baseUrl}/api/r2/upload-material';
+
+  // Admin routes - Material management
+  static String r2DeleteMaterial(String materialId) =>
+      '${EnvConfig.baseUrl}/api/r2/material/$materialId';
+
+  // Public/Student routes - Material access
+  static String r2MaterialsByCourse(String courseId) =>
+      '${EnvConfig.baseUrl}/api/r2/materials/course/$courseId';
+  static String r2MaterialsByLecture(String lectureId) =>
+      '${EnvConfig.baseUrl}/api/r2/materials/lecture/$lectureId';
+  static String r2MaterialDownload(String materialId) =>
+      '${EnvConfig.baseUrl}/api/r2/material/$materialId/download';
+
+  // ==================== IMAGE UPLOADS ====================
+  static String get imageUpload => '${EnvConfig.baseUrl}/api/images/upload';
+  static String get imageUploadMultiple =>
+      '${EnvConfig.baseUrl}/api/images/upload-multiple';
+  static String imageDelete(String filename) =>
+      '${EnvConfig.baseUrl}/api/images/delete/$filename';
 
   // ==================== VIDEO ACCESS ====================
   static String videoAccessUrl(String courseId, String lectureId) =>
@@ -362,13 +567,29 @@ class ApiEndpoints {
   static String videoAccessStatus(String courseId, String lectureId) =>
       '${EnvConfig.baseUrl}/api/video-access/$courseId/$lectureId/status';
 
-  // ==================== VIDEO DELIVERY ====================
+  // ==================== VIDEO DELIVERY (SCALABLE) ====================
   static String videoDeliverySignedUrl(String courseId, String lectureId) =>
       '${EnvConfig.baseUrl}/api/video-delivery/$courseId/$lectureId/signed-url';
   static String videoDeliveryBatchSignedUrls(String courseId) =>
       '${EnvConfig.baseUrl}/api/video-delivery/$courseId/batch-signed-urls';
   static String get videoDeliveryClearCache =>
       '${EnvConfig.baseUrl}/api/video-delivery/clear-cache';
+
+  // ==================== HEALTH & TEST ====================
+  static String get health => '${EnvConfig.baseUrl}/api/health';
+  static String get test => '${EnvConfig.baseUrl}/api/test';
+
+  // ==================== STATIC FILE UPLOADS ====================
+  static String uploadsPath(String filename) =>
+      '${EnvConfig.baseUrl}/uploads/$filename';
+  static String uploadsQuestionImages(String filename) =>
+      '${EnvConfig.baseUrl}/uploads/question-images/$filename';
+  static String uploadsResumes(String filename) =>
+      '${EnvConfig.baseUrl}/uploads/resumes/$filename';
+  static String uploadsPdfs(String filename) =>
+      '${EnvConfig.baseUrl}/uploads/pdfs/$filename';
+  static String uploadsExcel(String filename) =>
+      '${EnvConfig.baseUrl}/uploads/excel/$filename';
 
   // ==================== UTILITY METHODS ====================
   /// Build URL with query parameters
@@ -388,7 +609,31 @@ class ApiEndpoints {
     return '$baseUrl?$queryString';
   }
 
-  /// Build URL for file upload endpoints
-  static String uploadsPath(String filename) =>
-      '${EnvConfig.baseUrl}/uploads/$filename';
+  /// Build pagination URL
+  static String buildPaginatedUrl(
+    String baseUrl, {
+    int page = 1,
+    int limit = 10,
+    Map<String, dynamic>? additionalParams,
+  }) {
+    final params = {
+      'page': page,
+      'limit': limit,
+      if (additionalParams != null) ...additionalParams,
+    };
+    return buildUrlWithParams(baseUrl, params);
+  }
+
+  /// Build search URL
+  static String buildSearchUrl(
+    String baseUrl,
+    String searchQuery, {
+    Map<String, dynamic>? additionalParams,
+  }) {
+    final params = {
+      'search': searchQuery,
+      if (additionalParams != null) ...additionalParams,
+    };
+    return buildUrlWithParams(baseUrl, params);
+  }
 }

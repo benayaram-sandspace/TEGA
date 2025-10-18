@@ -50,7 +50,7 @@ class _EditCoursePageState extends State<EditCoursePage> {
 
   void _initializeControllers() {
     _courseNameController = TextEditingController(
-      text: widget.course['courseName'] ?? '',
+      text: widget.course['title'] ?? '',
     );
     _descriptionController = TextEditingController(
       text: widget.course['description'] ?? '',
@@ -59,14 +59,22 @@ class _EditCoursePageState extends State<EditCoursePage> {
       text: widget.course['price']?.toString() ?? '',
     );
     _durationController = TextEditingController(
-      text: widget.course['duration']?.toString() ?? '',
+      text: widget.course['estimatedDuration']?['hours']?.toString() ?? '',
     );
     _instructorController = TextEditingController(
-      text: widget.course['instructor'] ?? '',
+      text: widget.course['instructor']?['name'] ?? '',
     );
 
     _selectedCategory = widget.course['category'];
     _selectedLevel = widget.course['level'];
+
+    // Ensure selected values are valid
+    if (_selectedCategory != null && !_categories.contains(_selectedCategory)) {
+      _selectedCategory = 'Other';
+    }
+    if (_selectedLevel != null && !_levels.contains(_selectedLevel)) {
+      _selectedLevel = 'Beginner';
+    }
   }
 
   @override
