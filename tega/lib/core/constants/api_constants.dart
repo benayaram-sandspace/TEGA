@@ -231,7 +231,7 @@ class ApiEndpoints {
   static String studentApplyJob(String id) =>
       '${EnvConfig.baseUrl}/api/jobs/$id/apply';
 
-  // ==================== OFFERS ====================
+  // ==================== OFFERS ===================
   // Admin routes
   static String get adminOffersStats =>
       '${EnvConfig.baseUrl}/api/offers/admin/stats';
