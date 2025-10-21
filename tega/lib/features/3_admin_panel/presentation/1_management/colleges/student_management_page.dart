@@ -95,19 +95,6 @@ class _StudentManagementPageState extends State<StudentManagementPage>
     });
     _animationController.forward();
   }
-
-  void _clearFilters() {
-    _animationController.reset();
-    setState(() {
-      _selectedCollege = 'All';
-      _selectedBranch = 'All';
-      _selectedStatus = 'Active';
-      _searchController.clear();
-      _applyFilters();
-    });
-    _animationController.forward();
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(

@@ -254,7 +254,6 @@ class _StudentProfilePageState extends State<StudentProfilePage>
   }
 
   Widget _buildStatsCard() {
-    final studentData = _detailedStudentData;
     final screenWidth = MediaQuery.of(context).size.width;
     final isSmallScreen = screenWidth < 600;
 
@@ -337,20 +336,6 @@ class _StudentProfilePageState extends State<StudentProfilePage>
     );
   }
 
-  Color _getStatusColor(String? status) {
-    switch (status?.toLowerCase()) {
-      case 'approved':
-      case 'active':
-        return const Color(0xFF10B981);
-      case 'pending':
-        return const Color(0xFFF59E0B);
-      case 'rejected':
-      case 'suspended':
-        return const Color(0xFFEF4444);
-      default:
-        return const Color(0xFF6B7280);
-    }
-  }
 
   Widget _buildStatItem(
     IconData icon,

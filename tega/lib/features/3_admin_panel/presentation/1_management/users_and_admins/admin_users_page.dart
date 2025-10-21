@@ -141,14 +141,7 @@ class _AdminUsersPageState extends State<AdminUsersPage>
     _startStaggeredAnimations();
   }
 
-  void _clearFilters() {
-    setState(() {
-      _searchController.clear();
-      _selectedRole = '';
-      _selectedStatus = '';
-      _filteredAdmins = _allAdmins;
-    });
-  }
+  
 
   @override
   Widget build(BuildContext context) {

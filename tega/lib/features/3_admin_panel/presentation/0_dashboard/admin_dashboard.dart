@@ -10,6 +10,7 @@ import 'package:tega/features/3_admin_panel/presentation/0_dashboard/tabs/dashbo
 import 'package:tega/features/3_admin_panel/presentation/1_management/students/students_page.dart';
 import 'package:tega/features/3_admin_panel/presentation/1_management/principals/principals_page.dart';
 import 'package:tega/features/3_admin_panel/presentation/1_management/courses/course_management_page.dart';
+import 'package:tega/features/3_admin_panel/presentation/1_management/jobs/job_management_page.dart';
 import 'package:tega/features/3_admin_panel/presentation/4_settings_and_misc/notification_manager_page.dart';
 import 'package:tega/features/3_admin_panel/presentation/placeholder_pages/placeholder_page.dart';
 
@@ -77,12 +78,7 @@ class _AdminDashboardState extends State<AdminDashboard>
         description: 'Schedule and manage assessments, exams, and evaluations.',
         icon: Icons.calendar_today,
       ),
-      const PlaceholderPage(
-        title: 'Job Dashboard',
-        description:
-            'Monitor job postings, applications, and placement statistics.',
-        icon: Icons.work_outline,
-      ),
+      const JobManagementPage(),
       const PlaceholderPage(
         title: 'Placement Prep',
         description: 'Manage placement preparation materials and resources.',

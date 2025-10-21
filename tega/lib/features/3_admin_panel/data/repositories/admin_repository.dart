@@ -678,45 +678,4 @@ class AdminRepository {
     };
   }
 
-  // Enhanced activity logging (duplicate method - removing)
-  // Future<void> _logActivity({
-  //   required String adminId,
-  //   required String adminName,
-  //   required String action,
-  //   required String target,
-  //   required String details,
-  //   required String actionType,
-  //   String ipAddress = '',
-  //   String userAgent = '',
-  //   String location = '',
-  //   Map<String, dynamic> metadata = const {},
-  //   String category = '',
-  //   int severity = 1,
-  //   bool isSuccess = true,
-  //   String? errorMessage,
-  //   List<String> affectedItems = const [],
-  // }) async {
-  //   final log = ActivityLog(
-  //     id: 'log_${DateTime.now().millisecondsSinceEpoch}',
-  //     timestamp: DateTime.now(),
-  //     adminName: adminName,
-  //     adminId: adminId,
-  //     action: action,
-  //     target: target,
-  //     details: details,
-  //     actionType: actionType,
-  //     ipAddress: ipAddress,
-  //     userAgent: userAgent,
-  //     location: location,
-  //     metadata: metadata,
-  //     category: category,
-  //     severity: severity,
-  //     isSuccess: isSuccess,
-  //     errorMessage: errorMessage,
-  //     affectedItems: affectedItems,
-  //   );
-
-  //   _activityLogs.insert(0, log);
-  //   _updateStatistics();
-  // }
 }
