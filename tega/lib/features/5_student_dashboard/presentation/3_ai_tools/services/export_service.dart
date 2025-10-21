@@ -49,7 +49,6 @@ class ExportService {
           );
       }
     } catch (e) {
-      debugPrint('Error exporting resume: $e');
       return null;
     }
   }
@@ -77,7 +76,6 @@ class ExportService {
 
       return filePath;
     } catch (e) {
-      debugPrint('Error generating PDF: $e');
       return null;
     }
   }
@@ -102,7 +100,6 @@ class ExportService {
 
       return filePath;
     } catch (e) {
-      debugPrint('Error generating image: $e');
       return null;
     }
   }
@@ -126,7 +123,6 @@ class ExportService {
 
       return filePath;
     } catch (e) {
-      debugPrint('Error generating DOCX: $e');
       return null;
     }
   }
@@ -141,7 +137,6 @@ class ExportService {
 
       return byteData?.buffer.asUint8List();
     } catch (e) {
-      debugPrint('Error capturing widget: $e');
       return null;
     }
   }
@@ -238,7 +233,6 @@ class ExportService {
     try {
       await Share.shareXFiles([XFile(filePath)], text: 'My Resume');
     } catch (e) {
-      debugPrint('Error sharing file: $e');
     }
   }
 
@@ -256,7 +250,6 @@ class ExportService {
       }
       return false;
     } catch (e) {
-      debugPrint('Error saving to downloads: $e');
       return false;
     }
   }

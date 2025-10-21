@@ -58,7 +58,6 @@ class _StudentProfilePageState extends State<StudentProfilePage>
       }
     } catch (e) {
       // Handle error silently for now
-      print('Error fetching student details: $e');
     }
   }
 

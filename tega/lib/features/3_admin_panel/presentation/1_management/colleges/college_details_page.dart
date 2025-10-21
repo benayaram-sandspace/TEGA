@@ -17,8 +17,7 @@ class CollegeDetailsPage extends StatefulWidget {
 class _CollegeDetailsPageState extends State<CollegeDetailsPage>
     with TickerProviderStateMixin {
   late TabController _tabController;
-  // final CollegeService _collegeService = CollegeService(); // Unused for now
-  
+
   // Animation controllers
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;

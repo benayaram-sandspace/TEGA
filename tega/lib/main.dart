@@ -14,7 +14,6 @@ Future<void> main() async {
   // Initialize environment variables
   await EnvConfig.initialize();
 
-  // Print environment variables for debugging (optional)
   if (EnvConfig.enableDebugLogs) {
     EnvConfig.printAll();
   }
@@ -22,7 +21,6 @@ Future<void> main() async {
   // Keep the native splash screen on screen until it is removed manually
   FlutterNativeSplash.preserve(widgetsBinding: widgetsBinding);
 
-  // Get list of device cameras
   cameras = await availableCameras();
 
   runApp(const MyApp());

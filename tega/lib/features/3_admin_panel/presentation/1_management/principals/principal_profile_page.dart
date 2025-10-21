@@ -58,7 +58,6 @@ class _PrincipalProfilePageState extends State<PrincipalProfilePage>
       }
     } catch (e) {
       // Handle error silently for now
-      print('Error fetching principal details: $e');
     }
   }
 

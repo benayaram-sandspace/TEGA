@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:tega/features/5_student_dashboard/data/student_dashboard_service.dart';
 
 class InternshipsPage extends StatefulWidget {
   const InternshipsPage({super.key});
@@ -56,14 +59,98 @@ class _InternshipsPageState extends State<InternshipsPage> {
     });
 
     try {
-      // Note: Internship functionality is not yet implemented in the backend
-      // This is a placeholder implementation that shows the UI structure
-      // For now, show empty state with a message
-      _allInternships = [];
+      final dashboardService = StudentDashboardService();
 
-      // Set stats to 0 since no internships are available
-      _activeInternships = 0;
-      _companies = 0;
+      // Fetch internships from backend (public endpoint, no auth needed)
+      final internshipData = await dashboardService.getInternships({});
+
+      // Transform backend data to match UI needs
+      _allInternships = internshipData.map<Map<String, dynamic>>((internship) {
+        // Extract work type from jobType field (backend uses: full-time, part-time, contract, internship)
+        String workType = 'Internship';
+        final jobTypeRaw = internship['jobType'] ?? '';
+        switch (jobTypeRaw.toString().toLowerCase()) {
+          case 'internship':
+            workType = 'Internship';
+            break;
+          case 'part-time':
+            workType = 'Part Time';
+            break;
+          case 'contract':
+            workType = 'Contract';
+            break;
+          case 'full-time':
+            workType = 'Full Time';
+            break;
+          default:
+            workType = 'Internship';
+        }
+
+        // Format salary
+        String salary = 'Not specified';
+        if (internship['salary'] != null) {
+          final salaryNum = internship['salary'] as num?;
+          if (salaryNum != null && salaryNum > 0) {
+            salary = '₹${salaryNum.toStringAsFixed(0)}';
+          }
+        }
+
+        // Format posted date
+        String postedDate = 'Recently';
+        if (internship['createdAt'] != null) {
+          try {
+            final date = DateTime.parse(internship['createdAt']);
+            final now = DateTime.now();
+            final difference = now.difference(date);
+            if (difference.inDays == 0) {
+              postedDate = 'Today';
+            } else if (difference.inDays == 1) {
+              postedDate = '1 day ago';
+            } else if (difference.inDays < 7) {
+              postedDate = '${difference.inDays} days ago';
+            } else if (difference.inDays < 30) {
+              postedDate = '${(difference.inDays / 7).floor()} weeks ago';
+            } else {
+              postedDate = '${(difference.inDays / 30).floor()} months ago';
+            }
+          } catch (e) {
+            postedDate = 'Recently';
+          }
+        }
+
+        return {
+          'id': internship['_id'] ?? internship['id'] ?? '',
+          'title': internship['title'] ?? 'Untitled Internship',
+          'company': internship['company'] ?? 'Company',
+          'location': internship['location'] ?? 'Location',
+          'workType': workType,
+          'salary': salary,
+          'description':
+              internship['description'] ?? 'No description available',
+          'postedDate': postedDate,
+          'applicants': 0, // Backend doesn't track applicants count yet
+          'applicationLink':
+              internship['applicationLink'], // Include application link
+          'category': internship['category'] ?? 'General', // Add category field
+          'duration':
+              internship['duration'] ?? 'Not specified', // Add duration field
+          'stipend':
+              internship['stipend'] ??
+              salary, // Add stipend field (use salary as fallback)
+        };
+      }).toList();
+
+      // Calculate stats from actual data
+      if (_allInternships.isNotEmpty) {
+        _activeInternships = _allInternships.length;
+        _companies = _allInternships
+            .map((internship) => internship['company'])
+            .toSet()
+            .length;
+      } else {
+        _activeInternships = 0;
+        _companies = 0;
+      }
 
       if (mounted) {
         setState(() {
@@ -91,15 +178,17 @@ class _InternshipsPageState extends State<InternshipsPage> {
         final searchQuery = _searchController.text.toLowerCase();
         final matchesSearch =
             searchQuery.isEmpty ||
-            internship['title'].toLowerCase().contains(searchQuery) ||
-            internship['company'].toLowerCase().contains(searchQuery) ||
-            internship['description'].toLowerCase().contains(searchQuery) ||
-            internship['location'].toLowerCase().contains(searchQuery);
+            (internship['title'] ?? '').toLowerCase().contains(searchQuery) ||
+            (internship['company'] ?? '').toLowerCase().contains(searchQuery) ||
+            (internship['description'] ?? '').toLowerCase().contains(
+              searchQuery,
+            ) ||
+            (internship['location'] ?? '').toLowerCase().contains(searchQuery);
 
         // Category filter
         final matchesCategory =
             _selectedCategory == 'All Categories' ||
-            internship['category'] == _selectedCategory;
+            (internship['category'] ?? 'General') == _selectedCategory;
 
         return matchesSearch && matchesCategory;
       }).toList();
@@ -298,27 +387,27 @@ class _InternshipsPageState extends State<InternshipsPage> {
     final isTablet = screenWidth >= 600;
     final isLargeDesktop = screenWidth >= 1440;
     final isSmallScreen = screenWidth < 400;
-    
+
     return Container(
-      height: isLargeDesktop 
-          ? 140 
-          : isDesktop 
-          ? 120 
-          : isTablet 
-          ? 110 
-          : isSmallScreen 
-          ? 90 
+      height: isLargeDesktop
+          ? 140
+          : isDesktop
+          ? 120
+          : isTablet
+          ? 110
+          : isSmallScreen
+          ? 90
           : 100, // Responsive height
       padding: EdgeInsets.all(
-        isLargeDesktop 
-            ? 24 
-            : isDesktop 
-            ? 20 
-            : isTablet 
-            ? 18 
-            : isSmallScreen 
-            ? 12 
-            : 16
+        isLargeDesktop
+            ? 24
+            : isDesktop
+            ? 20
+            : isTablet
+            ? 18
+            : isSmallScreen
+            ? 12
+            : 16,
       ),
       decoration: BoxDecoration(
         color: Colors.white,
@@ -329,15 +418,15 @@ class _InternshipsPageState extends State<InternshipsPage> {
         children: [
           Container(
             padding: EdgeInsets.all(
-              isLargeDesktop 
-                  ? 16 
-                  : isDesktop 
-                  ? 14 
-                  : isTablet 
-                  ? 12 
-                  : isSmallScreen 
-                  ? 8 
-                  : 12
+              isLargeDesktop
+                  ? 16
+                  : isDesktop
+                  ? 14
+                  : isTablet
+                  ? 12
+                  : isSmallScreen
+                  ? 8
+                  : 12,
             ),
             decoration: BoxDecoration(
               color: const Color(0xFF6B5FFF).withOpacity(0.1),
@@ -346,18 +435,28 @@ class _InternshipsPageState extends State<InternshipsPage> {
             child: Icon(
               icon,
               color: const Color(0xFF6B5FFF),
-              size: isLargeDesktop 
-                  ? 28 
-                  : isDesktop 
-                  ? 24 
-                  : isTablet 
-                  ? 22 
-                  : isSmallScreen 
-                  ? 18 
+              size: isLargeDesktop
+                  ? 28
+                  : isDesktop
+                  ? 24
+                  : isTablet
+                  ? 22
+                  : isSmallScreen
+                  ? 18
                   : 20,
             ),
           ),
-          SizedBox(width: isLargeDesktop ? 16 : isDesktop ? 14 : isTablet ? 12 : isSmallScreen ? 8 : 12),
+          SizedBox(
+            width: isLargeDesktop
+                ? 16
+                : isDesktop
+                ? 14
+                : isTablet
+                ? 12
+                : isSmallScreen
+                ? 8
+                : 12,
+          ),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -367,14 +466,14 @@ class _InternshipsPageState extends State<InternshipsPage> {
                   child: Text(
                     value,
                     style: TextStyle(
-                      fontSize: isLargeDesktop 
-                          ? 28 
-                          : isDesktop 
-                          ? 24 
-                          : isTablet 
-                          ? 22 
-                          : isSmallScreen 
-                          ? 18 
+                      fontSize: isLargeDesktop
+                          ? 28
+                          : isDesktop
+                          ? 24
+                          : isTablet
+                          ? 22
+                          : isSmallScreen
+                          ? 18
                           : 20,
                       fontWeight: FontWeight.w700,
                       color: const Color(0xFF333333),
@@ -383,19 +482,29 @@ class _InternshipsPageState extends State<InternshipsPage> {
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
-                SizedBox(height: isLargeDesktop ? 6 : isDesktop ? 4 : isTablet ? 3 : isSmallScreen ? 2 : 4),
+                SizedBox(
+                  height: isLargeDesktop
+                      ? 6
+                      : isDesktop
+                      ? 4
+                      : isTablet
+                      ? 3
+                      : isSmallScreen
+                      ? 2
+                      : 4,
+                ),
                 Flexible(
                   child: Text(
                     label,
                     style: TextStyle(
-                      fontSize: isLargeDesktop 
-                          ? 16 
-                          : isDesktop 
-                          ? 14 
-                          : isTablet 
-                          ? 13 
-                          : isSmallScreen 
-                          ? 10 
+                      fontSize: isLargeDesktop
+                          ? 16
+                          : isDesktop
+                          ? 14
+                          : isTablet
+                          ? 13
+                          : isSmallScreen
+                          ? 10
                           : 12,
                       color: Colors.grey[600],
                     ),
@@ -603,7 +712,7 @@ class _InternshipsPageState extends State<InternshipsPage> {
                 ),
                 child: Center(
                   child: Text(
-                    internship['company'][0].toUpperCase(),
+                    (internship['company'] ?? 'C')[0].toUpperCase(),
                     style: TextStyle(
                       fontSize: isDesktop ? 24 : 20,
                       fontWeight: FontWeight.w700,
@@ -912,14 +1021,153 @@ class _InternshipsPageState extends State<InternshipsPage> {
   }
 
   Future<void> _applyForInternship(String internshipId) async {
-    // Note: Internship application functionality is not yet implemented in the backend
-    if (mounted) {
+    // Find the internship data
+    final internship = _allInternships.firstWhere(
+      (item) => item['id'] == internshipId,
+      orElse: () => {},
+    );
+
+    if (internship.isEmpty) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Internship not found'),
+            behavior: SnackBarBehavior.floating,
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+      return;
+    }
+
+    final applicationLink = internship['applicationLink'];
+    if (applicationLink == null || applicationLink.toString().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Internship application feature is coming soon!'),
+          content: Text('No application link available for this internship'),
+          behavior: SnackBarBehavior.floating,
           backgroundColor: Colors.orange,
         ),
       );
+      return;
     }
+
+    try {
+      // Try to open the URL directly in browser
+      final Uri url = Uri.parse(applicationLink.toString());
+
+      // Skip canLaunchUrl check and try to launch directly
+      bool launched = false;
+
+      // Try platform default first
+      try {
+        launched = await launchUrl(url, mode: LaunchMode.platformDefault);
+      } catch (e) {
+        // Platform default failed, try next mode
+      }
+
+      // If platform default failed, try external application
+      if (!launched) {
+        try {
+          launched = await launchUrl(url, mode: LaunchMode.externalApplication);
+        } catch (e) {
+          // External application failed, try next mode
+        }
+      }
+
+      // If external application failed, try in app web view
+      if (!launched) {
+        try {
+          launched = await launchUrl(url, mode: LaunchMode.inAppWebView);
+        } catch (e) {
+          // In app web view failed
+        }
+      }
+
+      if (launched && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Opening application for ${internship['title']}...'),
+            behavior: SnackBarBehavior.floating,
+            backgroundColor: Colors.green,
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      } else {
+        _showApplicationLinkDialog(
+          context,
+          internship,
+          applicationLink.toString(),
+        );
+      }
+    } catch (e) {
+      // If error, show dialog with copy option
+      _showApplicationLinkDialog(
+        context,
+        internship,
+        applicationLink.toString(),
+      );
+    }
+  }
+
+  void _showApplicationLinkDialog(
+    BuildContext context,
+    Map<String, dynamic> internship,
+    String applicationLink,
+  ) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Apply for ${internship['title']}'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Application Link:',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 8),
+              SelectableText(
+                applicationLink,
+                style: const TextStyle(
+                  color: Colors.blue,
+                  decoration: TextDecoration.underline,
+                ),
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                'Tap the link above to copy it, then paste it in your browser to apply.',
+                style: TextStyle(fontSize: 12, color: Colors.grey),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () async {
+                // Copy to clipboard
+                await Clipboard.setData(ClipboardData(text: applicationLink));
+                if (mounted) {
+                  Navigator.of(context).pop();
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Application link copied to clipboard!'),
+                      behavior: SnackBarBehavior.floating,
+                      backgroundColor: Colors.green,
+                    ),
+                  );
+                }
+              },
+              child: const Text('Copy Link'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Close'),
+            ),
+          ],
+        );
+      },
+    );
   }
 }

@@ -32,7 +32,6 @@ class TransactionHistoryService {
 
       return allTransactions;
     } catch (e) {
-      debugPrint('Error fetching transaction history: $e');
       rethrow;
     }
   }
@@ -57,7 +56,6 @@ class TransactionHistoryService {
       }
       return [];
     } catch (e) {
-      debugPrint('Error fetching payment history: $e');
       return [];
     }
   }
@@ -68,7 +66,6 @@ class TransactionHistoryService {
       final transactions = await getTransactionHistory();
       return TransactionStats.fromTransactions(transactions);
     } catch (e) {
-      debugPrint('Error calculating transaction stats: $e');
       return TransactionStats.empty();
     }
   }
@@ -79,7 +76,6 @@ class TransactionHistoryService {
       // Note: This would require backend endpoints to clear dummy data
       // For now, we'll just ensure only real data is shown
     } catch (e) {
-      debugPrint('Error clearing dummy data: $e');
     }
   }
 }

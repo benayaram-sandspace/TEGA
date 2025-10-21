@@ -107,25 +107,114 @@ class StudentDashboardService {
   }
 
   Future<List<dynamic>> getJobs(Map<String, String> headers) async {
-    final uri = Uri.parse(ApiEndpoints.jobs);
+    // Try with query parameters first
+    var uri = Uri.parse(ApiEndpoints.jobs).replace(
+      queryParameters: {
+        'status': 'all', // Get both 'open' and 'active' status jobs
+        'limit': '100', // Get more jobs
+      },
+    );
 
-    final res = await http.get(uri, headers: headers);
+    var res = await http.get(
+      uri,
+      headers: {'Content-Type': 'application/json'},
+    );
 
     try {
       final body = json.decode(res.body);
       if (res.statusCode == 200) {
-        if (body is List) {
+        // Handle the actual backend response structure
+        if (body['success'] == true && body['data'] != null) {
+          return body['data'] as List<dynamic>;
+        }
+        // Fallback for other response formats
+        else if (body is List) {
           return body;
-        } else if (body['success'] == true && body['jobs'] != null) {
+        } else if (body['jobs'] != null) {
           return body['jobs'] as List<dynamic>;
-        } else if (body['data'] != null) {
-          if (body['data'] is List) {
-            return body['data'] as List<dynamic>;
-          } else if (body['data']['jobs'] != null) {
-            return body['data']['jobs'] as List<dynamic>;
-          }
         }
       }
+
+      // If no results, try without query parameters as fallback
+      uri = Uri.parse(ApiEndpoints.jobs);
+      res = await http.get(uri, headers: {'Content-Type': 'application/json'});
+
+      final fallbackBody = json.decode(res.body);
+      if (res.statusCode == 200) {
+        if (fallbackBody['success'] == true && fallbackBody['data'] != null) {
+          return fallbackBody['data'] as List<dynamic>;
+        } else if (fallbackBody is List) {
+          return fallbackBody;
+        } else if (fallbackBody['jobs'] != null) {
+          return fallbackBody['jobs'] as List<dynamic>;
+        }
+      }
+
+      return [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  Future<List<dynamic>> getInternships(Map<String, String> headers) async {
+    // Try with query parameters to get internships specifically
+    var uri = Uri.parse(ApiEndpoints.jobs).replace(
+      queryParameters: {
+        'status': 'all', // Get both 'open' and 'active' status
+        'postingType': 'internship', // Filter for internships only
+        'limit': '100', // Get more internships
+      },
+    );
+
+    var res = await http.get(
+      uri,
+      headers: {'Content-Type': 'application/json'},
+    );
+
+    try {
+      final body = json.decode(res.body);
+      if (res.statusCode == 200) {
+        // Handle the actual backend response structure
+        if (body['success'] == true && body['data'] != null) {
+          return body['data'] as List<dynamic>;
+        }
+        // Fallback for other response formats
+        else if (body is List) {
+          return body;
+        } else if (body['jobs'] != null) {
+          return body['jobs'] as List<dynamic>;
+        }
+      }
+
+      // If no results, try without query parameters as fallback
+      uri = Uri.parse(ApiEndpoints.jobs);
+      res = await http.get(uri, headers: {'Content-Type': 'application/json'});
+
+      final fallbackBody = json.decode(res.body);
+      if (res.statusCode == 200) {
+        if (fallbackBody['success'] == true && fallbackBody['data'] != null) {
+          // Filter for internships in the fallback
+          final allData = fallbackBody['data'] as List<dynamic>;
+          return allData.where((item) {
+            final postingType = item['postingType']?.toString().toLowerCase();
+            return postingType == 'internship';
+          }).toList();
+        } else if (fallbackBody is List) {
+          // Filter for internships in the fallback
+          return fallbackBody.where((item) {
+            final postingType = item['postingType']?.toString().toLowerCase();
+            return postingType == 'internship';
+          }).toList();
+        } else if (fallbackBody['jobs'] != null) {
+          // Filter for internships in the fallback
+          final allJobs = fallbackBody['jobs'] as List<dynamic>;
+          return allJobs.where((item) {
+            final postingType = item['postingType']?.toString().toLowerCase();
+            return postingType == 'internship';
+          }).toList();
+        }
+      }
+
       return [];
     } catch (e) {
       return [];

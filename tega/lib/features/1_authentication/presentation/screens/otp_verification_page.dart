@@ -126,7 +126,6 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
     if (_isVerifying) return;
 
     setState(() => _isVerifying = true);
-    debugPrint('🔐 [OTP] Verifying OTP: $otp for ${widget.email}');
 
     try {
       if (widget.isRegistration) {
@@ -137,7 +136,6 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
         await _handlePasswordResetVerification(otp);
       }
     } catch (e) {
-      debugPrint('❌ [OTP] Error: $e');
       if (mounted) {
         _showErrorMessage('An unexpected error occurred. Please try again.');
       }
@@ -150,7 +148,6 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
 
   /// Handle registration OTP verification and account creation
   Future<void> _handleRegistrationVerification(String otp) async {
-    debugPrint('📝 [REGISTRATION] Verifying OTP and creating account...');
 
     // Verify OTP and create account in one step
     final verifyResult = await _authService.verifyRegistrationOTP(
@@ -161,7 +158,6 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
     if (!mounted) return;
 
     if (verifyResult['success'] == true && verifyResult['verified'] == true) {
-      debugPrint('✅ [REGISTRATION] Account created successfully!');
 
       // Show success message
       ScaffoldMessenger.of(context).showSnackBar(
@@ -188,7 +184,6 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
         (route) => false,
       );
     } else {
-      debugPrint('❌ [REGISTRATION] Invalid OTP or account creation failed');
       _showErrorMessage(
         verifyResult['message'] ??
             'Invalid verification code. Please try again.',
@@ -199,14 +194,12 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
 
   /// Handle password reset OTP verification
   Future<void> _handlePasswordResetVerification(String otp) async {
-    debugPrint('🔑 [PASSWORD RESET] Verifying OTP...');
 
     final result = await _authService.verifyOTP(widget.email, otp);
 
     if (!mounted) return;
 
     if (result['success'] == true && result['verified'] == true) {
-      debugPrint('✅ [PASSWORD RESET] OTP verified');
 
       // Navigate to reset password page
       if (!mounted) return;
@@ -216,7 +209,6 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
         ),
       );
     } else {
-      debugPrint('❌ [PASSWORD RESET] Invalid OTP');
       _showErrorMessage(
         result['message'] ?? 'Invalid verification code. Please try again.',
       );
@@ -228,7 +220,6 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
   Future<void> _resendOTP() async {
     if (!_canResend) return;
 
-    debugPrint('📧 [OTP] Resending OTP to ${widget.email}');
 
     try {
       final result = widget.isRegistration
@@ -238,7 +229,6 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
       if (!mounted) return;
 
       if (result['success'] == true) {
-        debugPrint('✅ [OTP] OTP resent successfully');
 
         setState(() {
           _resendCountdown = 30;
@@ -255,7 +245,6 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
         );
       }
     } catch (e) {
-      debugPrint('❌ [OTP] Resend error: $e');
       if (mounted) {
         _showErrorMessage(
           'Failed to resend code. Please check your connection.',

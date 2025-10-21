@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:tega/features/1_authentication/data/auth_repository.dart';
+import 'package:flutter/services.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:tega/features/5_student_dashboard/data/student_dashboard_service.dart';
 
 class JobRecommendationScreen extends StatefulWidget {
@@ -45,7 +46,6 @@ class _JobRecommendationScreenState extends State<JobRecommendationScreen>
   // Stats
   int _activeJobs = 0;
   int _companies = 0;
-  int _happyCandidates = 0;
 
   // Jobs list
   List<Map<String, dynamic>> _allJobs = [];
@@ -76,38 +76,40 @@ class _JobRecommendationScreenState extends State<JobRecommendationScreen>
     });
 
     try {
-      final authService = AuthService();
-      final headers = authService.getAuthHeaders();
       final dashboardService = StudentDashboardService();
 
-      // Fetch jobs from backend
-      final jobs = await dashboardService.getJobs(headers);
-
-      // Debug: Print what we got from backend
+      // Fetch jobs from backend (public endpoint, no auth needed)
+      final jobs = await dashboardService.getJobs({});
 
       // Transform backend data to match UI needs
       _allJobs = jobs.map<Map<String, dynamic>>((job) {
-        // Extract work type from jobType or type field
+        // Extract work type from jobType field (backend uses: full-time, part-time, contract, internship)
         String workType = 'Full Time';
-        final jobTypeRaw = job['jobType'] ?? job['type'] ?? '';
-        if (jobTypeRaw.toString().toLowerCase().contains('intern')) {
-          workType = 'Internship';
-        } else if (jobTypeRaw.toString().toLowerCase().contains('part')) {
-          workType = 'Part Time';
-        } else if (jobTypeRaw.toString().toLowerCase().contains('contract')) {
-          workType = 'Contract';
-        } else if (jobTypeRaw.toString().toLowerCase().contains('hybrid')) {
-          workType = 'Hybrid';
-        } else if (jobTypeRaw.toString().toLowerCase().contains('remote')) {
-          workType = 'Remote';
-        } else if (jobTypeRaw.toString().toLowerCase().contains('full')) {
-          workType = 'Full Time';
+        final jobTypeRaw = job['jobType'] ?? '';
+        switch (jobTypeRaw.toString().toLowerCase()) {
+          case 'internship':
+            workType = 'Internship';
+            break;
+          case 'part-time':
+            workType = 'Part Time';
+            break;
+          case 'contract':
+            workType = 'Contract';
+            break;
+          case 'full-time':
+            workType = 'Full Time';
+            break;
+          default:
+            workType = 'Full Time';
         }
 
         // Format salary
-        String salary = job['salary']?.toString() ?? 'Not specified';
-        if (!salary.contains('₹') && salary != 'Not specified') {
-          salary = '₹$salary';
+        String salary = 'Not specified';
+        if (job['salary'] != null) {
+          final salaryNum = job['salary'] as num?;
+          if (salaryNum != null && salaryNum > 0) {
+            salary = '₹${salaryNum.toStringAsFixed(0)}';
+          }
         }
 
         // Format posted date
@@ -135,32 +137,25 @@ class _JobRecommendationScreenState extends State<JobRecommendationScreen>
 
         return {
           'id': job['_id'] ?? job['id'] ?? '',
-          'title': job['title'] ?? job['jobTitle'] ?? 'Untitled Job',
-          'company': job['company'] ?? job['companyName'] ?? 'Company',
-          'location':
-              job['location'] ?? job['city'] ?? job['state'] ?? 'Location',
+          'title': job['title'] ?? 'Untitled Job',
+          'company': job['company'] ?? 'Company',
+          'location': job['location'] ?? 'Location',
           'workType': workType,
           'salary': salary,
-          'description':
-              job['description'] ??
-              job['details'] ??
-              'No description available',
+          'description': job['description'] ?? 'No description available',
           'postedDate': postedDate,
-          'applicants': job['applicants'] ?? job['applicantCount'] ?? 0,
+          'applicants': 0, // Backend doesn't track applicants count yet
+          'applicationLink': job['applicationLink'], // Include application link
         };
       }).toList();
 
       // Calculate stats from actual data
       if (_allJobs.isNotEmpty) {
-        _activeJobs = _allJobs.where((job) => job['id'] != '').length;
+        _activeJobs = _allJobs.length;
         _companies = _allJobs.map((job) => job['company']).toSet().length;
-        _happyCandidates = _allJobs.fold(
-          0,
-          (sum, job) => sum + (job['applicants'] as int),
-        );
+      } else {
         _activeJobs = 0;
         _companies = 0;
-        _happyCandidates = 0;
       }
 
       if (mounted) {
@@ -319,18 +314,14 @@ class _JobRecommendationScreenState extends State<JobRecommendationScreen>
     return GridView.count(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
-      crossAxisCount: isDesktop
-          ? 3
-          : isTablet
-          ? 3
-          : 1,
+      crossAxisCount: 2,
       crossAxisSpacing: isDesktop ? 16 : 12,
       mainAxisSpacing: isDesktop ? 16 : 12,
       childAspectRatio: isDesktop
           ? 2.5
           : isTablet
           ? 2.0
-          : 4.0,
+          : 1.8,
       children: [
         _buildStatCard(
           title: 'Active Jobs',
@@ -350,17 +341,6 @@ class _JobRecommendationScreenState extends State<JobRecommendationScreen>
           color: const Color(0xFF2196F3),
           gradient: const LinearGradient(
             colors: [Color(0xFF2196F3), Color(0xFF42A5F5)],
-          ),
-          isDesktop: isDesktop,
-          isTablet: isTablet,
-        ),
-        _buildStatCard(
-          title: 'Happy Candidates',
-          value: _happyCandidates.toString(),
-          icon: Icons.emoji_emotions_rounded,
-          color: const Color(0xFFFF9800),
-          gradient: const LinearGradient(
-            colors: [Color(0xFFFF9800), Color(0xFFFFB74D)],
           ),
           isDesktop: isDesktop,
           isTablet: isTablet,
@@ -823,64 +803,89 @@ class _JobRecommendationScreenState extends State<JobRecommendationScreen>
                           width: double.infinity,
                           child: ElevatedButton(
                             onPressed: () async {
-                              final jobId = job['id'];
-                              if (jobId == null || jobId.toString().isEmpty) {
+                              final applicationLink = job['applicationLink'];
+                              if (applicationLink == null ||
+                                  applicationLink.toString().isEmpty) {
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   const SnackBar(
-                                    content: Text('Invalid job ID'),
+                                    content: Text(
+                                      'No application link available for this job',
+                                    ),
                                     behavior: SnackBarBehavior.floating,
-                                    backgroundColor: Colors.red,
+                                    backgroundColor: Colors.orange,
                                   ),
                                 );
                                 return;
                               }
 
                               try {
-                                final authService = AuthService();
-                                final headers = authService.getAuthHeaders();
-                                final dashboardService =
-                                    StudentDashboardService();
+                                // Try to open the URL directly in browser
+                                final Uri url = Uri.parse(
+                                  applicationLink.toString(),
+                                );
 
-                                final result = await dashboardService
-                                    .applyForJob(jobId.toString(), headers);
+                                // Skip canLaunchUrl check and try to launch directly
+                                bool launched = false;
 
-                                if (mounted) {
-                                  if (result['success'] == true) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(
-                                        content: Text(
-                                          result['message'] ??
-                                              'Successfully applied to ${job['title']}',
-                                        ),
-                                        behavior: SnackBarBehavior.floating,
-                                        backgroundColor: Colors.green,
-                                      ),
+                                // Try platform default first
+                                try {
+                                  launched = await launchUrl(
+                                    url,
+                                    mode: LaunchMode.platformDefault,
+                                  );
+                                } catch (e) {
+                                  // Platform default failed, try next mode
+                                }
+
+                                // If platform default failed, try external application
+                                if (!launched) {
+                                  try {
+                                    launched = await launchUrl(
+                                      url,
+                                      mode: LaunchMode.externalApplication,
                                     );
-                                  } else {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(
-                                        content: Text(
-                                          result['message'] ??
-                                              'Failed to apply. Please try again.',
-                                        ),
-                                        behavior: SnackBarBehavior.floating,
-                                        backgroundColor: Colors.orange,
-                                      ),
-                                    );
+                                  } catch (e) {
+                                    // External application failed, try next mode
                                   }
                                 }
-                              } catch (e) {
-                                if (mounted) {
+
+                                // If external application failed, try in app web view
+                                if (!launched) {
+                                  try {
+                                    launched = await launchUrl(
+                                      url,
+                                      mode: LaunchMode.inAppWebView,
+                                    );
+                                  } catch (e) {
+                                    // In app web view failed
+                                  }
+                                }
+
+                                if (launched && mounted) {
                                   ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
+                                    SnackBar(
                                       content: Text(
-                                        'Error applying for job. Please try again.',
+                                        'Opening application for ${job['title']}...',
                                       ),
                                       behavior: SnackBarBehavior.floating,
-                                      backgroundColor: Colors.red,
+                                      backgroundColor: Colors.green,
+                                      duration: const Duration(seconds: 2),
                                     ),
                                   );
+                                } else {
+                                  _showApplicationLinkDialog(
+                                    context,
+                                    job,
+                                    applicationLink.toString(),
+                                  );
                                 }
+                              } catch (e) {
+                                // If error, show dialog with copy option
+                                _showApplicationLinkDialog(
+                                  context,
+                                  job,
+                                  applicationLink.toString(),
+                                );
                               }
                             },
                             style: ElevatedButton.styleFrom(
@@ -1232,6 +1237,67 @@ class _JobRecommendationScreenState extends State<JobRecommendationScreen>
           ],
         ),
       ),
+    );
+  }
+
+  void _showApplicationLinkDialog(
+    BuildContext context,
+    Map<String, dynamic> job,
+    String applicationLink,
+  ) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Apply for ${job['title']}'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Application Link:',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 8),
+              SelectableText(
+                applicationLink,
+                style: const TextStyle(
+                  color: Colors.blue,
+                  decoration: TextDecoration.underline,
+                ),
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                'Tap the link above to copy it, then paste it in your browser to apply.',
+                style: TextStyle(fontSize: 12, color: Colors.grey),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () async {
+                // Copy to clipboard
+                await Clipboard.setData(ClipboardData(text: applicationLink));
+                if (mounted) {
+                  Navigator.of(context).pop();
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Application link copied to clipboard!'),
+                      behavior: SnackBarBehavior.floating,
+                      backgroundColor: Colors.green,
+                    ),
+                  );
+                }
+              },
+              child: const Text('Copy Link'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Close'),
+            ),
+          ],
+        );
+      },
     );
   }
 }

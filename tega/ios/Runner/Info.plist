@@ -6,6 +6,45 @@
 		<string>This app requires camera access to simulate video interviews.</string>
 		<key>NSMicrophoneUsageDescription</key>
 		<string>This app requires microphone access to capture your responses.</string>
+		<key>NSUserNotificationsUsageDescription</key>
+		<string>This app needs permission to send you notifications about course updates and important announcements.</string>
+		<key>NSLocalNetworkUsageDescription</key>
+		<string>This app needs access to local network to connect to course content and sync your progress.</string>
+		<key>NSAppTransportSecurity</key>
+		<dict>
+			<key>NSAllowsArbitraryLoads</key>
+			<true/>
+			<key>NSExceptionDomains</key>
+			<dict>
+				<key>localhost</key>
+				<dict>
+					<key>NSExceptionAllowsInsecureHTTPLoads</key>
+					<true/>
+				</dict>
+			</dict>
+		</dict>
+		<key>LSApplicationQueriesSchemes</key>
+		<array>
+			<string>https</string>
+			<string>http</string>
+			<string>tel</string>
+			<string>mailto</string>
+			<string>sms</string>
+			<string>maps</string>
+			<string>youtube</string>
+			<string>vimeo</string>
+		</array>
+		<key>CFBundleURLTypes</key>
+		<array>
+			<dict>
+				<key>CFBundleURLName</key>
+				<string>tega.app</string>
+				<key>CFBundleURLSchemes</key>
+				<array>
+					<string>tega</string>
+				</array>
+			</dict>
+		</array>
 		<key>CFBundleDevelopmentRegion</key>
 		<string>$(DEVELOPMENT_LANGUAGE)</string>
 		<key>CFBundleDisplayName</key>

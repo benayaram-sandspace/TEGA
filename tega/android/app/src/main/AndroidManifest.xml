@@ -2,6 +2,9 @@
 <uses-permission android:name="android.permission.CAMERA"/>
 <uses-permission android:name="android.permission.RECORD_AUDIO"/>
 <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+<uses-permission android:name="android.permission.INTERNET"/>
+<uses-permission android:name="android.permission.QUERY_ALL_PACKAGES"/>
+<uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
     <application
         android:label="TEGA"
         android:name="${applicationName}"
@@ -45,5 +48,33 @@
             <action android:name="android.intent.action.PROCESS_TEXT"/>
             <data android:mimeType="text/plain"/>
         </intent>
+        <!-- Required for url_launcher -->
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:scheme="https" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:scheme="http" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:scheme="tel" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:scheme="mailto" />
+        </intent>
+        <!-- Add specific browser packages -->
+        <package android:name="com.android.chrome" />
+        <package android:name="com.android.browser" />
+        <package android:name="org.mozilla.firefox" />
+        <package android:name="com.opera.browser" />
+        <package android:name="com.microsoft.emmx" />
+        <package android:name="com.sec.android.app.sbrowser" />
+        <package android:name="com.UCMobile.intl" />
+        <package android:name="com.duckduckgo.mobile.android" />
+        <package android:name="com.brave.browser" />
+        <package android:name="com.vivaldi.browser" />
     </queries>
 </manifest>
