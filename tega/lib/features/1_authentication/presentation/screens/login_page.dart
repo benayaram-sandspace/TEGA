@@ -8,7 +8,7 @@ import 'package:tega/features/4_college_panel/data/repositories/college_reposito
 import 'package:tega/features/4_college_panel/presentation/0_dashboard/dashboard_screen.dart';
 import 'package:tega/features/5_student_dashboard/presentation/1_home/student_home_page.dart';
 import 'package:tega/core/services/credential_manager.dart';
-import 'package:tega/core/widgets/email_input_with_account_selection.dart';
+import 'package:tega/core/widgets/working_email_input.dart';
 import 'package:tega/core/widgets/save_credentials_dialog.dart';
 import 'package:tega/core/widgets/account_management_dialog.dart';
 
@@ -101,8 +101,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
       'logging_in': 'Signing in...',
       'invalid_email': 'Please enter a valid email address',
       'remember_me_title': 'Save Credentials',
-      'remember_me_message':
-          'Do you want to save your login credentials to this device?',
+      'remember_me_message': 'Do you want to save your login credentials to this device?',
       'save_credentials': 'Save to Device',
       'dont_save': 'Don\'t Save',
       'credentials_saved': 'Credentials saved successfully!',
@@ -129,8 +128,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
       'invalid_email':
           'దయచేసి చెల్లుబాటు అయ్యే ఇమెయిల్ చిరునామాను నమోదు చేయండి',
       'remember_me_title': 'ఆధారాలను సేవ్ చేయండి',
-      'remember_me_message':
-          'మీ లాగిన్ ఆధారాలను ఈ పరికరంలో సేవ్ చేయాలనుకుంటున్నారా?',
+      'remember_me_message': 'మీ లాగిన్ ఆధారాలను ఈ పరికరంలో సేవ్ చేయాలనుకుంటున్నారా?',
       'save_credentials': 'పరికరంలో సేవ్ చేయండి',
       'dont_save': 'సేవ్ చేయవద్దు',
       'credentials_saved': 'ఆధారాలు విజయవంతంగా సేవ్ చేయబడ్డాయి!',
@@ -177,6 +175,9 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
     try {
       await _credentialManager.initialize();
       debugPrint('✅ Credential manager initialized');
+      
+      // Update state to refresh UI
+      setState(() {});
     } catch (e) {
       debugPrint('⚠️ Error initializing credential manager: $e');
     }
@@ -191,6 +192,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
     _slideController.dispose();
     super.dispose();
   }
+
 
   /// Handle remember me checkbox toggle
   void _handleRememberMeToggle(bool? value) async {
@@ -237,7 +239,9 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
         content: Text(message),
         backgroundColor: const Color(0xFF27AE60),
         behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(10),
+        ),
         margin: const EdgeInsets.all(16),
         duration: const Duration(seconds: 2),
       ),
@@ -264,6 +268,8 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
     try {
       final email = _emailController.text.trim();
       final password = _passwordController.text;
+
+      debugPrint('🔐 Attempting login for: $email');
 
       final result = await _authService.login(email, password);
 
@@ -293,15 +299,18 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
           );
         }
       } else {
+        debugPrint('❌ Login failed: ${result['message']}');
         _showErrorDialog(
           result['message'] ?? 'Login failed. Please try again.',
         );
       }
     } on AuthException catch (e) {
+      debugPrint('❌ Auth error: ${e.message}');
       if (mounted) {
         _showErrorDialog(e.message);
       }
     } catch (e) {
+      debugPrint('❌ Unexpected error during login: $e');
       if (mounted) {
         _showErrorDialog(
           'An unexpected error occurred. Please check your connection and try again.',
@@ -631,7 +640,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
         children: [
           _buildFormLabel(_tr('email_label')),
           SizedBox(height: isMobile ? 8 : 10),
-          EmailInputWithAccountSelection(
+          WorkingEmailInput(
             controller: _emailController,
             hintText: _tr('email_hint'),
             isMobile: isMobile,
@@ -649,8 +658,12 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
               return null;
             },
             onAccountSelected: (email, password) {
+              debugPrint('🔍 LOGIN: Account selected callback called');
+              debugPrint('🔍 LOGIN: Email: $email');
+              debugPrint('🔍 LOGIN: Password: $password');
               // Auto-fill password when account is selected
               _passwordController.text = password;
+              debugPrint('🔍 LOGIN: Password field filled');
             },
           ),
           SizedBox(height: isMobile ? 20 : 24),
@@ -850,6 +863,9 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
       ),
     );
   }
+
+
+
 
   Widget _buildSignupLink() {
     return Container(

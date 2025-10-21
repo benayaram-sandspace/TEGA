@@ -159,9 +159,11 @@ class CredentialManager {
     String? accountName,
   }) async {
     try {
+      final normalizedEmail = email.toLowerCase().trim();
+      
       // Check if account already exists
       final existingIndex = _savedAccounts.indexWhere(
-        (account) => account.email.toLowerCase() == email.toLowerCase(),
+        (account) => account.email.toLowerCase() == normalizedEmail,
       );
 
       final now = DateTime.now();
@@ -171,7 +173,7 @@ class CredentialManager {
 
       final savedAccount = SavedAccount(
         id: accountId,
-        email: email.toLowerCase().trim(),
+        email: normalizedEmail,
         password: password,
         accountName: accountName?.trim(),
         savedAt: existingIndex >= 0 
@@ -183,17 +185,18 @@ class CredentialManager {
       if (existingIndex >= 0) {
         // Update existing account
         _savedAccounts[existingIndex] = savedAccount;
-        debugPrint('🔄 Updated existing account: ${savedAccount.displayName}');
+        debugPrint('🔄 Updated existing account: ${savedAccount.displayName} (${savedAccount.email})');
       } else {
         // Add new account
         _savedAccounts.insert(0, savedAccount);
         
         // Remove oldest account if we exceed the limit
         if (_savedAccounts.length > _maxSavedAccounts) {
-          _savedAccounts.removeLast();
+          final removedAccount = _savedAccounts.removeLast();
+          debugPrint('🗑️ Removed oldest account: ${removedAccount.email}');
         }
         
-        debugPrint('➕ Added new account: ${savedAccount.displayName}');
+        debugPrint('➕ Added new account: ${savedAccount.displayName} (${savedAccount.email})');
       }
 
       // Sort by last used date
@@ -286,16 +289,18 @@ class CredentialManager {
 
   /// Check if an account exists
   bool hasAccount(String email) {
+    final normalizedEmail = email.toLowerCase().trim();
     return _savedAccounts.any(
-      (account) => account.email.toLowerCase() == email.toLowerCase(),
+      (account) => account.email.toLowerCase() == normalizedEmail,
     );
   }
 
   /// Get account by email
   SavedAccount? getAccount(String email) {
     try {
+      final normalizedEmail = email.toLowerCase().trim();
       return _savedAccounts.firstWhere(
-        (account) => account.email.toLowerCase() == email.toLowerCase(),
+        (account) => account.email.toLowerCase() == normalizedEmail,
       );
     } catch (e) {
       return null;
@@ -308,4 +313,3 @@ class CredentialManager {
   /// Check if there are any saved accounts
   bool get hasAccounts => _savedAccounts.isNotEmpty;
 }
-

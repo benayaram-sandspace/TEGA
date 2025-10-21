@@ -501,4 +501,3 @@ class _AccountManagementDialogState extends State<AccountManagementDialog> {
     );
   }
 }
-

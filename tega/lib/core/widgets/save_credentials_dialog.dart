@@ -58,13 +58,26 @@ class _SaveCredentialsDialogState extends State<SaveCredentialsDialog> {
       return;
     }
 
-    setState(() {
-      _isLoading = true;
-      _errorMessage = null;
-    });
-
     try {
       final credentialManager = CredentialManager();
+      await credentialManager.initialize();
+      
+      // Check if account already exists
+      final accountExists = credentialManager.hasAccount(widget.email);
+      
+      if (accountExists) {
+        // Show confirmation dialog for existing account
+        final confirmed = await _showUpdateConfirmationDialog();
+        if (!confirmed) {
+          return; // User cancelled
+        }
+      }
+
+      setState(() {
+        _isLoading = true;
+        _errorMessage = null;
+      });
+      
       final success = await credentialManager.saveAccount(
         email: widget.email,
         password: widget.password,
@@ -75,6 +88,19 @@ class _SaveCredentialsDialogState extends State<SaveCredentialsDialog> {
         if (success) {
           Navigator.of(context).pop(true);
           HapticFeedback.lightImpact();
+          
+          // Show appropriate message
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                accountExists 
+                    ? 'Account updated successfully!' 
+                    : 'Account saved successfully!',
+              ),
+              backgroundColor: const Color(0xFF27AE60),
+              duration: const Duration(seconds: 2),
+            ),
+          );
         } else {
           setState(() {
             _errorMessage = 'Failed to save credentials. Please try again.';
@@ -90,6 +116,99 @@ class _SaveCredentialsDialogState extends State<SaveCredentialsDialog> {
         });
       }
     }
+  }
+
+  Future<bool> _showUpdateConfirmationDialog() async {
+    return await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        title: const Row(
+          children: [
+            Icon(
+              Icons.warning_amber_rounded,
+              color: Color(0xFFFF9800),
+              size: 24,
+            ),
+            SizedBox(width: 12),
+            Text(
+              'Update Account',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w700,
+                color: Color(0xFF2C3E50),
+              ),
+            ),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'An account with this email already exists:',
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.grey.shade600,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.grey.shade50,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.grey.shade200),
+              ),
+              child: Text(
+                widget.email,
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF2C3E50),
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            const Text(
+              'Are you sure you want to update this account with new credentials?',
+              style: TextStyle(
+                fontSize: 14,
+                color: Color(0xFF2C3E50),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: Text(
+              'Cancel',
+              style: TextStyle(
+                color: Colors.grey.shade600,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF9C88FF),
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            child: const Text(
+              'Update',
+              style: TextStyle(fontWeight: FontWeight.w600),
+            ),
+          ),
+        ],
+      ),
+    ) ?? false;
   }
 
   @override
@@ -367,4 +486,3 @@ class _SaveCredentialsDialogState extends State<SaveCredentialsDialog> {
     );
   }
 }
-
