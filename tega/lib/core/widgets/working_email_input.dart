@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../services/credential_manager.dart';
 
-/// Email input field with saved account selection popup
-class EmailInputWithAccountSelection extends StatefulWidget {
+/// Working email input with bottom sheet popup
+class WorkingEmailInput extends StatefulWidget {
   final TextEditingController controller;
   final String hintText;
   final String? Function(String?)? validator;
@@ -11,7 +11,7 @@ class EmailInputWithAccountSelection extends StatefulWidget {
   final Function(String email, String password)? onAccountSelected;
   final bool isMobile;
 
-  const EmailInputWithAccountSelection({
+  const WorkingEmailInput({
     super.key,
     required this.controller,
     required this.hintText,
@@ -22,10 +22,10 @@ class EmailInputWithAccountSelection extends StatefulWidget {
   });
 
   @override
-  State<EmailInputWithAccountSelection> createState() => _EmailInputWithAccountSelectionState();
+  State<WorkingEmailInput> createState() => _WorkingEmailInputState();
 }
 
-class _EmailInputWithAccountSelectionState extends State<EmailInputWithAccountSelection> {
+class _WorkingEmailInputState extends State<WorkingEmailInput> {
   final CredentialManager _credentialManager = CredentialManager();
   List<SavedAccount> _savedAccounts = [];
 
@@ -41,13 +41,14 @@ class _EmailInputWithAccountSelectionState extends State<EmailInputWithAccountSe
       setState(() {
         _savedAccounts = _credentialManager.savedAccounts;
       });
-      debugPrint('✅ Loaded ${_savedAccounts.length} saved accounts');
+      debugPrint('🔍 WORKING: Loaded ${_savedAccounts.length} accounts');
     } catch (e) {
-      debugPrint('⚠️ Error loading accounts: $e');
+      debugPrint('🔍 WORKING: Error loading accounts: $e');
     }
   }
 
   void _showAccountBottomSheet() {
+    debugPrint('🔍 WORKING: Showing bottom sheet with ${_savedAccounts.length} accounts');
     
     showModalBottomSheet(
       context: context,
@@ -105,7 +106,10 @@ class _EmailInputWithAccountSelectionState extends State<EmailInputWithAccountSe
                     ),
                   ),
                   IconButton(
-                    onPressed: () => Navigator.of(context).pop(),
+                    onPressed: () {
+                      debugPrint('🔍 WORKING: Close button pressed');
+                      Navigator.of(context).pop();
+                    },
                     icon: Icon(
                       Icons.close,
                       color: Colors.grey.shade400,
@@ -155,31 +159,6 @@ class _EmailInputWithAccountSelectionState extends State<EmailInputWithAccountSe
                           return _buildAccountItem(account);
                         },
                       ),
-              ),
-              
-              const SizedBox(height: 16),
-              
-              // Cancel button
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: () => Navigator.of(context).pop(),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.grey.shade200,
-                    foregroundColor: Colors.grey.shade700,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  child: const Text(
-                    'Cancel',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
               ),
             ],
           ),
@@ -251,19 +230,39 @@ class _EmailInputWithAccountSelectionState extends State<EmailInputWithAccountSe
               )
             : null,
         onTap: () {
-          debugPrint('✅ Account selected: ${account.email}');
+          debugPrint('🔍 WORKING: Account selected: ${account.email}');
+          debugPrint('🔍 WORKING: Account password: ${account.password}');
+          debugPrint('🔍 WORKING: Controller before: ${widget.controller.text}');
+          
           // Update last used timestamp
           _credentialManager.updateLastUsed(account.email);
           
           // Fill the fields
           widget.controller.text = account.email;
-          widget.onAccountSelected?.call(account.email, account.password);
+          debugPrint('🔍 WORKING: Controller after: ${widget.controller.text}');
+          
+          // Call the callback
+          if (widget.onAccountSelected != null) {
+            debugPrint('🔍 WORKING: Calling onAccountSelected callback');
+            widget.onAccountSelected!(account.email, account.password);
+          } else {
+            debugPrint('🔍 WORKING: onAccountSelected callback is null!');
+          }
           
           // Close bottom sheet
           Navigator.of(context).pop();
           
           // Haptic feedback
           HapticFeedback.lightImpact();
+          
+          // Show success message
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Account selected: ${account.displayName}'),
+              backgroundColor: const Color(0xFF27AE60),
+              duration: const Duration(seconds: 2),
+            ),
+          );
         },
       ),
     );
@@ -271,36 +270,41 @@ class _EmailInputWithAccountSelectionState extends State<EmailInputWithAccountSe
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      child: TextFormField(
-        controller: widget.controller,
-        keyboardType: TextInputType.emailAddress,
-        autocorrect: false,
-        textInputAction: TextInputAction.next,
-        style: TextStyle(
-          fontSize: widget.isMobile ? 14 : 15,
-          color: const Color(0xFF2C3E50),
-        ),
-          decoration: widget.decoration.copyWith(
-            hintText: widget.hintText,
-            suffixIcon: IconButton(
-              icon: const Icon(
-                Icons.account_circle_outlined,
-                color: Color(0xFF9C88FF),
-                size: 20,
-              ),
-              onPressed: _showAccountBottomSheet,
-              tooltip: 'Select saved account',
-            ),
-          ),
-        validator: widget.validator,
-        onTap: () {
-          // Only show popup if field is empty
-          if (widget.controller.text.isEmpty) {
-            _showAccountBottomSheet();
-          }
-        },
+    return TextFormField(
+      controller: widget.controller,
+      keyboardType: TextInputType.emailAddress,
+      autocorrect: false,
+      textInputAction: TextInputAction.next,
+      style: TextStyle(
+        fontSize: widget.isMobile ? 14 : 15,
+        color: const Color(0xFF2C3E50),
       ),
+      decoration: widget.decoration.copyWith(
+        hintText: 'Enter your email',
+        suffixIcon: IconButton(
+          icon: const Icon(
+            Icons.account_circle_outlined,
+            color: Color(0xFF9C88FF),
+            size: 20,
+          ),
+          onPressed: () {
+            debugPrint('🔍 WORKING: Account icon tapped!');
+            _showAccountBottomSheet();
+          },
+          tooltip: 'Select saved account',
+        ),
+      ),
+      validator: widget.validator,
+      onTap: () {
+        // Only show popup if field is empty
+        if (widget.controller.text.isEmpty) {
+          debugPrint('🔍 WORKING: Email field tapped (empty) - showing popup!');
+          _showAccountBottomSheet();
+        } else {
+          debugPrint('🔍 WORKING: Email field tapped (has text) - allowing edit');
+          // Allow normal editing
+        }
+      },
     );
   }
 }

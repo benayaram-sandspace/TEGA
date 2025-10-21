@@ -253,4 +253,3 @@ class _EmailInputWithSuggestionsState extends State<EmailInputWithSuggestions> {
     );
   }
 }
-
