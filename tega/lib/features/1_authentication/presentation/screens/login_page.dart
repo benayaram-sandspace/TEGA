@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tega/features/1_authentication/data/auth_repository.dart';
 import 'package:tega/features/1_authentication/presentation/screens/forgot_password_page.dart';
 import 'package:tega/features/1_authentication/presentation/screens/signup_page.dart';
@@ -8,6 +7,10 @@ import 'package:tega/features/3_admin_panel/presentation/0_dashboard/admin_dashb
 import 'package:tega/features/4_college_panel/data/repositories/college_repository.dart';
 import 'package:tega/features/4_college_panel/presentation/0_dashboard/dashboard_screen.dart';
 import 'package:tega/features/5_student_dashboard/presentation/1_home/student_home_page.dart';
+import 'package:tega/core/services/credential_manager.dart';
+import 'package:tega/core/widgets/email_input_with_account_selection.dart';
+import 'package:tega/core/widgets/save_credentials_dialog.dart';
+import 'package:tega/core/widgets/account_management_dialog.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -21,6 +24,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _authService = AuthService();
+  final _credentialManager = CredentialManager();
   bool _isPasswordVisible = false;
   bool _isLoading = false;
   bool _rememberMe = false;
@@ -164,52 +168,20 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
     _fadeController.forward();
     _slideController.forward();
 
-    // Load saved credentials if "Remember Me" was checked
-    _loadSavedCredentials();
+    // Initialize credential manager and load saved credentials
+    _initializeCredentialManager();
   }
 
-  /// Load saved credentials from SharedPreferences
-  Future<void> _loadSavedCredentials() async {
+  /// Initialize credential manager
+  Future<void> _initializeCredentialManager() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final savedEmail = prefs.getString('remembered_email');
-      final savedPassword = prefs.getString('remembered_password');
-      final rememberMe = prefs.getBool('remember_me') ?? false;
-
-      if (rememberMe && savedEmail != null && savedPassword != null) {
-        setState(() {
-          _emailController.text = savedEmail;
-          _passwordController.text = savedPassword;
-          _rememberMe = true;
-        });
-      }
-    } catch (e) {}
+      await _credentialManager.initialize();
+      debugPrint('✅ Credential manager initialized');
+    } catch (e) {
+      debugPrint('⚠️ Error initializing credential manager: $e');
+    }
   }
 
-  /// Save credentials to SharedPreferences
-  Future<void> _saveCredentials() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-
-      if (_rememberMe) {
-        await prefs.setString('remembered_email', _emailController.text.trim());
-        await prefs.setString('remembered_password', _passwordController.text);
-        await prefs.setBool('remember_me', true);
-      } else {
-        await _clearSavedCredentials();
-      }
-    } catch (e) {}
-  }
-
-  /// Clear saved credentials from SharedPreferences
-  Future<void> _clearSavedCredentials() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.remove('remembered_email');
-      await prefs.remove('remembered_password');
-      await prefs.setBool('remember_me', false);
-    } catch (e) {}
-  }
 
   @override
   void dispose() {
@@ -221,193 +193,39 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
   }
 
   /// Handle remember me checkbox toggle
-  void _handleRememberMeToggle(bool? value) {
+  void _handleRememberMeToggle(bool? value) async {
     if (value == true) {
-      // Show bottom sheet to confirm saving credentials
-      _showRememberMeBottomSheet();
+      // Show save credentials dialog
+      final shouldSave = await showDialog<bool>(
+        context: context,
+        builder: (context) => SaveCredentialsDialog(
+          email: _emailController.text.trim(),
+          password: _passwordController.text,
+          translate: _tr,
+          isMobile: isMobile,
+        ),
+      );
+      
+      if (shouldSave == true) {
+        setState(() {
+          _rememberMe = true;
+        });
+        _showSnackBar(_tr('credentials_saved'));
+      }
     } else {
       setState(() {
         _rememberMe = false;
       });
-      // Clear saved credentials immediately
-      _clearSavedCredentials();
     }
   }
 
-  /// Show bottom sheet for Remember Me functionality
-  void _showRememberMeBottomSheet() {
-    showModalBottomSheet(
+  /// Show account management dialog
+  void _showAccountManagement() {
+    showDialog(
       context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => _buildRememberMeBottomSheet(),
-    );
-  }
-
-  /// Build the Remember Me bottom sheet
-  Widget _buildRememberMeBottomSheet() {
-    final bottomPadding = MediaQuery.of(context).viewInsets.bottom;
-
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: const BorderRadius.only(
-          topLeft: Radius.circular(24),
-          topRight: Radius.circular(24),
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 20,
-            offset: const Offset(0, -5),
-          ),
-        ],
-      ),
-      child: Padding(
-        padding: EdgeInsets.only(
-          left: 24,
-          right: 24,
-          top: 24,
-          bottom: bottomPadding + 24,
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // Handle bar
-            Container(
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: Colors.grey.shade300,
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-            const SizedBox(height: 24),
-
-            // Icon
-            Container(
-              width: 80,
-              height: 80,
-              decoration: BoxDecoration(
-                color: const Color(0xFF9C88FF).withOpacity(0.1),
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(
-                Icons.save_rounded,
-                size: 40,
-                color: Color(0xFF9C88FF),
-              ),
-            ),
-            const SizedBox(height: 20),
-
-            // Title
-            Text(
-              _tr('remember_me_title'),
-              style: const TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFF2C3E50),
-              ),
-            ),
-            const SizedBox(height: 12),
-
-            // Message
-            Text(
-              _tr('remember_me_message'),
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 16,
-                color: Colors.grey.shade600,
-                height: 1.4,
-              ),
-            ),
-            const SizedBox(height: 32),
-
-            // Action buttons
-            Row(
-              children: [
-                // Don't Save button
-                Expanded(
-                  child: Container(
-                    height: 50,
-                    decoration: BoxDecoration(
-                      border: Border.all(color: Colors.grey.shade300),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: TextButton(
-                      onPressed: () {
-                        Navigator.of(context).pop();
-                        setState(() {
-                          _rememberMe = false;
-                        });
-                        _clearSavedCredentials();
-                        _showSnackBar(_tr('credentials_cleared'));
-                      },
-                      style: TextButton.styleFrom(
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                      child: Text(
-                        _tr('dont_save'),
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: Color(0xFF5D6D7E),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 16),
-
-                // Save button
-                Expanded(
-                  child: Container(
-                    height: 50,
-                    decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        colors: [Color(0xFF9C88FF), Color(0xFF8B7BFF)],
-                      ),
-                      borderRadius: BorderRadius.circular(12),
-                      boxShadow: [
-                        BoxShadow(
-                          color: const Color(0xFF9C88FF).withOpacity(0.3),
-                          blurRadius: 10,
-                          offset: const Offset(0, 5),
-                        ),
-                      ],
-                    ),
-                    child: TextButton(
-                      onPressed: () {
-                        Navigator.of(context).pop();
-                        setState(() {
-                          _rememberMe = true;
-                        });
-                        _saveCredentials();
-                        _showSnackBar(_tr('credentials_saved'));
-                      },
-                      style: TextButton.styleFrom(
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                      child: Text(
-                        _tr('save_credentials'),
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-          ],
-        ),
+      builder: (context) => AccountManagementDialog(
+        translate: _tr,
+        isMobile: isMobile,
       ),
     );
   }
@@ -452,8 +270,10 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
       if (!mounted) return;
 
       if (result['success'] == true) {
-        // Save credentials if "Remember Me" is checked
-        await _saveCredentials();
+        debugPrint('✅ Login successful, navigating based on role...');
+
+        // Update last used timestamp for saved account
+        await _credentialManager.updateLastUsed(email);
 
         // Navigate based on user role
         if (_authService.isAdmin) {
@@ -811,15 +631,10 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
         children: [
           _buildFormLabel(_tr('email_label')),
           SizedBox(height: isMobile ? 8 : 10),
-          TextFormField(
+          EmailInputWithAccountSelection(
             controller: _emailController,
-            keyboardType: TextInputType.emailAddress,
-            autocorrect: false,
-            textInputAction: TextInputAction.next,
-            style: TextStyle(
-              fontSize: isMobile ? 14 : 15,
-              color: const Color(0xFF2C3E50),
-            ),
+            hintText: _tr('email_hint'),
+            isMobile: isMobile,
             decoration: _inputDecoration(
               _tr('email_hint'),
               Icons.email_rounded,
@@ -832,6 +647,10 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                 return _tr('invalid_email');
               }
               return null;
+            },
+            onAccountSelected: (email, password) {
+              // Auto-fill password when account is selected
+              _passwordController.text = password;
             },
           ),
           SizedBox(height: isMobile ? 20 : 24),
@@ -885,51 +704,85 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
   }
 
   Widget _buildRememberMeAndForgotPassword() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    return Column(
       children: [
-        GestureDetector(
-          onTap: () => _handleRememberMeToggle(!_rememberMe),
-          child: Row(
-            children: [
-              SizedBox(
-                height: 24,
-                width: 24,
-                child: Checkbox(
-                  value: _rememberMe,
-                  onChanged: _handleRememberMeToggle,
-                  activeColor: const Color(0xFF27AE60),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(4),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            GestureDetector(
+              onTap: () => _handleRememberMeToggle(!_rememberMe),
+              child: Row(
+                children: [
+                  SizedBox(
+                    height: 24,
+                    width: 24,
+                    child: Checkbox(
+                      value: _rememberMe,
+                      onChanged: _handleRememberMeToggle,
+                      activeColor: const Color(0xFF27AE60),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                    ),
                   ),
+                  const SizedBox(width: 8),
+                  Text(
+                    _tr('remember_me'),
+                    style: const TextStyle(
+                      color: Color(0xFF5D6D7E),
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(
+                context,
+              ).push(MaterialPageRoute(builder: (_) => const ForgetPasswordPage())),
+              child: Text(
+                _tr('forgot_password'),
+                style: const TextStyle(
+                  color: Color(0xFF9C88FF),
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  decoration: TextDecoration.underline,
                 ),
               ),
-              const SizedBox(width: 8),
-              Text(
-                _tr('remember_me'),
+            ),
+          ],
+        ),
+        // Account management button
+        if (_credentialManager.hasAccounts) ...[
+          const SizedBox(height: 12),
+          SizedBox(
+            width: double.infinity,
+            child: TextButton.icon(
+              onPressed: () => _showAccountManagement(),
+              icon: const Icon(
+                Icons.account_circle_outlined,
+                size: 16,
+                color: Color(0xFF9C88FF),
+              ),
+              label: Text(
+                'Manage Saved Accounts (${_credentialManager.accountCount})',
                 style: const TextStyle(
-                  color: Color(0xFF5D6D7E),
-                  fontSize: 14,
+                  color: Color(0xFF9C88FF),
+                  fontSize: 12,
                   fontWeight: FontWeight.w500,
                 ),
               ),
-            ],
-          ),
-        ),
-        TextButton(
-          onPressed: () => Navigator.of(
-            context,
-          ).push(MaterialPageRoute(builder: (_) => const ForgetPasswordPage())),
-          child: Text(
-            _tr('forgot_password'),
-            style: const TextStyle(
-              color: Color(0xFF9C88FF),
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              decoration: TextDecoration.underline,
+              style: TextButton.styleFrom(
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  side: BorderSide(color: const Color(0xFF9C88FF).withOpacity(0.3)),
+                ),
+              ),
             ),
           ),
-        ),
+        ],
       ],
     );
   }
