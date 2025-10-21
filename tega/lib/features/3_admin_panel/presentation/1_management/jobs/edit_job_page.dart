@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:intl/intl.dart';
 import 'package:tega/core/constants/api_constants.dart';
 import 'package:tega/features/1_authentication/data/auth_repository.dart';
 import 'package:http/http.dart' as http;
@@ -29,6 +30,7 @@ class _EditJobPageState extends State<EditJobPage> {
   late final TextEditingController _benefitsController;
   late final TextEditingController _applicationLinkController;
   late final TextEditingController _experienceController;
+  late final TextEditingController _deadlineController;
 
   // Form values
   late String _selectedJobType;
@@ -83,6 +85,7 @@ class _EditJobPageState extends State<EditJobPage> {
     _experienceController = TextEditingController(
       text: widget.job['experience'] ?? '',
     );
+    _deadlineController = TextEditingController();
   }
 
   void _initializeValues() {
@@ -93,6 +96,7 @@ class _EditJobPageState extends State<EditJobPage> {
 
     if (widget.job['deadline'] != null) {
       _selectedDeadline = DateTime.parse(widget.job['deadline']);
+      _deadlineController.text = DateFormat.yMd().format(_selectedDeadline!);
     }
   }
 
@@ -107,6 +111,7 @@ class _EditJobPageState extends State<EditJobPage> {
     _benefitsController.dispose();
     _applicationLinkController.dispose();
     _experienceController.dispose();
+    _deadlineController.dispose();
     super.dispose();
   }
 
@@ -154,6 +159,8 @@ class _EditJobPageState extends State<EditJobPage> {
         body: json.encode(jobData),
       );
 
+      if (!mounted) return;
+
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         if (data['success'] == true) {
@@ -168,13 +175,16 @@ class _EditJobPageState extends State<EditJobPage> {
     } catch (e) {
       _showErrorSnackBar('Error updating job: $e');
     } finally {
-      setState(() {
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
   }
 
   void _showErrorSnackBar(String message) {
+    if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
@@ -185,6 +195,7 @@ class _EditJobPageState extends State<EditJobPage> {
   }
 
   void _showSuccessSnackBar(String message) {
+    if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
@@ -205,6 +216,7 @@ class _EditJobPageState extends State<EditJobPage> {
     if (date != null) {
       setState(() {
         _selectedDeadline = date;
+        _deadlineController.text = DateFormat.yMd().format(date);
       });
     }
   }
@@ -218,24 +230,6 @@ class _EditJobPageState extends State<EditJobPage> {
         backgroundColor: Colors.white,
         foregroundColor: const Color(0xFF2D3748),
         elevation: 0,
-        actions: [
-          TextButton(
-            onPressed: _isLoading ? null : _updateJob,
-            child: _isLoading
-                ? const SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : const Text(
-                    'Update',
-                    style: TextStyle(
-                      color: Color(0xFF6B5FFF),
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-          ),
-        ],
       ),
       body: Form(
         key: _formKey,
@@ -276,34 +270,26 @@ class _EditJobPageState extends State<EditJobPage> {
                   hint: 'e.g., Mumbai, India',
                 ),
                 const SizedBox(height: 16),
-                Row(
-                  children: [
-                    Expanded(
-                      child: _buildDropdown(
-                        label: 'Job Type',
-                        value: _selectedJobType,
-                        items: _jobTypes,
-                        onChanged: (value) {
-                          setState(() {
-                            _selectedJobType = value!;
-                          });
-                        },
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: _buildDropdown(
-                        label: 'Posting Type',
-                        value: _selectedPostingType,
-                        items: _postingTypes,
-                        onChanged: (value) {
-                          setState(() {
-                            _selectedPostingType = value!;
-                          });
-                        },
-                      ),
-                    ),
-                  ],
+                _buildDropdown(
+                  label: 'Job Type',
+                  value: _selectedJobType,
+                  items: _jobTypes,
+                  onChanged: (value) {
+                    setState(() {
+                      _selectedJobType = value!;
+                    });
+                  },
+                ),
+                const SizedBox(height: 16),
+                _buildDropdown(
+                  label: 'Posting Type',
+                  value: _selectedPostingType,
+                  items: _postingTypes,
+                  onChanged: (value) {
+                    setState(() {
+                      _selectedPostingType = value!;
+                    });
+                  },
                 ),
               ]),
               const SizedBox(height: 16),
@@ -363,69 +349,24 @@ class _EditJobPageState extends State<EditJobPage> {
               const SizedBox(height: 16),
               // Status & Settings Card
               _buildCard('Status & Settings', [
-                Row(
-                  children: [
-                    Expanded(
-                      child: _buildDropdown(
-                        label: 'Status',
-                        value: _selectedStatus,
-                        items: _statuses,
-                        onChanged: (value) {
-                          setState(() {
-                            _selectedStatus = value!;
-                          });
-                        },
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            'Deadline',
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w500,
-                              color: Color(0xFF2D3748),
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          InkWell(
-                            onTap: _selectDeadline,
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 16,
-                              ),
-                              decoration: BoxDecoration(
-                                border: Border.all(
-                                  color: const Color(0xFFE2E8F0),
-                                ),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Row(
-                                children: [
-                                  const Icon(Icons.calendar_today, size: 16),
-                                  const SizedBox(width: 8),
-                                  Text(
-                                    _selectedDeadline != null
-                                        ? '${_selectedDeadline!.day}/${_selectedDeadline!.month}/${_selectedDeadline!.year}'
-                                        : 'Select deadline',
-                                    style: TextStyle(
-                                      color: _selectedDeadline != null
-                                          ? const Color(0xFF2D3748)
-                                          : const Color(0xFF718096),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
+                _buildDropdown(
+                  label: 'Status',
+                  value: _selectedStatus,
+                  items: _statuses,
+                  onChanged: (value) {
+                    setState(() {
+                      _selectedStatus = value!;
+                    });
+                  },
+                ),
+                const SizedBox(height: 16),
+                _buildTextField(
+                  controller: _deadlineController,
+                  label: 'Deadline',
+                  hint: 'Select a date',
+                  readOnly: true,
+                  onTap: _selectDeadline,
+                  suffixIcon: Icons.calendar_today,
                 ),
                 const SizedBox(height: 16),
                 SwitchListTile(
@@ -438,6 +379,7 @@ class _EditJobPageState extends State<EditJobPage> {
                     });
                   },
                   activeColor: const Color(0xFF6B5FFF),
+                  contentPadding: EdgeInsets.zero,
                 ),
               ]),
               const SizedBox(height: 32),
@@ -476,7 +418,7 @@ class _EditJobPageState extends State<EditJobPage> {
                                 ),
                               ),
                             )
-                          : const Text('Update Job'),
+                          : const Text('Update'),
                     ),
                   ),
                 ],
@@ -520,6 +462,13 @@ class _EditJobPageState extends State<EditJobPage> {
     );
   }
 
+  OutlineInputBorder _buildOutlineBorder(Color color) {
+    return OutlineInputBorder(
+      borderRadius: BorderRadius.circular(8),
+      borderSide: BorderSide(color: color, width: 1),
+    );
+  }
+
   Widget _buildTextField({
     required TextEditingController controller,
     required String label,
@@ -528,44 +477,28 @@ class _EditJobPageState extends State<EditJobPage> {
     TextInputType? keyboardType,
     List<TextInputFormatter>? inputFormatters,
     String? Function(String?)? validator,
+    bool readOnly = false,
+    VoidCallback? onTap,
+    IconData? suffixIcon,
   }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: const TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w500,
-            color: Color(0xFF2D3748),
-          ),
-        ),
-        const SizedBox(height: 8),
-        TextFormField(
-          controller: controller,
-          maxLines: maxLines,
-          keyboardType: keyboardType,
-          inputFormatters: inputFormatters,
-          validator: validator,
-          decoration: InputDecoration(
-            hintText: hint,
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: const BorderSide(color: Color(0xFF6B5FFF)),
-            ),
-            filled: true,
-            fillColor: const Color(0xFFF7F8FC),
-          ),
-        ),
-      ],
+    return TextFormField(
+      controller: controller,
+      maxLines: maxLines,
+      keyboardType: keyboardType,
+      inputFormatters: inputFormatters,
+      validator: validator,
+      readOnly: readOnly,
+      onTap: onTap,
+      decoration: InputDecoration(
+        labelText: label,
+        hintText: hint,
+        suffixIcon: suffixIcon != null ? Icon(suffixIcon, size: 20) : null,
+        border: _buildOutlineBorder(const Color(0xFFE2E8F0)),
+        enabledBorder: _buildOutlineBorder(const Color(0xFFE2E8F0)),
+        focusedBorder: _buildOutlineBorder(const Color(0xFF6B5FFF)),
+        filled: true,
+        fillColor: const Color(0xFFF7F8FC),
+      ),
     );
   }
 
@@ -575,45 +508,27 @@ class _EditJobPageState extends State<EditJobPage> {
     required List<String> items,
     required Function(String?) onChanged,
   }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: const TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w500,
-            color: Color(0xFF2D3748),
-          ),
-        ),
-        const SizedBox(height: 8),
-        DropdownButtonFormField<String>(
-          value: value,
-          onChanged: onChanged,
-          decoration: InputDecoration(
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: const BorderSide(color: Color(0xFF6B5FFF)),
-            ),
-            filled: true,
-            fillColor: const Color(0xFFF7F8FC),
-          ),
-          items: items.map((item) {
-            return DropdownMenuItem<String>(
-              value: item,
-              child: Text(item.toUpperCase()),
-            );
-          }).toList(),
-        ),
-      ],
+    // Ensure the value exists in the items list, otherwise default to the first item
+    final String? currentValue = items.contains(value) ? value : null;
+
+    return DropdownButtonFormField<String>(
+      value: currentValue,
+      onChanged: onChanged,
+      decoration: InputDecoration(
+        labelText: label,
+        border: _buildOutlineBorder(const Color(0xFFE2E8F0)),
+        enabledBorder: _buildOutlineBorder(const Color(0xFFE2E8F0)),
+        focusedBorder: _buildOutlineBorder(const Color(0xFF6B5FFF)),
+        filled: true,
+        fillColor: const Color(0xFFF7F8FC),
+      ),
+      items: items.map((item) {
+        return DropdownMenuItem<String>(
+          value: item,
+          child: Text(item.toUpperCase()),
+        );
+      }).toList(),
+      validator: (value) => value == null ? 'Please select an option' : null,
     );
   }
 }

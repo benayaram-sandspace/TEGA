@@ -37,7 +37,7 @@ const adminAuth = async (req, res, next) => {
         message: 'Invalid token or admin account deactivated.'
       });
     }
-
+    
     req.admin = admin;
     next();
   } catch (error) {

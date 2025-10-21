@@ -23,6 +23,7 @@ router.get('/admin', adminAuth, async (req, res) => {
       recipient: req.adminId,
       recipientModel: 'Admin'
     }).sort({ createdAt: -1 });
+    
     res.json({ success: true, notifications });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Failed to get notifications' });
@@ -64,6 +65,9 @@ router.get('/user', studentAuth, async (req, res) => {
   try {
     const userId = req.studentId;
     
+    console.log('🔔 Fetching notifications for student ID:', userId);
+    console.log('🔗 MongoDB connected:', isMongoConnected());
+    
     // Try MongoDB first, fallback to in-memory storage
     let notifications = [];
     if (isMongoConnected()) {
@@ -72,17 +76,22 @@ router.get('/user', studentAuth, async (req, res) => {
           recipient: userId,
           recipientModel: 'Student'
         }).sort({ createdAt: -1 });
+        console.log(`📋 Found ${notifications.length} notifications in MongoDB`);
       } catch (error) {
+        console.error('❌ Error fetching notifications from MongoDB:', error);
       }
     }
     
     // Get from in-memory storage if MongoDB failed or not connected
     if (notifications.length === 0 && userNotifications.has(userId)) {
       notifications = userNotifications.get(userId);
+      console.log(`💾 Found ${notifications.length} notifications in memory storage`);
     }
     
+    console.log(`✅ Returning ${notifications.length} notifications to student`);
     res.json({ success: true, notifications });
   } catch (error) {
+    console.error('❌ Error in notification route:', error);
     res.status(500).json({ success: false, message: 'Failed to get notifications' });
   }
 });

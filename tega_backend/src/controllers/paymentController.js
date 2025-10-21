@@ -153,7 +153,7 @@ export const createPaymentOrder = async (req, res) => {
     }
 
     // Validate course
-    const course = await Course.findOne({ courseId, isActive: true });
+    const course = await RealTimeCourse.findOne({ courseId, isActive: true });
     if (!course) {
       return res.status(404).json({
         success: false,
@@ -205,9 +205,11 @@ export const createPaymentOrder = async (req, res) => {
       }
     });
   } catch (error) {
+    console.error('Payment order creation error:', error);
     res.status(500).json({
       success: false,
-      message: 'Failed to create payment order'
+      message: 'Failed to create payment order',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }
 };
@@ -806,17 +808,23 @@ export const checkCourseAccess = async (req, res) => {
 
     // Debug: Check what's actually in the database
     try {
+      console.log(`🔍 Debug: Checking database for user ${userIdObj} and course ${courseIdObj}`);
       
       // Check all payments for this user
-      // Check all Payments for this user
-      // Payment model already imported at top
       const allUserPayments = await Payment.find({ studentId: userIdObj });
+      console.log(`💰 Found ${allUserPayments.length} payments for user:`, allUserPayments.map(p => ({ id: p._id, courseId: p.courseId, courseName: p.courseName, status: p.status })));
       
       // Check all Enrollments for this user
-      // Enrollment model already imported at top
       const allEnrollments = await Enrollment.find({ studentId: userIdObj });
+      console.log(`📚 Found ${allEnrollments.length} enrollments for user:`, allEnrollments.map(e => ({ id: e._id, courseId: e.courseId, courseName: e.courseName, status: e.status })));
+      
+      // Check if course exists
+      const RealTimeCourse = (await import('../models/RealTimeCourse.js')).default;
+      const course = await RealTimeCourse.findById(courseIdObj);
+      console.log(`📖 Course found:`, course ? { id: course._id, title: course.title, courseName: course.courseName } : 'Not found');
       
     } catch (error) {
+      console.error('❌ Debug error:', error);
     }
 
     // Check old Payment system
@@ -856,9 +864,39 @@ export const checkCourseAccess = async (req, res) => {
         if (razorpayPayment) {
           hasAccess = true;
           accessSource = 'razorpay_payment_direct';
+          console.log(`✅ Access granted via direct payment check: ${razorpayPayment._id}`);
         } else {
+          console.log(`❌ No direct payment found for course ${courseId}`);
         }
       } catch (error) {
+        console.error('❌ Error checking direct payment:', error);
+      }
+    }
+
+    // Final fallback: Check by course name if course exists
+    if (!hasAccess) {
+      try {
+        const RealTimeCourse = (await import('../models/RealTimeCourse.js')).default;
+        const course = await RealTimeCourse.findById(courseIdObj);
+        
+        if (course) {
+          // Check if user has paid for any course with similar name
+          const paymentByCourseName = await Payment.findOne({
+            studentId: userIdObj,
+            courseName: course.title || course.courseName,
+            status: 'completed'
+          });
+          
+          if (paymentByCourseName) {
+            hasAccess = true;
+            accessSource = 'payment_by_name';
+            console.log(`✅ Access granted via payment by course name: ${paymentByCourseName._id}`);
+          } else {
+            console.log(`❌ No payment found by course name: ${course.title || course.courseName}`);
+          }
+        }
+      } catch (error) {
+        console.error('❌ Error checking payment by course name:', error);
       }
     }
 

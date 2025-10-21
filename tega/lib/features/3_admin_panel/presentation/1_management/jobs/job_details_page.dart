@@ -1,11 +1,26 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'edit_job_page.dart';
 
 class JobDetailsPage extends StatelessWidget {
   final Map<String, dynamic> job;
 
   const JobDetailsPage({super.key, required this.job});
+
+  Future<void> _launchURL(BuildContext context, String url) async {
+    final uri = Uri.parse(url);
+    if (!await launchUrl(uri)) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Could not launch $url'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -63,31 +78,25 @@ class JobDetailsPage extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Header Card
             _buildHeaderCard(),
             const SizedBox(height: 16),
-            // Job Information Card
             _buildJobInfoCard(),
             const SizedBox(height: 16),
-            // Description Card
             if (job['description'] != null) ...[
               _buildDescriptionCard(),
               const SizedBox(height: 16),
             ],
-            // Requirements Card
             if (job['requirements'] != null &&
                 (job['requirements'] as List).isNotEmpty) ...[
               _buildRequirementsCard(),
               const SizedBox(height: 16),
             ],
-            // Benefits Card
             if (job['benefits'] != null &&
                 (job['benefits'] as List).isNotEmpty) ...[
               _buildBenefitsCard(),
               const SizedBox(height: 16),
             ],
-            // Application Info Card
-            _buildApplicationCard(),
+            _buildApplicationCard(context),
             const SizedBox(height: 32),
           ],
         ),
@@ -113,6 +122,7 @@ class JobDetailsPage extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Expanded(
                 child: Column(
@@ -138,30 +148,6 @@ class JobDetailsPage extends StatelessWidget {
                 ),
               ),
               _buildStatusChip(),
-            ],
-          ),
-          const SizedBox(height: 16),
-          Row(
-            children: [
-              if (job['location'] != null) ...[
-                _buildInfoChip(
-                  Icons.location_on,
-                  job['location'],
-                  const Color(0xFF4299E1),
-                ),
-                const SizedBox(width: 12),
-              ],
-              _buildInfoChip(
-                Icons.work,
-                job['jobType'] ?? 'full-time',
-                const Color(0xFF48BB78),
-              ),
-              const SizedBox(width: 12),
-              _buildInfoChip(
-                Icons.category,
-                job['postingType'] ?? 'job',
-                const Color(0xFFED8936),
-              ),
             ],
           ),
           if (job['salary'] != null) ...[
@@ -212,8 +198,29 @@ class JobDetailsPage extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 16),
-          _buildInfoRow('Job Type', job['jobType'] ?? 'Not specified'),
-          _buildInfoRow('Posting Type', job['postingType'] ?? 'Not specified'),
+          Wrap(
+            spacing: 8.0,
+            runSpacing: 8.0,
+            children: [
+              if (job['location'] != null)
+                _buildInfoChip(
+                  Icons.location_on,
+                  job['location'],
+                  const Color(0xFF4299E1),
+                ),
+              _buildInfoChip(
+                Icons.work,
+                job['jobType'] ?? 'full-time',
+                const Color(0xFF48BB78),
+              ),
+              _buildInfoChip(
+                Icons.category,
+                job['postingType'] ?? 'job',
+                const Color(0xFFED8936),
+              ),
+            ],
+          ),
+          const Divider(height: 32),
           _buildInfoRow('Status', job['status'] ?? 'Not specified'),
           _buildInfoRow('Active', job['isActive'] == true ? 'Yes' : 'No'),
           if (job['experience'] != null)
@@ -243,6 +250,7 @@ class JobDetailsPage extends StatelessWidget {
 
   Widget _buildDescriptionCard() {
     return Container(
+      width: double.infinity,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: Colors.white,
@@ -283,6 +291,7 @@ class JobDetailsPage extends StatelessWidget {
   Widget _buildRequirementsCard() {
     final requirements = job['requirements'] as List;
     return Container(
+      width: double.infinity,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: Colors.white,
@@ -340,6 +349,7 @@ class JobDetailsPage extends StatelessWidget {
   Widget _buildBenefitsCard() {
     final benefits = job['benefits'] as List;
     return Container(
+      width: double.infinity,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: Colors.white,
@@ -394,8 +404,9 @@ class JobDetailsPage extends StatelessWidget {
     );
   }
 
-  Widget _buildApplicationCard() {
+  Widget _buildApplicationCard(BuildContext context) {
     return Container(
+      width: double.infinity,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: Colors.white,
@@ -425,15 +436,15 @@ class JobDetailsPage extends StatelessWidget {
             const SizedBox(height: 16),
             SizedBox(
               width: double.infinity,
-              child: ElevatedButton.icon(
+              child: OutlinedButton.icon(
                 onPressed: () {
-                  // Handle application link
+                  _launchURL(context, job['applicationLink']);
                 },
                 icon: const Icon(Icons.open_in_new),
-                label: const Text('Apply Now'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF6B5FFF),
-                  foregroundColor: Colors.white,
+                label: const Text('Open Application Link'),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: const Color(0xFF6B5FFF),
+                  side: const BorderSide(color: Color(0xFF6B5FFF)),
                   padding: const EdgeInsets.symmetric(vertical: 12),
                 ),
               ),
@@ -462,7 +473,7 @@ class JobDetailsPage extends StatelessWidget {
       decoration: BoxDecoration(
         color: color.withOpacity(0.1),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: color),
+        border: Border.all(color: color.withOpacity(0.5)),
       ),
       child: Text(
         status.toUpperCase(),
@@ -488,7 +499,7 @@ class JobDetailsPage extends StatelessWidget {
           Icon(icon, size: 14, color: color),
           const SizedBox(width: 6),
           Text(
-            text.toUpperCase(),
+            text,
             style: TextStyle(
               fontSize: 12,
               color: color,
@@ -506,8 +517,8 @@ class JobDetailsPage extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          SizedBox(
-            width: 120,
+          Flexible(
+            flex: 2,
             child: Text(
               label,
               style: const TextStyle(
@@ -517,10 +528,16 @@ class JobDetailsPage extends StatelessWidget {
               ),
             ),
           ),
-          Expanded(
+          const SizedBox(width: 16),
+          Flexible(
+            flex: 3,
             child: Text(
               value,
-              style: const TextStyle(fontSize: 14, color: Color(0xFF2D3748)),
+              style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+                color: Color(0xFF2D3748),
+              ),
             ),
           ),
         ],
@@ -545,7 +562,7 @@ class JobDetailsPage extends StatelessWidget {
   }
 
   void _shareJob(BuildContext context) {
-    // Implement job sharing functionality
+    if (!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
         content: Text('Job sharing functionality will be implemented'),

@@ -26,7 +26,7 @@ router.get('/admin/stats', adminAuth, getOfferStats);
 router.get('/admin/courses', adminAuth, getAvailableCourses);
 router.get('/admin/tega-exams', adminAuth, getAvailableTegaExams);
 router.get('/admin/institutes', adminAuth, getInstitutes);
-router.get('/admin', adminAuth, getAllOffers);
+router.get('/admin/all', adminAuth, getAllOffers);
 // Parameterized routes come after specific routes
 router.get('/admin/:id', adminAuth, getOfferById);
 router.post('/admin', adminAuth, createOffer);
