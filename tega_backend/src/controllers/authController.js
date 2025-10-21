@@ -105,6 +105,7 @@ export const login = async (req, res) => {
       role: user.role || 'student'
     };
 
+
     // Generate tokens
     const token = generateToken(payload);
     const refreshToken = generateRefreshToken(payload);
@@ -229,7 +230,13 @@ export const logout = async (req, res) => {
 // Verify authentication status
 export const verifyAuth = async (req, res) => {
   try {
-    const token = req.cookies.authToken;
+    // Check for token in Authorization header first, then in cookies
+    let token = req.header('Authorization')?.replace('Bearer ', '');
+    
+    // If no token in header, check cookies
+    if (!token) {
+      token = req.cookies.authToken;
+    }
     
     if (!token) {
       return res.status(401).json({ 

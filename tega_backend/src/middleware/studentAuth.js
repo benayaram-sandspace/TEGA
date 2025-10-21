@@ -4,7 +4,13 @@ import { inMemoryUsers } from '../controllers/authController.js';
 
 const studentAuth = async (req, res, next) => {
   try {
-    const token = req.header('Authorization')?.replace('Bearer ', '');
+    // Check for token in Authorization header first, then in cookies
+    let token = req.header('Authorization')?.replace('Bearer ', '');
+    
+    // If no token in header, check cookies
+    if (!token) {
+      token = req.cookies.authToken;
+    }
     
     if (!token) {
       return res.status(401).json({
@@ -49,8 +55,6 @@ const studentAuth = async (req, res, next) => {
     }
     
     if (!student) {
-      console.log(`❌ Student not found for ID: ${studentId}`);
-      console.log(`🔍 Token payload:`, decoded);
       return res.status(401).json({
         success: false,
         message: 'Account not found. Please verify your email address or register for a new account.'

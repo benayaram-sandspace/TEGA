@@ -1,5 +1,4 @@
 import express from 'express';
-import { authRequired } from '../middleware/auth.js';
 import Student from '../models/Student.js';
 import Conversation from '../models/Conversation.js';
 import { GoogleGenerativeAI } from '@google/generative-ai';

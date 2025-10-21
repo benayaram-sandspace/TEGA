@@ -194,6 +194,7 @@ import certificateRoutes from './routes/certificate.js';
 import realTimeCourseRoutes from './routes/realTimeCourse.js';
 import videoDeliveryRoutes from './routes/videoDeliveryRoutes.js';
 import contactRoutes from './routes/contactRoutes.js';
+import announcementRoutes from './routes/announcementRoutes.js';
 
 // Serve static files (uploaded images)
 app.use('/uploads', express.static('uploads'));
@@ -214,7 +215,6 @@ app.use('/api/tega-exam-payments', tegaExamPaymentRoutes);
 
 // Real-Time Course System (R2-Based) - CONSOLIDATED SINGLE SYSTEM
 app.use('/api/real-time-courses', realTimeCourseRoutes);
-app.use('/api/courses', realTimeCourseRoutes); // Alias for backward compatibility
 app.use('/api/r2', r2UploadRoutes);
 app.use('/api/certificates', certificateRoutes);
 app.use('/api/video-delivery', videoDeliveryRoutes);
@@ -227,6 +227,7 @@ app.use('/api/company-questions', companyQuestionRoutes);
 app.use('/api/images', imageRoutes);
 app.use('/api/ai-assistant', aiAssistantRoutes);
 app.use('/api/contact', contactRoutes);
+app.use('/api/principal/announcements', announcementRoutes);
 
 // Static file serving is already configured above
 

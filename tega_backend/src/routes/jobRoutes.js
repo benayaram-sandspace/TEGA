@@ -10,7 +10,6 @@ import {
   applyForJob
 } from '../controllers/jobController.js';
 import { adminAuth } from '../middleware/adminAuth.js';
-import { authRequired } from '../middleware/auth.js';
 import { studentAuth } from '../middleware/studentAuth.js';
 
 const router = express.Router();

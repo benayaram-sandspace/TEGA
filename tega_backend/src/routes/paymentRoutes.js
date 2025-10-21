@@ -15,7 +15,6 @@ import {
   getUPIPaymentStatus,
   getOfferPrice
 } from '../controllers/paymentController.js';
-import { authRequired } from '../middleware/auth.js';
 import { studentAuth } from '../middleware/studentAuth.js';
 import { adminAuth } from '../middleware/adminAuth.js';
 import { generateServerPDFReceipt } from '../utils/pdfReceiptGenerator.js';
@@ -26,10 +25,13 @@ const router = express.Router();
 router.get('/courses', getCourses);
 router.get('/pricing', getCoursePricing);
 
-// Protected routes (require authentication)
-router.use(authRequired);
+// Admin routes (protected by adminAuth middleware)
+router.get('/admin/stats', adminAuth, getPaymentStats);
+router.get('/admin/all', adminAuth, getAllPayments);
+router.get('/admin/courses', adminAuth, getCourses);
+router.get('/admin/pricing', adminAuth, getCoursePricing);
 
-// Payment processing routes
+// Payment processing routes (student authentication required)
 router.post('/create-order', studentAuth, createPaymentOrder);
 router.post('/process-dummy', studentAuth, processDummyPayment);
 router.post('/verify', studentAuth, verifyPayment);
@@ -90,12 +92,5 @@ router.get('/receipt/:transactionId', studentAuth, async (req, res) => {
 
 // Refund processing
 router.post('/refund', studentAuth, processRefund);
-
-// Admin routes (for payment statistics)
-router.get('/stats', getPaymentStats);
-router.get('/admin/all', adminAuth, getAllPayments);
-router.get('/admin/stats', adminAuth, getPaymentStats);
-router.get('/admin/courses', adminAuth, getCourses);
-router.get('/admin/pricing', adminAuth, getCoursePricing);
 
 export default router;

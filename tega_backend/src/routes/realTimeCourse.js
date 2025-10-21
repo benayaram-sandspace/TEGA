@@ -17,34 +17,34 @@ import {
   publishRealTimeCourse,
   getAllCoursesForAdmin
 } from '../controllers/realTimeCourseController.js';
-import { verifyStudent, verifyAdmin, optionalStudentAuth } from '../middlewares/authMiddleware.js';
+import { adminAuth } from '../middleware/adminAuth.js';
+import { studentAuth } from '../middleware/studentAuth.js';
 
 const router = express.Router();
 
 // Admin routes - CRUD operations (must come before :courseId routes)
-router.get('/admin', verifyAdmin, getAllCoursesForAdmin);
-router.get('/admin/all', verifyAdmin, getAllCoursesForAdmin); // Alias for backward compatibility
-router.post('/', verifyAdmin, createRealTimeCourse);
+router.get('/admin/all', adminAuth, getAllCoursesForAdmin);
+router.post('/', adminAuth, createRealTimeCourse);
 
 // Public routes
 router.get('/', getRealTimeCourses);
 
 // Student routes (require authentication) - specific routes must come before generic ones
-router.get('/:courseId/content', verifyStudent, getCourseContent);
-router.get('/:courseId', verifyStudent, getRealTimeCourse);
-router.get('/:courseId/enrollment-status', verifyStudent, getEnrollmentStatus);
-router.post('/:courseId/enroll', verifyStudent, enrollInCourse);
-router.put('/:courseId/lectures/:lectureId/progress', verifyStudent, updateLectureProgress);
-router.put('/:courseId/lectures/:lectureId/duration', verifyStudent, updateLectureDuration);
-router.post('/:courseId/lectures/:lectureId/quiz', verifyStudent, submitQuiz);
-router.put('/:courseId/heartbeat', verifyStudent, updateHeartbeat);
-router.get('/:courseId/progress', verifyStudent, getStudentProgress);
+router.get('/:courseId/content', studentAuth, getCourseContent);
+router.get('/:courseId', studentAuth, getRealTimeCourse);
+router.get('/:courseId/enrollment-status', studentAuth, getEnrollmentStatus);
+router.post('/:courseId/enroll', studentAuth, enrollInCourse);
+router.put('/:courseId/lectures/:lectureId/progress', studentAuth, updateLectureProgress);
+router.put('/:courseId/lectures/:lectureId/duration', studentAuth, updateLectureDuration);
+router.post('/:courseId/lectures/:lectureId/quiz', studentAuth, submitQuiz);
+router.put('/:courseId/heartbeat', studentAuth, updateHeartbeat);
+router.get('/:courseId/progress', studentAuth, getStudentProgress);
 
 // Admin routes - course management
-router.put('/:courseId', verifyAdmin, updateRealTimeCourse);
-router.delete('/:courseId', verifyAdmin, deleteRealTimeCourse);
-router.put('/:courseId/publish', verifyAdmin, publishRealTimeCourse);
-router.get('/:courseId/analytics', verifyAdmin, getCourseAnalytics);
+router.put('/:courseId', adminAuth, updateRealTimeCourse);
+router.delete('/:courseId', adminAuth, deleteRealTimeCourse);
+router.put('/:courseId/publish', adminAuth, publishRealTimeCourse);
+router.get('/:courseId/analytics', adminAuth, getCourseAnalytics);
 
 // Admin routes - video validation and fixing (functions to be implemented)
 // router.get('/:courseId/validate-videos', verifyAdmin, validateCourseVideos);

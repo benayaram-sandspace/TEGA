@@ -1,6 +1,6 @@
 import express from 'express';
 import * as contactController from '../controllers/contactController.js';
-import { authRequired as auth } from '../middleware/auth.js';
+import { adminAuth } from '../middleware/adminAuth.js';
 
 const router = express.Router();
 
@@ -8,10 +8,10 @@ const router = express.Router();
 router.post('/submit', contactController.submitContactForm);
 
 // Admin routes (authentication required)
-router.get('/admin/submissions', auth, contactController.getAllSubmissions);
-router.get('/admin/submissions/stats', auth, contactController.getSubmissionStats);
-router.get('/admin/submissions/:id', auth, contactController.getSubmissionById);
-router.put('/admin/submissions/:id', auth, contactController.updateSubmissionStatus);
-router.delete('/admin/submissions/:id', auth, contactController.deleteSubmission);
+router.get('/admin/submissions', adminAuth, contactController.getAllSubmissions);
+router.get('/admin/submissions/stats', adminAuth, contactController.getSubmissionStats);
+router.get('/admin/submissions/:id', adminAuth, contactController.getSubmissionById);
+router.put('/admin/submissions/:id', adminAuth, contactController.updateSubmissionStatus);
+router.delete('/admin/submissions/:id', adminAuth, contactController.deleteSubmission);
 
 export default router;

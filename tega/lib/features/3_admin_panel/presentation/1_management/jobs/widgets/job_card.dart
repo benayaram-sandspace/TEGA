@@ -35,7 +35,7 @@ class JobCard extends StatelessWidget {
                 borderRadius: BorderRadius.circular(12),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.05),
+                    color: Colors.black.withOpacity(0.05),
                     blurRadius: 8,
                     offset: const Offset(0, 2),
                   ),
@@ -49,7 +49,7 @@ class JobCard extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: _getStatusColor().withValues(alpha: 0.1),
+                      color: _getStatusColor().withOpacity(0.1),
                       borderRadius: const BorderRadius.only(
                         topLeft: Radius.circular(
                           11,
@@ -70,6 +70,8 @@ class JobCard extends StatelessWidget {
                                   fontWeight: FontWeight.bold,
                                   color: Color(0xFF2D3748),
                                 ),
+                                maxLines: 1, // Prevent title overflow
+                                overflow: TextOverflow.ellipsis,
                               ),
                               const SizedBox(height: 4),
                               Text(
@@ -78,6 +80,8 @@ class JobCard extends StatelessWidget {
                                   fontSize: 14,
                                   color: Color(0xFF718096),
                                 ),
+                                maxLines: 1, // Prevent company overflow
+                                overflow: TextOverflow.ellipsis,
                               ),
                             ],
                           ),
@@ -168,33 +172,51 @@ class JobCard extends StatelessWidget {
                           ),
                         ],
                         const SizedBox(height: 16),
-                        // Action Buttons (Using Wrap for responsiveness)
-                        Wrap(
-                          spacing: 8.0,
-                          runSpacing: 8.0,
+                        // Action Buttons (Using Row + Expanded for better spacing)
+                        Row(
                           children: [
-                            OutlinedButton.icon(
-                              onPressed: onView,
-                              icon: const Icon(Icons.visibility, size: 16),
-                              label: const Text('View'),
-                              style: OutlinedButton.styleFrom(
-                                foregroundColor: const Color(0xFF6B5FFF),
-                                side: const BorderSide(
-                                  color: Color(0xFF6B5FFF),
+                            Expanded(
+                              // Makes View button take available space
+                              child: OutlinedButton.icon(
+                                onPressed: onView,
+                                icon: const Icon(Icons.visibility, size: 16),
+                                label: const Text('View'),
+                                style: OutlinedButton.styleFrom(
+                                  foregroundColor: const Color(0xFF6B5FFF),
+                                  side: const BorderSide(
+                                    color: Color(0xFF6B5FFF),
+                                  ),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                    vertical: 8,
+                                  ),
+                                  textStyle: const TextStyle(fontSize: 13),
                                 ),
                               ),
                             ),
-                            OutlinedButton.icon(
-                              onPressed: onEdit,
-                              icon: const Icon(Icons.edit, size: 16),
-                              label: const Text('Edit'),
-                              style: OutlinedButton.styleFrom(
-                                foregroundColor: const Color(0xFF4299E1),
-                                side: const BorderSide(
-                                  color: Color(0xFF4299E1),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              // Makes Edit button take available space
+                              child: OutlinedButton.icon(
+                                onPressed: onEdit,
+                                icon: const Icon(Icons.edit, size: 16),
+                                label: const Text('Edit'),
+                                style: OutlinedButton.styleFrom(
+                                  foregroundColor: const Color(0xFF4299E1),
+                                  side: const BorderSide(
+                                    color: Color(0xFF4299E1),
+                                  ),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                    vertical: 8,
+                                  ),
+                                  textStyle: const TextStyle(fontSize: 13),
                                 ),
                               ),
                             ),
+                            const SizedBox(
+                              width: 8,
+                            ), // Added spacing before menu
                             PopupMenuButton<String>(
                               onSelected: (value) {
                                 switch (value) {
@@ -235,19 +257,10 @@ class JobCard extends StatelessWidget {
                                   ),
                                 ),
                               ],
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 12,
-                                  vertical: 8,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFFF7F8FC),
-                                  borderRadius: BorderRadius.circular(8),
-                                  border: Border.all(
-                                    color: const Color(0xFFE2E8F0),
-                                  ),
-                                ),
-                                child: const Icon(Icons.more_vert, size: 16),
+                              icon: const Icon(
+                                Icons.more_vert,
+                                size: 20,
+                                color: Color(0xFF718096),
                               ),
                             ),
                           ],
@@ -271,9 +284,9 @@ class JobCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
+        color: color.withOpacity(0.1),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withValues(alpha: 0.5)),
+        border: Border.all(color: color.withOpacity(0.5)),
       ),
       child: Text(
         status.toUpperCase(),
@@ -290,7 +303,7 @@ class JobCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
+        color: color.withOpacity(0.1),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Row(

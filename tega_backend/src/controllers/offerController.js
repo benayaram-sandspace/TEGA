@@ -725,7 +725,7 @@ export const getInstitutes = async (req, res) => {
     
     if (!institutes || institutes.length === 0) {
       const { colleges } = await import('../data/colleges.js');
-      institutes = colleges.slice(0, 50); // Use first 50 colleges for demo
+      institutes = colleges; // Use all colleges instead of limiting to 50
     }
     
     // Sort alphabetically
@@ -743,7 +743,7 @@ export const getInstitutes = async (req, res) => {
       const { colleges } = await import('../data/colleges.js');
       res.json({
         success: true,
-        data: colleges.slice(0, 50).sort()
+        data: colleges.sort() // Use all colleges instead of limiting to 50
       });
     } catch (fallbackError) {
     res.status(500).json({
