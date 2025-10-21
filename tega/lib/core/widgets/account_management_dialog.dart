@@ -6,11 +6,13 @@ import '../services/credential_manager.dart';
 class AccountManagementDialog extends StatefulWidget {
   final String Function(String) translate;
   final bool isMobile;
+  final Function(String email, String password)? onAccountSelected;
 
   const AccountManagementDialog({
     super.key,
     required this.translate,
     this.isMobile = true,
+    this.onAccountSelected,
   });
 
   @override
@@ -266,9 +268,35 @@ class _AccountManagementDialogState extends State<AccountManagementDialog> {
               case 'delete':
                 _deleteAccount(account);
                 break;
+              case 'select':
+                _selectAccount(account);
+                break;
+              case 'change_password':
+                _changeAccountPassword(account);
+                break;
             }
           },
           itemBuilder: (context) => [
+            const PopupMenuItem(
+              value: 'select',
+              child: Row(
+                children: [
+                  Icon(Icons.login, size: 16, color: Color(0xFF27AE60)),
+                  SizedBox(width: 8),
+                  Text('Use This Account'),
+                ],
+              ),
+            ),
+            const PopupMenuItem(
+              value: 'change_password',
+              child: Row(
+                children: [
+                  Icon(Icons.lock, size: 16, color: Color(0xFF9C88FF)),
+                  SizedBox(width: 8),
+                  Text('Change Password'),
+                ],
+              ),
+            ),
             const PopupMenuItem(
               value: 'edit',
               child: Row(
@@ -295,6 +323,244 @@ class _AccountManagementDialogState extends State<AccountManagementDialog> {
             color: Colors.grey.shade400,
             size: 20,
           ),
+        ),
+        onTap: () {
+          // Tap to select account
+          _selectAccount(account);
+        },
+      ),
+    );
+  }
+
+  void _selectAccount(SavedAccount account) {
+    debugPrint('🔍 MANAGEMENT: Account selected: ${account.email}');
+    
+    // Update last used timestamp
+    _credentialManager.updateLastUsed(account.email);
+    
+    // Call the callback to fill the form
+    if (widget.onAccountSelected != null) {
+      widget.onAccountSelected!(account.email, account.password);
+    }
+    
+    // Close the dialog
+    Navigator.of(context).pop();
+    
+    // Haptic feedback
+    HapticFeedback.lightImpact();
+    
+    // Show success message
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Account selected: ${account.displayName}'),
+        backgroundColor: const Color(0xFF27AE60),
+        duration: const Duration(seconds: 2),
+      ),
+    );
+  }
+
+  /// Change account password
+  void _changeAccountPassword(SavedAccount account) {
+    final passwordController = TextEditingController();
+    final confirmPasswordController = TextEditingController();
+    bool isPasswordVisible = false;
+    bool isConfirmPasswordVisible = false;
+
+    showDialog(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: Text(
+            'Change Password',
+            style: TextStyle(
+              fontSize: widget.isMobile ? 18 : 20,
+              fontWeight: FontWeight.bold,
+              color: const Color(0xFF2C3E50),
+            ),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Account: ${account.displayName}',
+                style: TextStyle(
+                  fontSize: widget.isMobile ? 14 : 15,
+                  color: const Color(0xFF7F8C8D),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'New Password',
+                style: TextStyle(
+                  fontSize: widget.isMobile ? 14 : 15,
+                  fontWeight: FontWeight.w600,
+                  color: const Color(0xFF2C3E50),
+                ),
+              ),
+              const SizedBox(height: 8),
+              TextFormField(
+                controller: passwordController,
+                obscureText: !isPasswordVisible,
+                decoration: InputDecoration(
+                  hintText: 'Enter new password',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: const BorderSide(color: Color(0xFFE0E0E0)),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: const BorderSide(color: Color(0xFF9C88FF), width: 2),
+                  ),
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      isPasswordVisible ? Icons.visibility_off : Icons.visibility,
+                      color: Colors.grey.shade600,
+                    ),
+                    onPressed: () {
+                      setDialogState(() {
+                        isPasswordVisible = !isPasswordVisible;
+                      });
+                    },
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Confirm Password',
+                style: TextStyle(
+                  fontSize: widget.isMobile ? 14 : 15,
+                  fontWeight: FontWeight.w600,
+                  color: const Color(0xFF2C3E50),
+                ),
+              ),
+              const SizedBox(height: 8),
+              TextFormField(
+                controller: confirmPasswordController,
+                obscureText: !isConfirmPasswordVisible,
+                decoration: InputDecoration(
+                  hintText: 'Confirm new password',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: const BorderSide(color: Color(0xFFE0E0E0)),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: const BorderSide(color: Color(0xFF9C88FF), width: 2),
+                  ),
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      isConfirmPasswordVisible ? Icons.visibility_off : Icons.visibility,
+                      color: Colors.grey.shade600,
+                    ),
+                    onPressed: () {
+                      setDialogState(() {
+                        isConfirmPasswordVisible = !isConfirmPasswordVisible;
+                      });
+                    },
+                  ),
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                passwordController.dispose();
+                confirmPasswordController.dispose();
+                Navigator.of(context).pop();
+              },
+              child: Text(
+                'Cancel',
+                style: TextStyle(
+                  color: Colors.grey.shade600,
+                  fontSize: widget.isMobile ? 14 : 15,
+                ),
+              ),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                final newPassword = passwordController.text.trim();
+                final confirmPassword = confirmPasswordController.text.trim();
+
+                if (newPassword.isEmpty) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Please enter a new password'),
+                      backgroundColor: Color(0xFFE74C3C),
+                    ),
+                  );
+                  return;
+                }
+
+                if (newPassword != confirmPassword) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Passwords do not match'),
+                      backgroundColor: Color(0xFFE74C3C),
+                    ),
+                  );
+                  return;
+                }
+
+                if (newPassword.length < 6) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Password must be at least 6 characters'),
+                      backgroundColor: Color(0xFFE74C3C),
+                    ),
+                  );
+                  return;
+                }
+
+                // Update password
+                final success = await _credentialManager.updateAccountPassword(
+                  account.email,
+                  newPassword,
+                );
+
+                passwordController.dispose();
+                confirmPasswordController.dispose();
+
+                if (success) {
+                  Navigator.of(context).pop();
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Password updated successfully!'),
+                      backgroundColor: Color(0xFF27AE60),
+                    ),
+                  );
+                  // Refresh the account list
+                  setState(() {});
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Failed to update password. Please try again.'),
+                      backgroundColor: Color(0xFFE74C3C),
+                    ),
+                  );
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF9C88FF),
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                padding: EdgeInsets.symmetric(
+                  horizontal: widget.isMobile ? 16 : 20,
+                  vertical: widget.isMobile ? 8 : 10,
+                ),
+              ),
+              child: Text(
+                'Update Password',
+                style: TextStyle(
+                  fontSize: widget.isMobile ? 14 : 15,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );

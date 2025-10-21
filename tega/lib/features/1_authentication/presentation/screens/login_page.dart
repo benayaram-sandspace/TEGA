@@ -29,6 +29,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
   bool _isLoading = false;
   bool _rememberMe = false;
   String _selectedLanguage = 'EN';
+  String? _currentSelectedEmail; // Track currently selected account email
 
   late AnimationController _fadeController;
   late AnimationController _slideController;
@@ -168,6 +169,9 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
 
     // Initialize credential manager and load saved credentials
     _initializeCredentialManager();
+    
+    // Add listener to email controller to detect changes
+    _emailController.addListener(_onEmailChanged);
   }
 
   /// Initialize credential manager
@@ -186,6 +190,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
 
   @override
   void dispose() {
+    _emailController.removeListener(_onEmailChanged);
     _emailController.dispose();
     _passwordController.dispose();
     _fadeController.dispose();
@@ -194,30 +199,48 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
   }
 
 
+  /// Handle email field changes
+  void _onEmailChanged() {
+    final currentEmail = _emailController.text.trim().toLowerCase();
+    
+    // Check if this is a saved account
+    final isSavedAccount = _credentialManager.hasAccount(currentEmail);
+    
+    if (isSavedAccount) {
+      // If it's a saved account, disable Remember Me and gray it out
+      if (_currentSelectedEmail != currentEmail) {
+        setState(() {
+          _rememberMe = false;
+          _currentSelectedEmail = currentEmail;
+        });
+        debugPrint('🔍 LOGIN: Saved account detected, disabling Remember Me');
+      }
+    } else {
+      // If it's not a saved account, enable Remember Me and auto-check it
+      if (_currentSelectedEmail != null) {
+        setState(() {
+          _rememberMe = true;
+          _currentSelectedEmail = null;
+        });
+        debugPrint('🔍 LOGIN: New account detected, enabling Remember Me');
+      }
+    }
+  }
+
   /// Handle remember me checkbox toggle
   void _handleRememberMeToggle(bool? value) async {
     if (value == true) {
-      // Show save credentials dialog
-      final shouldSave = await showDialog<bool>(
-        context: context,
-        builder: (context) => SaveCredentialsDialog(
-          email: _emailController.text.trim(),
-          password: _passwordController.text,
-          translate: _tr,
-          isMobile: isMobile,
-        ),
-      );
-      
-      if (shouldSave == true) {
-        setState(() {
-          _rememberMe = true;
-        });
-        _showSnackBar(_tr('credentials_saved'));
-      }
+      // For new accounts, we'll show the save dialog during login
+      // For existing accounts, this shouldn't be called (checkbox is disabled)
+      setState(() {
+        _rememberMe = true;
+      });
+      debugPrint('🔍 LOGIN: Remember Me checked for new account');
     } else {
       setState(() {
         _rememberMe = false;
       });
+      debugPrint('🔍 LOGIN: Remember Me unchecked');
     }
   }
 
@@ -228,6 +251,18 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
       builder: (context) => AccountManagementDialog(
         translate: _tr,
         isMobile: isMobile,
+        onAccountSelected: (email, password) {
+          debugPrint('🔍 LOGIN: Account selected from management: $email');
+          // Fill the form fields
+          _emailController.text = email;
+          _passwordController.text = password;
+          // Set current selected email to disable Remember Me
+          _currentSelectedEmail = email.toLowerCase();
+          setState(() {
+            _rememberMe = false; // Disable Remember Me for saved accounts
+          });
+          debugPrint('🔍 LOGIN: Form fields filled from management and Remember Me disabled');
+        },
       ),
     );
   }
@@ -263,12 +298,43 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
     // Dismiss keyboard
     FocusScope.of(context).unfocus();
 
+    final email = _emailController.text.trim();
+    final password = _passwordController.text.trim();
+
+    // Check if this is a new account (not saved) and Remember Me is checked
+    final isNewAccount = !_credentialManager.hasAccount(email);
+    
+    if (isNewAccount && _rememberMe) {
+      // Show save account dialog first
+      final shouldSave = await showDialog<bool>(
+        context: context,
+        builder: (context) => SaveCredentialsDialog(
+          email: email,
+          password: password,
+          translate: _tr,
+          isMobile: isMobile,
+        ),
+      );
+
+      if (shouldSave == null || shouldSave == false) {
+        // User cancelled saving, don't proceed with login
+        debugPrint('🔍 LOGIN: User cancelled saving account');
+        return;
+      }
+      
+      // Account saved successfully, now proceed with login
+      debugPrint('🔍 LOGIN: Account saved, proceeding with login');
+    }
+
+    // Proceed with actual login
+    await _performLogin(email, password);
+  }
+
+  /// Perform the actual login
+  Future<void> _performLogin(String email, String password) async {
     setState(() => _isLoading = true);
 
     try {
-      final email = _emailController.text.trim();
-      final password = _passwordController.text;
-
       debugPrint('🔐 Attempting login for: $email');
 
       final result = await _authService.login(email, password);
@@ -663,7 +729,12 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
               debugPrint('🔍 LOGIN: Password: $password');
               // Auto-fill password when account is selected
               _passwordController.text = password;
-              debugPrint('🔍 LOGIN: Password field filled');
+              // Set current selected email to disable Remember Me
+              _currentSelectedEmail = email.toLowerCase();
+              setState(() {
+                _rememberMe = false; // Disable Remember Me for saved accounts
+              });
+              debugPrint('🔍 LOGIN: Password field filled and Remember Me disabled');
             },
           ),
           SizedBox(height: isMobile ? 20 : 24),
@@ -723,7 +794,12 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             GestureDetector(
-              onTap: () => _handleRememberMeToggle(!_rememberMe),
+              onTap: () {
+                // Only allow toggle if it's not a saved account
+                if (_currentSelectedEmail == null) {
+                  _handleRememberMeToggle(!_rememberMe);
+                }
+              },
               child: Row(
                 children: [
                   SizedBox(
@@ -731,7 +807,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                     width: 24,
                     child: Checkbox(
                       value: _rememberMe,
-                      onChanged: _handleRememberMeToggle,
+                      onChanged: _currentSelectedEmail == null ? _handleRememberMeToggle : null,
                       activeColor: const Color(0xFF27AE60),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(4),
@@ -741,8 +817,10 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                   const SizedBox(width: 8),
                   Text(
                     _tr('remember_me'),
-                    style: const TextStyle(
-                      color: Color(0xFF5D6D7E),
+                    style: TextStyle(
+                      color: _currentSelectedEmail == null 
+                          ? const Color(0xFF5D6D7E)
+                          : Colors.grey.shade400,
                       fontSize: 14,
                       fontWeight: FontWeight.w500,
                     ),

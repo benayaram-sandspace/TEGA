@@ -253,6 +253,33 @@ class CredentialManager {
     }
   }
 
+  /// Update account password
+  Future<bool> updateAccountPassword(String email, String newPassword) async {
+    try {
+      final accountIndex = _savedAccounts.indexWhere(
+        (account) => account.email.toLowerCase() == email.toLowerCase(),
+      );
+      
+      if (accountIndex >= 0) {
+        _savedAccounts[accountIndex] = _savedAccounts[accountIndex].copyWith(
+          password: newPassword,
+          lastUsed: DateTime.now(),
+        );
+        
+        // Sort by last used date
+        _savedAccounts.sort((a, b) => b.lastUsed.compareTo(a.lastUsed));
+        await _saveAccounts();
+        
+        debugPrint('🔑 Updated password for: $email');
+        return true;
+      }
+      return false;
+    } catch (e) {
+      debugPrint('⚠️ Error updating password: $e');
+      return false;
+    }
+  }
+
   /// Update account name
   Future<bool> updateAccountName(String email, String newName) async {
     try {
