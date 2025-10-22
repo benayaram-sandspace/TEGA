@@ -44,7 +44,7 @@ class _CreateJobPageState extends State<CreateJobPage> {
     'internship',
   ];
   final List<String> _postingTypes = ['job', 'internship'];
-  final List<String> _statuses = ['open', 'active', 'closed', 'paused'];
+  final List<String> _statuses = ['open', 'active', 'expired', 'paused'];
 
   @override
   void dispose() {

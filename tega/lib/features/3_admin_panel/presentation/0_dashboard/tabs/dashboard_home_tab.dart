@@ -3,7 +3,6 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:tega/features/1_authentication/data/auth_repository.dart';
 import 'package:tega/features/3_admin_panel/data/services/admin_dashboard_service.dart';
 import 'package:tega/features/3_admin_panel/presentation/0_dashboard/admin_dashboard_styles.dart';
-import 'package:tega/features/3_admin_panel/presentation/0_dashboard/create_student_page.dart';
 
 class DashboardHomeTab extends StatefulWidget {
   final AuthService authService;
@@ -64,18 +63,6 @@ class _DashboardHomeTabState extends State<DashboardHomeTab> {
         _isLoading = false;
       });
     }
-  }
-
-  void _navigateToCreateStudentPage() {
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (context) => CreateStudentPage(
-          onStudentCreated: () {
-            _loadDashboardData(); // Refresh dashboard data
-          },
-        ),
-      ),
-    );
   }
 
   @override
@@ -159,8 +146,6 @@ class _DashboardHomeTabState extends State<DashboardHomeTab> {
           ],
         ),
       ),
-      floatingActionButton: _buildCreateStudentFAB(),
-      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
     );
   }
 
@@ -343,45 +328,6 @@ class _DashboardHomeTabState extends State<DashboardHomeTab> {
         ],
       ),
     ).animate().fadeIn(duration: 800.ms).slideY(begin: -0.3);
-  }
-
-  Widget _buildCreateStudentFAB() {
-    return Container(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(16),
-            boxShadow: [
-              BoxShadow(
-                color: AdminDashboardStyles.primary.withOpacity(0.3),
-                blurRadius: 20,
-                offset: const Offset(0, 8),
-                spreadRadius: 0,
-              ),
-              BoxShadow(
-                color: Colors.black.withOpacity(0.1),
-                blurRadius: 10,
-                offset: const Offset(0, 4),
-                spreadRadius: 0,
-              ),
-            ],
-          ),
-          child: FloatingActionButton.extended(
-            onPressed: _navigateToCreateStudentPage,
-            backgroundColor: AdminDashboardStyles.primary,
-            foregroundColor: Colors.white,
-            elevation: 0,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-            ),
-            icon: const Icon(Icons.person_add_rounded, size: 20),
-            label: const Text(
-              'Create Student',
-              style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
-            ),
-          ),
-        )
-        .animate()
-        .fadeIn(duration: 1000.ms, delay: 300.ms)
-        .scale(begin: const Offset(0.8, 0.8));
   }
 
   Widget _buildCreativeStatsSection() {

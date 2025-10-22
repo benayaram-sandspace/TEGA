@@ -4,6 +4,7 @@ import 'package:tega/features/3_admin_panel/presentation/0_dashboard/admin_dashb
 import 'package:tega/features/5_student_dashboard/data/models/student_model.dart';
 import 'package:tega/data/colleges_data.dart';
 import 'package:tega/features/3_admin_panel/data/services/admin_dashboard_service.dart';
+import 'package:tega/features/3_admin_panel/presentation/0_dashboard/create_student_page.dart';
 import 'student_profile_page.dart';
 
 class StudentManagementPage extends StatefulWidget {
@@ -83,6 +84,18 @@ class _StudentManagementPageState extends State<StudentManagementPage>
         }
       });
     }
+  }
+
+  void _navigateToCreateStudentPage() {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => CreateStudentPage(
+          onStudentCreated: () {
+            _fetchStudentsFromAPI(); // Refresh student data
+          },
+        ),
+      ),
+    );
   }
 
   @override
@@ -200,14 +213,16 @@ class _StudentManagementPageState extends State<StudentManagementPage>
     final screenWidth = MediaQuery.of(context).size.width;
     final isSmallScreen = screenWidth < 600;
 
-    return GestureDetector(
-      onTap: () {
-        // Unfocus any text fields when tapping outside
-        FocusScope.of(context).unfocus();
-      },
-      behavior: HitTestBehavior.opaque,
-      child: Container(
-        color: const Color(0xFFF8FAFC),
+    return Scaffold(
+      backgroundColor: const Color(0xFFF8FAFC),
+      floatingActionButton: _buildCreateStudentFAB(),
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
+      body: GestureDetector(
+        onTap: () {
+          // Unfocus any text fields when tapping outside
+          FocusScope.of(context).unfocus();
+        },
+        behavior: HitTestBehavior.opaque,
         child: Column(
           children: [
             // Filter Section
@@ -1374,5 +1389,44 @@ class _StudentManagementPageState extends State<StudentManagementPage>
         ],
       ),
     );
+  }
+
+  Widget _buildCreateStudentFAB() {
+    return Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: AdminDashboardStyles.primary.withOpacity(0.3),
+                blurRadius: 20,
+                offset: const Offset(0, 8),
+                spreadRadius: 0,
+              ),
+              BoxShadow(
+                color: Colors.black.withOpacity(0.1),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+                spreadRadius: 0,
+              ),
+            ],
+          ),
+          child: FloatingActionButton.extended(
+            onPressed: _navigateToCreateStudentPage,
+            backgroundColor: AdminDashboardStyles.primary,
+            foregroundColor: Colors.white,
+            elevation: 0,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            icon: const Icon(Icons.person_add_rounded, size: 20),
+            label: const Text(
+              'Create Student',
+              style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+            ),
+          ),
+        )
+        .animate()
+        .fadeIn(duration: 1000.ms, delay: 300.ms)
+        .scale(begin: const Offset(0.8, 0.8));
   }
 }

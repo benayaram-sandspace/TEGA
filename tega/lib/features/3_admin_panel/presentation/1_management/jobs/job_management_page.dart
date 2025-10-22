@@ -37,7 +37,7 @@ class _JobManagementPageState extends State<JobManagementPage>
   Map<String, int> _stats = {
     'total': 0,
     'active': 0,
-    'closed': 0,
+    'expired': 0,
     'jobs': 0,
     'internships': 0,
   };
@@ -53,6 +53,7 @@ class _JobManagementPageState extends State<JobManagementPage>
       CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
     );
     _loadJobs();
+    _loadStats();
     _animationController.forward();
   }
 
@@ -107,7 +108,7 @@ class _JobManagementPageState extends State<JobManagementPage>
             }
             _totalPages = data['pagination']['totalPages'];
             _totalJobs = data['pagination']['totalJobs'];
-            _calculateStats();
+            _loadStats();
           });
         } else {
           _showErrorSnackBar(data['message'] ?? 'Failed to load jobs');
@@ -125,17 +126,72 @@ class _JobManagementPageState extends State<JobManagementPage>
   }
 
   void _calculateStats() {
+    // Calculate stats from all jobs, not just filtered ones
     _stats = {
       'total': _totalJobs,
       'active': _jobs
           .where((job) => job['status'] == 'open' || job['status'] == 'active')
           .length,
-      'closed': _jobs.where((job) => job['status'] == 'closed').length,
+      'expired': _jobs
+          .where(
+            (job) => job['status'] == 'expired' || job['status'] == 'closed',
+          )
+          .length,
       'jobs': _jobs.where((job) => job['postingType'] == 'job').length,
       'internships': _jobs
           .where((job) => job['postingType'] == 'internship')
           .length,
     };
+  }
+
+  Future<void> _loadStats() async {
+    try {
+      final headers = _authService.getAuthHeaders();
+      final response = await http.get(
+        Uri.parse(ApiEndpoints.adminJobsAll),
+        headers: headers,
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        if (data['success'] == true) {
+          final allJobs = List<Map<String, dynamic>>.from(data['data']);
+          // Debug: Print job statuses to see actual values
+          print('Job statuses in database:');
+          for (var job in allJobs) {
+            print('Job: ${job['title']} - Status: ${job['status']}');
+          }
+          setState(() {
+            _stats = {
+              'total': allJobs.length,
+              'active': allJobs
+                  .where(
+                    (job) =>
+                        job['status'] == 'open' || job['status'] == 'active',
+                  )
+                  .length,
+              'expired': allJobs
+                  .where(
+                    (job) =>
+                        job['status'] == 'expired' || job['status'] == 'closed',
+                  )
+                  .length,
+              'jobs': allJobs
+                  .where((job) => job['postingType'] == 'job')
+                  .length,
+              'internships': allJobs
+                  .where((job) => job['postingType'] == 'internship')
+                  .length,
+            };
+            // Debug: Print calculated stats
+            print('Calculated stats: $_stats');
+          });
+        }
+      }
+    } catch (e) {
+      // If stats loading fails, fall back to calculating from current jobs
+      _calculateStats();
+    }
   }
 
   Future<void> _deleteJob(String jobId) async {
@@ -151,6 +207,7 @@ class _JobManagementPageState extends State<JobManagementPage>
         if (data['success'] == true) {
           _showSuccessSnackBar('Job deleted successfully');
           _loadJobs(refresh: true);
+          _loadStats();
         } else {
           _showErrorSnackBar(data['message'] ?? 'Failed to delete job');
         }
@@ -176,6 +233,7 @@ class _JobManagementPageState extends State<JobManagementPage>
         if (data['success'] == true) {
           _showSuccessSnackBar('Job status updated successfully');
           _loadJobs(refresh: true);
+          _loadStats();
         } else {
           _showErrorSnackBar(data['message'] ?? 'Failed to update job status');
         }
@@ -223,7 +281,7 @@ class _JobManagementPageState extends State<JobManagementPage>
           children: [
             const Text('Select new status:'),
             const SizedBox(height: 16),
-            ...['open', 'active', 'closed', 'paused'].map(
+            ...['open', 'active', 'expired', 'paused'].map(
               (status) => ListTile(
                 title: Text(status.toUpperCase()),
                 leading: Radio<String>(
@@ -273,6 +331,7 @@ class _JobManagementPageState extends State<JobManagementPage>
       _searchQuery = query;
     });
     _loadJobs(refresh: true);
+    _loadStats();
   }
 
   void _onFilterChanged(String status, String type) {
@@ -281,6 +340,7 @@ class _JobManagementPageState extends State<JobManagementPage>
       _selectedType = type;
     });
     _loadJobs(refresh: true);
+    _loadStats();
   }
 
   void _loadMoreJobs() {

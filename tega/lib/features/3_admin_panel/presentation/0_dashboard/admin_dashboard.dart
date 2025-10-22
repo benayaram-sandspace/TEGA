@@ -7,6 +7,7 @@ import 'package:tega/features/1_authentication/data/auth_repository.dart';
 import 'package:tega/features/1_authentication/presentation/screens/login_page.dart';
 import 'package:tega/features/3_admin_panel/presentation/0_dashboard/admin_dashboard_styles.dart';
 import 'package:tega/features/3_admin_panel/presentation/0_dashboard/tabs/dashboard_home_tab.dart';
+import 'package:tega/features/3_admin_panel/presentation/1_management/offers/offer_management_page.dart';
 import 'package:tega/features/3_admin_panel/presentation/1_management/students/students_page.dart';
 import 'package:tega/features/3_admin_panel/presentation/1_management/principals/principals_page.dart';
 import 'package:tega/features/3_admin_panel/presentation/1_management/courses/course_management_page.dart';
@@ -64,12 +65,7 @@ class _AdminDashboardState extends State<AdminDashboard>
     _pages = [
       DashboardHomeTab(authService: _authService),
       const CourseManagementPage(),
-      const PlaceholderPage(
-        title: 'Offer Management',
-        description:
-            'Create and manage special offers, discounts, and promotional campaigns.',
-        icon: Icons.percent,
-      ),
+      const OfferManagementPage(),
       const StudentsPage(),
       const PrincipalsPage(),
       const NotificationManagerPage(),

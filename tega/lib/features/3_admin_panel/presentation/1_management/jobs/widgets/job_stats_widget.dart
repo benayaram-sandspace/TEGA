@@ -72,8 +72,8 @@ class JobStatsWidget extends StatelessWidget {
                   ),
                   const SizedBox(height: 12),
                   _buildAnimatedStatRow(
-                    'Closed',
-                    stats['closed'] ?? 0,
+                    'Expired',
+                    stats['expired'] ?? 0,
                     const Color(0xFFF56565),
                     Icons.cancel,
                     100,

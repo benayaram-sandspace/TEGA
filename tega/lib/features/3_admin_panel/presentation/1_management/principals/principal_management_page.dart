@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:tega/features/3_admin_panel/data/models/principal_model.dart';
 import 'package:tega/data/colleges_data.dart';
 import 'package:tega/features/3_admin_panel/data/services/admin_dashboard_service.dart';
+import 'package:tega/features/3_admin_panel/presentation/0_dashboard/create_principal_page.dart';
+import 'package:tega/features/3_admin_panel/presentation/0_dashboard/admin_dashboard_styles.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'principal_profile_page.dart';
 
 class PrincipalManagementPage extends StatefulWidget {
@@ -87,6 +90,18 @@ class _PrincipalManagementPageState extends State<PrincipalManagementPage>
     }
   }
 
+  void _navigateToCreatePrincipalPage() {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => CreatePrincipalPage(
+          onPrincipalCreated: () {
+            _fetchPrincipalsFromAPI(); // Refresh principal data
+          },
+        ),
+      ),
+    );
+  }
+
   @override
   void dispose() {
     _searchController.dispose();
@@ -158,13 +173,15 @@ class _PrincipalManagementPageState extends State<PrincipalManagementPage>
     final screenWidth = MediaQuery.of(context).size.width;
     final isSmallScreen = screenWidth < 600;
 
-    return GestureDetector(
-      onTap: () {
-        FocusScope.of(context).unfocus();
-      },
-      behavior: HitTestBehavior.opaque,
-      child: Container(
-        color: const Color(0xFFF8FAFC), // Solid background color
+    return Scaffold(
+      backgroundColor: const Color(0xFFF8FAFC),
+      floatingActionButton: _buildCreatePrincipalFAB(),
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
+      body: GestureDetector(
+        onTap: () {
+          FocusScope.of(context).unfocus();
+        },
+        behavior: HitTestBehavior.opaque,
         child: Column(
           children: [
             Padding(
@@ -706,5 +723,44 @@ class _PrincipalManagementPageState extends State<PrincipalManagementPage>
         ),
       ),
     );
+  }
+
+  Widget _buildCreatePrincipalFAB() {
+    return Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: AdminDashboardStyles.primary.withOpacity(0.3),
+                blurRadius: 20,
+                offset: const Offset(0, 8),
+                spreadRadius: 0,
+              ),
+              BoxShadow(
+                color: Colors.black.withOpacity(0.1),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+                spreadRadius: 0,
+              ),
+            ],
+          ),
+          child: FloatingActionButton.extended(
+            onPressed: _navigateToCreatePrincipalPage,
+            backgroundColor: AdminDashboardStyles.primary,
+            foregroundColor: Colors.white,
+            elevation: 0,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            icon: const Icon(Icons.school_rounded, size: 20),
+            label: const Text(
+              'Create Principal',
+              style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+            ),
+          ),
+        )
+        .animate()
+        .fadeIn(duration: 1000.ms, delay: 300.ms)
+        .scale(begin: const Offset(0.8, 0.8));
   }
 }

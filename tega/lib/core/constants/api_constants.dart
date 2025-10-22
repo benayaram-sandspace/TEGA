@@ -363,7 +363,7 @@ class ApiEndpoints {
       '${EnvConfig.baseUrl}/api/offers/admin/institutes';
 
   // Admin routes - CRUD Operations
-  static String get adminOffers => '${EnvConfig.baseUrl}/api/offers/admin';
+  static String get adminOffers => '${EnvConfig.baseUrl}/api/offers/admin/all';
   static String adminOfferById(String id) =>
       '${EnvConfig.baseUrl}/api/offers/admin/$id';
   static String get adminCreateOffer => '${EnvConfig.baseUrl}/api/offers/admin';
@@ -451,6 +451,8 @@ class ApiEndpoints {
       '${EnvConfig.baseUrl}/api/notifications/admin/payments';
   static String adminNotificationMarkRead(String id) =>
       '${EnvConfig.baseUrl}/api/notifications/admin/$id/read';
+  static String get adminNotificationMarkAllRead =>
+      '${EnvConfig.baseUrl}/api/notifications/admin/mark-all-read';
 
   // User/Student notifications
   static String get userNotifications =>
@@ -574,6 +576,19 @@ class ApiEndpoints {
       '${EnvConfig.baseUrl}/api/video-delivery/$courseId/batch-signed-urls';
   static String get videoDeliveryClearCache =>
       '${EnvConfig.baseUrl}/api/video-delivery/clear-cache';
+
+  // ==================== ANNOUNCEMENTS ====================
+  // Principal routes for announcements
+  static String get principalAnnouncements =>
+      '${EnvConfig.baseUrl}/api/principal/announcements';
+  static String principalAnnouncementById(String id) =>
+      '${EnvConfig.baseUrl}/api/principal/announcements/$id';
+  static String get principalCreateAnnouncement =>
+      '${EnvConfig.baseUrl}/api/principal/announcements';
+  static String principalUpdateAnnouncement(String id) =>
+      '${EnvConfig.baseUrl}/api/principal/announcements/$id';
+  static String principalDeleteAnnouncement(String id) =>
+      '${EnvConfig.baseUrl}/api/principal/announcements/$id';
 
   // ==================== HEALTH & TEST ====================
   static String get health => '${EnvConfig.baseUrl}/api/health';
