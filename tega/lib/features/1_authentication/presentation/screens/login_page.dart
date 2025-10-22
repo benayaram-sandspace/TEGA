@@ -7,16 +7,23 @@ import 'package:tega/features/3_admin_panel/presentation/0_dashboard/admin_dashb
 import 'package:tega/features/4_college_panel/data/repositories/college_repository.dart';
 import 'package:tega/features/4_college_panel/presentation/0_dashboard/dashboard_screen.dart';
 import 'package:tega/features/5_student_dashboard/presentation/1_home/student_home_page.dart';
-import 'package:tega/core/services/credential_manager.dart';
-import 'package:tega/core/widgets/working_email_input.dart';
-import 'package:tega/core/widgets/save_credentials_dialog.dart';
-import 'package:tega/core/widgets/account_management_dialog.dart';
+import 'package:tega/core/services/simple_google_credential_manager.dart';
+import 'package:tega/core/widgets/google_credential_picker_field.dart';
+import 'package:tega/core/widgets/fingerprint_login_button.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
 
   @override
   State<LoginPage> createState() => _LoginPageState();
+
+  // Static reference to clear fields on logout
+  static _LoginPageState? _currentInstance;
+
+  /// Clear login fields when logging out
+  static void clearFieldsOnLogout() {
+    _currentInstance?.clearLoginFields();
+  }
 }
 
 class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
@@ -24,7 +31,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _authService = AuthService();
-  final _credentialManager = CredentialManager();
+  final _credentialManager = SimpleGoogleCredentialManager();
   bool _isPasswordVisible = false;
   bool _isLoading = false;
   bool _rememberMe = false;
@@ -101,7 +108,8 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
       'logging_in': 'Signing in...',
       'invalid_email': 'Please enter a valid email address',
       'remember_me_title': 'Save Credentials',
-      'remember_me_message': 'Do you want to save your login credentials to this device?',
+      'remember_me_message':
+          'Do you want to save your login credentials to this device?',
       'save_credentials': 'Save to Device',
       'dont_save': 'Don\'t Save',
       'credentials_saved': 'Credentials saved successfully!',
@@ -128,7 +136,8 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
       'invalid_email':
           'దయచేసి చెల్లుబాటు అయ్యే ఇమెయిల్ చిరునామాను నమోదు చేయండి',
       'remember_me_title': 'ఆధారాలను సేవ్ చేయండి',
-      'remember_me_message': 'మీ లాగిన్ ఆధారాలను ఈ పరికరంలో సేవ్ చేయాలనుకుంటున్నారా?',
+      'remember_me_message':
+          'మీ లాగిన్ ఆధారాలను ఈ పరికరంలో సేవ్ చేయాలనుకుంటున్నారా?',
       'save_credentials': 'పరికరంలో సేవ్ చేయండి',
       'dont_save': 'సేవ్ చేయవద్దు',
       'credentials_saved': 'ఆధారాలు విజయవంతంగా సేవ్ చేయబడ్డాయి!',
@@ -168,21 +177,20 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
 
     // Initialize credential manager and load saved credentials
     _initializeCredentialManager();
+
+    // Set static reference for logout clearing
+    LoginPage._currentInstance = this;
   }
 
   /// Initialize credential manager
   Future<void> _initializeCredentialManager() async {
     try {
       await _credentialManager.initialize();
-      debugPrint('✅ Credential manager initialized');
-      
+
       // Update state to refresh UI
       setState(() {});
-    } catch (e) {
-      debugPrint('⚠️ Error initializing credential manager: $e');
-    }
+    } catch (e) {}
   }
-
 
   @override
   void dispose() {
@@ -190,46 +198,36 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
     _passwordController.dispose();
     _fadeController.dispose();
     _slideController.dispose();
+
+    // Clear static reference
+    LoginPage._currentInstance = null;
     super.dispose();
   }
-
 
   /// Handle remember me checkbox toggle
   void _handleRememberMeToggle(bool? value) async {
     if (value == true) {
-      // Show save credentials dialog
-      final shouldSave = await showDialog<bool>(
-        context: context,
-        builder: (context) => SaveCredentialsDialog(
-          email: _emailController.text.trim(),
-          password: _passwordController.text,
-          translate: _tr,
-          isMobile: isMobile,
-        ),
+      // Save credentials using Google Credential Manager
+      final success = await _credentialManager.saveCredentials(
+        domain: 'tega.app', // Your app domain
+        username: _emailController.text.trim(),
+        password: _passwordController.text,
+        displayName: _emailController.text.split('@')[0],
       );
-      
-      if (shouldSave == true) {
+
+      if (success) {
         setState(() {
           _rememberMe = true;
         });
         _showSnackBar(_tr('credentials_saved'));
+      } else {
+        _showSnackBar('Failed to save credentials. Please try again.');
       }
     } else {
       setState(() {
         _rememberMe = false;
       });
     }
-  }
-
-  /// Show account management dialog
-  void _showAccountManagement() {
-    showDialog(
-      context: context,
-      builder: (context) => AccountManagementDialog(
-        translate: _tr,
-        isMobile: isMobile,
-      ),
-    );
   }
 
   /// Show snackbar with message
@@ -239,13 +237,20 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
         content: Text(message),
         backgroundColor: const Color(0xFF27AE60),
         behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(10),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         margin: const EdgeInsets.all(16),
         duration: const Duration(seconds: 2),
       ),
     );
+  }
+
+  /// Clear login form fields
+  void clearLoginFields() {
+    _emailController.clear();
+    _passwordController.clear();
+    setState(() {
+      _rememberMe = false;
+    });
   }
 
   /// Validate email format
@@ -269,15 +274,11 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
       final email = _emailController.text.trim();
       final password = _passwordController.text;
 
-      debugPrint('🔐 Attempting login for: $email');
-
       final result = await _authService.login(email, password);
 
       if (!mounted) return;
 
       if (result['success'] == true) {
-        debugPrint('✅ Login successful, navigating based on role...');
-
         // Update last used timestamp for saved account
         await _credentialManager.updateLastUsed(email);
 
@@ -299,18 +300,15 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
           );
         }
       } else {
-        debugPrint('❌ Login failed: ${result['message']}');
         _showErrorDialog(
           result['message'] ?? 'Login failed. Please try again.',
         );
       }
     } on AuthException catch (e) {
-      debugPrint('❌ Auth error: ${e.message}');
       if (mounted) {
         _showErrorDialog(e.message);
       }
     } catch (e) {
-      debugPrint('❌ Unexpected error during login: $e');
       if (mounted) {
         _showErrorDialog(
           'An unexpected error occurred. Please check your connection and try again.',
@@ -378,36 +376,42 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              Color(0xFF9C88FF), // Light Purple
-              Color(0xFF8B7BFF), // Medium Light Purple
-              Color(0xFF7A6BFF), // Medium Purple
-            ],
+      body: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: () {
+          FocusScope.of(context).unfocus();
+        },
+        child: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                Color(0xFF9C88FF), // Light Purple
+                Color(0xFF8B7BFF), // Medium Light Purple
+                Color(0xFF7A6BFF), // Medium Purple
+              ],
+            ),
           ),
-        ),
-        child: SafeArea(
-          child: FadeTransition(
-            opacity: _fadeAnimation,
-            child: SlideTransition(
-              position: _slideAnimation,
-              child: Center(
-                child: SingleChildScrollView(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: horizontalPadding,
-                    vertical: isMobile ? 20 : 40,
-                  ),
-                  child: ConstrainedBox(
-                    constraints: BoxConstraints(
-                      maxWidth: isDesktop ? 1200 : double.infinity,
+          child: SafeArea(
+            child: FadeTransition(
+              opacity: _fadeAnimation,
+              child: SlideTransition(
+                position: _slideAnimation,
+                child: Center(
+                  child: SingleChildScrollView(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: horizontalPadding,
+                      vertical: isMobile ? 20 : 40,
                     ),
-                    child: isDesktop
-                        ? _buildDesktopLayout()
-                        : _buildMobileLayout(),
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(
+                        maxWidth: isDesktop ? 1200 : double.infinity,
+                      ),
+                      child: isDesktop
+                          ? _buildDesktopLayout()
+                          : _buildMobileLayout(),
+                    ),
                   ),
                 ),
               ),
@@ -616,90 +620,94 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
     final cardPadding = isMobile ? 20.0 : (isTablet ? 24.0 : 28.0);
     final borderRadius = isMobile ? 20.0 : 24.0;
 
-    return Container(
-      width: double.infinity,
-      padding: EdgeInsets.all(cardPadding),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(borderRadius),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 30,
-            offset: const Offset(0, 15),
-          ),
-          BoxShadow(
-            color: const Color(0xFF9C88FF).withOpacity(0.1),
-            blurRadius: 20,
-            offset: const Offset(0, 10),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildFormLabel(_tr('email_label')),
-          SizedBox(height: isMobile ? 8 : 10),
-          WorkingEmailInput(
-            controller: _emailController,
-            hintText: _tr('email_hint'),
-            isMobile: isMobile,
-            decoration: _inputDecoration(
-              _tr('email_hint'),
-              Icons.email_rounded,
+    return GestureDetector(
+      onTap: () {
+        // Dismiss keyboard and remove focus when tapping outside input fields
+        FocusScope.of(context).unfocus();
+      },
+      child: Container(
+        width: double.infinity,
+        padding: EdgeInsets.all(cardPadding),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(borderRadius),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 30,
+              offset: const Offset(0, 15),
             ),
-            validator: (value) {
-              if (value == null || value.isEmpty) {
-                return _tr('validation_email');
-              }
-              if (!_isValidEmail(value.trim())) {
-                return _tr('invalid_email');
-              }
-              return null;
-            },
-            onAccountSelected: (email, password) {
-              debugPrint('🔍 LOGIN: Account selected callback called');
-              debugPrint('🔍 LOGIN: Email: $email');
-              debugPrint('🔍 LOGIN: Password: $password');
-              // Auto-fill password when account is selected
-              _passwordController.text = password;
-              debugPrint('🔍 LOGIN: Password field filled');
-            },
-          ),
-          SizedBox(height: isMobile ? 20 : 24),
-          _buildFormLabel(_tr('password_label')),
-          SizedBox(height: isMobile ? 8 : 10),
-          TextFormField(
-            controller: _passwordController,
-            obscureText: !_isPasswordVisible,
-            autocorrect: false,
-            enableSuggestions: false,
-            textInputAction: TextInputAction.done,
-            onFieldSubmitted: (_) => _handleLogin(),
-            style: TextStyle(
-              fontSize: isMobile ? 14 : 15,
-              color: const Color(0xFF2C3E50),
+            BoxShadow(
+              color: const Color(0xFF9C88FF).withOpacity(0.1),
+              blurRadius: 20,
+              offset: const Offset(0, 10),
             ),
-            decoration: _inputDecoration(
-              _tr('password_hint'),
-              Icons.lock_rounded,
-              isPassword: true,
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildFormLabel(_tr('email_label')),
+            SizedBox(height: isMobile ? 8 : 10),
+            GoogleCredentialPickerField(
+              controller: _emailController,
+              hintText: _tr('email_hint'),
+              isMobile: isMobile,
+              decoration: _inputDecoration(
+                _tr('email_hint'),
+                Icons.email_rounded,
+              ),
+              validator: (value) {
+                if (value == null || value.isEmpty) {
+                  return _tr('validation_email');
+                }
+                if (!_isValidEmail(value.trim())) {
+                  return _tr('invalid_email');
+                }
+                return null;
+              },
+              onCredentialSelected: (email, password) {
+                // Auto-fill password when credential is selected
+                _passwordController.text = password;
+              },
             ),
-            validator: (value) {
-              if (value == null || value.isEmpty) {
-                return _tr('validation_password');
-              }
-              if (value.length < 6) {
-                return 'Password must be at least 6 characters';
-              }
-              return null;
-            },
-          ),
-          SizedBox(height: isMobile ? 16 : 20),
-          _buildRememberMeAndForgotPassword(),
-          SizedBox(height: isMobile ? 24 : 32),
-          _buildLoginButton(),
-        ],
+            SizedBox(height: isMobile ? 20 : 24),
+            _buildFormLabel(_tr('password_label')),
+            SizedBox(height: isMobile ? 8 : 10),
+            TextFormField(
+              controller: _passwordController,
+              obscureText: !_isPasswordVisible,
+              autocorrect: false,
+              enableSuggestions: false,
+              textInputAction: TextInputAction.done,
+              onFieldSubmitted: (_) => _handleLogin(),
+              style: TextStyle(
+                fontSize: isMobile ? 14 : 15,
+                color: const Color(0xFF2C3E50),
+              ),
+              decoration: _inputDecoration(
+                _tr('password_hint'),
+                Icons.lock_rounded,
+                isPassword: true,
+              ),
+              validator: (value) {
+                if (value == null || value.isEmpty) {
+                  return _tr('validation_password');
+                }
+                if (value.length < 6) {
+                  return 'Password must be at least 6 characters';
+                }
+                return null;
+              },
+            ),
+            SizedBox(height: isMobile ? 16 : 20),
+            _buildRememberMeAndForgotPassword(),
+            SizedBox(height: isMobile ? 24 : 32),
+            _buildLoginButton(),
+            SizedBox(height: isMobile ? 16 : 20),
+            _buildFingerprintLoginButton(),
+          ],
+        ),
       ),
     );
   }
@@ -751,9 +759,9 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
               ),
             ),
             TextButton(
-              onPressed: () => Navigator.of(
-                context,
-              ).push(MaterialPageRoute(builder: (_) => const ForgetPasswordPage())),
+              onPressed: () => Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const ForgetPasswordPage()),
+              ),
               child: Text(
                 _tr('forgot_password'),
                 style: const TextStyle(
@@ -766,36 +774,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
             ),
           ],
         ),
-        // Account management button
-        if (_credentialManager.hasAccounts) ...[
-          const SizedBox(height: 12),
-          SizedBox(
-            width: double.infinity,
-            child: TextButton.icon(
-              onPressed: () => _showAccountManagement(),
-              icon: const Icon(
-                Icons.account_circle_outlined,
-                size: 16,
-                color: Color(0xFF9C88FF),
-              ),
-              label: Text(
-                'Manage Saved Accounts (${_credentialManager.accountCount})',
-                style: const TextStyle(
-                  color: Color(0xFF9C88FF),
-                  fontSize: 12,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-              style: TextButton.styleFrom(
-                padding: const EdgeInsets.symmetric(vertical: 8),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                  side: BorderSide(color: const Color(0xFF9C88FF).withOpacity(0.3)),
-                ),
-              ),
-            ),
-          ),
-        ],
+        // Removed Manage Saved Accounts button as requested
       ],
     );
   }
@@ -864,8 +843,16 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
     );
   }
 
-
-
+  Widget _buildFingerprintLoginButton() {
+    return FingerprintLoginButton(
+      isMobile: isMobile,
+      onLoginSuccess: (email, password) {
+        _emailController.text = email;
+        _passwordController.text = password;
+        _handleLogin();
+      },
+    );
+  }
 
   Widget _buildSignupLink() {
     return Container(

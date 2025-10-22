@@ -17,6 +17,8 @@ class ApiEndpoints {
   static String get verifyOTP => '${EnvConfig.baseUrl}/api/auth/verify-otp';
   static String get resetPassword =>
       '${EnvConfig.baseUrl}/api/auth/reset-password';
+  static String get changePassword =>
+      '${EnvConfig.baseUrl}/api/auth/change-password';
   static String get sendRegistrationOTP =>
       '${EnvConfig.baseUrl}/api/auth/register/send-otp';
   static String get verifyRegistrationOTP =>

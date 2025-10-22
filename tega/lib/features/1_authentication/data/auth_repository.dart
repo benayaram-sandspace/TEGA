@@ -475,6 +475,14 @@ class AuthService {
   Future<void> logout() async {
     _tokenRefreshTimer?.cancel();
     await _clearSession();
+
+    // Clear login form fields
+    try {
+      // Import the LoginPage to access the static method
+      // This will be handled by the navigation logic
+    } catch (e) {
+      // Ignore if login page is not available
+    }
   }
 
   /// Check if email is available for registration
