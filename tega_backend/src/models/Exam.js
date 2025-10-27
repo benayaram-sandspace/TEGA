@@ -13,8 +13,15 @@ const examSchema = new mongoose.Schema({
   },
   courseId: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'RealTimeCourse',
-    required: true
+    ref: 'Course',
+    required: function() {
+      return !this.isTegaExam; // Only required if it's not a TEGA exam
+    }
+  },
+  // New field to distinguish TEGA exams from course-based exams
+  isTegaExam: {
+    type: Boolean,
+    default: false
   },
   description: {
     type: String,
@@ -53,6 +60,10 @@ const examSchema = new mongoose.Schema({
       type: String, // HH:MM format
       required: true
     },
+    slotDateTime: {
+      type: Date, // Full datetime for the slot
+      required: false // Optional for backward compatibility
+    },
     maxParticipants: {
       type: Number,
       required: true,
@@ -88,6 +99,13 @@ const examSchema = new mongoose.Schema({
   maxAttempts: {
     type: Number,
     default: 1
+  },
+  // Payment deadline - payment must be completed before this time
+  paymentDeadline: {
+    type: Date,
+    required: function() {
+      return this.requiresPayment && this.price > 0;
+    }
   },
   instructions: {
     type: String,

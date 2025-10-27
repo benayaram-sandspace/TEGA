@@ -61,7 +61,7 @@ async function callGemini(messages, res) {
     
     return fullResponse;
   } catch (error) {
-    console.error('Gemini API error:', error);
+    // console.error('Gemini API error:', error);
     throw new Error(`Gemini error: ${error.message}`);
   }
 }
@@ -98,7 +98,7 @@ async function callOllama(messages, stream = true) {
 
     return response;
   } catch (error) {
-    console.error('Ollama connection error:', error);
+    // console.error('Ollama connection error:', error);
     throw new Error('Failed to connect to Ollama. Make sure Ollama is running.');
   }
 }
@@ -123,7 +123,7 @@ router.post('/chat', async (req, res) => {
         userId = payload.id || payload.userId || payload.principalId || payload._id;
       }
     } catch (authError) {
-      console.log('No valid authentication, proceeding without user context');
+      // console.log('No valid authentication, proceeding without user context');
     }
 
     if (!message || typeof message !== 'string') {
@@ -141,7 +141,7 @@ router.post('/chat', async (req, res) => {
           .populate('enrolledCourses')
           .select('name email enrolledCourses college');
       } catch (userError) {
-        console.log('Could not fetch user context:', userError.message);
+        // console.log('Could not fetch user context:', userError.message);
       }
     }
 
@@ -186,11 +186,11 @@ router.post('/chat', async (req, res) => {
     
     if (useGemini) {
       // Use Gemini API
-      console.log('Using Gemini API for AI Assistant');
+      // console.log('Using Gemini API for AI Assistant');
       try {
         fullResponse = await callGemini(ollamaMessages, res);
       } catch (geminiError) {
-        console.error('Gemini failed, trying Ollama:', geminiError.message);
+        // console.error('Gemini failed, trying Ollama:', geminiError.message);
         // If Gemini fails, try Ollama
         if (!getGeminiApiKey()) {
           throw new Error('Gemini failed and Ollama not configured');
@@ -201,7 +201,7 @@ router.post('/chat', async (req, res) => {
     
     // Use Ollama with Mistral if Gemini is not available or failed
     if (!fullResponse || fullResponse.length === 0) {
-      console.log('Using Ollama with Mistral for AI Assistant (Gemini fallback)');
+      // console.log('Using Ollama with Mistral for AI Assistant (Gemini fallback)');
       const ollamaResponse = await fetch(`${OLLAMA_API_URL}/api/chat`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -252,7 +252,7 @@ router.post('/chat', async (req, res) => {
             }
           } catch (e) {
             // Skip malformed JSON lines
-            console.error('JSON parse error:', e);
+            // console.error('JSON parse error:', e);
           }
         }
       }
@@ -294,7 +294,7 @@ router.post('/chat', async (req, res) => {
         // Send conversation ID to client
         res.write(`data: ${JSON.stringify({ conversationId: savedConversationId })}\n\n`);
       } catch (dbError) {
-        console.error('Error saving conversation:', dbError);
+        // console.error('Error saving conversation:', dbError);
       }
     }
 
@@ -303,7 +303,7 @@ router.post('/chat', async (req, res) => {
     res.end();
 
   } catch (error) {
-    console.error('AI Assistant error:', error);
+    // console.error('AI Assistant error:', error);
     
     try {
       const errorMsg = getGeminiApiKey() 
@@ -336,7 +336,7 @@ router.get('/conversations', async (req, res) => {
         userId = payload.id || payload.userId || payload.principalId || payload._id;
       }
     } catch (authError) {
-      console.log('No valid authentication for conversations');
+      // console.log('No valid authentication for conversations');
     }
 
     if (!userId) {
@@ -367,7 +367,7 @@ router.get('/conversations', async (req, res) => {
       data: conversationsWithCount 
     });
   } catch (error) {
-    console.error('Error fetching conversations:', error);
+    // console.error('Error fetching conversations:', error);
     res.status(500).json({ 
       success: false, 
       error: 'Failed to load conversations' 
@@ -389,7 +389,7 @@ router.get('/conversations/:id', async (req, res) => {
         userId = payload.id || payload.userId || payload.principalId || payload._id;
       }
     } catch (authError) {
-      console.log('No valid authentication for conversation');
+      // console.log('No valid authentication for conversation');
     }
 
     if (!userId) {
@@ -416,7 +416,7 @@ router.get('/conversations/:id', async (req, res) => {
       data: conversation 
     });
   } catch (error) {
-    console.error('Error fetching conversation:', error);
+    // console.error('Error fetching conversation:', error);
     res.status(500).json({ 
       success: false, 
       error: 'Failed to load conversation' 
@@ -438,7 +438,7 @@ router.delete('/conversations/:id', async (req, res) => {
         userId = payload.id || payload.userId || payload.principalId || payload._id;
       }
     } catch (authError) {
-      console.log('No valid authentication for delete conversation');
+      // console.log('No valid authentication for delete conversation');
     }
 
     if (!userId) {
@@ -465,7 +465,7 @@ router.delete('/conversations/:id', async (req, res) => {
       message: 'Conversation deleted successfully' 
     });
   } catch (error) {
-    console.error('Error deleting conversation:', error);
+    // console.error('Error deleting conversation:', error);
     res.status(500).json({ 
       success: false, 
       error: 'Failed to delete conversation' 

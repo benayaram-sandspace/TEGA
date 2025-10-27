@@ -14,11 +14,12 @@ const examPaymentAttemptSchema = new mongoose.Schema({
   courseId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Course',
-    required: true
+    required: false,
+    default: null
   },
   paymentId: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'Payment',
+    ref: 'RazorpayPayment',
     required: true
   },
   attemptNumber: {

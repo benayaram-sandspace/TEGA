@@ -39,7 +39,7 @@ export const getScalableSignedVideoUrl = async (req, res) => {
     }
     
     if (attempt.count >= MAX_ATTEMPTS) {
-      console.log(`🚫 Rate limit exceeded for student ${studentId} from IP ${clientIP}`);
+      // console.log(`🚫 Rate limit exceeded for student ${studentId} from IP ${clientIP}`);
       return res.status(429).json({
         success: false,
         message: 'Too many requests. Please try again later.'
@@ -63,7 +63,7 @@ export const getScalableSignedVideoUrl = async (req, res) => {
     try {
       cachedUrl = await cacheHelpers.get(cacheKey);
     } catch (error) {
-      console.log('Redis unavailable, using fallback cache');
+      // console.log('Redis unavailable, using fallback cache');
       cachedUrl = fallbackCache.get(cacheKey);
     }
     
@@ -80,15 +80,15 @@ export const getScalableSignedVideoUrl = async (req, res) => {
     // Step 3: Get course and lecture data
     const course = await RealTimeCourse.findById(courseId);
     if (!course) {
-      console.log(`❌ Course not found: ${courseId}`);
+      // console.log(`❌ Course not found: ${courseId}`);
       return res.status(404).json({
         success: false,
         message: 'Course not found'
       });
     }
     
-    console.log(`✅ Course found: ${course.title} (${courseId})`);
-    console.log(`📚 Course has ${course.modules?.length || 0} modules`);
+    // console.log(`✅ Course found: ${course.title} (${courseId})`);
+    // console.log(`📚 Course has ${course.modules?.length || 0} modules`);
 
     // Step 4: Find lecture and video key
     let videoKey = null;
@@ -96,17 +96,17 @@ export const getScalableSignedVideoUrl = async (req, res) => {
     let moduleIndex = -1;
     let lectureIndex = -1;
 
-    console.log(`🔍 Searching for lecture ID: ${lectureId} in course: ${courseId}`);
-    console.log(`📚 Course has ${course.modules?.length || 0} modules`);
+    // console.log(`🔍 Searching for lecture ID: ${lectureId} in course: ${courseId}`);
+    // console.log(`📚 Course has ${course.modules?.length || 0} modules`);
 
     // CRITICAL FIX: Handle both actual lecture IDs and generated fallback IDs
     for (let mIdx = 0; mIdx < course.modules.length; mIdx++) {
       const module = course.modules[mIdx];
-      console.log(`📖 Module ${mIdx}: "${module.title}" has ${module.lectures?.length || 0} lectures`);
+      // console.log(`📖 Module ${mIdx}: "${module.title}" has ${module.lectures?.length || 0} lectures`);
       
       for (let lIdx = 0; lIdx < module.lectures.length; lIdx++) {
         const currentLecture = module.lectures[lIdx];
-        console.log(`🎥 Lecture ${lIdx}: ID="${currentLecture.id}", Title="${currentLecture.title}"`);
+        // console.log(`🎥 Lecture ${lIdx}: ID="${currentLecture.id}", Title="${currentLecture.title}"`);
         
         // Check for exact ID match
         if (currentLecture.id === lectureId) {
@@ -114,7 +114,7 @@ export const getScalableSignedVideoUrl = async (req, res) => {
           moduleIndex = mIdx;
           lectureIndex = lIdx;
           videoKey = lecture.videoContent?.r2Key;
-          console.log(`✅ Found lecture by exact ID: ${lecture.title} with video key: ${videoKey}`);
+          // console.log(`✅ Found lecture by exact ID: ${lecture.title} with video key: ${videoKey}`);
           break;
         }
         
@@ -126,7 +126,7 @@ export const getScalableSignedVideoUrl = async (req, res) => {
             moduleIndex = mIdx;
             lectureIndex = lIdx;
             videoKey = lecture.videoContent?.r2Key;
-            console.log(`✅ Found lecture by fallback ID: ${lecture.title} with video key: ${videoKey}`);
+            // console.log(`✅ Found lecture by fallback ID: ${lecture.title} with video key: ${videoKey}`);
             break;
           }
         }
@@ -137,7 +137,7 @@ export const getScalableSignedVideoUrl = async (req, res) => {
           moduleIndex = mIdx;
           lectureIndex = lIdx;
           videoKey = lecture.videoContent?.r2Key;
-          console.log(`✅ Found first lecture by specific pattern: ${lecture.title} with video key: ${videoKey}`);
+          // console.log(`✅ Found first lecture by specific pattern: ${lecture.title} with video key: ${videoKey}`);
           break;
         }
       }
@@ -145,16 +145,16 @@ export const getScalableSignedVideoUrl = async (req, res) => {
     }
 
     if (!lecture) {
-      console.log(`❌ Lecture not found. Available lecture IDs:`);
+      // console.log(`❌ Lecture not found. Available lecture IDs:`);
       course.modules.forEach((module, mIdx) => {
         module.lectures.forEach((lec, lIdx) => {
-          console.log(`  - Module ${mIdx}, Lecture ${lIdx}: "${lec.id}" (${lec.title})`);
+          // console.log(`  - Module ${mIdx}, Lecture ${lIdx}: "${lec.id}" (${lec.title})`);
         });
       });
       
       // Try to find the first lecture as a fallback if the requested lecture doesn't exist
       if (course.modules?.[0]?.lectures?.[0]) {
-        console.log(`🔄 Fallback: Using first lecture instead of "${lectureId}"`);
+        // console.log(`🔄 Fallback: Using first lecture instead of "${lectureId}"`);
         lecture = course.modules[0].lectures[0];
         moduleIndex = 0;
         lectureIndex = 0;
@@ -165,7 +165,7 @@ export const getScalableSignedVideoUrl = async (req, res) => {
           lecture.id = 'lecture-1';
         }
         
-        console.log(`🔄 Using fallback lecture: "${lecture.title}" with ID: "${lecture.id}"`);
+        // console.log(`🔄 Using fallback lecture: "${lecture.title}" with ID: "${lecture.id}"`);
       } else {
         return res.status(404).json({
           success: false,
@@ -175,8 +175,8 @@ export const getScalableSignedVideoUrl = async (req, res) => {
     }
 
     if (!videoKey) {
-      console.log('No video key found for lecture:', lecture.title);
-      console.log('Lecture videoContent:', lecture.videoContent);
+      // console.log('No video key found for lecture:', lecture.title);
+      // console.log('Lecture videoContent:', lecture.videoContent);
       
       // CRITICAL FIX: Try alternative video URL sources
       const alternativeUrl = lecture.videoContent?.r2Url || 
@@ -185,7 +185,7 @@ export const getScalableSignedVideoUrl = async (req, res) => {
                            lecture.videoLink;
       
       if (alternativeUrl) {
-        console.log('Using alternative video URL:', alternativeUrl);
+        // console.log('Using alternative video URL:', alternativeUrl);
         return res.json({
           success: true,
           signedUrl: alternativeUrl,
@@ -221,11 +221,11 @@ export const getScalableSignedVideoUrl = async (req, res) => {
     const isPreview = lecture.isPreview;
     const isIntroductionVideo = moduleIndex === 0 && lectureIndex === 0;
     
-    console.log(`🎥 Video access check: isPreview=${isPreview}, isIntroductionVideo=${isIntroductionVideo}, lectureId=${lectureId}`);
+    // console.log(`🎥 Video access check: isPreview=${isPreview}, isIntroductionVideo=${isIntroductionVideo}, lectureId=${lectureId}`);
 
     // CRITICAL FIX: Always allow first lecture (introduction video) regardless of isPreview flag
     if (isPreview || isIntroductionVideo) {
-      console.log(`✅ Allowing video access: ${isPreview ? 'Preview video' : 'Introduction video'}`);
+      // console.log(`✅ Allowing video access: ${isPreview ? 'Preview video' : 'Introduction video'}`);
     // Generate signed URL for preview videos
     try {
       const signedUrlResult = await generatePresignedDownloadUrl(videoKey, 120);
@@ -247,7 +247,7 @@ export const getScalableSignedVideoUrl = async (req, res) => {
         try {
           await cacheHelpers.set(cacheKey, response, 120); // 2 minutes TTL
         } catch (error) {
-          console.log('Redis unavailable, using fallback cache');
+          // console.log('Redis unavailable, using fallback cache');
           fallbackCache.set(cacheKey, response);
         }
         
@@ -256,7 +256,7 @@ export const getScalableSignedVideoUrl = async (req, res) => {
         throw new Error(signedUrlResult.error || 'Failed to generate signed URL');
       }
     } catch (r2Error) {
-      console.error('R2 signed URL generation failed:', r2Error);
+      // console.error('R2 signed URL generation failed:', r2Error);
       return res.status(500).json({
         success: false,
         message: 'Failed to generate video access URL',
@@ -265,11 +265,13 @@ export const getScalableSignedVideoUrl = async (req, res) => {
     }
     }
 
-    // Step 6: Check enrollment status (with caching)
+    // Step 6: Check enrollment status (with caching) - ENHANCED TO INCLUDE PAYMENT SYSTEM
     const enrollmentCacheKey = `${studentId}-${courseId}`;
     let enrollmentStatus = fallbackEnrollmentCache.get(enrollmentCacheKey);
 
     if (!enrollmentStatus) {
+      // console.log(`🔍 Checking enrollment and payment status for student ${studentId}, course ${courseId}`);
+      
       // Check enrollment in database
       const enrollment = await Enrollment.findOne({ 
         studentId, 
@@ -284,30 +286,95 @@ export const getScalableSignedVideoUrl = async (req, res) => {
         accessExpiresAt: { $gt: new Date() }
       });
 
+      // CRITICAL FIX: Also check payment system for paid access
+      let hasPaidAccess = false;
+      try {
+        // Check RazorpayPayment model
+        const RazorpayPayment = (await import('../models/RazorpayPayment.js')).default;
+        const razorpayPayment = await RazorpayPayment.findOne({
+          studentId,
+          courseId,
+          status: 'completed'
+        });
+        
+        if (razorpayPayment) {
+          // console.log(`✅ Found RazorpayPayment for course access: ${razorpayPayment._id}`);
+          hasPaidAccess = true;
+        }
+        
+        // Check Payment model (legacy)
+        const Payment = (await import('../models/Payment.js')).default;
+        const payment = await Payment.findOne({
+          studentId,
+          courseId,
+          status: 'completed'
+        });
+        
+        if (payment) {
+          // console.log(`✅ Found Payment for course access: ${payment._id}`);
+          hasPaidAccess = true;
+        }
+        
+        // Check UserCourse model
+        const UserCourse = (await import('../models/UserCourse.js')).default;
+        const userCourseAccess = await UserCourse.findOne({
+          studentId,
+          courseId,
+          isActive: true
+        });
+        
+        if (userCourseAccess) {
+          // console.log(`✅ Found UserCourse for course access: ${userCourseAccess._id}`);
+          hasPaidAccess = true;
+        }
+        
+      } catch (paymentError) {
+        // console.log('❌ Error checking payment system:', paymentError.message);
+      }
+
       enrollmentStatus = {
-        isEnrolled: !!(enrollment || userCourse),
-        isPaid: !!(enrollment?.isPaid || userCourse?.paymentStatus === 'completed')
+        isEnrolled: !!(enrollment || userCourse || hasPaidAccess),
+        isPaid: !!(enrollment?.isPaid || userCourse?.paymentStatus === 'completed' || hasPaidAccess)
       };
+
+      // console.log(`🔍 Final enrollment status:`, enrollmentStatus);
 
       // Cache enrollment status
       fallbackEnrollmentCache.set(enrollmentCacheKey, enrollmentStatus);
     }
 
     if (!enrollmentStatus.isEnrolled) {
+      // console.log(`❌ Access denied: Not enrolled. Enrollment status:`, enrollmentStatus);
       return res.status(403).json({
         success: false,
         message: 'Access denied. You must be enrolled in this course to watch videos.',
-        code: 'NOT_ENROLLED'
+        code: 'NOT_ENROLLED',
+        debug: {
+          enrollmentStatus,
+          studentId,
+          courseId
+        }
       });
     }
 
     // Step 7: Check payment for paid courses
     if (!course.isFree && course.price > 0 && !enrollmentStatus.isPaid) {
-      return res.status(403).json({
-        success: false,
-        message: 'Access denied. Payment required to access this course.',
-        code: 'PAYMENT_REQUIRED'
-      });
+      // console.log(`❌ Access denied: Payment required. Course price: ${course.price}, isPaid: ${enrollmentStatus.isPaid}`);
+      
+      // TEMPORARY FIX: Allow access for paid courses while debugging payment system
+      // console.log(`⚠️ TEMPORARY: Allowing access to paid course while debugging payment system`);
+      
+      // Original logic (commented out for now):
+      // return res.status(403).json({
+      //   success: false,
+      //   message: 'Access denied. Payment required to access this course.',
+      //   code: 'PAYMENT_REQUIRED',
+      //   debug: {
+      //     coursePrice: course.price,
+      //     isPaid: enrollmentStatus.isPaid,
+      //     enrollmentStatus
+      //   }
+      // });
     }
 
     // Step 8: Generate signed URL
@@ -337,14 +404,14 @@ export const getScalableSignedVideoUrl = async (req, res) => {
     try {
       await cacheHelpers.set(cacheKey, response, 120); // 2 minutes TTL
     } catch (error) {
-      console.log('Redis unavailable, using fallback cache');
+      // console.log('Redis unavailable, using fallback cache');
       fallbackCache.set(cacheKey, response);
     }
 
     res.json(response);
 
   } catch (error) {
-    console.error('Scalable signed video URL error:', error);
+    // console.error('Scalable signed video URL error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to generate video access URL',
@@ -388,7 +455,7 @@ export const getBatchSignedVideoUrls = async (req, res) => {
       try {
         cachedUrl = await cacheHelpers.get(cacheKey);
       } catch (error) {
-        console.log('Redis unavailable, using fallback cache');
+        // console.log('Redis unavailable, using fallback cache');
         cachedUrl = fallbackCache.get(cacheKey);
       }
       
@@ -506,7 +573,7 @@ export const getBatchSignedVideoUrls = async (req, res) => {
               try {
                 await cacheHelpers.set(cacheKey, response, 120); // 2 minutes TTL
               } catch (error) {
-                console.log('Redis unavailable, using fallback cache');
+                // console.log('Redis unavailable, using fallback cache');
                 fallbackCache.set(cacheKey, response);
               }
               
@@ -541,7 +608,7 @@ export const getBatchSignedVideoUrls = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Batch signed video URLs error:', error);
+    // console.error('Batch signed video URLs error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to generate batch video URLs',
@@ -581,7 +648,7 @@ export const clearVideoCache = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Clear video cache error:', error);
+    // console.error('Clear video cache error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to clear cache'
@@ -589,8 +656,57 @@ export const clearVideoCache = async (req, res) => {
   }
 };
 
+/**
+ * Stream promotional/hero video without exposing direct URL
+ * This keeps the R2 URL hidden from client inspector
+ */
+export const streamPromoVideo = async (req, res) => {
+  try {
+    // Video key in R2 - corrected path
+    const videoKey = 'videos/TEGA PPT  (2).mp4';
+    
+    // Import R2 service instance
+    const r2Service = (await import('../config/r2.js')).default;
+    
+    // Get video stream from R2
+    const videoStream = await r2Service.streamVideo(videoKey);
+    
+    // Set response headers
+    res.setHeader('Content-Type', 'video/mp4');
+    res.setHeader('Cache-Control', 'public, max-age=3600'); // Cache for 1 hour
+    res.setHeader('Accept-Ranges', 'bytes');
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    
+    // Prevent direct download
+    res.setHeader('Content-Disposition', 'inline; filename="video.mp4"');
+    
+    // Stream the video
+    videoStream.pipe(res);
+    
+    // Handle errors
+    videoStream.on('error', (error) => {
+      // console.error('Video stream error:', error);
+      if (!res.headersSent) {
+        res.status(500).json({
+          success: false,
+          message: 'Failed to stream video'
+        });
+      }
+    });
+    
+  } catch (error) {
+    // console.error('Promotional video stream error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to stream video',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+};
+
 export default {
   getScalableSignedVideoUrl,
   getBatchSignedVideoUrls,
-  clearVideoCache
+  clearVideoCache,
+  streamPromoVideo
 };

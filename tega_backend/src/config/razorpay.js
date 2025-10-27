@@ -11,12 +11,16 @@ if (isRazorpayConfigured) {
     key_id: process.env.RAZORPAY_KEY_ID,
     key_secret: process.env.RAZORPAY_KEY_SECRET,
   });
+  console.log('✅ Razorpay initialized with API keys');
 } else {
+  console.log('⚠️ Razorpay API keys not found. Please configure RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET in .env file');
+  console.log('📝 For testing, you can use test keys from https://dashboard.razorpay.com');
 }
 
 // Verify Razorpay signature
 export const verifyRazorpaySignature = (razorpay_order_id, razorpay_payment_id, razorpay_signature) => {
   if (!isRazorpayConfigured) {
+    console.log('⚠️ Razorpay not configured, skipping signature verification');
     return false;
   }
   
@@ -32,11 +36,13 @@ export const verifyRazorpaySignature = (razorpay_order_id, razorpay_payment_id, 
 // Verify webhook signature
 export const verifyWebhookSignature = (body, signature) => {
   if (!isRazorpayConfigured) {
+    console.log('⚠️ Razorpay not configured, skipping webhook signature verification');
     return false;
   }
   
   // Skip webhook verification in development mode
   if (process.env.NODE_ENV === 'development') {
+    console.log('🔧 Development mode: Skipping webhook signature verification');
     return true;
   }
   

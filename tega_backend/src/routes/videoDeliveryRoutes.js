@@ -3,12 +3,19 @@ import { studentAuth } from '../middleware/studentAuth.js';
 import { 
   getScalableSignedVideoUrl, 
   getBatchSignedVideoUrls, 
-  clearVideoCache 
+  clearVideoCache,
+  streamPromoVideo
 } from '../controllers/videoDeliveryController.js';
 
 const router = express.Router();
 
-// All routes require student authentication
+/**
+ * PUBLIC: GET /api/video-delivery/promo/stream
+ * Stream promotional video (no authentication required to play on homepage)
+ */
+router.get('/promo/stream', streamPromoVideo);
+
+// All routes below require student authentication
 router.use(studentAuth);
 
 /**

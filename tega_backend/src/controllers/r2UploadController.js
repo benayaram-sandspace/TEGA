@@ -497,5 +497,148 @@ export const deleteMaterial = async (req, res) => {
   }
 };
 
+/**
+ * Upload profile picture to R2
+ */
+export const uploadProfilePicture = async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        message: 'No file uploaded'
+      });
+    }
+
+    const studentId = req.studentId;
+
+    if (!studentId) {
+      return res.status(401).json({
+        success: false,
+        message: 'Authentication required'
+      });
+    }
+
+    // Validate file type (only images)
+    const allowedImageTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+    if (!allowedImageTypes.includes(req.file.mimetype)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Only image files (JPEG, PNG, GIF, WebP) are allowed'
+      });
+    }
+
+    // Validate file size (max 5MB for profile pictures)
+    if (req.file.size > 5 * 1024 * 1024) {
+      return res.status(400).json({
+        success: false,
+        message: 'Profile picture size exceeds 5MB limit'
+      });
+    }
+
+    // Generate R2 key for profile picture
+    const r2Key = generateR2Key('profile-pictures', req.file.originalname);
+
+    // Upload to R2
+    const uploadResult = await uploadToR2(
+      req.file.buffer,
+      r2Key,
+      req.file.mimetype,
+      {
+        studentId: studentId.toString(),
+        uploadedAt: new Date().toISOString(),
+        type: 'profile-picture'
+      }
+    );
+
+    // Get public URL
+    const profilePictureUrl = process.env.R2_PUBLIC_URL 
+      ? `${process.env.R2_PUBLIC_URL}/${r2Key}`
+      : uploadResult.url;
+
+    res.json({
+      success: true,
+      message: 'Profile picture uploaded successfully',
+      data: {
+        r2Key: r2Key,
+        url: profilePictureUrl,
+        fileName: req.file.originalname,
+        fileSize: req.file.size,
+        mimeType: req.file.mimetype
+      }
+    });
+
+  } catch (error) {
+    console.error('Upload Profile Picture Error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to upload profile picture',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+};
+
+/**
+ * Generate presigned URL for profile picture upload
+ */
+export const generateProfilePictureUploadUrl = async (req, res) => {
+  try {
+    const { fileName, fileSize, contentType } = req.body;
+    const studentId = req.studentId;
+
+    if (!studentId) {
+      return res.status(401).json({
+        success: false,
+        message: 'Authentication required'
+      });
+    }
+
+    if (!fileName || !fileSize || !contentType) {
+      return res.status(400).json({
+        success: false,
+        message: 'File name, size, and content type are required'
+      });
+    }
+
+    // Validate file type (only images)
+    const allowedImageTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+    if (!allowedImageTypes.includes(contentType)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Only image files (JPEG, PNG, GIF, WebP) are allowed'
+      });
+    }
+
+    // Validate file size (max 5MB for profile pictures)
+    if (fileSize > 5 * 1024 * 1024) {
+      return res.status(400).json({
+        success: false,
+        message: 'Profile picture size exceeds 5MB limit'
+      });
+    }
+
+    // Generate unique R2 key
+    const r2Key = generateR2Key('profile-pictures', fileName);
+
+    // Generate presigned URL (valid for 1 hour)
+    const result = await generatePresignedUploadUrl(r2Key, contentType, 3600);
+
+    res.json({
+      success: true,
+      message: 'Upload URL generated successfully',
+      uploadUrl: result.uploadUrl,
+      r2Key: r2Key,
+      expiresIn: result.expiresIn
+    });
+
+  } catch (error) {
+    console.error('Generate Profile Picture Upload URL Error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to generate upload URL',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+};
+
 export { upload };
 

@@ -106,10 +106,10 @@ router.post('/', verifyPrincipal, async (req, res) => {
           });
         });
 
-        console.log(`Emitted new announcement to ${students.length} students`);
+        // console.log(`Emitted new announcement to ${students.length} students`);
       }
     } catch (socketError) {
-      console.error('Error emitting announcement event:', socketError);
+      // console.error('Error emitting announcement event:', socketError);
     }
 
     res.status(201).json({
@@ -118,7 +118,7 @@ router.post('/', verifyPrincipal, async (req, res) => {
       announcement
     });
   } catch (error) {
-    console.error('Error creating announcement:', error);
+    // console.error('Error creating announcement:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to create announcement'
@@ -171,7 +171,7 @@ router.get('/', verifyPrincipal, async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Error fetching announcements:', error);
+    // console.error('Error fetching announcements:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to fetch announcements'
@@ -200,7 +200,7 @@ router.get('/:id', verifyPrincipal, async (req, res) => {
       announcement
     });
   } catch (error) {
-    console.error('Error fetching announcement:', error);
+    // console.error('Error fetching announcement:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to fetch announcement'
@@ -261,10 +261,10 @@ router.put('/:id', verifyPrincipal, async (req, res) => {
           });
         });
 
-        console.log(`Emitted announcement update to ${students.length} students`);
+        // console.log(`Emitted announcement update to ${students.length} students`);
       }
     } catch (socketError) {
-      console.error('Error emitting announcement update event:', socketError);
+      // console.error('Error emitting announcement update event:', socketError);
     }
 
     res.json({
@@ -273,7 +273,7 @@ router.put('/:id', verifyPrincipal, async (req, res) => {
       announcement
     });
   } catch (error) {
-    console.error('Error updating announcement:', error);
+    // console.error('Error updating announcement:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to update announcement'
@@ -328,10 +328,10 @@ router.delete('/:id', verifyPrincipal, async (req, res) => {
           });
         });
 
-        console.log(`Emitted announcement deletion to ${students.length} students`);
+        // console.log(`Emitted announcement deletion to ${students.length} students`);
       }
     } catch (socketError) {
-      console.error('Error emitting announcement deletion event:', socketError);
+      // console.error('Error emitting announcement deletion event:', socketError);
     }
 
     res.json({
@@ -339,7 +339,7 @@ router.delete('/:id', verifyPrincipal, async (req, res) => {
       message: 'Announcement deleted successfully'
     });
   } catch (error) {
-    console.error('Error deleting announcement:', error);
+    // console.error('Error deleting announcement:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to delete announcement'
@@ -381,7 +381,7 @@ async function createStudentNotifications(announcement) {
       await Notification.insertMany(notifications);
     }
   } catch (error) {
-    console.error('Error creating student notifications:', error);
+    // console.error('Error creating student notifications:', error);
   }
 }
 

@@ -1,4 +1,3 @@
-
 import express from 'express';
 import {
   getAllOffers,
@@ -26,7 +25,7 @@ router.get('/admin/stats', adminAuth, getOfferStats);
 router.get('/admin/courses', adminAuth, getAvailableCourses);
 router.get('/admin/tega-exams', adminAuth, getAvailableTegaExams);
 router.get('/admin/institutes', adminAuth, getInstitutes);
-router.get('/admin/all', adminAuth, getAllOffers);
+router.get('/admin', adminAuth, getAllOffers);
 // Parameterized routes come after specific routes
 router.get('/admin/:id', adminAuth, getOfferById);
 router.post('/admin', adminAuth, createOffer);
@@ -40,5 +39,3 @@ router.get('/institute/:instituteName/course/:courseId', getCourseOfferForInstit
 router.get('/institute/:instituteName/tega-exam', getTegaExamOfferForInstitute);
 
 export default router;
-
-

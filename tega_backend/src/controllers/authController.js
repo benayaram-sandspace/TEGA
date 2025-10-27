@@ -6,11 +6,12 @@ import Student from '../models/Student.js';
 import Admin from '../models/Admin.js';
 import Principal from '../models/Principal.js';
 import Notification from '../models/Notification.js';
-import { getLoginNotificationTemplate } from '../utils/emailTemplates.js';
+import { getLoginNotificationTemplate, getRegistrationOTPTemplate, getWelcomeTemplate } from '../utils/emailTemplates.js';
+import config from '../config/environment.js';
 
 // Create email transporter
 const createEmailTransporter = () => {
-  return nodemailer.createTransporter({
+  return nodemailer.createTransport({
     service: 'gmail',
     auth: {
       user: process.env.EMAIL_USER,
@@ -29,6 +30,9 @@ export const userPayments = new Map();
 export const userNotifications = new Map();
 export const userCourseAccess = new Map();
 
+// OTP storage for registration
+export const registrationOTPs = new Map();
+
 // Check MongoDB connection
 const isMongoConnected = () => {
   try {
@@ -40,16 +44,37 @@ const isMongoConnected = () => {
 
 // Generate JWT token
 const generateToken = (payload) => {
-  return jwt.sign(payload, process.env.JWT_SECRET || 'your-super-secret-jwt-key-change-this-in-production', {
+  return jwt.sign(payload, config.JWT_SECRET, {
     expiresIn: '30d'
   });
 };
 
 // Generate refresh token
 const generateRefreshToken = (payload) => {
-  return jwt.sign(payload, process.env.JWT_SECRET || 'your-super-secret-jwt-key-change-this-in-production', {
+  return jwt.sign(payload, config.JWT_SECRET, {
     expiresIn: '60d'
   });
+};
+// Generate OTP
+const generateOTP = () => {
+  return Math.floor(100000 + Math.random() * 900000).toString();
+};
+
+// Send OTP email
+const sendOTPEmail = async (email, otp, firstName) => {
+  try {
+    const transporter = createEmailTransporter();
+    await transporter.sendMail({
+      from: `"TEGA Platform" <${process.env.EMAIL_USER}>`,
+      to: email,
+      subject: 'Complete Your Registration - TEGA',
+      html: getRegistrationOTPTemplate(firstName, otp)
+    });
+    return true;
+  } catch (error) {
+    // console.error('Error sending OTP email:', error);
+    return false;
+  }
 };
 
 // Login function with secure cookie implementation
@@ -186,7 +211,7 @@ export const login = async (req, res) => {
 
     res.json(response);
   } catch (error) {
-    console.error('Login error:', error);
+    // console.error('Login error:', error);
     res.status(500).json({ 
       success: false, 
       message: 'Server error during login' 
@@ -205,7 +230,7 @@ export const logout = async (req, res) => {
     const token = req.cookies.refreshToken;
     if (token) {
       try {
-        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        const decoded = jwt.verify(token, config.JWT_SECRET);
         const userModel = decoded.role === 'admin' ? Admin : 
                          decoded.role === 'principal' ? Principal : Student;
         await userModel.findByIdAndUpdate(decoded.id, { refreshToken: null });
@@ -219,7 +244,7 @@ export const logout = async (req, res) => {
       message: 'Logout successful' 
     });
   } catch (error) {
-    console.error('Logout error:', error);
+    // console.error('Logout error:', error);
     res.status(500).json({ 
       success: false, 
       message: 'Server error during logout' 
@@ -245,7 +270,7 @@ export const verifyAuth = async (req, res) => {
       });
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-super-secret-jwt-key-change-this-in-production');
+    const decoded = jwt.verify(token, config.JWT_SECRET);
     
     const userModel = decoded.role === 'admin' ? Admin : 
                      decoded.role === 'principal' ? Principal : Student;
@@ -264,7 +289,7 @@ export const verifyAuth = async (req, res) => {
       role: decoded.role
     });
   } catch (error) {
-    console.error('Auth verification error:', error);
+    // console.error('Auth verification error:', error);
     res.status(401).json({ 
       success: false, 
       message: 'Invalid or expired token' 
@@ -284,7 +309,7 @@ export const refreshToken = async (req, res) => {
       });
     }
 
-    const decoded = jwt.verify(refreshToken, process.env.JWT_SECRET || 'your-super-secret-jwt-key-change-this-in-production');
+    const decoded = jwt.verify(refreshToken, config.JWT_SECRET);
     
     const userModel = decoded.role === 'admin' ? Admin : 
                      decoded.role === 'principal' ? Principal : Student;
@@ -333,7 +358,7 @@ export const refreshToken = async (req, res) => {
       token: newToken // Include for development
     });
   } catch (error) {
-    console.error('Token refresh error:', error);
+    // console.error('Token refresh error:', error);
     res.status(401).json({ 
       success: false, 
       message: 'Token refresh failed' 
@@ -358,7 +383,7 @@ export const getCSRFToken = async (req, res) => {
       csrfToken 
     });
   } catch (error) {
-    console.error('CSRF token error:', error);
+    // console.error('CSRF token error:', error);
     res.status(500).json({ 
       success: false, 
       message: 'Failed to generate CSRF token' 
@@ -436,10 +461,219 @@ export const register = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Registration error:', error);
+    // console.error('Registration error:', error);
     res.status(500).json({
       success: false,
       message: "Server error during registration"
+    });
+  }
+};
+
+// Send OTP for registration
+export const sendRegistrationOTP = async (req, res) => {
+  try {
+    const { email, firstName, lastName, institute, password } = req.body;
+
+    // Basic validation
+    if (!email || !firstName || !lastName || !password) {
+      return res.status(400).json({
+        success: false,
+        message: "All required fields must be provided"
+      });
+    }
+
+    // Check if user already exists
+    const existingUser = await Student.findOne({ email: email.toLowerCase() });
+    if (existingUser) {
+      return res.status(400).json({
+        success: false,
+        message: "This email is already registered. Please try logging in."
+      });
+    }
+
+    // Generate OTP
+    const otp = generateOTP();
+    const otpExpiry = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+
+    // Store OTP and user data temporarily
+    registrationOTPs.set(email.toLowerCase(), {
+      otp,
+      expiry: otpExpiry,
+      userData: {
+        email: email.toLowerCase(),
+        firstName,
+        lastName,
+        institute: institute || 'Not specified',
+        password
+      }
+    });
+
+    // Send OTP email
+    const emailSent = await sendOTPEmail(email, otp, firstName);
+    
+    if (!emailSent) {
+      return res.status(500).json({
+        success: false,
+        message: "Failed to send verification email. Please try again."
+      });
+    }
+
+    res.json({
+      success: true,
+      message: "OTP sent to your email address"
+    });
+
+  } catch (error) {
+    // console.error('Send OTP error:', error);
+    res.status(500).json({
+      success: false,
+      message: "Server error while sending OTP"
+    });
+  }
+};
+
+// Verify OTP and complete registration
+export const verifyRegistrationOTP = async (req, res) => {
+  try {
+    const { email, otp } = req.body;
+    console.log('🔍 Verify OTP request:', { email, otp: otp ? 'provided' : 'missing' });
+
+    if (!email || !otp) {
+      return res.status(400).json({
+        success: false,
+        message: "Email and OTP are required"
+      });
+    }
+
+    // Get stored OTP data
+    const otpData = registrationOTPs.get(email.toLowerCase());
+    console.log('🔍 OTP data found:', !!otpData);
+    
+    if (!otpData) {
+      console.log('❌ No OTP data found for email:', email);
+      return res.status(400).json({
+        success: false,
+        message: "OTP not found or expired. Please request a new OTP."
+      });
+    }
+
+    // Check if OTP has expired
+    if (new Date() > otpData.expiry) {
+      registrationOTPs.delete(email.toLowerCase());
+      return res.status(400).json({
+        success: false,
+        message: "OTP has expired. Please request a new OTP."
+      });
+    }
+
+    // Verify OTP
+    if (otpData.otp !== otp) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid OTP. Please check and try again."
+      });
+    }
+
+    // OTP is valid, create the user
+    const { userData } = otpData;
+    console.log('🔍 Creating user with data:', { email: userData.email, firstName: userData.firstName });
+    
+    // Hash password
+    const saltRounds = 12;
+    const hashedPassword = await bcrypt.hash(userData.password, saltRounds);
+
+    // Create user
+    const user = new Student({
+      username: userData.email.split('@')[0], // Use email prefix as username
+      email: userData.email,
+      password: hashedPassword,
+      firstName: userData.firstName,
+      lastName: userData.lastName,
+      institute: userData.institute,
+      role: 'student',
+      acceptTerms: true // Required field
+    });
+
+    console.log('🔍 Saving user to database...');
+    try {
+      await user.save();
+      console.log('✅ User saved successfully:', user._id);
+    } catch (saveError) {
+      console.error('❌ Error saving user:', saveError.message);
+      throw saveError;
+    }
+
+    // Clean up OTP data
+    registrationOTPs.delete(email.toLowerCase());
+
+    // Send welcome email
+    try {
+      const transporter = createEmailTransporter();
+      await transporter.sendMail({
+        from: `"TEGA Platform" <${process.env.EMAIL_USER}>`,
+        to: user.email,
+        subject: 'Welcome to TEGA!',
+        html: getWelcomeTemplate(userData.firstName)
+      });
+    } catch (emailError) {
+      // Non-blocking error
+    }
+
+    res.status(201).json({
+      success: true,
+      message: "Registration completed successfully",
+      user: {
+        id: user._id,
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        role: user.role
+      }
+    });
+
+  } catch (error) {
+    // console.error('Verify OTP error:', error);
+    res.status(500).json({
+      success: false,
+      message: "Server error during verification"
+    });
+  }
+};
+
+// Check email availability
+export const checkEmailAvailability = async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({
+        success: false,
+        message: "Email is required"
+      });
+    }
+
+    // Check if email exists in database
+    const existingUser = await Student.findOne({ email: email.toLowerCase() });
+    
+    if (existingUser) {
+      return res.json({
+        success: true,
+        available: false,
+        message: "This email is already registered"
+      });
+    }
+
+    res.json({
+      success: true,
+      available: true,
+      message: "Email is available"
+    });
+
+  } catch (error) {
+    // console.error('Check email error:', error);
+    res.status(500).json({
+      success: false,
+      message: "Server error while checking email"
     });
   }
 };

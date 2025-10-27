@@ -7,14 +7,16 @@ import dotenv from 'dotenv';
 import Principal from '../models/Principal.js';
 import Student from '../models/Student.js';
 import { getPasswordResetTemplate } from '../utils/emailTemplates.js';
+import config from '../config/environment.js';
+import principalAuth from '../middleware/principalAuth.js';
 
 // Ensure environment variables are loaded
 dotenv.config();
 
 const router = express.Router();
 
-// Store OTPs temporarily (in production, use Redis)
-const otpStore = new Map();
+// Import storage service for OTP management
+import storageService from '../services/storageService.js';
 
 // Email transporter setup with optimized settings
 const transporter = nodemailer.createTransport({
@@ -64,7 +66,7 @@ router.post('/login', async (req, res) => {
     // Generate JWT token
     const token = jwt.sign(
       { id: principal._id, email: principal.email, university: principal.university, role: 'principal' },
-      process.env.JWT_SECRET,
+      config.JWT_SECRET,
       { expiresIn: '24h' } // 24 hours - actual logout controlled by 30-min inactivity timeout
     );
 
@@ -113,12 +115,8 @@ router.post('/forgot-password', async (req, res) => {
     // Generate 6-digit OTP
     const otp = crypto.randomInt(100000, 999999).toString();
     
-    // Store OTP with expiration (5 minutes)
-    otpStore.set(email, {
-      otp,
-      expires: Date.now() + 10 * 60 * 1000,
-      principalId: principal._id
-    });
+    // Store OTP using storage service (5 minutes)
+    await storageService.storeOTP(email, otp, 300);
 
     // Send OTP email with optimized settings
     const principalName = principal.principalName || `${principal.firstName || ''} ${principal.lastName || ''}`.trim() || 'Principal';
@@ -181,7 +179,7 @@ router.post('/reset-password', async (req, res) => {
     }
 
     // Check if OTP exists and is valid
-    const storedOTP = otpStore.get(email);
+    const storedOTP = await storageService.getOTP(email);
     if (!storedOTP) {
       return res.status(400).json({
         success: false,
@@ -189,23 +187,15 @@ router.post('/reset-password', async (req, res) => {
       });
     }
 
-    if (Date.now() > storedOTP.expires) {
-      otpStore.delete(email);
-      return res.status(400).json({
-        success: false,
-        message: 'OTP has expired'
-      });
-    }
-
-    if (storedOTP.otp !== otp) {
+    if (storedOTP !== otp) {
       return res.status(400).json({
         success: false,
         message: 'Invalid OTP'
       });
     }
 
-    // Get principal details
-    const principal = await Principal.findById(storedOTP.principalId);
+    // Get principal by email
+    const principal = await Principal.findOne({ email });
     if (!principal) {
       return res.status(404).json({
         success: false,
@@ -229,7 +219,7 @@ router.post('/reset-password', async (req, res) => {
     await Principal.findByIdAndUpdate(principal._id, { password: hashedPassword });
 
     // Clear OTP
-    otpStore.delete(email);
+    await storageService.deleteOTP(email);
 
     res.json({
       success: true,
@@ -245,40 +235,9 @@ router.post('/reset-password', async (req, res) => {
 });
 
 // Principal Dashboard Data (College-specific)
-router.get('/dashboard', async (req, res) => {
+router.get('/dashboard', principalAuth, async (req, res) => {
   try {
-    const authHeader = req.header('Authorization');
-    const token = authHeader?.startsWith('Bearer ') ? authHeader.replace('Bearer ', '') : authHeader;
-    if (!token) {
-      return res.status(401).json({
-        success: false,
-        message: 'Access denied. No token provided.'
-      });
-    }
-
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-super-secret-jwt-key-change-this-in-production');
-    const principal = await Principal.findById(decoded.id);
-    if (principal) {
-    } else {
-      // Let's also try to find by email as a fallback
-      const principalByEmail = await Principal.findOne({ email: decoded.email });
-      if (principalByEmail) {
-      }
-    }
-    
-    if (!principal) {
-      return res.status(401).json({
-        success: false,
-        message: 'Principal not found.'
-      });
-    }
-
-    if (!principal.isActive) {
-      return res.status(401).json({
-        success: false,
-        message: 'Principal account deactivated.'
-      });
-    }
+    const principal = req.principal;
 
     // Get college-specific user data (users from the same university)
     const collegeStudents = await Student.find({ institute: principal.university })
@@ -318,27 +277,11 @@ router.get('/dashboard', async (req, res) => {
 
 
 // Get students for the principal's college
-router.get('/students', async (req, res) => {
+router.get('/students', principalAuth, async (req, res) => {
   try {
-    const authHeader = req.header('Authorization');
-    const token = authHeader?.startsWith('Bearer ') ? authHeader.replace('Bearer ', '') : authHeader;
+    const principal = req.principal;
 
-    if (!token) {
-      return res.status(401).json({
-        success: false,
-        message: 'Access denied. No token provided.'
-      });
-    }
-
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-super-secret-jwt-key-change-this-in-production');
-    const university = decoded.university;
-
-    if (!university) {
-        return res.status(401).json({
-            success: false,
-            message: 'Invalid token: university not found.'
-        });
-    }
+    const university = principal.university;
 
     // Get pagination parameters
     const page = parseInt(req.query.page) || 1;
@@ -421,6 +364,589 @@ router.get('/students', async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Failed to load student data'
+    });
+  }
+});
+
+// Get specific student details
+router.get('/students/:studentId', principalAuth, async (req, res) => {
+  try {
+    const principal = req.principal;
+    const { studentId } = req.params;
+    const university = principal.university;
+
+    const student = await Student.findOne({ 
+      _id: studentId, 
+      institute: university 
+    }).select('-password');
+
+    if (!student) {
+      return res.status(404).json({
+        success: false,
+        message: 'Student not found'
+      });
+    }
+
+    res.json({
+      success: true,
+      student
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Failed to load student details'
+    });
+  }
+});
+
+// Get Placement Readiness Data for Principal
+router.get('/placement-readiness', async (req, res) => {
+  try {
+    const authHeader = req.header('Authorization');
+    const token = authHeader?.startsWith('Bearer ') ? authHeader.replace('Bearer ', '') : authHeader;
+
+    if (!token) {
+      return res.status(401).json({
+        success: false,
+        message: 'Access denied. No token provided.'
+      });
+    }
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-super-secret-jwt-key-change-this-in-production');
+    const principal = await Principal.findById(decoded.id);
+
+    if (!principal) {
+      return res.status(404).json({
+        success: false,
+        message: 'Principal not found.'
+      });
+    }
+
+    if (!principal.isActive) {
+      return res.status(401).json({
+        success: false,
+        message: 'Principal account deactivated.'
+      });
+    }
+
+    // Get all students from the principal's university
+    const students = await Student.find({ institute: principal.university })
+      .select('_id firstName lastName email course');
+
+    const studentIds = students.map(student => student._id);
+
+    // Get all active jobs on the platform (matching the frontend query)
+    // Include both 'open' and 'active' statuses as per the job controller
+    const jobs = await Job.find({ 
+      isActive: true, 
+      status: { $in: ['open', 'active'] },
+      postingType: 'job'  // Only include jobs, not internships
+    }).select('title company location salary jobType');
+
+    // Get all applications from students in this university
+    const applications = await Application.find({ 
+      studentId: { $in: studentIds } 
+    }).populate('jobId', 'title company');
+
+    // Calculate total applications
+    const totalApplications = applications.length;
+    const totalJobs = jobs.length;
+
+    // Calculate job-wise statistics
+    const jobStats = jobs.map(job => {
+      const applicationsForJob = applications.filter(app => 
+        app.jobId && app.jobId._id.toString() === job._id.toString()
+      );
+      
+      return {
+        jobTitle: job.title,
+        company: job.company,
+        applications: applicationsForJob.length,
+        jobId: job._id
+      };
+    });
+
+    // Sort by applications count (descending)
+    jobStats.sort((a, b) => b.applications - a.applications);
+
+    res.json({
+      success: true,
+      data: {
+        totalJobs,
+        totalApplications,
+        jobStats,
+        students: students.length
+      }
+    });
+
+  } catch (error) {
+    console.error('Placement readiness error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to load placement readiness data',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+});
+
+// Export students data
+router.get('/students/export', principalAuth, async (req, res) => {
+  try {
+    const principal = req.principal;
+
+    const university = principal.university;
+    const format = req.query.format || 'csv';
+
+    // Get search parameters
+    const search = req.query.search || '';
+    const statusFilter = req.query.status || '';
+    const yearFilter = req.query.year || '';
+    const courseFilter = req.query.course || '';
+
+    // Build query
+    let query = { institute: university };
+    
+    // Add search filter
+    if (search) {
+      query.$or = [
+        { firstName: { $regex: search, $options: 'i' } },
+        { lastName: { $regex: search, $options: 'i' } },
+        { email: { $regex: search, $options: 'i' } },
+        { studentId: { $regex: search, $options: 'i' } }
+      ];
+    }
+
+    // Add status filter
+    if (statusFilter) {
+      query.accountStatus = statusFilter;
+    }
+
+    // Add year filter
+    if (yearFilter) {
+      query.yearOfStudy = parseInt(yearFilter);
+    }
+
+    // Add course filter
+    if (courseFilter) {
+      query.course = { $regex: courseFilter, $options: 'i' };
+    }
+
+    const students = await Student.find(query)
+      .select('firstName lastName email studentId institute course yearOfStudy accountStatus isActive createdAt')
+      .sort({ createdAt: -1 });
+
+    if (format === 'csv') {
+      // Convert to CSV format
+      const csvHeader = 'Name,Email,Student ID,Institute,Course,Year,Status,Active,Registered\n';
+      const csvData = students.map(student => {
+        const name = `${student.firstName} ${student.lastName}`;
+        const status = student.accountStatus || 'pending';
+        const active = student.isActive ? 'Yes' : 'No';
+        const registered = student.createdAt ? new Date(student.createdAt).toLocaleDateString() : 'Unknown';
+        return `"${name}","${student.email}","${student.studentId}","${student.institute}","${student.course || 'Not specified'}","${student.yearOfStudy || 'Not specified'}","${status}","${active}","${registered}"`;
+      }).join('\n');
+
+      const csvContent = csvHeader + csvData;
+      
+      res.setHeader('Content-Type', 'text/csv');
+      res.setHeader('Content-Disposition', `attachment; filename="students_export_${new Date().toISOString().split('T')[0]}.csv"`);
+      res.send(csvContent);
+    } else {
+      // Return JSON format
+      res.json({
+        success: true,
+        data: students
+      });
+    }
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Failed to export student data'
+    });
+  }
+});
+
+// Update Principal Account Information
+router.put('/account', async (req, res) => {
+  try {
+    const authHeader = req.header('Authorization');
+    const token = authHeader?.startsWith('Bearer ') ? authHeader.replace('Bearer ', '') : authHeader;
+    
+    if (!token) {
+      return res.status(401).json({
+        success: false,
+        message: 'Access denied. No token provided.'
+      });
+    }
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-super-secret-jwt-key-change-this-in-production');
+    const principal = await Principal.findById(decoded.id);
+    
+    if (!principal) {
+      return res.status(404).json({
+        success: false,
+        message: 'Principal not found.'
+      });
+    }
+
+    if (!principal.isActive) {
+      return res.status(401).json({
+        success: false,
+        message: 'Principal account deactivated.'
+      });
+    }
+
+    const { principalName, email, phone, designation } = req.body;
+
+    // Validate required fields
+    if (!principalName || !email || !phone) {
+      return res.status(400).json({
+        success: false,
+        message: 'Principal name, email, and phone are required.'
+      });
+    }
+
+    // Check if email is already taken by another principal
+    if (email !== principal.email) {
+      const existingPrincipal = await Principal.findOne({ email, _id: { $ne: principal._id } });
+      if (existingPrincipal) {
+        return res.status(400).json({
+          success: false,
+          message: 'Email is already taken by another principal.'
+        });
+      }
+    }
+
+    // Update principal information
+    principal.principalName = principalName;
+    principal.email = email;
+    principal.phone = phone;
+    principal.designation = designation || principal.designation;
+    principal.updatedAt = new Date();
+
+    await principal.save();
+
+    res.json({
+      success: true,
+      message: 'Account information updated successfully.',
+      principal: {
+        id: principal._id,
+        principalName: principal.principalName,
+        email: principal.email,
+        phone: principal.phone,
+        designation: principal.designation,
+        university: principal.university,
+        college: principal.college
+      }
+    });
+
+  } catch (error) {
+    console.error('Account update error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to update account information.'
+    });
+  }
+});
+
+// Update Principal College Information
+router.put('/college', async (req, res) => {
+  try {
+    const authHeader = req.header('Authorization');
+    const token = authHeader?.startsWith('Bearer ') ? authHeader.replace('Bearer ', '') : authHeader;
+    
+    if (!token) {
+      return res.status(401).json({
+        success: false,
+        message: 'Access denied. No token provided.'
+      });
+    }
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-super-secret-jwt-key-change-this-in-production');
+    const principal = await Principal.findById(decoded.id);
+    
+    if (!principal) {
+      return res.status(404).json({
+        success: false,
+        message: 'Principal not found.'
+      });
+    }
+
+    if (!principal.isActive) {
+      return res.status(401).json({
+        success: false,
+        message: 'Principal account deactivated.'
+      });
+    }
+
+    const { 
+      collegeName, 
+      university, 
+      address, 
+      city, 
+      state, 
+      pincode, 
+      website, 
+      phone, 
+      email, 
+      establishedYear, 
+      accreditation 
+    } = req.body;
+
+    // Validate required fields
+    if (!collegeName || !university || !address || !city || !state || !pincode) {
+      return res.status(400).json({
+        success: false,
+        message: 'College name, university, address, city, state, and pincode are required.'
+      });
+    }
+
+    // Update college information
+    principal.college = collegeName;
+    principal.university = university;
+    principal.address = address;
+    principal.city = city;
+    principal.state = state;
+    principal.pincode = pincode;
+    principal.website = website || principal.website;
+    principal.phone = phone || principal.phone;
+    principal.email = email || principal.email;
+    principal.establishedYear = establishedYear || principal.establishedYear;
+    principal.accreditation = accreditation || principal.accreditation;
+    principal.updatedAt = new Date();
+
+    await principal.save();
+
+    res.json({
+      success: true,
+      message: 'College information updated successfully.',
+      principal: {
+        id: principal._id,
+        principalName: principal.principalName,
+        email: principal.email,
+        phone: principal.phone,
+        designation: principal.designation,
+        college: principal.college,
+        university: principal.university,
+        address: principal.address,
+        city: principal.city,
+        state: principal.state,
+        pincode: principal.pincode,
+        website: principal.website,
+        establishedYear: principal.establishedYear,
+        accreditation: principal.accreditation
+      }
+    });
+
+  } catch (error) {
+    console.error('College update error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to update college information.'
+    });
+  }
+});
+
+// Get Course Engagement Statistics
+router.get('/course-engagement', async (req, res) => {
+  try {
+    const authHeader = req.header('Authorization');
+    const token = authHeader?.startsWith('Bearer ') ? authHeader.replace('Bearer ', '') : authHeader;
+
+    if (!token) {
+      return res.status(401).json({
+        success: false,
+        message: 'Access denied. No token provided.'
+      });
+    }
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-super-secret-jwt-key-change-this-in-production');
+    const principal = await Principal.findById(decoded.id);
+
+    if (!principal) {
+      return res.status(404).json({
+        success: false,
+        message: 'Principal not found.'
+      });
+    }
+
+    if (!principal.isActive) {
+      return res.status(401).json({
+        success: false,
+        message: 'Principal account deactivated.'
+      });
+    }
+
+    // Import models
+    const RealTimeCourse = (await import('../models/RealTimeCourse.js')).default;
+    const RealTimeProgress = (await import('../models/RealTimeProgress.js')).default;
+    const Enrollment = (await import('../models/Enrollment.js')).default;
+
+    // Get all students from the principal's university
+    const students = await Student.find({ institute: principal.university })
+      .select('_id')
+      .lean();
+
+    const studentIds = students.map(student => student._id);
+
+    // Get all courses
+    const courses = await RealTimeCourse.find()
+      .select('title category modules')
+      .lean();
+
+    // Get all enrollments for students from this university
+    const enrollments = await Enrollment.find({
+      studentId: { $in: studentIds },
+      status: 'active'
+    }).lean();
+
+    // Get all progress records for students from this university
+    const progressRecords = await RealTimeProgress.find({
+      studentId: { $in: studentIds }
+    }).lean();
+
+    // Calculate statistics for each course
+    const courseStats = courses.map(course => {
+      // Get enrollments for this course
+      const courseEnrollments = enrollments.filter(e => 
+        e.courseId.toString() === course._id.toString()
+      );
+
+      // Get progress records for this course
+      const courseProgress = progressRecords.filter(p => 
+        p.courseId.toString() === course._id.toString()
+      );
+
+      // Calculate average completion
+      const avgCompletion = courseProgress.length > 0
+        ? Math.round(
+            courseProgress.reduce((sum, p) => sum + (p.overallProgress?.percentage || 0), 0) / courseProgress.length
+          )
+        : 0;
+
+      return {
+        _id: course._id,
+        title: course.title,
+        category: course.category,
+        students: courseEnrollments.length,
+        completion: avgCompletion
+      };
+    });
+
+    // Calculate total statistics
+    const totalStudents = enrollments.length;
+    const totalCourses = courses.length;
+    const avgCompletion = progressRecords.length > 0
+      ? Math.round(
+          progressRecords.reduce((sum, p) => sum + (p.overallProgress?.percentage || 0), 0) / progressRecords.length
+        )
+      : 0;
+
+    res.json({
+      success: true,
+      data: {
+        courses: courseStats,
+        totalStudents,
+        totalCourses,
+        avgCompletion
+      }
+    });
+
+  } catch (error) {
+    console.error('Course engagement error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to load course engagement data',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+});
+
+// Change Principal Password
+router.post('/change-password', async (req, res) => {
+  try {
+    const authHeader = req.header('Authorization');
+    const token = authHeader?.startsWith('Bearer ') ? authHeader.replace('Bearer ', '') : authHeader;
+    
+    if (!token) {
+      return res.status(401).json({
+        success: false,
+        message: 'Access denied. No token provided.'
+      });
+    }
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-super-secret-jwt-key-change-this-in-production');
+    const principal = await Principal.findById(decoded.id);
+    
+    if (!principal) {
+      return res.status(404).json({
+        success: false,
+        message: 'Principal not found.'
+      });
+    }
+
+    if (!principal.isActive) {
+      return res.status(401).json({
+        success: false,
+        message: 'Principal account deactivated.'
+      });
+    }
+
+    const { currentPassword, newPassword } = req.body;
+
+    // Validate required fields
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({
+        success: false,
+        message: 'Current password and new password are required.'
+      });
+    }
+
+    // Verify current password
+    const isCurrentPasswordValid = await bcrypt.compare(currentPassword, principal.password);
+    if (!isCurrentPasswordValid) {
+      return res.status(400).json({
+        success: false,
+        message: 'Current password is incorrect.'
+      });
+    }
+
+    // Validate new password strength
+    if (newPassword.length < 8) {
+      return res.status(400).json({
+        success: false,
+        message: 'New password must be at least 8 characters long.'
+      });
+    }
+
+    // Check if new password is different from current
+    if (currentPassword === newPassword) {
+      return res.status(400).json({
+        success: false,
+        message: 'New password must be different from current password.'
+      });
+    }
+
+    // Hash new password
+    const saltRounds = 12;
+    const hashedNewPassword = await bcrypt.hash(newPassword, saltRounds);
+
+    // Update password
+    principal.password = hashedNewPassword;
+    principal.updatedAt = new Date();
+
+    await principal.save();
+
+    res.json({
+      success: true,
+      message: 'Password changed successfully.'
+    });
+
+  } catch (error) {
+    console.error('Password change error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to change password.'
     });
   }
 });

@@ -827,6 +827,9 @@ router.post('/principals/bulk-import', adminAuth, async (req, res) => {
 // Register Principal
 router.post('/register-principal', adminAuth, async (req, res) => {
   try {
+    // console.log('🚀 Principal registration request received');
+    // console.log('📧 Request body:', req.body);
+    
     const { principalName, email, university, password, gender, firstName, lastName } = req.body;
 
     // Comprehensive validation
@@ -864,25 +867,51 @@ router.post('/register-principal', adminAuth, async (req, res) => {
       });
     }
 
-    // Check if a principal with this email already exists
-    const existingPrincipal = await Principal.findOne({ 
-      $or: [
-        { email: email.toLowerCase() },
-        { principalName: { $regex: new RegExp(`^${principalName}$`, 'i') } }
-      ]
-    });
+    // Check if email already exists in any user collection (Student, Admin, Principal)
+    // console.log('🔍 Checking email:', email.toLowerCase());
     
-    if (existingPrincipal) {
-      let message = 'A principal with this information already exists.';
-      if (existingPrincipal.email.toLowerCase() === email.toLowerCase()) {
-        message = 'A principal with this email already exists.';
-      } else if (existingPrincipal.principalName.toLowerCase() === principalName.toLowerCase()) {
-        message = 'A principal with this name already exists.';
+    const [existingStudent, existingAdmin, existingPrincipal] = await Promise.all([
+      Student.findOne({ email: email.toLowerCase() }),
+      Admin.findOne({ email: email.toLowerCase() }),
+      Principal.findOne({ email: email.toLowerCase() })
+    ]);
+    
+    // console.log('🔍 Email check results:');
+    // console.log('  - Existing Student:', existingStudent ? `${existingStudent.email} (${existingStudent._id})` : 'None');
+    // console.log('  - Existing Admin:', existingAdmin ? `${existingAdmin.email} (${existingAdmin._id})` : 'None');
+    // console.log('  - Existing Principal:', existingPrincipal ? `${existingPrincipal.email} (${existingPrincipal._id})` : 'None');
+    
+    if (existingStudent || existingAdmin || existingPrincipal) {
+      let message = 'This email address is already registered in the system.';
+      if (existingStudent) {
+        message = 'This email is already registered as a student. Please use a different email address.';
+        // console.log('❌ Email already exists as student:', existingStudent.email);
+      } else if (existingAdmin) {
+        message = 'This email is already registered as an admin. Please use a different email address.';
+        // console.log('❌ Email already exists as admin:', existingAdmin.email);
+      } else if (existingPrincipal) {
+        message = 'This email is already registered as a principal. Please use a different email address.';
+        // console.log('❌ Email already exists as principal:', existingPrincipal.email);
       }
       
+      // console.log('🚫 Returning 409 error:', message);
       return res.status(409).json({ 
         success: false,
         message 
+      });
+    }
+    
+    // console.log('✅ Email validation passed - proceeding with principal creation');
+
+    // Check if principal name already exists
+    const existingPrincipalName = await Principal.findOne({ 
+      principalName: { $regex: new RegExp(`^${principalName}$`, 'i') }
+    });
+    
+    if (existingPrincipalName) {
+      return res.status(409).json({ 
+        success: false,
+        message: 'A principal with this name already exists. Please use a different name.'
       });
     }
 
@@ -900,6 +929,15 @@ router.post('/register-principal', adminAuth, async (req, res) => {
     }
 
     // Create new principal
+    // console.log('🏗️ Creating new principal with data:', {
+    //   principalName: principalName.trim(),
+    //   firstName: finalFirstName,
+    //   lastName: finalLastName,
+    //   email: email.toLowerCase().trim(),
+    //   university: university.trim(),
+    //   gender: gender.toLowerCase()
+    // });
+    
     const newPrincipal = new Principal({
       principalName: principalName.trim(),
       firstName: finalFirstName,
@@ -914,6 +952,7 @@ router.post('/register-principal', adminAuth, async (req, res) => {
     });
 
     await newPrincipal.save();
+    // console.log('✅ Principal created successfully:', newPrincipal._id);
 
     // Notify the admin who performed the action
     const notification = new Notification({

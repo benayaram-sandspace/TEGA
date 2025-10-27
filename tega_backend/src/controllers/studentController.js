@@ -29,6 +29,15 @@ export const getStudentProfile = async (req, res) => {
         message: 'Student not found' 
       });
     }
+    // console.log('🔍 Sending student data to frontend:', {
+    //   dob: student.dob,
+    //   gender: student.gender,
+    //   maritalStatus: student.maritalStatus,
+    //   studentId: student.studentId,
+    //   dobType: typeof student.dob,
+    //   genderType: typeof student.gender
+    // });
+    
     res.json({
       success: true,
       data: student
@@ -73,29 +82,92 @@ export const updateStudentProfile = async (req, res) => {
     // Build a sanitized payload to avoid validation issues
     const src = req.body || {};
     const cleaned = { ...src };
+    
+    // Debug logging
+    // console.log('🔍 Student Profile Update Debug:', {
+    //   studentId,
+    //   requestBody: src,
+    //   cleanedKeys: Object.keys(cleaned),
+    //   dob: {
+    //     original: src.dob,
+    //     cleaned: cleaned.dob,
+    //     type: typeof cleaned.dob
+    //   },
+    //   gender: {
+    //     original: src.gender,
+    //     cleaned: cleaned.gender,
+    //     type: typeof cleaned.gender
+    //   },
+    //   nationality: cleaned.nationality,
+    //   maritalStatus: {
+    //     original: src.maritalStatus,
+    //     cleaned: cleaned.maritalStatus,
+    //     type: typeof cleaned.maritalStatus
+    //   },
+    //   fatherName: cleaned.fatherName,
+    //   fatherOccupation: cleaned.fatherOccupation,
+    //   motherName: cleaned.motherName,
+    //   motherOccupation: cleaned.motherOccupation
+    // });
 
-    // Normalize gender
-    if (cleaned.gender !== undefined) {
-      const g = String(cleaned.gender).toLowerCase();
-      cleaned.gender = g === 'male' ? 'Male' : g === 'female' ? 'Female' : g === 'other' ? 'Other' : undefined;
+    // Normalize gender - ensure it matches schema enum values
+    if (cleaned.gender !== undefined && cleaned.gender !== null && cleaned.gender !== '') {
+      const g = String(cleaned.gender).toLowerCase().trim();
+      const genderMap = {
+        'male': 'Male',
+        'female': 'Female',
+        'other': 'Other',
+        'prefer-not-to-say': 'Other'
+      };
+      cleaned.gender = genderMap[g] || (['Male', 'Female', 'Other'].includes(cleaned.gender) ? cleaned.gender : undefined);
+    }
+    
+    // Normalize marital status - keep as string but trim whitespace
+    if (cleaned.maritalStatus !== undefined && cleaned.maritalStatus !== null && cleaned.maritalStatus !== '') {
+      cleaned.maritalStatus = String(cleaned.maritalStatus).trim();
     }
 
-    // Normalize numeric/date fields
+    // Normalize numeric/date fields with better error handling
     if (cleaned.yearOfStudy !== undefined && cleaned.yearOfStudy !== null && cleaned.yearOfStudy !== '') {
       const n = parseInt(cleaned.yearOfStudy, 10);
-      cleaned.yearOfStudy = Number.isNaN(n) ? undefined : n;
+      cleaned.yearOfStudy = Number.isNaN(n) ? null : n;
     }
-    if (cleaned.dob) {
-      const d = new Date(cleaned.dob);
-      cleaned.dob = isNaN(d.getTime()) ? undefined : d;
+    
+    if (cleaned.dob && cleaned.dob !== '') {
+      let d;
+      if (typeof cleaned.dob === 'string' && cleaned.dob.includes('T')) {
+        // It's an ISO string, parse directly
+        d = new Date(cleaned.dob);
+      } else if (typeof cleaned.dob === 'string' && cleaned.dob.includes('-')) {
+        // It's in YYYY-MM-DD format, create date in UTC
+        const [year, month, day] = cleaned.dob.split('-');
+        d = new Date(Date.UTC(parseInt(year), parseInt(month) - 1, parseInt(day)));
+      } else {
+        // Try parsing as regular date
+        d = new Date(cleaned.dob);
+      }
+      cleaned.dob = isNaN(d.getTime()) ? null : d;
     }
-    if (cleaned.enrollmentYear) {
+    
+    if (cleaned.enrollmentYear && cleaned.enrollmentYear !== '') {
       const d = new Date(cleaned.enrollmentYear);
-      cleaned.enrollmentYear = isNaN(d.getTime()) ? undefined : d;
+      cleaned.enrollmentYear = isNaN(d.getTime()) ? null : d;
     }
-    if (cleaned.expectedGraduation) {
+    
+    if (cleaned.expectedGraduation && cleaned.expectedGraduation !== '') {
       const d = new Date(cleaned.expectedGraduation);
-      cleaned.expectedGraduation = isNaN(d.getTime()) ? undefined : d;
+      cleaned.expectedGraduation = isNaN(d.getTime()) ? null : d;
+    }
+
+    // Normalize CGPA and percentage with better handling
+    if (cleaned.cgpa !== undefined && cleaned.cgpa !== null && cleaned.cgpa !== '') {
+      const cgpaNum = parseFloat(cleaned.cgpa);
+      cleaned.cgpa = Number.isNaN(cgpaNum) ? null : cgpaNum;
+    }
+    
+    if (cleaned.percentage !== undefined && cleaned.percentage !== null && cleaned.percentage !== '') {
+      const percentNum = parseFloat(cleaned.percentage);
+      cleaned.percentage = Number.isNaN(percentNum) ? null : percentNum;
     }
 
     // Normalize ids/strings - keep empty strings as empty strings, not undefined
@@ -117,49 +189,106 @@ export const updateStudentProfile = async (req, res) => {
     // Normalize arrays: accept comma-separated strings or arrays of strings
     const toArray = (v) => Array.isArray(v) ? v : (typeof v === 'string' && v.trim() ? v.split(',').map(s => s.trim()).filter(Boolean) : []);
 
-    if (cleaned.skills && !Array.isArray(cleaned.skills.filter ? cleaned.skills : [])) {
+    // Handle skills array
+    if (cleaned.skills !== undefined) {
+      if (Array.isArray(cleaned.skills)) {
+        // Already an array, ensure proper structure
+        cleaned.skills = cleaned.skills.map(skill => {
+          if (typeof skill === 'string') {
+            return { name: skill, level: 'Intermediate' };
+          }
+          return skill;
+        });
+      } else if (typeof cleaned.skills === 'string' && cleaned.skills.trim() !== '') {
       const arr = toArray(cleaned.skills);
       cleaned.skills = arr.map(name => ({ name, level: 'Intermediate' }));
+      } else {
+        cleaned.skills = [];
+      }
     }
 
-    if (cleaned.certifications && !Array.isArray(cleaned.certifications.filter ? cleaned.certifications : [])) {
+    // Handle certifications array
+    if (cleaned.certifications !== undefined) {
+      if (Array.isArray(cleaned.certifications)) {
+        // Already an array, ensure proper structure
+        cleaned.certifications = cleaned.certifications.map(cert => {
+          if (typeof cert === 'string') {
+            return { name: cert, issuer: 'Not specified', date: new Date(), url: '' };
+          }
+          return cert;
+        });
+      } else if (typeof cleaned.certifications === 'string' && cleaned.certifications.trim() !== '') {
       const arr = toArray(cleaned.certifications);
       cleaned.certifications = arr.map(name => ({ name, issuer: 'Not specified', date: new Date(), url: '' }));
+      } else {
+        cleaned.certifications = [];
+      }
     }
 
-    if (cleaned.languages && !Array.isArray(cleaned.languages.filter ? cleaned.languages : [])) {
+    // Handle languages array
+    if (cleaned.languages !== undefined) {
+      if (Array.isArray(cleaned.languages)) {
+        cleaned.languages = cleaned.languages.map(lang => {
+          if (typeof lang === 'string') {
+            return { name: lang, proficiency: 'Conversational' };
+          }
+          return lang;
+        });
+      } else if (typeof cleaned.languages === 'string' && cleaned.languages.trim() !== '') {
       const arr = toArray(cleaned.languages);
       cleaned.languages = arr.map(name => ({ name, proficiency: 'Conversational' }));
+      } else {
+        cleaned.languages = [];
+      }
     }
 
-    if (cleaned.hobbies && !Array.isArray(cleaned.hobbies.filter ? cleaned.hobbies : [])) {
+    // Handle hobbies array
+    if (cleaned.hobbies !== undefined) {
+      if (Array.isArray(cleaned.hobbies)) {
+        cleaned.hobbies = cleaned.hobbies.map(hobby => {
+          if (typeof hobby === 'string') {
+            return { name: hobby, description: '' };
+          }
+          return hobby;
+        });
+      } else if (typeof cleaned.hobbies === 'string' && cleaned.hobbies.trim() !== '') {
       const arr = toArray(cleaned.hobbies);
-      cleaned.hobbies = arr;
+        cleaned.hobbies = arr.map(name => ({ name, description: '' }));
+      } else {
+        cleaned.hobbies = [];
+      }
     }
 
     // Ensure other optional array fields are arrays
-    const arrayFields = ['projects','achievements','education','experience','volunteerExperience','extracurricularActivities','references'];
+    const arrayFields = ['projects','achievements','education','experience','volunteerExperience','extracurricularActivities'];
     arrayFields.forEach(f => {
-      if (cleaned[f] === '' || cleaned[f] === null || cleaned[f] === undefined) cleaned[f] = [];
+      if (cleaned[f] === '' || cleaned[f] === null || cleaned[f] === undefined) {
+        cleaned[f] = [];
+      }
     });
 
-    // Normalize CGPA and percentage
-    if (cleaned.cgpa !== undefined && cleaned.cgpa !== null && cleaned.cgpa !== '') {
-      const cgpaNum = parseFloat(cleaned.cgpa);
-      cleaned.cgpa = Number.isNaN(cgpaNum) ? '' : cgpaNum;
-    }
-    if (cleaned.percentage !== undefined && cleaned.percentage !== null && cleaned.percentage !== '') {
-      const percentNum = parseFloat(cleaned.percentage);
-      cleaned.percentage = Number.isNaN(percentNum) ? '' : percentNum;
-    }
-
-    // Remove ONLY fields that are strictly undefined or null (keep empty strings)
-    // Only delete fields that are truly problematic for validation
-    Object.keys(cleaned).forEach((key) => {
-      // Keep empty strings for most fields
-      if (cleaned[key] === null) {
-        cleaned[key] = '';
+    // Clean up string fields - convert null to empty string for better compatibility
+    const stringFields = [
+      'username', 'studentName', 'firstName', 'lastName', 'email', 'phone', 'contactNumber',
+      'alternateNumber', 'personalEmail', 'emergencyContact', 'emergencyPhone',
+      'institute', 'course', 'major', 'studentId', 'address', 'landmark', 'zipcode',
+      'city', 'district', 'state', 'country', 'permanentAddress', 'fatherName',
+      'fatherOccupation', 'fatherPhone', 'motherName', 'motherOccupation', 'motherPhone',
+      'guardianName', 'guardianRelation', 'guardianPhone', 'profilePhoto', 'title',
+      'summary', 'linkedin', 'website', 'github', 'portfolio', 'behance', 'dribbble',
+      'jobType', 'preferredLocation', 'workMode', 'salaryExpectation', 'noticePeriod',
+      'availability', 'interests', 'achievements', 'publications', 'patents', 'awards',
+      'nationality', 'maritalStatus', 'certificateName'
+    ];
+    
+    stringFields.forEach(field => {
+      if (cleaned[field] === null) {
+        cleaned[field] = '';
       }
+    });
+
+    // Remove fields that are undefined or invalid
+    Object.keys(cleaned).forEach((key) => {
       // Only delete undefined values
       if (cleaned[key] === undefined) {
         delete cleaned[key];
@@ -178,6 +307,16 @@ export const updateStudentProfile = async (req, res) => {
     if (student.gender && !validGender.includes(student.gender)) {
       student.gender = undefined;
     }
+    
+    // Debug logging after processing
+    // console.log('🔍 After Processing:', {
+    //   dob: student.dob,
+    //   gender: student.gender,
+    //   maritalStatus: student.maritalStatus,
+    //   dobType: typeof student.dob,
+    //   genderType: typeof student.gender,
+    //   maritalStatusType: typeof student.maritalStatus
+    // });
 
     // Check if this is a MongoDB user or in-memory user
     const isValidObjectId = /^[0-9a-fA-F]{24}$/.test(studentId);
@@ -185,16 +324,39 @@ export const updateStudentProfile = async (req, res) => {
 
     if (isValidObjectId) {
       // MongoDB user - save to database
-
+      // console.log('🔍 Saving to MongoDB...');
+      try {
       await student.save();
-
+      // console.log('🔍 Student saved successfully:', {
+      //   _id: student._id,
+      //   dob: student.dob,
+      //   gender: student.gender,
+      //   nationality: student.nationality,
+      //   maritalStatus: student.maritalStatus,
+      //   fatherName: student.fatherName,
+      //   fatherOccupation: student.fatherOccupation,
+      //   motherName: student.motherName,
+      //   motherOccupation: student.motherOccupation,
+      //   dobType: typeof student.dob,
+      //   genderType: typeof student.gender,
+      //   maritalStatusType: typeof student.maritalStatus
+      // });
+      } catch (saveError) {
+        // console.error('🔍 Save Error:', saveError);
+        // console.error('🔍 Student data before save:', {
+        //   dob: student.dob,
+        //   gender: student.gender,
+        //   maritalStatus: student.maritalStatus
+        // });
+        throw saveError;
+      }
     } else {
       // In-memory user - update in memory
-
+      // console.log('🔍 Updating in-memory user...');
       const userIndex = inMemoryUsers.findIndex(user => user._id === studentId);
       if (userIndex !== -1) {
         inMemoryUsers[userIndex] = { ...inMemoryUsers[userIndex], ...student };
-
+        // console.log('🔍 In-memory user updated successfully');
       }
     }
 
@@ -224,7 +386,91 @@ export const updateStudentProfile = async (req, res) => {
   }
 };
 
-// Upload profile photo
+// Update profile picture with R2 data
+export const updateProfilePicture = async (req, res) => {
+  try {
+    const studentId = req.studentId;
+    const { r2Key, url, fileName, fileSize, mimeType } = req.body;
+
+    if (!r2Key || !url) {
+      return res.status(400).json({
+        success: false,
+        message: 'R2 key and URL are required'
+      });
+    }
+
+    let student = null;
+    
+    // Check if studentId is a valid MongoDB ObjectId
+    if (/^[0-9a-fA-F]{24}$/.test(studentId)) {
+      student = await Student.findById(studentId);
+    }
+    
+    // If not found in MongoDB or not a valid ObjectId, check in-memory storage
+    if (!student) {
+      student = inMemoryUsers.find(user => user._id === studentId);
+    }
+    
+    if (!student) {
+      return res.status(404).json({ 
+        success: false,
+        message: 'Student not found' 
+      });
+    }
+
+    // Generate proxy URL to avoid CORS issues
+    // Extract just the filename from the R2 key (remove the profile-pictures/ prefix)
+    const filename = r2Key.split('/').pop();
+    const publicUrl = `${process.env.SERVER_URL || 'http://localhost:5001'}/api/r2/profile-picture/${filename}`;
+    
+    // console.log('🔍 Generated proxy URL for profile picture:', publicUrl);
+    // console.log('🔍 R2 key:', r2Key, 'Filename:', filename);
+    
+    // Update profile picture data
+    student.profilePicture = {
+      url: publicUrl,
+      r2Key: r2Key,
+      fileName: fileName || 'profile-picture',
+      fileSize: fileSize || 0,
+      mimeType: mimeType || 'image/jpeg',
+      uploadedAt: new Date()
+    };
+    
+    // Also update the legacy profilePhoto field for backward compatibility
+    student.profilePhoto = publicUrl;
+
+    // Check if this is a MongoDB user or in-memory user
+    const isValidObjectId = /^[0-9a-fA-F]{24}$/.test(studentId);
+    
+    if (isValidObjectId) {
+      // MongoDB user - save to database
+      await student.save();
+    } else {
+      // In-memory user - update in memory
+      const userIndex = inMemoryUsers.findIndex(user => user._id === studentId);
+      if (userIndex !== -1) {
+        inMemoryUsers[userIndex] = { ...inMemoryUsers[userIndex], ...student };
+      }
+    }
+
+    res.json({
+      success: true,
+      message: 'Profile picture updated successfully',
+      data: {
+        profilePicture: student.profilePicture
+      }
+    });
+  } catch (err) {
+    // console.error('Update Profile Picture Error:', err);
+    res.status(500).json({
+      success: false,
+      message: 'Server error while updating profile picture',
+      error: process.env.NODE_ENV === 'development' ? err.message : undefined
+    });
+  }
+};
+
+// Legacy profile photo upload (keeping for backward compatibility)
 export const uploadProfilePhoto = async (req, res) => {
   try {
     const studentId = req.studentId;
@@ -233,16 +479,12 @@ export const uploadProfilePhoto = async (req, res) => {
     
     // Check if studentId is a valid MongoDB ObjectId
     if (/^[0-9a-fA-F]{24}$/.test(studentId)) {
-
       student = await Student.findById(studentId);
-
     }
     
     // If not found in MongoDB or not a valid ObjectId, check in-memory storage
     if (!student) {
-
       student = inMemoryUsers.find(user => user._id === studentId);
-
     }
     
     if (!student) {
@@ -250,7 +492,7 @@ export const uploadProfilePhoto = async (req, res) => {
     }
 
     if (req.file) {
-      // Convert buffer to Base64 Data URI
+      // Convert buffer to Base64 Data URI (legacy support)
       const photoDataUri = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
       student.profilePhoto = photoDataUri;
     }
@@ -266,13 +508,12 @@ export const uploadProfilePhoto = async (req, res) => {
       const userIndex = inMemoryUsers.findIndex(user => user._id === studentId);
       if (userIndex !== -1) {
         inMemoryUsers[userIndex] = { ...inMemoryUsers[userIndex], ...student };
-
       }
     }
+    
     // Return only the necessary fields
     res.json({ profilePhoto: student.profilePhoto });
   } catch (err) {
-
     res.status(500).send('Server Error');
   }
 };

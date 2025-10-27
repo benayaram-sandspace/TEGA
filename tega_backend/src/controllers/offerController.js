@@ -1,5 +1,5 @@
 import Offer from '../models/Offer.js';
-import RealTimeCourse from '../models/RealTimeCourse.js';
+import RealTimeCourse from '../models/RealTimeCourse.js'; // Updated to use RealTimeCourse
 import Exam from '../models/Exam.js';
 import Student from '../models/Student.js';
 import mongoose from 'mongoose';
@@ -47,6 +47,7 @@ export const getAllOffers = async (req, res) => {
       }
     });
   } catch (error) {
+    // console.error('Error fetching offers:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to fetch offers',
@@ -81,6 +82,7 @@ export const getOfferById = async (req, res) => {
       data: offer
     });
   } catch (error) {
+    // console.error('Error fetching offer:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to fetch offer',
@@ -92,6 +94,7 @@ export const getOfferById = async (req, res) => {
 // Create new offer
 export const createOffer = async (req, res) => {
   try {
+    // console.log('🎯 Creating offer - Request body:', req.body);
     
     const {
       instituteName,
@@ -114,9 +117,15 @@ export const createOffer = async (req, res) => {
       createdBy = req.user._id;
     }
     
+    // console.log('🎯 Created by admin ID:', createdBy);
+    // console.log('🎯 Request object keys:', Object.keys(req));
+    // console.log('🎯 req.adminId:', req.adminId);
+    // console.log('🎯 req.admin:', req.admin);
+    // console.log('🎯 req.user:', req.user);
 
     // Validate required fields
     if (!instituteName || !validUntil) {
+      // console.log('❌ Missing required fields:', { instituteName, validUntil });
       return res.status(400).json({
         success: false,
         message: 'Institute name and valid until date are required'
@@ -124,6 +133,7 @@ export const createOffer = async (req, res) => {
     }
 
     if (!createdBy) {
+      // console.log('❌ No admin ID found in request');
       return res.status(400).json({
         success: false,
         message: 'Admin authentication required'
@@ -136,29 +146,36 @@ export const createOffer = async (req, res) => {
     if (courseOffers && courseOffers.length > 0) {
       for (const courseOffer of courseOffers) {
         if (!courseOffer.courseId || !courseOffer.originalPrice || !courseOffer.offerPrice) {
+          // console.log('⚠️ Course offer missing required fields - filtering out');
           invalidCourses.push('Course offer with missing required fields');
           continue;
         }
 
         // Validate course exists (skip validation for default courses)
+        // console.log('🔍 Validating course ID:', courseOffer.courseId);
         if (!courseOffer.courseId.startsWith('default-')) {
           const course = await RealTimeCourse.findById(courseOffer.courseId);
           if (!course) {
+            // console.log('⚠️ Course not found:', courseOffer.courseId, '- filtering out');
             invalidCourses.push(`Course ID ${courseOffer.courseId} (not found)`);
             continue;
           }
           
-          // Check if course is active
-          if (!course.isActive) {
-            invalidCourses.push(`Course "${course.courseName}" (inactive)`);
+          // Check if course is published (RealTimeCourse uses 'status' field)
+          if (course.status !== 'published') {
+            // console.log('⚠️ Course not published:', course.title, '- filtering out');
+            invalidCourses.push(`Course "${course.title}" (not published)`);
             continue;
           }
           
+          // console.log('✅ Course found:', course.title);
         } else {
+          // console.log('✅ Using default course:', courseOffer.courseId);
         }
 
         // Validate prices
         if (courseOffer.offerPrice > courseOffer.originalPrice) {
+          // console.log('⚠️ Offer price higher than original - filtering out');
           invalidCourses.push('Course offer with invalid pricing');
           continue;
         }
@@ -169,6 +186,7 @@ export const createOffer = async (req, res) => {
       
       // Log warnings about filtered courses
       if (invalidCourses.length > 0) {
+        // console.log(`⚠️ Filtered out ${invalidCourses.length} invalid course offers:`, invalidCourses);
       }
     }
 
@@ -178,6 +196,7 @@ export const createOffer = async (req, res) => {
     if (tegaExamOffers && tegaExamOffers.length > 0) {
       for (const tegaExamOffer of tegaExamOffers) {
         if (!tegaExamOffer.examId || !tegaExamOffer.originalPrice || !tegaExamOffer.offerPrice) {
+          // console.log('⚠️ TEGA exam offer missing required fields - filtering out');
           invalidTegaExams.push('TEGA exam offer with missing required fields');
           continue;
         }
@@ -185,23 +204,27 @@ export const createOffer = async (req, res) => {
         // Validate exam exists
         const exam = await Exam.findById(tegaExamOffer.examId);
         if (!exam) {
+          // console.log('⚠️ TEGA exam not found:', tegaExamOffer.examId, '- filtering out');
           invalidTegaExams.push(`TEGA exam ID ${tegaExamOffer.examId} (not found)`);
           continue;
         }
 
         if (!exam.isTegaExam) {
+          // console.log('⚠️ Exam is not a TEGA exam:', exam.title, '- filtering out');
           invalidTegaExams.push(`Exam "${exam.title}" (not a TEGA exam)`);
           continue;
         }
         
         // Check if exam is active
         if (!exam.isActive) {
+          // console.log('⚠️ TEGA exam inactive:', exam.title, '- filtering out');
           invalidTegaExams.push(`TEGA exam "${exam.title}" (inactive)`);
           continue;
         }
 
         // Validate prices
         if (tegaExamOffer.offerPrice > tegaExamOffer.originalPrice) {
+          // console.log('⚠️ TEGA exam offer price higher than original - filtering out');
           invalidTegaExams.push('TEGA exam offer with invalid pricing');
           continue;
         }
@@ -222,10 +245,20 @@ export const createOffer = async (req, res) => {
       
       // Log warnings about filtered TEGA exams
       if (invalidTegaExams.length > 0) {
+        // console.log(`⚠️ Filtered out ${invalidTegaExams.length} invalid TEGA exam offers:`, invalidTegaExams);
       }
     }
 
     // Create offer
+    // console.log('🎯 Creating offer object with data:', {
+    //   instituteName,
+    //   courseOffers: validCourseOffers,
+    //   tegaExamOffers: validTegaExamOffers,
+    //   validUntil: new Date(validUntil),
+    //   description,
+    //   maxStudents,
+    //   createdBy
+    // });
 
     const offer = new Offer({
       instituteName,
@@ -237,10 +270,13 @@ export const createOffer = async (req, res) => {
       createdBy
     });
 
+    // console.log('🎯 Offer object created, saving to database...');
     await offer.save();
+    // console.log('✅ Offer saved successfully with ID:', offer._id);
 
     // Note: Since we changed courseId to String and createdBy to String, 
     // population is not needed for these fields
+    // console.log('✅ Offer created without population (using String IDs)');
 
     // Prepare success message
     let successMessage = 'Offer created successfully';
@@ -263,6 +299,7 @@ export const createOffer = async (req, res) => {
       data: offer
     });
   } catch (error) {
+    // console.error('Error creating offer:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to create offer',
@@ -301,19 +338,22 @@ export const updateOffer = async (req, res) => {
         if (courseOffer.courseId) {
           const course = await RealTimeCourse.findById(courseOffer.courseId);
           if (!course) {
+            // console.log(`⚠️ Course validation warning: Course with ID ${courseOffer.courseId} not found - filtering out`);
             invalidCourses.push(`Course ID ${courseOffer.courseId} (not found)`);
             continue; // Skip this course offer
           }
           
-          // Check if course is active
-          if (!course.isActive) {
-            invalidCourses.push(`Course "${course.courseName}" (inactive)`);
+          // Check if course is published (RealTimeCourse uses 'status' field)
+          if (course.status !== 'published') {
+            // console.log(`⚠️ Course validation warning: Course ${course.title} is not published - filtering out`);
+            invalidCourses.push(`Course "${course.title}" (not published)`);
             continue; // Skip this course offer
           }
         }
 
         if (courseOffer.originalPrice && courseOffer.offerPrice && 
             courseOffer.offerPrice > courseOffer.originalPrice) {
+          // console.log(`⚠️ Course validation warning: Offer price higher than original price - filtering out`);
           invalidCourses.push(`Course offer with invalid pricing`);
           continue; // Skip this course offer
         }
@@ -327,6 +367,7 @@ export const updateOffer = async (req, res) => {
       
       // Log warnings about filtered courses
       if (invalidCourses.length > 0) {
+        // console.log(`⚠️ Filtered out ${invalidCourses.length} invalid course offers:`, invalidCourses);
       }
     }
 
@@ -339,17 +380,20 @@ export const updateOffer = async (req, res) => {
         if (tegaExamOffer.examId) {
           const exam = await Exam.findById(tegaExamOffer.examId);
           if (!exam) {
+            // console.log(`⚠️ TEGA exam validation warning: Exam with ID ${tegaExamOffer.examId} not found - filtering out`);
             invalidTegaExams.push(`TEGA exam ID ${tegaExamOffer.examId} (not found)`);
             continue; // Skip this exam offer
           }
 
           if (!exam.isTegaExam) {
+            // console.log(`⚠️ TEGA exam validation warning: Exam ${exam.title} is not a TEGA exam - filtering out`);
             invalidTegaExams.push(`Exam "${exam.title}" (not a TEGA exam)`);
             continue; // Skip this exam offer
           }
           
           // Check if exam is active
           if (!exam.isActive) {
+            // console.log(`⚠️ TEGA exam validation warning: Exam ${exam.title} is not active - filtering out`);
             invalidTegaExams.push(`TEGA exam "${exam.title}" (inactive)`);
             continue; // Skip this exam offer
           }
@@ -369,6 +413,7 @@ export const updateOffer = async (req, res) => {
       
       // Log warnings about filtered TEGA exams
       if (invalidTegaExams.length > 0) {
+        // console.log(`⚠️ Filtered out ${invalidTegaExams.length} invalid TEGA exam offers:`, invalidTegaExams);
       }
     }
 
@@ -404,6 +449,7 @@ export const updateOffer = async (req, res) => {
       data: offer
     });
   } catch (error) {
+    // console.error('Error updating offer:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to update offer',
@@ -439,6 +485,7 @@ export const deleteOffer = async (req, res) => {
       message: 'Offer deleted successfully'
     });
   } catch (error) {
+    // console.error('Error deleting offer:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to delete offer',
@@ -476,6 +523,7 @@ export const toggleOfferStatus = async (req, res) => {
       data: offer
     });
   } catch (error) {
+    // console.error('Error toggling offer status:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to toggle offer status',
@@ -488,6 +536,7 @@ export const toggleOfferStatus = async (req, res) => {
 export const getOffersForInstitute = async (req, res) => {
   try {
     const { instituteName } = req.params;
+    // console.log('🔍 Fetching offers for institute:', instituteName);
 
     if (!instituteName) {
       return res.status(400).json({
@@ -509,6 +558,7 @@ export const getOffersForInstitute = async (req, res) => {
     
     // If no exact match, try case-insensitive match
     if (!offers || offers.length === 0) {
+      // console.log('🔍 No exact match, trying case-insensitive search...');
       offers = await Offer.find({
         instituteName: { $regex: new RegExp(`^${instituteName}$`, 'i') },
         isActive: true,
@@ -519,6 +569,7 @@ export const getOffersForInstitute = async (req, res) => {
     
     // If still no match, try partial match
     if (!offers || offers.length === 0) {
+      // console.log('🔍 No case-insensitive match, trying partial search...');
       offers = await Offer.find({
         instituteName: { $regex: instituteName, $options: 'i' },
         isActive: true,
@@ -527,11 +578,15 @@ export const getOffersForInstitute = async (req, res) => {
       });
     }
 
+    // console.log('📊 Found offers for institute:', offers.length);
+    // console.log('📊 Offers data:', offers);
 
     // If no offers found, show all available institute names for debugging
     if (!offers || offers.length === 0) {
+      // console.log('🔍 No offers found, checking all available institutes...');
       const allOffers = await Offer.find({ isActive: true });
       const availableInstitutes = [...new Set(allOffers.map(offer => offer.instituteName))];
+      // console.log('📊 Available institutes in database:', availableInstitutes);
       
       return res.status(404).json({
         success: false,
@@ -548,6 +603,7 @@ export const getOffersForInstitute = async (req, res) => {
       data: offers
     });
   } catch (error) {
+    // console.error('Error fetching offers for institute:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to fetch offers for institute',
@@ -582,6 +638,7 @@ export const getCourseOfferForInstitute = async (req, res) => {
       data: offer
     });
   } catch (error) {
+    // console.error('Error fetching course offer:', error);
     res.status(500).json({
           success: false,
       message: 'Failed to fetch course offer',
@@ -609,6 +666,7 @@ export const getTegaExamOfferForInstitute = async (req, res) => {
       data: offer
     });
   } catch (error) {
+    // console.error('Error fetching Tega Exam offer:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to fetch Tega Exam offer',
@@ -620,18 +678,37 @@ export const getTegaExamOfferForInstitute = async (req, res) => {
 // Get available courses for offer creation
 export const getAvailableCourses = async (req, res) => {
   try {
+    // console.log('🔍 Fetching available courses...');
     
     const courses = await RealTimeCourse.find({ status: 'published' })
       .select('_id title price category description')
       .sort({ title: 1 });
 
+    // console.log('📚 Courses found:', courses.length);
+    // console.log('📚 Sample course:', courses[0]);
+
+    // Map RealTimeCourse fields to expected format for offer management
+    const mappedCourses = courses.map(course => ({
+      _id: course._id,
+      courseName: course.title, // Map title to courseName for compatibility
+      name: course.title, // Also provide as 'name'
+      title: course.title,
+      price: course.price,
+      category: course.category,
+      description: course.description
+    }));
+
+    // console.log('📚 Mapped courses:', mappedCourses.length);
 
     // If no courses found, add some default courses
-    if (!courses || courses.length === 0) {
+    if (!mappedCourses || mappedCourses.length === 0) {
+      // console.log('📚 No courses found, adding default courses');
       const defaultCourses = [
         {
           _id: 'default-java',
           courseName: 'Java Programming',
+          name: 'Java Programming',
+          title: 'Java Programming',
           price: 799,
           category: 'Programming',
           description: 'Learn Java programming from basics to advanced'
@@ -639,6 +716,8 @@ export const getAvailableCourses = async (req, res) => {
         {
           _id: 'default-python',
           courseName: 'Python for Data Science',
+          name: 'Python for Data Science',
+          title: 'Python for Data Science',
           price: 799,
           category: 'Data Science',
           description: 'Master Python for data analysis and machine learning'
@@ -675,9 +754,10 @@ export const getAvailableCourses = async (req, res) => {
 
     res.json({
       success: true,
-      data: courses
+      data: mappedCourses
     });
   } catch (error) {
+    // console.error('Error fetching available courses:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to fetch available courses',
@@ -689,6 +769,7 @@ export const getAvailableCourses = async (req, res) => {
 // Get available TEGA exams for offer management
 export const getAvailableTegaExams = async (req, res) => {
   try {
+    // console.log('🔍 Fetching available TEGA exams for offer management...');
     
     // Get all TEGA exams (isTegaExam: true)
     const tegaExams = await Exam.find({ 
@@ -696,12 +777,20 @@ export const getAvailableTegaExams = async (req, res) => {
       isActive: true 
     }).select('_id title price effectivePrice description duration').sort({ createdAt: -1 });
     
+    // console.log('📊 TEGA exams found:', tegaExams.length);
+    // console.log('📊 TEGA exams data:', tegaExams.map(exam => ({
+    //   id: exam._id,
+    //   title: exam.title,
+    //   price: exam.price,
+    //   effectivePrice: exam.effectivePrice
+    // }));
 
     res.json({
       success: true,
       data: tegaExams
     });
   } catch (error) {
+    // console.error('Error fetching available TEGA exams:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to fetch available TEGA exams',
@@ -713,37 +802,42 @@ export const getAvailableTegaExams = async (req, res) => {
 // Get institutes list
 export const getInstitutes = async (req, res) => {
   try {
+    // console.log('🔍 Fetching institutes list...');
     
     // Get unique institute names from students
     const studentInstitutes = await Student.distinct('institute', { 
       institute: { $exists: true, $ne: null, $ne: '' } 
     });
     
+    // console.log('📊 Student institutes found:', studentInstitutes);
     
     // If no institutes found in students, use static colleges list as fallback
     let institutes = studentInstitutes;
     
     if (!institutes || institutes.length === 0) {
+      // console.log('📚 No institutes found in students, using static colleges list');
       const { colleges } = await import('../data/colleges.js');
-      institutes = colleges; // Use all colleges instead of limiting to 50
+      institutes = colleges.slice(0, 50); // Use first 50 colleges for demo
     }
     
     // Sort alphabetically
     institutes.sort();
     
+    // console.log('✅ Final institutes list:', institutes.length, 'institutes');
 
     res.json({
       success: true,
       data: institutes
     });
   } catch (error) {
+    // console.error('Error fetching institutes:', error);
     
     // Fallback to static colleges if database fails
     try {
       const { colleges } = await import('../data/colleges.js');
       res.json({
         success: true,
-        data: colleges.sort() // Use all colleges instead of limiting to 50
+        data: colleges.slice(0, 50).sort()
       });
     } catch (fallbackError) {
     res.status(500).json({
@@ -795,6 +889,7 @@ export const getOfferStats = async (req, res) => {
       }
     });
   } catch (error) {
+    // console.error('Error fetching offer statistics:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to fetch offer statistics',

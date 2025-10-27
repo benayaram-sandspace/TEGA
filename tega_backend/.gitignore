@@ -26,3 +26,5 @@ coverage/
 # Editor
 .vscode/
 .idea/
+scripts/
+/scripts

@@ -1,6 +1,7 @@
 import jwt from 'jsonwebtoken';
 import Student from '../models/Student.js';
 import { inMemoryUsers } from '../controllers/authController.js';
+import config from '../config/environment.js';
 
 const studentAuth = async (req, res, next) => {
   try {
@@ -20,7 +21,7 @@ const studentAuth = async (req, res, next) => {
     }
 
     
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-super-secret-jwt-key-change-this-in-production');
+    const decoded = jwt.verify(token, config.JWT_SECRET);
     
     // Check for both 'id' and 'userId' in the decoded token
     const studentId = decoded.id || decoded.userId;

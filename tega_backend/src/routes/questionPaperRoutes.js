@@ -8,7 +8,8 @@ import {
   uploadQuestionPaper,
   deleteQuestionPaper,
   downloadQuestionTemplate,
-  getQuestionPaperDetails
+  getQuestionPaperDetails,
+  getTegaExamQuestionPapers
 } from '../controllers/questionPaperController.js';
 import { adminAuth } from '../middleware/adminAuth.js';
 
@@ -57,6 +58,7 @@ const handleMulterError = (err, req, res, next) => {
 
 // Admin routes
 router.get('/admin/all', adminAuth, getAllQuestionPapers);
+router.get('/admin/tega-exam', adminAuth, getTegaExamQuestionPapers);
 router.get('/admin/course/:courseId', adminAuth, getQuestionPapersByCourse);
 router.post('/admin/upload', adminAuth, upload.single('questionPaper'), handleMulterError, uploadQuestionPaper);
 router.delete('/admin/:questionPaperId', adminAuth, deleteQuestionPaper);
