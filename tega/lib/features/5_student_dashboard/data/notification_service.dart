@@ -22,6 +22,7 @@ class NotificationService {
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
+
         if (data['success'] == true && data['notifications'] != null) {
           final List<dynamic> notificationsJson = data['notifications'];
           return notificationsJson
@@ -92,10 +93,12 @@ class NotificationModel {
   });
 
   factory NotificationModel.fromJson(Map<String, dynamic> json) {
+    // Backend only has 'message' field, so use it as both title and message
+    final message = json['message'] ?? '';
     return NotificationModel(
       id: json['id'] ?? json['_id'] ?? '',
-      title: json['title'] ?? '',
-      message: json['message'],
+      title: json['title'] ?? message, // Use message as title if no title field
+      message: message,
       type: json['type'] ?? 'general',
       isRead: json['isRead'] ?? json['read'] ?? false,
       createdAt: DateTime.parse(
@@ -104,7 +107,7 @@ class NotificationModel {
             DateTime.now().toIso8601String(),
       ),
       readAt: json['readAt'] != null ? DateTime.parse(json['readAt']) : null,
-      metadata: json['metadata'],
+      metadata: json['data'] ?? json['metadata'], // Backend uses 'data' field
     );
   }
 

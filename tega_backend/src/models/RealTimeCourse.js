@@ -183,6 +183,13 @@ const realTimeCourseSchema = new mongoose.Schema({
       enum: ['immediate', 'previous_complete', 'quiz_pass', 'time_based'],
       default: 'immediate'
     },
+    // ✅ NEW: Quiz reference for this module
+    quiz: {
+      id: mongoose.Schema.Types.ObjectId,
+      totalQuestions: Number,
+      passMarks: Number,
+      passMarksPerQuestion: Number
+    },
     lectures: [{
       _id: false,
       id: {

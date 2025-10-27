@@ -14,7 +14,7 @@ const examAttemptSchema = new mongoose.Schema({
   courseId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Course',
-    required: true
+    required: false  // Made optional for TEGA exams
   },
   startTime: {
     type: Date,

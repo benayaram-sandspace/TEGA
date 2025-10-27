@@ -1,5 +1,6 @@
 import jwt from 'jsonwebtoken';
 import Admin from '../models/Admin.js';
+import config from '../config/environment.js';
 
 const adminAuth = async (req, res, next) => {
   try {
@@ -17,7 +18,9 @@ const adminAuth = async (req, res, next) => {
       });
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-super-secret-jwt-key-change-this-in-production');
+    const decoded = jwt.verify(token, config.JWT_SECRET);
+    
+    // console.log('🔐 Token decoded:', { id: decoded.id, email: decoded.email, role: decoded.role });
 
     // Role-based access control
     if (decoded.role !== 'admin') {

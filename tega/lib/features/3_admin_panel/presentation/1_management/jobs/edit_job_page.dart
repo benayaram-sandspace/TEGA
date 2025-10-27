@@ -46,7 +46,7 @@ class _EditJobPageState extends State<EditJobPage> {
     'internship',
   ];
   final List<String> _postingTypes = ['job', 'internship'];
-  final List<String> _statuses = ['open', 'active', 'closed', 'paused'];
+  final List<String> _statuses = ['open', 'active', 'expired', 'paused'];
 
   @override
   void initState() {

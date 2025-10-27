@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:tega/core/constants/app_colors.dart';
 import 'package:tega/features/3_admin_panel/presentation/0_dashboard/admin_dashboard_styles.dart';
+import 'package:tega/features/3_admin_panel/data/services/notification_service.dart';
 
 // Compose Notification Page
 class ComposeNotificationPage extends StatefulWidget {
@@ -352,7 +353,8 @@ class NotificationManagerPage extends StatefulWidget {
   const NotificationManagerPage({super.key});
 
   @override
-  State<NotificationManagerPage> createState() => _NotificationManagerPageState();
+  State<NotificationManagerPage> createState() =>
+      _NotificationManagerPageState();
 }
 
 class _NotificationManagerPageState extends State<NotificationManagerPage>
@@ -364,53 +366,38 @@ class _NotificationManagerPageState extends State<NotificationManagerPage>
   late List<Animation<double>> _cardScaleAnimations;
   late List<Animation<Offset>> _cardSlideAnimations;
 
-  final List<Map<String, dynamic>> _notifications = [
-    {
-      'id': '1',
-      'icon': Icons.campaign_rounded,
-      'title': 'Welcome to the Team!',
-      'message': 'We are excited to have you join our platform. Start exploring all the amazing features.',
-      'audience': 'All Users',
-      'sentDate': '2023-09-15',
-      'status': 'sent',
-      'type': 'welcome',
-    },
-    {
-      'id': '2',
-      'icon': Icons.system_update_alt_rounded,
-      'title': 'App Update v2.5 Available',
-      'message': 'New features and bug fixes are now available. Update your app to get the latest improvements.',
-      'audience': 'Specific Group',
-      'sentDate': '2023-09-10',
-      'status': 'sent',
-      'type': 'update',
-    },
-    {
-      'id': '3',
-      'icon': Icons.local_offer_rounded,
-      'title': 'Flash Sale: 50% Off!',
-      'message': 'Limited time offer! Get 50% off on all premium courses. Don\'t miss out!',
-      'audience': 'All Users',
-      'sentDate': '2023-09-05',
-      'status': 'sent',
-      'type': 'promotion',
-    },
-    {
-      'id': '4',
-      'icon': Icons.school_rounded,
-      'title': 'New Course Available',
-      'message': 'Check out our new Machine Learning course with hands-on projects and expert guidance.',
-      'audience': 'Students',
-      'sentDate': '2023-09-01',
-      'status': 'draft',
-      'type': 'course',
-    },
-  ];
+  List<Map<String, dynamic>> _notifications = [];
+  bool _isLoading = true;
+  String? _errorMessage;
+  final NotificationService _notificationService = NotificationService();
 
   @override
   void initState() {
     super.initState();
-    _initializeAnimations();
+    _loadNotifications();
+  }
+
+  Future<void> _loadNotifications() async {
+    try {
+      setState(() {
+        _isLoading = true;
+        _errorMessage = null;
+      });
+
+      final notifications = await _notificationService.getAdminNotifications();
+
+      setState(() {
+        _notifications = notifications;
+        _isLoading = false;
+      });
+
+      _initializeAnimations();
+    } catch (e) {
+      setState(() {
+        _errorMessage = e.toString();
+        _isLoading = false;
+      });
+    }
   }
 
   void _initializeAnimations() {
@@ -421,10 +408,13 @@ class _NotificationManagerPageState extends State<NotificationManagerPage>
     _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(parent: _animationController, curve: Curves.easeOutCubic),
     );
-    _slideAnimation = Tween<Offset>(
-      begin: const Offset(0, 0.3),
-      end: Offset.zero,
-    ).animate(CurvedAnimation(parent: _animationController, curve: Curves.easeOutCubic));
+    _slideAnimation =
+        Tween<Offset>(begin: const Offset(0, 0.3), end: Offset.zero).animate(
+          CurvedAnimation(
+            parent: _animationController,
+            curve: Curves.easeOutCubic,
+          ),
+        );
 
     // Initialize card animations
     _cardAnimations = List.generate(
@@ -436,20 +426,22 @@ class _NotificationManagerPageState extends State<NotificationManagerPage>
     );
 
     _cardScaleAnimations = _cardAnimations
-        .map((controller) => CurvedAnimation(
-              parent: controller,
-              curve: Curves.easeOutBack,
-            ))
+        .map(
+          (controller) =>
+              CurvedAnimation(parent: controller, curve: Curves.easeOutBack),
+        )
         .toList();
 
     _cardSlideAnimations = _cardAnimations
-        .map((controller) => Tween<Offset>(
-              begin: const Offset(0, 0.5),
-              end: Offset.zero,
-            ).animate(CurvedAnimation(
-              parent: controller,
-              curve: Curves.easeOutCubic,
-            )))
+        .map(
+          (controller) =>
+              Tween<Offset>(
+                begin: const Offset(0, 0.5),
+                end: Offset.zero,
+              ).animate(
+                CurvedAnimation(parent: controller, curve: Curves.easeOutCubic),
+              ),
+        )
         .toList();
 
     _animationController.forward();
@@ -477,175 +469,270 @@ class _NotificationManagerPageState extends State<NotificationManagerPage>
 
   @override
   Widget build(BuildContext context) {
+    final unreadNotifications = _notifications
+        .where((n) => n['isRead'] == false || n['isRead'] == null)
+        .length;
+
     return Container(
       color: AdminDashboardStyles.background,
-      child: FadeTransition(
-        opacity: _fadeAnimation,
-        child: SlideTransition(
-          position: _slideAnimation,
-          child: Column(
-            children: [
-              // Header Section
-              Container(
-                padding: const EdgeInsets.all(20),
+      child: _isLoading
+          ? _buildLoadingState()
+          : _errorMessage != null
+          ? _buildErrorState()
+          : FadeTransition(
+              opacity: _fadeAnimation,
+              child: SlideTransition(
+                position: _slideAnimation,
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Notification Manager',
-                              style: const TextStyle(
-                                fontSize: 24,
-                                fontWeight: FontWeight.bold,
-                                color: AdminDashboardStyles.textDark,
+                    // Header Section with Unread count and Mark all as read
+                    Container(
+                      margin: const EdgeInsets.all(20),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 16,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.05),
+                            blurRadius: 10,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        children: [
+                          Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(10),
+                                decoration: BoxDecoration(
+                                  color: AdminDashboardStyles.primary
+                                      .withOpacity(0.1),
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: const Icon(
+                                  Icons.notifications_active,
+                                  color: AdminDashboardStyles.primary,
+                                  size: 24,
+                                ),
                               ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              'Manage and track all notifications',
-                              style: const TextStyle(
-                                fontSize: 14,
-                                color: AdminDashboardStyles.textLight,
+                              const SizedBox(width: 12),
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Unread Notifications',
+                                    style: const TextStyle(
+                                      fontSize: 14,
+                                      color: AdminDashboardStyles.textLight,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    '$unreadNotifications',
+                                    style: const TextStyle(
+                                      fontSize: 20,
+                                      fontWeight: FontWeight.bold,
+                                      color: AdminDashboardStyles.textDark,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                          if (unreadNotifications > 0) ...[
+                            const SizedBox(height: 16),
+                            SizedBox(
+                              width: double.infinity,
+                              child: TextButton.icon(
+                                onPressed: _markAllAsRead,
+                                icon: const Icon(Icons.done_all, size: 18),
+                                label: const Text('Mark all as read'),
+                                style: TextButton.styleFrom(
+                                  foregroundColor: AdminDashboardStyles.primary,
+                                  backgroundColor: AdminDashboardStyles.primary
+                                      .withOpacity(0.1),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                    vertical: 12,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                ),
                               ),
                             ),
                           ],
-                        ),
-                        ElevatedButton.icon(
-                          onPressed: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => const ComposeNotificationPage(),
-                              ),
-                            );
-                          },
-                          icon: const Icon(Icons.add, size: 18),
-                          label: const Text('Compose'),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AdminDashboardStyles.primary,
-                            foregroundColor: AdminDashboardStyles.pureWhite,
-                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                    const SizedBox(height: 20),
-                    // Stats Cards
-                    Row(
-                      children: [
-                        Expanded(
-                          child: _buildStatCard(
-                            'Total Sent',
-                            '${_notifications.where((n) => n['status'] == 'sent').length}',
-                            Icons.send,
-                            AdminDashboardStyles.primary,
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: _buildStatCard(
-                            'Drafts',
-                            '${_notifications.where((n) => n['status'] == 'draft').length}',
-                            Icons.drafts,
-                            AppColors.warning,
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: _buildStatCard(
-                            'This Month',
-                            '12',
-                            Icons.calendar_month,
-                            AppColors.success,
-                          ),
-                        ),
-                      ],
+
+                    // Notifications List
+                    Expanded(
+                      child: _notifications.isEmpty
+                          ? _buildEmptyState()
+                          : ListView.builder(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 20,
+                              ),
+                              itemCount: _notifications.length,
+                              itemBuilder: (context, index) {
+                                final notification = _notifications[index];
+                                return AnimatedBuilder(
+                                  animation: _cardAnimations[index],
+                                  builder: (context, child) {
+                                    return Transform.scale(
+                                      scale: _cardScaleAnimations[index].value,
+                                      child: SlideTransition(
+                                        position: _cardSlideAnimations[index],
+                                        child: _buildNotificationCard(
+                                          notification,
+                                          index,
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                );
+                              },
+                            ),
                     ),
                   ],
                 ),
               ),
-
-              // Notifications List
-              Expanded(
-                child: ListView.builder(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  itemCount: _notifications.length,
-                  itemBuilder: (context, index) {
-                    final notification = _notifications[index];
-                    return AnimatedBuilder(
-                      animation: _cardAnimations[index],
-                      builder: (context, child) {
-                        return Transform.scale(
-                          scale: _cardScaleAnimations[index].value,
-                          child: SlideTransition(
-                            position: _cardSlideAnimations[index],
-                            child: _buildNotificationCard(notification, index),
-                          ),
-                        );
-                      },
-                    );
-                  },
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
+            ),
     );
   }
 
-  Widget _buildStatCard(String title, String value, IconData icon, Color color) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AdminDashboardStyles.surface,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AdminDashboardStyles.borderLight),
-      ),
+  Widget _buildLoadingState() {
+    return const Center(
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: color.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Icon(icon, color: color, size: 20),
-              ),
-              const Spacer(),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Text(
-            value,
-            style: const TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              color: AdminDashboardStyles.textDark,
+          CircularProgressIndicator(
+            valueColor: AlwaysStoppedAnimation<Color>(
+              AdminDashboardStyles.primary,
             ),
           ),
-          const SizedBox(height: 4),
+          SizedBox(height: 16),
           Text(
-            title,
-            style: const TextStyle(
-              fontSize: 12,
+            'Loading notifications...',
+            style: TextStyle(
               color: AdminDashboardStyles.textLight,
+              fontSize: 16,
             ),
           ),
         ],
       ),
     );
+  }
+
+  Widget _buildErrorState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.error_outline, size: 64, color: AppColors.error),
+          const SizedBox(height: 16),
+          Text(
+            'Failed to load notifications',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+              color: AdminDashboardStyles.textDark,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            _errorMessage ?? 'Unknown error occurred',
+            style: TextStyle(
+              color: AdminDashboardStyles.textLight,
+              fontSize: 14,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 24),
+          ElevatedButton.icon(
+            onPressed: _loadNotifications,
+            icon: const Icon(Icons.refresh),
+            label: const Text('Retry'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AdminDashboardStyles.primary,
+              foregroundColor: Colors.white,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEmptyState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.notifications_none,
+            size: 64,
+            color: AdminDashboardStyles.textLight,
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'No notifications yet',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+              color: AdminDashboardStyles.textDark,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'You haven\'t sent any notifications yet',
+            style: TextStyle(
+              color: AdminDashboardStyles.textLight,
+              fontSize: 14,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _markAllAsRead() async {
+    try {
+      await _notificationService.markAllNotificationsAsRead();
+
+      setState(() {
+        for (var notification in _notifications) {
+          notification['isRead'] = true;
+        }
+      });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('All notifications marked as read'),
+            backgroundColor: AppColors.success,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Failed to mark notifications as read: ${e.toString()}',
+            ),
+            backgroundColor: AppColors.error,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    }
   }
 
   Widget _buildNotificationCard(Map<String, dynamic> notification, int index) {
@@ -676,12 +763,18 @@ class _NotificationManagerPageState extends State<NotificationManagerPage>
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: _getTypeColor(notification['type']).withOpacity(0.1),
+                      color: _getTypeColor(
+                        notification['type']?.toString() ?? 'info',
+                      ).withOpacity(0.1),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Icon(
-                      notification['icon'],
-                      color: _getTypeColor(notification['type']),
+                      _getNotificationIcon(
+                        notification['type']?.toString() ?? 'info',
+                      ),
+                      color: _getTypeColor(
+                        notification['type']?.toString() ?? 'info',
+                      ),
                       size: 24,
                     ),
                   ),
@@ -691,7 +784,7 @@ class _NotificationManagerPageState extends State<NotificationManagerPage>
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          notification['title'],
+                          notification['title']?.toString() ?? 'Notification',
                           style: const TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
@@ -700,7 +793,7 @@ class _NotificationManagerPageState extends State<NotificationManagerPage>
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          notification['message'],
+                          notification['message']?.toString() ?? 'No message',
                           style: const TextStyle(
                             fontSize: 14,
                             color: AdminDashboardStyles.textLight,
@@ -712,17 +805,25 @@ class _NotificationManagerPageState extends State<NotificationManagerPage>
                     ),
                   ),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
                     decoration: BoxDecoration(
-                      color: _getStatusColor(notification['status']).withOpacity(0.1),
+                      color: _getStatusColor(
+                        notification['status']?.toString() ?? 'sent',
+                      ).withOpacity(0.1),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Text(
-                      notification['status'].toUpperCase(),
+                      (notification['status']?.toString() ?? 'sent')
+                          .toUpperCase(),
                       style: TextStyle(
                         fontSize: 10,
                         fontWeight: FontWeight.bold,
-                        color: _getStatusColor(notification['status']),
+                        color: _getStatusColor(
+                          notification['status']?.toString() ?? 'sent',
+                        ),
                       ),
                     ),
                   ),
@@ -738,7 +839,7 @@ class _NotificationManagerPageState extends State<NotificationManagerPage>
                   ),
                   const SizedBox(width: 4),
                   Text(
-                    notification['audience'],
+                    notification['recipientModel']?.toString() ?? 'All',
                     style: const TextStyle(
                       fontSize: 12,
                       color: AdminDashboardStyles.textLight,
@@ -752,7 +853,7 @@ class _NotificationManagerPageState extends State<NotificationManagerPage>
                   ),
                   const SizedBox(width: 4),
                   Text(
-                    notification['sentDate'],
+                    _formatDate(notification['createdAt']?.toString()),
                     style: const TextStyle(
                       fontSize: 12,
                       color: AdminDashboardStyles.textLight,
@@ -767,8 +868,8 @@ class _NotificationManagerPageState extends State<NotificationManagerPage>
     );
   }
 
-  Color _getTypeColor(String type) {
-    switch (type) {
+  Color _getTypeColor(String? type) {
+    switch (type?.toLowerCase()) {
       case 'welcome':
         return AppColors.success;
       case 'update':
@@ -782,8 +883,8 @@ class _NotificationManagerPageState extends State<NotificationManagerPage>
     }
   }
 
-  Color _getStatusColor(String status) {
-    switch (status) {
+  Color _getStatusColor(String? status) {
+    switch (status?.toLowerCase()) {
       case 'sent':
         return AppColors.success;
       case 'draft':
@@ -792,6 +893,35 @@ class _NotificationManagerPageState extends State<NotificationManagerPage>
         return AppColors.error;
       default:
         return AdminDashboardStyles.textLight;
+    }
+  }
+
+  IconData _getNotificationIcon(String? type) {
+    switch (type?.toLowerCase()) {
+      case 'welcome':
+        return Icons.campaign_rounded;
+      case 'update':
+        return Icons.system_update_alt_rounded;
+      case 'promotion':
+        return Icons.local_offer_rounded;
+      case 'course':
+        return Icons.school_rounded;
+      case 'payment':
+        return Icons.payment_rounded;
+      case 'info':
+        return Icons.info_rounded;
+      default:
+        return Icons.notifications_rounded;
+    }
+  }
+
+  String _formatDate(String? dateString) {
+    if (dateString == null) return 'Unknown';
+    try {
+      final date = DateTime.parse(dateString);
+      return '${date.day}/${date.month}/${date.year}';
+    } catch (e) {
+      return 'Unknown';
     }
   }
 
@@ -912,5 +1042,5 @@ class NotificationCard extends StatelessWidget {
         ),
       ),
     );
-}
   }
+}

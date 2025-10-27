@@ -14,7 +14,8 @@ const examRegistrationSchema = new mongoose.Schema({
   courseId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Course',
-    required: true
+    required: false,
+    default: null
   },
   slotId: {
     type: String,
@@ -81,6 +82,28 @@ examRegistrationSchema.statics.canRegister = function(studentId, examId) {
     isActive: true
   });
 };
+
+// Pre-save hook for conditional validation
+examRegistrationSchema.pre('save', async function(next) {
+  try {
+    // For course-based exams, courseId should be present
+    if (this.courseId === null || this.courseId === undefined) {
+      // Check if this is a course-based exam
+      const Exam = mongoose.model('Exam');
+      const exam = await Exam.findById(this.examId);
+      
+      if (exam && exam.courseId && exam.courseId.toString() !== 'null') {
+        // This is a course-based exam but courseId is missing
+        const error = new Error('courseId is required for course-based exams');
+        return next(error);
+      }
+      // For TEGA/standalone exams, courseId can be null
+    }
+    next();
+  } catch (error) {
+    next(error);
+  }
+});
 
 // Static method to get slot availability
 examRegistrationSchema.statics.getSlotAvailability = function(examId, slotId) {

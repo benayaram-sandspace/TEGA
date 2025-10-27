@@ -6,7 +6,10 @@ import dotenv from 'dotenv';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
 import jobRoutes from './routes/jobRoutes.js';
+import mockInterviewRoutes from './routes/mockInterviewRoutes.js';
 import { initializeRedis } from './config/redis.js';
+import logger from './utils/logger.js';
+import { setupInterviewSocket } from './socket/interviewSocket.js';
 
 // Import AI Assistant routes
 import aiAssistantRoutes from './routes/aiAssistant.js';
@@ -17,17 +20,30 @@ dotenv.config();
 const app = express();
 const server = createServer(app);
 
-// CORS configuration
+// CORS configuration - Production Ready
 const corsOptions = {
   origin: [
     'http://localhost:3000', 
     'http://127.0.0.1:3000',
+    'http://localhost:3001', 
+    'http://127.0.0.1:3001',
     'https://tegaedu.com',
     'https://www.tegaedu.com',
     'http://tegaedu.com',
     'http://www.tegaedu.com',
     process.env.CLIENT_URL,
-    process.env.FRONTEND_URL
+    process.env.FRONTEND_URL,
+    process.env.ADMIN_URL,
+    // Development origins
+    ...(process.env.NODE_ENV === 'development' ? [
+      'http://localhost:3000',
+      'http://127.0.0.1:3000'
+    ] : []),
+    // Production domains
+    ...(process.env.NODE_ENV === 'production' ? [
+      'https://tegaedu.com',
+      'https://www.tegaedu.com'
+    ] : [])
   ].filter(Boolean), // Remove undefined values
   credentials: true, // Allow credentials (cookies, authorization headers)
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
@@ -42,26 +58,55 @@ const io = new Server(server, {
   transports: ['websocket', 'polling']
 });
 
-// Socket.IO connection handling
+// Socket.IO connection handling - Production Ready
 io.on('connection', (socket) => {
+  logger.info(`User connected: ${socket.id}`);
 
   // Join user to their personal room for real-time updates
   socket.on('join-user-room', (userId) => {
-    socket.join(`user-${userId}`);
+    const roomName = `user-${userId}`;
+    socket.join(roomName);
+    logger.info(`User ${userId} joined room: ${roomName}`);
+    // console.log(`📊 Room ${roomName} now has ${io.sockets.adapter.rooms.get(roomName)?.size || 0} members`);
   });
 
   // Handle payment history requests
   socket.on('request-payment-history', (userId) => {
+    logger.info(`Payment history requested for user ${userId}`);
     // This will be handled by the payment routes
   });
 
+  // Handle real-time notifications
+  socket.on('subscribe-notifications', (userId) => {
+    socket.join(`notifications-${userId}`);
+    logger.info(`User ${userId} subscribed to notifications`);
+  });
+
+  // Handle course progress updates
+  socket.on('course-progress', (data) => {
+    logger.info(`Course progress update: ${JSON.stringify(data)}`);
+    // Broadcast to relevant users
+    socket.to(`course-${data.courseId}`).emit('progress-update', data);
+  });
+
+  // Handle errors
+  socket.on('error', (error) => {
+    logger.error(`Socket error for ${socket.id}:`, error);
+  });
+
   // Handle disconnection
-  socket.on('disconnect', () => {
+  socket.on('disconnect', (reason) => {
+    logger.info(`User disconnected: ${socket.id}, reason: ${reason}`);
+    // console.log('🔌 WebSocket disconnected:', socket.id, 'Reason:', reason);
+    // Clean up user-specific data if needed
   });
 });
 
 // Make io available to routes
 app.set('io', io);
+
+// Setup interview socket handlers
+setupInterviewSocket(io);
 
 // Middleware
 app.use(cors(corsOptions));
@@ -74,11 +119,15 @@ const connectDB = async () => {
   try {
     // Ensure MongoDB URI is provided in production
     if (!process.env.MONGODB_URI && process.env.NODE_ENV === 'production') {
-      console.error('FATAL ERROR: MONGODB_URI is not defined in production environment');
+      logger.error('FATAL ERROR: MONGODB_URI is not defined in production environment');
       process.exit(1);
     }
     
-    const mongoURI = process.env.MONGODB_URI || 'mongodb://localhost:27017/tega-auth-starter';
+    const mongoURI = process.env.MONGODB_URI;
+    
+    if (!mongoURI) {
+      throw new Error('MONGODB_URI environment variable is required');
+    }
     
     // MongoDB connection options - optimized for 10,000+ users
     const options = {
@@ -101,59 +150,59 @@ const connectDB = async () => {
     
     // Handle connection events with proper logging
     mongoose.connection.on('error', (err) => {
-      console.error('❌ MongoDB Connection Error:', err);
+      logger.error('MongoDB Connection Error:', err);
     });
     
     // Initialize Redis (optional - will fallback to memory cache if not available)
     await initializeRedis();
     
     mongoose.connection.on('disconnected', () => {
-      console.warn('⚠️  MongoDB Disconnected. Attempting to reconnect...');
+      logger.warn('MongoDB Disconnected. Attempting to reconnect...');
     });
     
     mongoose.connection.on('reconnected', () => {
-      console.log('✅ MongoDB Reconnected Successfully');
+      logger.success('MongoDB Reconnected Successfully');
     });
     
   } catch (err) {
-    console.error('❌ MongoDB Connection Failed:', err.message);
-    console.error('Stack:', err.stack);
+    logger.error('MongoDB Connection Failed:', err.message);
+    logger.error('Stack:', err.stack);
     
     // In production, exit if DB connection fails
     if (process.env.NODE_ENV === 'production') {
-      console.error('Exiting application due to database connection failure');
+      logger.error('Exiting application due to database connection failure');
       process.exit(1);
     }
     
     // In development, retry after delay
-    console.log('Retrying connection in 5 seconds...');
+    logger.info('Retrying connection in 5 seconds...');
     setTimeout(connectDB, 5000);
   }
 };
 
 // Graceful shutdown handler
 const gracefulShutdown = async (signal) => {
-  console.log(`\n${signal} received. Starting graceful shutdown...`);
+  logger.info(`${signal} received. Starting graceful shutdown...`);
   
   try {
     // Close MongoDB connection
     await mongoose.connection.close();
-    console.log('✅ MongoDB connection closed');
+    logger.success('MongoDB connection closed');
     
     // Close server
     server.close(() => {
-      console.log('✅ HTTP server closed');
+      logger.success('HTTP server closed');
       process.exit(0);
     });
     
     // Force close after timeout
     setTimeout(() => {
-      console.error('⚠️  Forced shutdown after timeout');
+      logger.error('Forced shutdown after timeout');
       process.exit(1);
     }, 10000); // 10 seconds timeout
     
   } catch (err) {
-    console.error('❌ Error during shutdown:', err);
+    logger.error('Error during shutdown:', err);
     process.exit(1);
   }
 };
@@ -162,11 +211,11 @@ const gracefulShutdown = async (signal) => {
 process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
 process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 process.on('uncaughtException', (err) => {
-  console.error('❌ Uncaught Exception:', err);
+  logger.error('Uncaught Exception:', err);
   gracefulShutdown('uncaughtException');
 });
 process.on('unhandledRejection', (reason, promise) => {
-  console.error('❌ Unhandled Rejection at:', promise, 'reason:', reason);
+  logger.error('Unhandled Rejection at:', promise, 'reason:', reason);
   gracefulShutdown('unhandledRejection');
 });
 
@@ -195,6 +244,10 @@ import realTimeCourseRoutes from './routes/realTimeCourse.js';
 import videoDeliveryRoutes from './routes/videoDeliveryRoutes.js';
 import contactRoutes from './routes/contactRoutes.js';
 import announcementRoutes from './routes/announcementRoutes.js';
+import pdfFeedbackRoutes from './routes/pdfFeedbackRoutes.js';
+import quizRoutes from './routes/quizRoutes.js';
+import codeRoutes from './routes/codeRoutes.js';
+import codeSnippetRoutes from './routes/codeSnippetRoutes.js';
 
 // Serve static files (uploaded images)
 app.use('/uploads', express.static('uploads'));
@@ -221,13 +274,21 @@ app.use('/api/video-delivery', videoDeliveryRoutes);
 app.use('/api/enrollments', enrollmentRoutes);
 app.use('/api/offers', offerRoutes);
 app.use('/api/admin/exam-results', adminExamResultRoutes);
-app.use('/api/chatbot', chatbotRoutes);
+app.use('/api/admin/placements', placementRoutes);
 app.use('/api/placement', placementRoutes);
 app.use('/api/company-questions', companyQuestionRoutes);
+app.use('/api/chatbot', chatbotRoutes);
 app.use('/api/images', imageRoutes);
+app.use('/api/contacts', contactRoutes);
+app.use('/api/announcements', announcementRoutes);
+app.use('/api/pdf-feedback', pdfFeedbackRoutes);
+app.use('/api', quizRoutes);
 app.use('/api/ai-assistant', aiAssistantRoutes);
 app.use('/api/contact', contactRoutes);
 app.use('/api/principal/announcements', announcementRoutes);
+app.use('/api/code', codeRoutes);
+app.use('/api/code-snippets', codeSnippetRoutes);
+app.use('/api/interviews', mockInterviewRoutes);
 
 // Static file serving is already configured above
 

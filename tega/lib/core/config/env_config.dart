@@ -102,6 +102,10 @@ class EnvConfig {
   /// JWT Secret (if needed)
   static String get jwtSecret => getString('JWT_SECRET');
 
+  /// Google Client ID for Credential Manager
+  /// Add GOOGLE_CLIENT_ID=your_google_client_id_here to your .env file
+  static String get googleClientId => getString('GOOGLE_CLIENT_ID');
+
   // ==================== UTILITY METHODS ====================
 
   /// Check if running in development mode

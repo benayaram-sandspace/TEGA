@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'dart:ui';
 import 'package:tega/features/1_authentication/data/auth_repository.dart';
 import 'package:tega/features/1_authentication/presentation/screens/login_page.dart';
 import 'package:tega/features/5_student_dashboard/presentation/1_home/student_notification_page.dart';
@@ -19,11 +20,15 @@ import 'package:tega/features/5_student_dashboard/presentation/3_ai_tools/studen
 import 'package:tega/features/5_student_dashboard/presentation/3_ai_tools/resume_builder_page.dart';
 import 'package:tega/features/5_student_dashboard/data/student_dashboard_service.dart';
 import 'package:tega/features/5_student_dashboard/presentation/4_profile_and_settings/student_profile_page.dart';
+import 'package:tega/features/5_student_dashboard/presentation/4_profile_and_settings/student_setting_page.dart';
+import 'package:tega/features/5_student_dashboard/presentation/4_profile_and_settings/help_support_page.dart';
 import 'package:tega/features/5_student_dashboard/presentation/5_placement_prep/placement_prep_page.dart';
 import 'package:tega/features/5_student_dashboard/presentation/6_exams/exams_page.dart';
 import 'package:tega/features/5_student_dashboard/presentation/7_results/my_results_page.dart';
 import 'package:tega/features/5_student_dashboard/presentation/shared/widgets/coming_soon_overlay.dart';
 import 'package:tega/core/config/env_config.dart';
+import 'package:tega/features/5_student_dashboard/presentation/3_ai_tools/ai_assistant_page.dart'
+    as ai;
 
 class StudentHomePage extends StatefulWidget {
   const StudentHomePage({super.key});
@@ -60,7 +65,8 @@ class _StudentHomePageState extends State<StudentHomePage>
     'Transaction History',
     // 'Start Payment', // (locked) - REMOVED
     // 'Help & Support', // (locked) - REMOVED
-    // 'Settings', // (locked) - REMOVED
+    'Settings',
+    'Help & Support',
     'Profile',
   ];
 
@@ -127,13 +133,14 @@ class _StudentHomePageState extends State<StudentHomePage>
       const JobRecommendationScreen(), // Jobs
       const InternshipsPage(), // Internships
       const ResumeBuilderPage(), // Resume Builder
-      const _AIAssistantPage(), // AI Assistant
+      const _AIAssistantPage(), // AI Assistant (unlocked)
       const NotificationPage(), // Notifications
       const LearningHistoryPage(), // Learning History
       const TransactionHistoryPage(), // Transaction History
       // const _StartPaymentPage(), // Start Payment (locked) - REMOVED
       // const HelpPage(), // Help & Support (locked) - REMOVED
-      // const SettingsPage(), // Settings (locked) - REMOVED
+      const SettingsPage(), // Settings (unlocked)
+      const HelpSupportPage(), // Help & Support (unlocked)
       StudentProfilePage(), // Profile
     ];
   }
@@ -153,30 +160,60 @@ class _StudentHomePageState extends State<StudentHomePage>
   void _showLogoutConfirmation() {
     showDialog(
       context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('Logout'),
-          content: const Text('Are you sure you want to logout?'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel'),
+      barrierColor: Colors.black.withValues(alpha: 0.3),
+      builder: (BuildContext context) {
+        return BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 4, sigmaY: 4),
+          child: AlertDialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
             ),
-            TextButton(
-              onPressed: () async {
-                Navigator.pop(context);
-                await _authService.logout();
-                if (mounted) {
-                  Navigator.pushAndRemoveUntil(
-                    context,
-                    MaterialPageRoute(builder: (_) => const LoginPage()),
-                    (route) => false,
-                  );
-                }
-              },
-              child: const Text('Logout', style: TextStyle(color: Colors.red)),
+            backgroundColor: Colors.white,
+            title: const Row(
+              children: [
+                Icon(Icons.logout, color: Colors.red),
+                SizedBox(width: 8),
+                Text('Logout'),
+              ],
             ),
-          ],
+            content: const Text('Are you sure you want to logout?'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('Cancel'),
+              ),
+              ElevatedButton(
+                onPressed: () async {
+                  Navigator.of(context).pop();
+                  await _authService.logout();
+
+                  // Clear login form fields
+                  LoginPage.clearFieldsOnLogout();
+
+                  if (mounted) {
+                    Navigator.pushAndRemoveUntil(
+                      context,
+                      MaterialPageRoute(builder: (_) => const LoginPage()),
+                      (route) => false,
+                    );
+                  }
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.red,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                child: const Text(
+                  'Logout',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
+          ),
         );
       },
     );
@@ -320,11 +357,10 @@ class _StudentHomePageState extends State<StudentHomePage>
                       description: 'Create professional resumes',
                       primaryColor: const Color(0xFF4CAF50),
                     ),
-                    LockedNavItem(
+                    _buildNavItem(
                       icon: Icons.psychology_rounded,
                       title: 'AI Assistant',
-                      description: 'Get AI-powered career guidance',
-                      primaryColor: const Color(0xFF6B5FFF),
+                      index: 8,
                     ),
                     _buildNavItem(
                       icon: Icons.notifications_rounded,
@@ -352,22 +388,20 @@ class _StudentHomePageState extends State<StudentHomePage>
                       description: 'Payment processing system',
                       primaryColor: const Color(0xFF4CAF50),
                     ),
-                    LockedNavItem(
-                      icon: Icons.help_rounded,
-                      title: 'Help & Support',
-                      description: 'Get help and support',
-                      primaryColor: const Color(0xFF2196F3),
-                    ),
-                    LockedNavItem(
+                    _buildNavItem(
                       icon: Icons.settings_rounded,
                       title: 'Settings',
-                      description: 'App settings and preferences',
-                      primaryColor: const Color(0xFF9C27B0),
+                      index: 12,
+                    ),
+                    _buildNavItem(
+                      icon: Icons.help_rounded,
+                      title: 'Help & Support',
+                      index: 13,
                     ),
                     _buildNavItem(
                       icon: Icons.person_rounded,
                       title: 'Profile',
-                      index: 12,
+                      index: 14,
                     ),
                   ],
                 ),
@@ -700,45 +734,6 @@ class _AIAssistantPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ComingSoonOverlay(
-      featureName: 'AI Assistant',
-      description:
-          'Get personalized career guidance, interview preparation, and learning recommendations powered by advanced AI.',
-      icon: Icons.psychology_rounded,
-      primaryColor: const Color(0xFF6B5FFF),
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.all(20.0),
-        child: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const SizedBox(height: 100),
-              Container(
-                padding: const EdgeInsets.all(30),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF6B5FFF).withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: const Icon(
-                  Icons.psychology_rounded,
-                  size: 80,
-                  color: Color(0xFF6B5FFF),
-                ),
-              ),
-              const SizedBox(height: 24),
-              const Text(
-                'AI Assistant',
-                style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 12),
-              const Text(
-                'Coming Soon',
-                style: TextStyle(fontSize: 16, color: Colors.grey),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
+    return const ai.AIAssistantPage();
   }
 }

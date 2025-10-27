@@ -25,7 +25,7 @@ class _JobFiltersState extends State<JobFilters> {
     const MapEntry('All Status', 'all'),
     const MapEntry('Open', 'open'),
     const MapEntry('Active', 'active'),
-    const MapEntry('Closed', 'closed'),
+    const MapEntry('Expired', 'expired'),
     const MapEntry('Paused', 'paused'),
   ];
 

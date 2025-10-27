@@ -552,7 +552,7 @@ class JobDetailsPage extends StatelessWidget {
         return const Color(0xFF48BB78);
       case 'active':
         return const Color(0xFF4299E1);
-      case 'closed':
+      case 'expired':
         return const Color(0xFFF56565);
       case 'paused':
         return const Color(0xFFED8936);

@@ -92,11 +92,11 @@ class R2Service {
     );
 
     if (missingVars.length > 0) {
-      console.error(
-        `❌ R2 Service: Missing required environment variables: ${missingVars.join(
-          ", "
-        )}`
-      );
+      // console.error(
+      //   `❌ R2 Service: Missing required environment variables: ${missingVars.join(
+      //     ", "
+      //   )}`
+      // );
       this.isConfigured = false;
       return;
     }
@@ -108,9 +108,9 @@ class R2Service {
     } else if (process.env.R2_ACCOUNT_ID) {
       endpoint = `https://${process.env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com`;
     } else {
-      console.error(
-        "❌ R2 Service: Either R2_ENDPOINT or R2_ACCOUNT_ID must be provided"
-      );
+      // console.error(
+      //   "❌ R2 Service: Either R2_ENDPOINT or R2_ACCOUNT_ID must be provided"
+      // );
       this.isConfigured = false;
       return;
     }
@@ -139,7 +139,7 @@ class R2Service {
         console.log(`🔗 Public URL: ${this.publicUrl}`);
       }
     } catch (error) {
-      console.error("❌ R2 Service initialization failed:", error.message);
+      // console.error("❌ R2 Service initialization failed:", error.message);
       this.isConfigured = false;
     }
   }
@@ -174,7 +174,7 @@ class R2Service {
         expiresAt: new Date(Date.now() + expiresIn * 1000).toISOString(),
       };
     } catch (error) {
-      console.error(`❌ Error generating signed URL for key "${key}":`, error);
+      // console.error(`❌ Error generating signed URL for key "${key}":`, error);
       throw new Error(`Failed to generate signed URL: ${error.message}`);
     }
   }
@@ -218,10 +218,10 @@ class R2Service {
         expiresAt: new Date(Date.now() + expiresIn * 1000).toISOString(),
       };
     } catch (error) {
-      console.error(
-        `❌ Error generating presigned upload URL for key "${key}":`,
-        error
-      );
+      // console.error(
+      //   `❌ Error generating presigned upload URL for key "${key}":`,
+      //   error
+      // );
       throw new Error(
         `Failed to generate presigned upload URL: ${error.message}`
       );
@@ -243,7 +243,7 @@ class R2Service {
       const response = await this.s3Client.send(command);
       return response.Body;
     } catch (error) {
-      console.error("Error streaming video:", error);
+      // console.error("Error streaming video:", error);
       throw new Error("Video not found");
     }
   }
@@ -328,7 +328,7 @@ class R2Service {
         contentType: contentType,
       };
     } catch (error) {
-      console.error(`❌ Error uploading file "${key}":`, error);
+      // console.error(`❌ Error uploading file "${key}":`, error);
       throw new Error(`Failed to upload file: ${error.message}`);
     }
   }
@@ -400,7 +400,7 @@ class R2Service {
         message: "File deleted successfully",
       };
     } catch (error) {
-      console.error(`❌ Error deleting file "${key}":`, error);
+      // console.error(`❌ Error deleting file "${key}":`, error);
       throw new Error(`Failed to delete file: ${error.message}`);
     }
   }
@@ -440,7 +440,7 @@ class R2Service {
           key: key,
         };
       }
-      console.error(`❌ Error getting metadata for "${key}":`, error);
+      // console.error(`❌ Error getting metadata for "${key}":`, error);
       throw new Error(`Failed to get file metadata: ${error.message}`);
     }
   }

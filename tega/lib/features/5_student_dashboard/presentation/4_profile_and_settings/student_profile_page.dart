@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:tega/features/1_authentication/data/auth_repository.dart';
-import 'package:tega/features/5_student_dashboard/presentation/1_home/student_home_page.dart';
 import 'package:tega/core/constants/api_constants.dart';
 
 class StudentProfilePage extends StatefulWidget {
@@ -58,9 +57,7 @@ class _StudentProfilePageState extends State<StudentProfilePage> {
           leading: IconButton(
             icon: const Icon(Icons.arrow_back, color: Colors.black87),
             onPressed: () {
-              Navigator.of(context).pushReplacement(
-                MaterialPageRoute(builder: (context) => StudentHomePage()),
-              );
+              Navigator.of(context).pop();
             },
           ),
           title: const Text(

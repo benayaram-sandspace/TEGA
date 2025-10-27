@@ -50,7 +50,7 @@ const submitContactForm = async (req, res) => {
     try {
       await sendAdminNotification(submission);
     } catch (emailError) {
-      console.error('Failed to send admin notification:', emailError);
+      // console.error('Failed to send admin notification:', emailError);
       // Don't fail the submission if email fails
     }
 
@@ -61,7 +61,7 @@ const submitContactForm = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Contact form submission error:', error);
+    // console.error('Contact form submission error:', error);
     res.status(500).json({
       success: false,
       message: 'Internal server error. Please try again later.'
@@ -118,7 +118,7 @@ const getAllSubmissions = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Get submissions error:', error);
+    // console.error('Get submissions error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to fetch submissions'
@@ -144,7 +144,7 @@ const getSubmissionById = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Get submission error:', error);
+    // console.error('Get submission error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to fetch submission'
@@ -181,7 +181,7 @@ const updateSubmissionStatus = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Update submission error:', error);
+    // console.error('Update submission error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to update submission'
@@ -207,7 +207,7 @@ const deleteSubmission = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Delete submission error:', error);
+    // console.error('Delete submission error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to delete submission'
@@ -249,7 +249,7 @@ const getSubmissionStats = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Get stats error:', error);
+    // console.error('Get stats error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to fetch statistics'

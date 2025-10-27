@@ -8,6 +8,7 @@ import {
   getStudentProfile, 
   updateStudentProfile, 
   uploadProfilePhoto, 
+  updateProfilePicture,
   removeProfilePhoto,
   getStudentDashboard,
   getSidebarCounts 
@@ -60,23 +61,23 @@ router.get('/announcements', studentAuth, async (req, res) => {
     const student = await Student.findById(req.studentId).select('institute course yearOfStudy');
     
     if (!student) {
-      console.log('❌ Student not found for ID:', req.studentId);
+      // console.log('❌ Student not found for ID:', req.studentId);
       return res.status(404).json({
         success: false,
         message: 'Student not found'
       });
     }
 
-    console.log('📚 Student data:', {
-      id: student._id,
-      institute: student.institute,
-      course: student.course,
-      yearOfStudy: student.yearOfStudy
-    });
+    // console.log('📚 Student data:', {
+    //   id: student._id,
+    //   institute: student.institute,
+    //   course: student.course,
+    //   yearOfStudy: student.yearOfStudy
+    // });
 
     // Check if student has institute set
     if (!student.institute) {
-      console.log('⚠️ Student has no institute set, returning empty announcements');
+      // console.log('⚠️ Student has no institute set, returning empty announcements');
       return res.json({
         success: true,
         announcements: [],
@@ -102,7 +103,7 @@ router.get('/announcements', studentAuth, async (req, res) => {
       ]
     };
 
-    console.log('🔍 Announcements query:', query);
+    // console.log('🔍 Announcements query:', query);
 
     // Filter by audience if needed
     let announcements = await Announcement.find(query)
@@ -115,7 +116,7 @@ router.get('/announcements', studentAuth, async (req, res) => {
 
     // If no institute-specific announcements found, try to get general announcements
     if (announcements.length === 0) {
-      console.log('📢 No institute-specific announcements found, checking for general announcements...');
+      // console.log('📢 No institute-specific announcements found, checking for general announcements...');
       
       const generalQuery = {
         isActive: true,
@@ -132,10 +133,10 @@ router.get('/announcements', studentAuth, async (req, res) => {
         .limit(parseInt(limit));
         
       total = await Announcement.countDocuments(generalQuery);
-      console.log(`📢 Found ${announcements.length} general announcements (total: ${total})`);
+      // console.log(`📢 Found ${announcements.length} general announcements (total: ${total})`);
     }
 
-    console.log(`📢 Final result: ${announcements.length} announcements for student (total: ${total})`);
+    // console.log(`📢 Final result: ${announcements.length} announcements for student (total: ${total})`);
 
     res.json({
       success: true,
@@ -147,7 +148,7 @@ router.get('/announcements', studentAuth, async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('❌ Error fetching announcements:', error);
+    // console.error('❌ Error fetching announcements:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to fetch announcements'
@@ -189,7 +190,7 @@ router.get('/announcements/:id', studentAuth, async (req, res) => {
       announcement
     });
   } catch (error) {
-    console.error('Error fetching announcement:', error);
+    // console.error('Error fetching announcement:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to fetch announcement'
@@ -229,6 +230,46 @@ router.delete('/profile/photo',
   studentAuth, 
   removeProfilePhoto
 );
+
+// Update profile picture with R2 data
+router.put('/profile/picture', 
+  studentAuth, 
+  updateProfilePicture
+);
+
+// Debug route to check user's profile picture data
+router.get('/profile/debug', studentAuth, async (req, res) => {
+  try {
+    const studentId = req.studentId;
+    // console.log('🔍 Debug route called for student:', studentId);
+    
+    // Try to find the student
+    let student = null;
+    if (/^[0-9a-fA-F]{24}$/.test(studentId)) {
+      student = await Student.findById(studentId);
+    }
+    if (!student) {
+      // Check in-memory users
+      const { inMemoryUsers } = await import('../controllers/studentController.js');
+      student = inMemoryUsers.find(user => user._id === studentId);
+    }
+    
+    if (!student) {
+      return res.status(404).json({ success: false, message: 'Student not found' });
+    }
+    
+    res.json({
+      success: true,
+      studentId: studentId,
+      profilePicture: student.profilePicture,
+      profilePhoto: student.profilePhoto,
+      hasProfilePicture: !!(student.profilePicture?.url || student.profilePhoto)
+    });
+  } catch (error) {
+    // console.error('Debug route error:', error);
+    res.status(500).json({ success: false, message: 'Debug failed', error: error.message });
+  }
+});
 
 
 export default router;

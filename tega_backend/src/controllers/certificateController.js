@@ -144,7 +144,7 @@ export const generateCertificate = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Generate Certificate Error:', error);
+    // console.error('Generate Certificate Error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to generate certificate',
@@ -319,7 +319,7 @@ export const getStudentCertificates = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Get Student Certificates Error:', error);
+    // console.error('Get Student Certificates Error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to fetch certificates',
@@ -355,7 +355,7 @@ export const getCertificateById = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Get Certificate Error:', error);
+    // console.error('Get Certificate Error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to fetch certificate',
@@ -394,7 +394,7 @@ export const downloadCertificate = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Download Certificate Error:', error);
+    // console.error('Download Certificate Error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to download certificate',
@@ -434,7 +434,7 @@ export const verifyCertificate = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Verify Certificate Error:', error);
+    // console.error('Verify Certificate Error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to verify certificate',
@@ -472,7 +472,7 @@ export const getCertificateSample = async (req, res) => {
     res.send(pdfBuffer);
 
   } catch (error) {
-    console.error('Get Certificate Sample Error:', error);
+    // console.error('Get Certificate Sample Error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to generate certificate sample',
@@ -527,7 +527,7 @@ export const checkCourseCompletion = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Check Course Completion Error:', error);
+    // console.error('Check Course Completion Error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to check course completion',
