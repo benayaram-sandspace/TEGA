@@ -20,31 +20,54 @@ dotenv.config();
 const app = express();
 const server = createServer(app);
 
-// CORS configuration - Production Ready
+// CORS configuration - Production Ready with Dynamic Origin Support
 const corsOptions = {
-  origin: [
-    'http://localhost:3000', 
-    'http://127.0.0.1:3000',
-    'http://localhost:3001', 
-    'http://127.0.0.1:3001',
-    'https://tegaedu.com',
-    'https://www.tegaedu.com',
-    'http://tegaedu.com',
-    'http://www.tegaedu.com',
-    process.env.CLIENT_URL,
-    process.env.FRONTEND_URL,
-    process.env.ADMIN_URL,
-    // Development origins
-    ...(process.env.NODE_ENV === 'development' ? [
-      'http://localhost:3000',
-      'http://127.0.0.1:3000'
-    ] : []),
-    // Production domains
-    ...(process.env.NODE_ENV === 'production' ? [
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    
+    const allowedOrigins = [
+      'http://localhost:3000', 
+      'http://127.0.0.1:3000',
+      'http://localhost:3001', 
+      'http://127.0.0.1:3001',
       'https://tegaedu.com',
-      'https://www.tegaedu.com'
-    ] : [])
-  ].filter(Boolean), // Remove undefined values
+      'https://www.tegaedu.com',
+      'http://tegaedu.com',
+      'http://www.tegaedu.com',
+      process.env.CLIENT_URL,
+      process.env.FRONTEND_URL,
+      process.env.ADMIN_URL,
+      // Development origins
+      ...(process.env.NODE_ENV === 'development' ? [
+        'http://localhost:3000',
+        'http://127.0.0.1:3000'
+      ] : []),
+      // Production domains
+      ...(process.env.NODE_ENV === 'production' ? [
+        'https://tegaedu.com',
+        'https://www.tegaedu.com'
+      ] : [])
+    ].filter(Boolean); // Remove undefined values
+    
+    // Check if origin is allowed
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+    
+    // For production, also allow any subdomain of tegaedu.com
+    if (process.env.NODE_ENV === 'production' && origin && origin.match(/^https?:\/\/[a-zA-Z0-9-]+\.tegaedu\.com$/)) {
+      return callback(null, true);
+    }
+    
+    // Allow any origin in development
+    if (process.env.NODE_ENV === 'development') {
+      return callback(null, true);
+    }
+    
+    // Reject other origins
+    callback(new Error('Not allowed by CORS'));
+  },
   credentials: true, // Allow credentials (cookies, authorization headers)
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Range'],

@@ -143,13 +143,15 @@ export const login = async (req, res) => {
       await userModel.findByIdAndUpdate(user._id, { refreshToken });
     }
 
-    // Set secure httpOnly cookies
+    // Set secure httpOnly cookies with proper domain configuration
     const cookieOptions = {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production', // HTTPS only in production
-      sameSite: 'strict', // CSRF protection
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'strict', // Allow cross-site in production
       maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
-      path: '/'
+      path: '/',
+      // Set domain for production to allow subdomain access
+      ...(process.env.NODE_ENV === 'production' && process.env.COOKIE_DOMAIN ? { domain: process.env.COOKIE_DOMAIN } : {})
     };
 
     const refreshCookieOptions = {
@@ -335,13 +337,15 @@ export const refreshToken = async (req, res) => {
     // Update refresh token in database
     await userModel.findByIdAndUpdate(user._id, { refreshToken: newRefreshToken });
 
-    // Set new cookies
+    // Set new cookies with proper domain configuration
     const cookieOptions = {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'strict',
       maxAge: 30 * 24 * 60 * 60 * 1000,
-      path: '/'
+      path: '/',
+      // Set domain for production to allow subdomain access
+      ...(process.env.NODE_ENV === 'production' && process.env.COOKIE_DOMAIN ? { domain: process.env.COOKIE_DOMAIN } : {})
     };
 
     const refreshCookieOptions = {
