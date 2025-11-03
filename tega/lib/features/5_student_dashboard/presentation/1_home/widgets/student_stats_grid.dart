@@ -56,9 +56,11 @@ class _StudentStatsGridState extends State<StudentStatsGrid>
       final headers = auth.getAuthHeaders();
       final api = StudentDashboardService();
       final dashData = await api.getDashboard(headers);
+      if (!mounted) return;
 
       final userProgress = dashData['userProgress'] ?? {};
 
+      if (!mounted) return;
       setState(() {
         _stats = [
           _StatInfo(
@@ -100,6 +102,7 @@ class _StudentStatsGridState extends State<StudentStatsGrid>
         }
       });
     } catch (e) {
+      if (!mounted) return;
       setState(() {
         _stats = [
           const _StatInfo(

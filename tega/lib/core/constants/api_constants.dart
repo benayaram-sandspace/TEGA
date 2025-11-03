@@ -335,6 +335,12 @@ class ApiEndpoints {
   static String get studentMockInterviews =>
       '${EnvConfig.baseUrl}/api/api/placement/mock-interviews';
 
+  // ==================== COMPANY QUESTIONS ====================
+  static String get companyList =>
+      '${EnvConfig.baseUrl}/api/api/company-questions/companies';
+  static String companyQuestionsV2(String companyName) =>
+      '${EnvConfig.baseUrl}/api/api/company-questions/companies/$companyName/questions';
+
   // ==================== JOBS ====================
   // Admin routes
   static String get adminJobsAll =>

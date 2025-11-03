@@ -6,6 +6,7 @@ import 'package:tega/features/1_authentication/presentation/screens/login_page.d
 import 'package:tega/features/5_student_dashboard/presentation/1_home/student_notification_page.dart';
 import 'package:tega/features/5_student_dashboard/presentation/1_home/learning_history_page.dart';
 import 'package:tega/features/5_student_dashboard/presentation/1_home/transaction_history_page.dart';
+import 'package:tega/features/5_student_dashboard/presentation/1_home/start_payment_page.dart';
 import 'package:tega/features/5_student_dashboard/presentation/1_home/widgets/student_dashboard_header.dart';
 import 'package:tega/features/5_student_dashboard/presentation/1_home/widgets/student_stats_grid.dart';
 import 'package:tega/features/5_student_dashboard/presentation/1_home/widgets/weekly_progress_widget.dart';
@@ -63,7 +64,7 @@ class _StudentHomePageState extends State<StudentHomePage>
     'Notifications',
     'Learning History',
     'Transaction History',
-    // 'Start Payment', // (locked) - REMOVED
+    'Start Payment',
     // 'Help & Support', // (locked) - REMOVED
     'Settings',
     'Help & Support',
@@ -103,6 +104,7 @@ class _StudentHomePageState extends State<StudentHomePage>
       final sidebar = await api.getSidebarCounts(headers);
       final dash = await api.getDashboard(headers);
       final prof = await api.getProfile(headers);
+      if (!mounted) return;
       setState(() {
         _sidebarCounts = sidebar;
         _dashboardData = dash;
@@ -114,6 +116,7 @@ class _StudentHomePageState extends State<StudentHomePage>
       // Reinitialize pages with new data
       _initializePages();
     } catch (_) {
+      if (!mounted) return;
       setState(() {
         _isLoading = false;
       });
@@ -137,7 +140,7 @@ class _StudentHomePageState extends State<StudentHomePage>
       const NotificationPage(), // Notifications
       const LearningHistoryPage(), // Learning History
       const TransactionHistoryPage(), // Transaction History
-      // const _StartPaymentPage(), // Start Payment (locked) - REMOVED
+      const StartPaymentPage(), // Start Payment (unlocked)
       // const HelpPage(), // Help & Support (locked) - REMOVED
       const SettingsPage(), // Settings (unlocked)
       const HelpSupportPage(), // Help & Support (unlocked)
@@ -382,26 +385,25 @@ class _StudentHomePageState extends State<StudentHomePage>
                     ),
                     const Divider(height: 24),
                     _buildSectionHeader('QUICK ACTIONS'),
-                    LockedNavItem(
+                    _buildNavItem(
                       icon: Icons.payment_rounded,
                       title: 'Start Payment',
-                      description: 'Payment processing system',
-                      primaryColor: const Color(0xFF4CAF50),
+                      index: 12,
                     ),
                     _buildNavItem(
                       icon: Icons.settings_rounded,
                       title: 'Settings',
-                      index: 12,
+                      index: 13,
                     ),
                     _buildNavItem(
                       icon: Icons.help_rounded,
                       title: 'Help & Support',
-                      index: 13,
+                      index: 14,
                     ),
                     _buildNavItem(
                       icon: Icons.person_rounded,
                       title: 'Profile',
-                      index: 14,
+                      index: 15,
                     ),
                   ],
                 ),

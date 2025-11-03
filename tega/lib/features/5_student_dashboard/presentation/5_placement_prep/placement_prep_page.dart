@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:tega/features/1_authentication/data/auth_repository.dart';
 import 'package:tega/features/5_student_dashboard/data/student_dashboard_service.dart';
 import 'package:tega/features/5_student_dashboard/presentation/5_placement_prep/company_specific_questions_page.dart';
-import 'package:tega/features/5_student_dashboard/presentation/3_ai_tools/student_ai_interview_page.dart';
+// import removed: mock interview is locked for now
 
 class PlacementPrepPage extends StatefulWidget {
   const PlacementPrepPage({super.key});
@@ -13,7 +13,6 @@ class PlacementPrepPage extends StatefulWidget {
 
 class _PlacementPrepPageState extends State<PlacementPrepPage> {
   bool _isLoading = true;
-  Map<String, dynamic> _placementData = {};
 
   @override
   void initState() {
@@ -28,11 +27,9 @@ class _PlacementPrepPageState extends State<PlacementPrepPage> {
       final api = StudentDashboardService();
 
       // Fetch placement-specific data
-      final dashboardData = await api.getDashboard(headers);
-
+      await api.getDashboard(headers);
       if (mounted) {
         setState(() {
-          _placementData = dashboardData['placementProgress'] ?? {};
           _isLoading = false;
         });
       }
@@ -64,20 +61,11 @@ class _PlacementPrepPageState extends State<PlacementPrepPage> {
   }
 
   void _handleStartMockInterview() {
-    Navigator.of(
-      context,
-    ).push(MaterialPageRoute(builder: (context) => const AiInterviewPage()));
+    // Locked for now - same behavior as skill assessment
+    _handleTakeSkillAssessment();
   }
 
-  void _handleSolveCodingProblems() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Coding Problems - Under Development!'),
-        behavior: SnackBarBehavior.floating,
-        backgroundColor: Color(0xFF6B5FFF),
-      ),
-    );
-  }
+  // Removed: Solve Coding Problems action is no longer shown
 
   @override
   Widget build(BuildContext context) {
@@ -97,9 +85,6 @@ class _PlacementPrepPageState extends State<PlacementPrepPage> {
         slivers: [
           // Modern Header with Hero Section
           _buildModernHeader(isDesktop, isTablet),
-
-          // Stats Overview Section
-          _buildStatsOverview(isDesktop, isTablet),
 
           // Main Actions Section
           _buildMainActionsSection(isDesktop, isTablet),
@@ -231,125 +216,7 @@ class _PlacementPrepPageState extends State<PlacementPrepPage> {
     );
   }
 
-  Widget _buildStatsOverview(bool isDesktop, bool isTablet) {
-    return SliverToBoxAdapter(
-      child: Container(
-        margin: EdgeInsets.symmetric(
-          horizontal: isDesktop
-              ? 24
-              : isTablet
-              ? 20
-              : 16,
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Your Progress',
-              style: TextStyle(
-                fontSize: isDesktop ? 22 : 20,
-                fontWeight: FontWeight.bold,
-                color: const Color(0xFF1A1A1A),
-              ),
-            ),
-            SizedBox(height: isDesktop ? 16 : 12),
-            _buildModernStatsRow(isDesktop, isTablet),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildModernStatsRow(bool isDesktop, bool isTablet) {
-    final stats = [
-      {
-        'value': '${_placementData['learningStreak'] ?? 0}',
-        'label': 'Day Streak',
-        'icon': Icons.local_fire_department_rounded,
-        'color': const Color(0xFFFF6B6B),
-        'bgColor': const Color(0xFFFFF5F5),
-      },
-      {
-        'value': '${_placementData['problemsSolved'] ?? 0}',
-        'label': 'Problems Solved',
-        'icon': Icons.check_circle_rounded,
-        'color': const Color(0xFF4ECDC4),
-        'bgColor': const Color(0xFFF0FFFE),
-      },
-      {
-        'value': '${_placementData['mockInterviews'] ?? 0}',
-        'label': 'Mock Interviews',
-        'icon': Icons.videocam_rounded,
-        'color': const Color(0xFFFFBE0B),
-        'bgColor': const Color(0xFFFFFDF0),
-      },
-      {
-        'value': '${_placementData['totalPoints'] ?? 0}',
-        'label': 'Total Points',
-        'icon': Icons.stars_rounded,
-        'color': const Color(0xFF6B5FFF),
-        'bgColor': const Color(0xFFF8F5FF),
-      },
-    ];
-
-    return Row(
-      children: stats.map((stat) {
-        return Expanded(
-          child: Container(
-            margin: EdgeInsets.only(
-              right: stat == stats.last ? 0 : (isDesktop ? 12 : 8),
-            ),
-            padding: EdgeInsets.all(isDesktop ? 20 : 16),
-            decoration: BoxDecoration(
-              color: stat['bgColor'] as Color,
-              borderRadius: BorderRadius.circular(isDesktop ? 16 : 12),
-              border: Border.all(
-                color: (stat['color'] as Color).withOpacity(0.2),
-                width: 1,
-              ),
-            ),
-            child: Column(
-              children: [
-                Container(
-                  padding: EdgeInsets.all(isDesktop ? 12 : 10),
-                  decoration: BoxDecoration(
-                    color: stat['color'] as Color,
-                    borderRadius: BorderRadius.circular(isDesktop ? 12 : 10),
-                  ),
-                  child: Icon(
-                    stat['icon'] as IconData,
-                    color: Colors.white,
-                    size: isDesktop ? 24 : 20,
-                  ),
-                ),
-                SizedBox(height: isDesktop ? 12 : 8),
-                Text(
-                  stat['value'] as String,
-                  style: TextStyle(
-                    fontSize: isDesktop ? 24 : 20,
-                    fontWeight: FontWeight.bold,
-                    color: stat['color'] as Color,
-                  ),
-                ),
-                SizedBox(height: isDesktop ? 4 : 2),
-                Text(
-                  stat['label'] as String,
-                  style: TextStyle(
-                    fontSize: isDesktop ? 12 : 10,
-                    color: Colors.grey[600],
-                    fontWeight: FontWeight.w500,
-                  ),
-                  textAlign: TextAlign.center,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
-            ),
-          ),
-        );
-      }).toList(),
-    );
-  }
+  // Removed progress stats section
 
   Widget _buildMainActionsSection(bool isDesktop, bool isTablet) {
     return SliverToBoxAdapter(
@@ -407,16 +274,7 @@ class _PlacementPrepPageState extends State<PlacementPrepPage> {
         'icon': Icons.videocam_rounded,
         'color': const Color(0xFFee0979),
         'onTap': _handleStartMockInterview,
-        'status': 'Available',
-        'isAvailable': true,
-      },
-      {
-        'title': 'Solve Coding Problems',
-        'description': 'Sharpen your coding skills with algorithmic challenges',
-        'icon': Icons.code_rounded,
-        'color': const Color(0xFF0575E6),
-        'onTap': _handleSolveCodingProblems,
-        'status': 'Under Development',
+        'status': 'Coming Soon',
         'isAvailable': false,
       },
     ];

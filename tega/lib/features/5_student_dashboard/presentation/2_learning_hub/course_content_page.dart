@@ -4,6 +4,7 @@ import 'package:video_player/video_player.dart';
 import 'package:tega/features/1_authentication/data/auth_repository.dart';
 import 'package:tega/core/constants/api_constants.dart';
 import 'package:tega/features/5_student_dashboard/data/payment_service.dart';
+import 'package:tega/core/config/env_config.dart';
 import 'package:http/http.dart' as http;
 import 'package:razorpay_flutter/razorpay_flutter.dart';
 import 'dart:convert';
@@ -104,7 +105,7 @@ class _CourseContentPageState extends State<CourseContentPage> {
             final moduleLectures = module['lectures'] as List<dynamic>? ?? [];
 
             for (final lecture in moduleLectures) {
-              final isPreview = lecture['isPreview'] ?? false;
+              bool isPreview = lecture['isPreview'] ?? false;
               final isRestricted = lecture['isRestricted'] ?? false;
 
               // Extract video key for signed URL generation
@@ -113,11 +114,21 @@ class _CourseContentPageState extends State<CourseContentPage> {
                 videoKey = lecture['videoContent']?['r2Key'] ?? '';
               }
 
+              // Best-effort duration extraction
+              final dynamic durationSecondsRaw =
+                  lecture['videoContent']?['durationSeconds'] ??
+                  lecture['durationSeconds'] ??
+                  ((lecture['videoContent']?['durationMs'] ?? lecture['durationMs']) is int
+                      ? ((lecture['videoContent']?['durationMs'] ?? lecture['durationMs']) / 1000).round()
+                      : null);
+
+              final dynamic durationValue = durationSecondsRaw ?? lecture['duration'] ?? '0:00';
+
               final lectureData = {
                 'id': lecture['_id'] ?? lecture['id'] ?? '',
                 'title': lecture['title'] ?? 'Untitled Lecture',
                 'description': lecture['description'] ?? '',
-                'duration': lecture['duration'] ?? '0:00',
+                'duration': durationValue,
                 'videoKey': videoKey, // Store video key instead of direct URL
                 'videoUrl': '', // Will be populated when we get signed URL
                 'isPreview': isPreview,
@@ -136,6 +147,19 @@ class _CourseContentPageState extends State<CourseContentPage> {
           _lectures.sort(
             (a, b) => (a['order'] as int).compareTo(b['order'] as int),
           );
+
+          // Ensure only Introduction is marked as preview
+          if (_lectures.isNotEmpty) {
+            // Find an introduction lecture by title; fallback to the very first lecture
+            int introIndex = _lectures.indexWhere((l) =>
+                (l['title'] as String).toLowerCase().contains('intro'));
+            if (introIndex < 0) introIndex = 0;
+            for (int i = 0; i < _lectures.length; i++) {
+              final bool isIntro = i == introIndex;
+              _lectures[i]['isPreview'] = isIntro;
+              _lectures[i]['isLocked'] = !_isEnrolled && !isIntro;
+            }
+          }
 
           // Initialize module expansion state (all expanded by default)
           _expandedModules.clear();
@@ -519,13 +543,26 @@ class _CourseContentPageState extends State<CourseContentPage> {
       _isPaymentLoading = false;
     });
 
+  try {
+    final int code = (response.code is int) ? response.code as int : -1;
+    final String msg = (response.message ?? '').toString();
+    final bool isCancelled = code == 2 || msg.toLowerCase().contains('cancel');
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('Payment failed: ${response.message}'),
+        content: Text(isCancelled ? 'Payment cancelled' : 'Payment failed: $msg'),
+        backgroundColor: isCancelled ? Colors.grey : Colors.red,
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  } catch (_) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Payment failed'),
         backgroundColor: Colors.red,
         behavior: SnackBarBehavior.floating,
       ),
     );
+  }
   }
 
   void _handleExternalWallet(ExternalWalletResponse response) {
@@ -561,11 +598,14 @@ class _CourseContentPageState extends State<CourseContentPage> {
         // Open Razorpay payment
         _paymentService.openPayment(
           orderId: orderResult['orderId'],
-          keyId: orderResult['keyId'], // Get key from backend response
+          keyId: (orderResult['keyId'] ?? EnvConfig.razorpayKeyId),
           name: 'TEGA Learning Platform',
           description:
               'Course Enrollment - ${widget.course['title'] ?? 'Course'}',
-          amount: orderResult['chargedAmount'],
+          amount: (orderResult['amount'] ??
+              ((orderResult['chargedAmount'] ?? 0) is int
+                  ? (orderResult['chargedAmount'] * 100)
+                  : 0)),
           currency: 'INR',
           prefillEmail: user?.email ?? '',
           prefillContact: user?.phone ?? '',
@@ -770,6 +810,27 @@ class _CourseContentPageState extends State<CourseContentPage> {
 
                       const SizedBox(height: 24),
 
+                      // Title and description
+                      const Text(
+                        'This lecture is locked',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF1A1A1A),
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Buy the course to unlock all premium videos or go back.',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.grey,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 16),
+
                       // Action button
                       Container(
                         width: double.infinity,
@@ -794,7 +855,19 @@ class _CourseContentPageState extends State<CourseContentPage> {
                           child: InkWell(
                             onTap: () {
                               Navigator.of(context).pop();
-                              _startPayment();
+                              if (_isEnrolled) {
+                                // Jump to first available lecture
+                                int targetIndex = 0;
+                                for (int i = 0; i < _lectures.length; i++) {
+                                  if (!_lectures[i]['isLocked']) {
+                                    targetIndex = i;
+                                    break;
+                                  }
+                                }
+                                _initializeVideo(targetIndex);
+                              } else {
+                                _startPayment();
+                              }
                             },
                             borderRadius: BorderRadius.circular(12),
                             child: Center(
@@ -822,19 +895,19 @@ class _CourseContentPageState extends State<CourseContentPage> {
                                         ),
                                       ],
                                     )
-                                  : const Row(
+                                  : Row(
                                       mainAxisAlignment:
                                           MainAxisAlignment.center,
                                       children: [
-                                        Icon(
+                                        const Icon(
                                           Icons.shopping_cart_rounded,
                                           color: Colors.white,
                                           size: 20,
                                         ),
-                                        SizedBox(width: 8),
+                                        const SizedBox(width: 8),
                                         Text(
-                                          'Enroll Now',
-                                          style: TextStyle(
+                                          _isEnrolled ? 'Continue Learning' : 'Buy Course',
+                                          style: const TextStyle(
                                             fontSize: 16,
                                             fontWeight: FontWeight.w600,
                                             color: Colors.white,
@@ -842,6 +915,30 @@ class _CourseContentPageState extends State<CourseContentPage> {
                                         ),
                                       ],
                                     ),
+                            ),
+                          ),
+                        ),
+                      ),
+
+                      const SizedBox(height: 12),
+
+                      SizedBox(
+                        width: double.infinity,
+                        height: 48,
+                        child: OutlinedButton(
+                          onPressed: () => Navigator.of(context).pop(),
+                          style: OutlinedButton.styleFrom(
+                            side: const BorderSide(color: Color(0xFF6B5FFF)),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            foregroundColor: const Color(0xFF6B5FFF),
+                          ),
+                          child: const Text(
+                            'Go Back',
+                            style: TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w600,
                             ),
                           ),
                         ),
