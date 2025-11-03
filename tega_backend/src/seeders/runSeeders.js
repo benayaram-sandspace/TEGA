@@ -15,7 +15,6 @@ const runSeeders = async () => {
     // Seed courses
     await seedCourses();
 
-
   } catch (error) {
   } finally {
     // Close database connection

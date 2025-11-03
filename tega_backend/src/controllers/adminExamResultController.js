@@ -6,9 +6,6 @@ import Student from '../models/Student.js';
 export const getExamResultsForAdmin = async (req, res) => {
   try {
     const { examId, date, examType } = req.query;
-    
-    // console.log('🔍 getExamResultsForAdmin called:', { examId, date, examType });
-    
     let query = { status: 'completed' };
     
     if (examId) {
@@ -21,9 +18,6 @@ export const getExamResultsForAdmin = async (req, res) => {
       startOfDay.setHours(0, 0, 0, 0);
       const endOfDay = new Date(date);
       endOfDay.setHours(23, 59, 59, 999);
-      
-      // console.log(`🔍 Filtering by attempt date: ${date} (${startOfDay.toISOString()} to ${endOfDay.toISOString()})`);
-      
       // Filter by attempt date directly
       query.startTime = {
         $gte: startOfDay,
@@ -39,27 +33,16 @@ export const getExamResultsForAdmin = async (req, res) => {
       .populate('examId', 'title subject examDate')
       .populate('courseId', 'courseName')
       .sort({ createdAt: -1 });
-
-    // console.log('🔍 Found exam attempts:', examAttempts.length);
-    // console.log('🔍 Sample attempt data:', {
-    //   hasExamId: !!examAttempts[0]?.examId,
-    //   examIdType: typeof examAttempts[0]?.examId,
-    //   examTitle: examAttempts[0]?.examId?.title,
-    //   examDate: examAttempts[0]?.examId?.examDate
-    // });
-
     // Filter by exam type if specified (after population)
     let filteredAttempts = examAttempts;
     if (examType === 'tega') {
       filteredAttempts = examAttempts.filter(attempt => 
         attempt.examId && (!attempt.examId.courseId || attempt.examId.courseId === null)
       );
-      // console.log(`🎯 Filtered to ${filteredAttempts.length} TEGA exam attempts`);
     } else if (examType === 'course') {
       filteredAttempts = examAttempts.filter(attempt => 
         attempt.examId && attempt.examId.courseId && attempt.examId.courseId !== null
       );
-      // console.log(`🎓 Filtered to ${filteredAttempts.length} Course exam attempts`);
     }
 
     // Group results by exam and date
@@ -68,16 +51,12 @@ export const getExamResultsForAdmin = async (req, res) => {
     filteredAttempts.forEach(attempt => {
       // Check if examId is populated
       if (!attempt.examId) {
-        // console.log('⚠️ Skipping attempt with no examId:', attempt._id);
         return;
       }
       
       // Use the actual attempt date instead of exam scheduled date
       const attemptDate = attempt.startTime.toISOString().split('T')[0];
       const key = `${attempt.examId._id}_${attemptDate}`;
-      
-      // console.log(`📅 Processing attempt: ${attempt.examId.title || 'Unknown'} on ${attemptDate}`);
-      
       if (!groupedResults[key]) {
         groupedResults[key] = {
           examId: attempt.examId._id,
@@ -135,7 +114,6 @@ export const getExamResultsForAdmin = async (req, res) => {
       totalStudents: examAttempts.length
     });
   } catch (error) {
-    // console.error('Error fetching exam results for admin:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to fetch exam results'
@@ -148,9 +126,6 @@ export const publishExamResults = async (req, res) => {
   try {
     const { examId, examDate, publish = true } = req.body;
     const { adminId } = req;
-
-    // console.log('📊 publishExamResults called:', { examId, examDate, publish });
-
     if (!examId || !examDate) {
       return res.status(400).json({
         success: false,
@@ -206,9 +181,6 @@ export const publishExamResults = async (req, res) => {
     }
 
     const updateResult = await ExamAttempt.updateMany(filter, updateData);
-
-    // console.log(`✅ ${publish ? 'Published' : 'Unpublished'} ${updateResult.modifiedCount} results`);
-
     res.json({
       success: true,
       message: publish
@@ -219,7 +191,6 @@ export const publishExamResults = async (req, res) => {
       examDate
     });
   } catch (error) {
-    // console.error('Error publishing exam results:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to publish exam results'
@@ -289,7 +260,6 @@ export const unpublishExamResults = async (req, res) => {
       examDate
     });
   } catch (error) {
-    // console.error('Error unpublishing exam results:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to unpublish exam results'
@@ -320,7 +290,6 @@ export const getStudentResultDetails = async (req, res) => {
       result: attempt
     });
   } catch (error) {
-    // console.error('Error fetching student result details:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to fetch student result details'
@@ -333,9 +302,6 @@ export const getStudentResultDetails = async (req, res) => {
 export const clearDummyExamData = async (req, res) => {
   try {
     const { adminId } = req;
-    
-    // console.log('🧹 Clearing dummy exam data...');
-    
     // Find and delete exam attempts with dummy data
     // (score = 0, percentage = 0, or no proper exam title)
     const dummyAttempts = await ExamAttempt.find({
@@ -347,9 +313,6 @@ export const clearDummyExamData = async (req, res) => {
         { score: { $exists: false } }
       ]
     });
-    
-    // console.log(`📊 Found ${dummyAttempts.length} dummy exam attempts`);
-    
     if (dummyAttempts.length === 0) {
       return res.json({
         success: true,
@@ -368,9 +331,6 @@ export const clearDummyExamData = async (req, res) => {
         { score: { $exists: false } }
       ]
     });
-    
-    // console.log(`✅ Deleted ${result.deletedCount} dummy exam attempts`);
-    
     res.json({
       success: true,
       message: `Successfully cleared ${result.deletedCount} dummy exam attempts`,
@@ -378,7 +338,6 @@ export const clearDummyExamData = async (req, res) => {
     });
     
   } catch (error) {
-    // console.error('❌ Error clearing dummy data:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to clear dummy data'
@@ -390,9 +349,6 @@ export const publishAllResultsForDate = async (req, res) => {
   try {
     const { date, examType } = req.body;
     const { adminId } = req;
-    
-    // console.log('📊 publishAllResultsForDate called:', { date, examType });
-    
     if (!date) {
       return res.status(400).json({
         success: false,
@@ -417,15 +373,11 @@ export const publishAllResultsForDate = async (req, res) => {
     // Filter by exam type
     if (examType === 'tega') {
       examFilter.courseId = null;
-      // console.log('🎯 Publishing TEGA exam results');
     } else if (examType === 'course') {
       examFilter.courseId = { $ne: null };
-      // console.log('🎓 Publishing Course exam results');
     }
     
     const examsOnDate = await Exam.find(examFilter).select('_id');
-    // console.log(`📊 Found ${examsOnDate.length} exams to publish`);
-    
     if (examsOnDate.length === 0) {
       return res.status(404).json({
         success: false,
@@ -448,16 +400,12 @@ export const publishAllResultsForDate = async (req, res) => {
         }
       }
     );
-    
-    // console.log(`✅ Published ${result.modifiedCount} results for ${date}`);
-    
     res.json({
       success: true,
       message: `Published ${result.modifiedCount} ${examType === 'tega' ? 'TEGA' : 'course'} exam results for ${date}`,
       publishedCount: result.modifiedCount
     });
   } catch (error) {
-    // console.error('Error publishing all results for date:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to publish results for this date'

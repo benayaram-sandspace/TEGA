@@ -297,7 +297,6 @@ export const getStudentModules = async (req, res) => {
     const modules = await PlacementModule.find({ isActive: true })
       .select('-questions')
       .sort({ order: 1 });
-    
 
     // Get student progress
     let progress = await PlacementProgress.findOne({ studentId });
@@ -723,4 +722,3 @@ export default {
   getStudentInterviews,
   getPlacementStats
 };
-

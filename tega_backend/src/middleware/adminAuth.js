@@ -19,9 +19,6 @@ const adminAuth = async (req, res, next) => {
     }
 
     const decoded = jwt.verify(token, config.JWT_SECRET);
-    
-    // console.log('🔐 Token decoded:', { id: decoded.id, email: decoded.email, role: decoded.role });
-
     // Role-based access control
     if (decoded.role !== 'admin') {
       return res.status(401).json({

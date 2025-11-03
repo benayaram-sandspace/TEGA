@@ -226,8 +226,6 @@ async function seedPlacementData() {
       { moduleType: 'interview' },
       { $set: { questions: createdQuestions.slice(4, 6).map(q => q._id) } }
     );
-    
-
 
     process.exit(0);
   } catch (error) {
@@ -237,4 +235,3 @@ async function seedPlacementData() {
 
 // Run seeder
 seedPlacementData();
-

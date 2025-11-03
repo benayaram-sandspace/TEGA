@@ -71,7 +71,6 @@ export const generateVideoUploadUrl = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Generate Upload URL Error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to generate upload URL',
@@ -119,7 +118,6 @@ export const generateDocumentUploadUrl = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Generate Document Upload URL Error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to generate upload URL',
@@ -186,7 +184,6 @@ export const confirmVideoUpload = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Confirm Video Upload Error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to confirm video upload',
@@ -267,7 +264,6 @@ export const uploadCourseMaterial = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Upload Course Material Error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to upload course material',
@@ -342,7 +338,6 @@ export const confirmDocumentUpload = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Confirm Document Upload Error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to confirm document upload',
@@ -372,7 +367,6 @@ export const getMaterialsByCourse = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Get Materials Error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to fetch materials',
@@ -401,7 +395,6 @@ export const getMaterialsByLecture = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Get Lecture Materials Error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to fetch lecture materials',
@@ -442,7 +435,6 @@ export const generateMaterialDownloadUrl = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Generate Download URL Error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to generate download URL',
@@ -488,7 +480,6 @@ export const deleteMaterial = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Delete Material Error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to delete material',
@@ -568,7 +559,6 @@ export const uploadProfilePicture = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Upload Profile Picture Error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to upload profile picture',
@@ -631,7 +621,6 @@ export const generateProfilePictureUploadUrl = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Generate Profile Picture Upload URL Error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to generate upload URL',
@@ -641,4 +630,3 @@ export const generateProfilePictureUploadUrl = async (req, res) => {
 };
 
 export { upload };
-

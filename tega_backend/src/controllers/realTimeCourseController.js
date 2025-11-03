@@ -5,6 +5,38 @@ import Enrollment from '../models/Enrollment.js';
 import { uploadToR2, generateR2Key, generatePresignedUploadUrl, generatePresignedDownloadUrl } from '../config/r2.js';
 import mongoose from 'mongoose';
 
+// Helper function to check course access (both Enrollment and UserCourse)
+const checkCourseAccess = async (studentId, courseId, course) => {
+  // Check Enrollment record first
+  let enrollment = await Enrollment.findOne({
+    studentId,
+    courseId,
+    status: { $in: ['active', 'enrolled'] }
+  });
+
+  // If no enrollment found, check UserCourse (for Razorpay payments)
+  if (!enrollment) {
+    const UserCourse = (await import('../models/UserCourse.js')).default;
+    const userCourse = await UserCourse.findOne({
+      studentId,
+      courseId,
+      isActive: true
+    });
+    
+    if (userCourse) {
+      // Create a virtual enrollment object for consistency
+      enrollment = {
+        studentId: userCourse.studentId,
+        courseId: userCourse.courseId,
+        isPaid: true, // UserCourse records are created only after successful payment
+        status: 'active'
+      };
+    }
+  }
+
+  return enrollment;
+};
+
 // Get all published courses with real-time features
 export const getRealTimeCourses = async (req, res) => {
   try {
@@ -111,7 +143,6 @@ export const getRealTimeCourse = async (req, res) => {
   try {
     const { courseId } = req.params;
     const studentId = req.studentId;
-    
 
     const course = await RealTimeCourse.findById(courseId);
 
@@ -193,51 +224,9 @@ export const getCourseContent = async (req, res) => {
     if (studentId) {
       // Checking enrollment for studentId
       
-      // Check enrollment with multiple possible statuses
-      const enrollment = await Enrollment.findOne({ 
-        studentId, 
-        courseId,
-        $or: [
-          { status: 'active' },
-          { status: 'enrolled' },
-          { status: { $exists: false } } // Handle old records without status field
-        ]
-      });
-      
-      // Enrollment found
-      
+      // Use the helper function to check both Enrollment and UserCourse
+      const enrollment = await checkCourseAccess(studentId, courseId, course);
       isEnrolled = !!enrollment;
-      if (enrollment) {
-        
-        // CRITICAL: Only mark as enrolled if payment is verified
-        // For paid courses, isPaid must be true
-        // Payment check
-        if (!course.isFree && course.price > 0 && !enrollment.isPaid) {
-          // Student not enrolled: Payment required for paid course
-          isEnrolled = false;
-        } else {
-          // Student enrolled: Payment verified or free course
-        }
-      }
-      
-      // Additional check: if no enrollment found, check if student has any enrollment for this course
-      if (!enrollment) {
-        const anyEnrollment = await Enrollment.findOne({ 
-          studentId, 
-          courseId
-        });
-        // Only set as enrolled if the enrollment has a valid status AND payment is verified
-        if (anyEnrollment && (anyEnrollment.status === 'active' || anyEnrollment.status === 'enrolled')) {
-          // CRITICAL: Check payment status for paid courses
-          if (!course.isFree && course.price > 0 && !anyEnrollment.isPaid) {
-            isEnrolled = false;
-          } else {
-            isEnrolled = true;
-          }
-        } else {
-          isEnrolled = false;
-        }
-      }
       
       // CRITICAL FIX: Auto-enroll students for free courses
       if (!isEnrolled && course.isFree && course.price === 0) {
@@ -313,7 +302,7 @@ export const getCourseContent = async (req, res) => {
     
     // CRITICAL FIX: Ensure all modules are properly structured
     if (!filteredCourse.modules || filteredCourse.modules.length === 0) {
-      console.warn('⚠️ Course has no modules, creating default structure');
+
       filteredCourse.modules = [{
         id: 'module-1',
         title: 'Course Content',
@@ -426,17 +415,7 @@ export const getCourseContent = async (req, res) => {
           // Flatten video URLs for frontend compatibility
           const videoUrl = originalLecture?.videoContent?.r2Url || originalLecture?.videoUrl || originalLecture?.videoLink || 
                           lecture.videoContent?.r2Url || lecture.videoUrl || lecture.videoLink;
-          
-          // console.log(`📹 Lecture "${lecture.title}" video URLs:`, {
-          //   'originalVideoContent.r2Url': originalLecture?.videoContent?.r2Url,
-          //   'originalVideoUrl': originalLecture?.videoUrl,
-          //   'originalVideoLink': originalLecture?.videoLink,
-          //   'currentVideoContent.r2Url': lecture.videoContent?.r2Url,
-          //   'currentVideoUrl': lecture.videoUrl,
-          //   'currentVideoLink': lecture.videoLink,
-          //   'final': videoUrl
-          // });
-          
+
           return {
             ...lecture,
             // Keep original nested structure with original data
@@ -463,41 +442,10 @@ export const getCourseContent = async (req, res) => {
     }
 
     // DEBUG: Log the final course structure
-    // console.log(`📋 Final course structure:`, {
-    //   title: filteredCourse.title,
-    //   modulesCount: filteredCourse.modules?.length || 0,
-    //   firstModule: filteredCourse.modules?.[0] ? {
-    //     title: filteredCourse.modules[0].title,
-    //     lecturesCount: filteredCourse.modules[0].lectures?.length || 0,
-    //     firstLecture: filteredCourse.modules[0].lectures?.[0] ? {
-    //       id: filteredCourse.modules[0].lectures[0].id,
-    //       title: filteredCourse.modules[0].lectures[0].title,
-    //       hasVideoContent: !!filteredCourse.modules[0].lectures[0].videoContent,
-    //       hasR2Url: !!filteredCourse.modules[0].lectures[0].videoContent?.r2Url,
-    //       isPreview: filteredCourse.modules[0].lectures[0].isPreview,
-    //       isRestricted: filteredCourse.modules[0].lectures[0].isRestricted
-    //     } : null
-    //   } : null
-    // });
-    
+
     // CRITICAL FIX: Ensure course data consistency between admin and student views
-    // console.log(`🔧 Ensuring course data consistency for student view`);
-    
+
     // Log the original course data for comparison
-    // console.log(`📊 Original course data:`, {
-    //   title: course.title,
-    //   modulesCount: course.modules?.length || 0,
-    //   firstModule: course.modules?.[0] ? {
-    //     title: course.modules[0].title,
-    //     lecturesCount: course.modules[0].lectures?.length || 0,
-    //     firstLecture: course.modules[0].lectures?.[0] ? {
-    //       id: course.modules[0].lectures[0].id,
-    //       title: course.modules[0].lectures[0].title,
-    //       hasVideoContent: !!course.modules[0].lectures[0].videoContent,
-    //       hasR2Url: !!course.modules[0].lectures[0].videoContent?.r2Url
-    //     } : null
-    //   } : null
-    // });
 
     // CRITICAL FIX: Ensure data consistency - use original course data if filtered data is missing
     const finalCourseData = {
@@ -510,23 +458,17 @@ export const getCourseContent = async (req, res) => {
     
     // Validate that we have proper course structure
     if (!finalCourseData.modules || finalCourseData.modules.length === 0) {
-      // console.log(`⚠️ No modules found in filtered course, using original course data`);
+
       finalCourseData.modules = course.modules || [];
     }
     
     // CRITICAL FIX: Ensure ALL lectures are visible and have proper video content
     if (finalCourseData.modules?.[0]?.lectures) {
       const originalModule = course.modules?.[0];
-      
-      // console.log(`🔧 Restoring ALL lectures from original course data`);
-      // console.log(`📊 Original lectures count: ${originalModule?.lectures?.length || 0}`);
-      // console.log(`📊 Filtered lectures count: ${finalCourseData.modules[0].lectures.length}`);
-      
+
       // Restore all lectures from original course data
       if (originalModule?.lectures) {
-        // console.log(`🔧 Before restoration - finalCourseData.modules[0].lectures.length: ${finalCourseData.modules[0].lectures.length}`);
-        // console.log(`🔧 Before restoration - originalModule.lectures.length: ${originalModule.lectures.length}`);
-        
+
         finalCourseData.modules[0].lectures = originalModule.lectures.map((originalLecture, index) => {
           const existingLecture = finalCourseData.modules[0].lectures[index];
           
@@ -547,7 +489,7 @@ export const getCourseContent = async (req, res) => {
             };
           } else {
             // Add missing lecture from original data
-            // console.log(`➕ Adding missing lecture: ${originalLecture.title}`);
+
             return {
               ...originalLecture,
               isPreview: index === 0 ? true : (originalLecture.isPreview || false),
@@ -559,35 +501,11 @@ export const getCourseContent = async (req, res) => {
             };
           }
         });
-        
-        // console.log(`✅ Restored ${finalCourseData.modules[0].lectures.length} lectures`);
-        // console.log(`🔧 After restoration - finalCourseData.modules[0].lectures:`, finalCourseData.modules[0].lectures.map((lecture, idx) => ({
-        //   index: idx,
-        //   id: lecture.id,
-        //   title: lecture.title,
-        //   isPreview: lecture.isPreview,
-        //   isRestricted: lecture.isRestricted,
-        //   hasVideoContent: !!lecture.videoContent,
-        //   hasR2Url: !!lecture.videoContent?.r2Url
-        // })));
+
       }
     }
 
     // DEBUG: Log what we're sending to frontend
-    // console.log(`📤 Sending course data to frontend:`, {
-    //   title: finalCourseData.title,
-    //   modulesCount: finalCourseData.modules?.length,
-    //   totalLectures: finalCourseData.modules?.reduce((total, module) => total + (module.lectures?.length || 0), 0),
-    //   firstModuleLectures: finalCourseData.modules?.[0]?.lectures?.length,
-    //   allLectures: finalCourseData.modules?.flatMap(module => module.lectures?.map(lecture => ({
-    //     id: lecture.id,
-    //     title: lecture.title,
-    //     isPreview: lecture.isPreview,
-    //     isRestricted: lecture.isRestricted,
-    //     hasVideoContent: !!lecture.videoContent,
-    //     hasR2Url: !!lecture.videoContent?.r2Url
-    //   })) || [])
-    // });
 
     const response = {
       success: true,
@@ -630,21 +548,14 @@ export const updateLectureDuration = async (req, res) => {
 
     // Find and update the lecture duration
     let lectureUpdated = false;
-    // console.log(`🔍 Looking for lectureId: ${lectureId} in course: ${courseId}`);
-    
+
     if (course.modules && course.modules.length > 0) {
       for (const module of course.modules) {
         if (module.lectures && module.lectures.length > 0) {
           for (const lecture of module.lectures) {
-            // console.log(`🔍 Checking lecture:`, {
-            //   id: lecture.id,
-            //   _id: lecture._id,
-            //   title: lecture.title,
-            //   currentDuration: lecture.duration
-            // });
-            
+
             if ((lecture._id && lecture._id.toString() === lectureId) || lecture.id === lectureId) {
-              // console.log(`✅ Found matching lecture, updating duration from ${lecture.duration} to ${duration}`);
+
               lecture.duration = duration;
               lectureUpdated = true;
               break;
@@ -665,8 +576,6 @@ export const updateLectureDuration = async (req, res) => {
     // Save the course
     await course.save();
 
-    // console.log(`✅ Updated lecture duration: ${lectureId} -> ${duration} seconds`);
-
     res.json({
       success: true,
       message: 'Lecture duration updated successfully',
@@ -674,7 +583,7 @@ export const updateLectureDuration = async (req, res) => {
     });
 
   } catch (error) {
-    // console.error('Update lecture duration error:', error);
+
     res.status(500).json({
       success: false,
       message: 'Failed to update lecture duration'
@@ -714,11 +623,7 @@ export const updateLectureProgress = async (req, res) => {
       });
     }
 
-    const enrollment = await Enrollment.findOne({
-      studentId,
-      courseId,
-      status: { $in: ['active', 'enrolled'] }
-    });
+    const enrollment = await checkCourseAccess(studentId, courseId, course);
 
     if (!enrollment) {
       return res.status(403).json({
@@ -826,11 +731,7 @@ export const submitQuiz = async (req, res) => {
     }
 
     // CRITICAL: Verify enrollment and payment before allowing quiz submission
-    const enrollment = await Enrollment.findOne({
-      studentId,
-      courseId,
-      status: { $in: ['active', 'enrolled'] }
-    });
+    const enrollment = await checkCourseAccess(studentId, courseId, course);
 
     if (!enrollment) {
       return res.status(403).json({
@@ -1590,11 +1491,7 @@ export const getEnrollmentStatus = async (req, res) => {
       });
     }
 
-    const enrollment = await Enrollment.findOne({ 
-      studentId, 
-      courseId,
-      status: 'active'
-    });
+    const enrollment = await checkCourseAccess(studentId, courseId, null);
 
     res.json({
       success: true,
@@ -1617,7 +1514,6 @@ export const enrollInCourse = async (req, res) => {
     const { courseId } = req.params;
     const studentId = req.studentId;
 
-
     if (!studentId) {
       return res.status(401).json({
         success: false,
@@ -1637,7 +1533,6 @@ export const enrollInCourse = async (req, res) => {
         message: 'Course not found'
       });
     }
-
 
     // Check if already enrolled
     const existingEnrollment = await Enrollment.findOne({ 

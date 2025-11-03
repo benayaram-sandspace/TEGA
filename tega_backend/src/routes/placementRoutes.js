@@ -61,4 +61,3 @@ router.post('/mock-interview', studentAuth, createMockInterview);
 router.get('/mock-interviews', studentAuth, getStudentInterviews);
 
 export default router;
-

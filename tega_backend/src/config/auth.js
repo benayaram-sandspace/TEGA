@@ -95,8 +95,6 @@ export const validateAuthConfig = () => {
   if (errors.length > 0) {
     throw new Error(`❌ Authentication configuration errors:\n${errors.join('\n')}`);
   }
-
-  console.log('✅ Authentication configuration validated successfully');
 };
 
 // Validate configuration on import

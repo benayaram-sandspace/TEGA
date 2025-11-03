@@ -70,4 +70,3 @@ companyQuizAttemptSchema.pre('save', function(next) {
 const CompanyQuizAttempt = mongoose.model('CompanyQuizAttempt', companyQuizAttemptSchema);
 
 export default CompanyQuizAttempt;
-

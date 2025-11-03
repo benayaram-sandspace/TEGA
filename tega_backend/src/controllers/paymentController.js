@@ -36,7 +36,6 @@ const getOfferPriceForStudent = async (studentId, feature = 'Course') => {
       return null;
     }
 
-
     // Escape special regex characters in the institute name
     const escapedInstitute = student.institute.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     
@@ -48,7 +47,6 @@ const getOfferPriceForStudent = async (studentId, feature = 'Course') => {
       validUntil: { $gte: new Date() }
     });
 
-
     // If no exact match found, try partial matching
     if (!offer) {
       const allOffers = await Offer.find({
@@ -56,8 +54,7 @@ const getOfferPriceForStudent = async (studentId, feature = 'Course') => {
         validFrom: { $lte: new Date() },
         validUntil: { $gte: new Date() }
       });
-      
-      
+
       // Try to find a partial match
       const partialMatch = allOffers.find(o => 
         o.instituteName.toLowerCase().includes(student.institute.toLowerCase()) ||
@@ -65,31 +62,20 @@ const getOfferPriceForStudent = async (studentId, feature = 'Course') => {
       );
       
       if (partialMatch) {
-        // console.log(`🔍 Found partial offer match: "${partialMatch.instituteName}" for "${student.institute}"`);
         offer = partialMatch;
       }
     }
 
     if (offer) {
-      // console.log(`🎯 Found offer for "${student.institute}":`, {
-      //   instituteName: offer.instituteName,
-      //   courseOffers: offer.courseOffers?.length || 0,
-      //   tegaExamOffers: offer.tegaExamOffers?.length || 0
-      // });
-      
       // For course offers, we need to find the specific course offer
       // This function is called for general course pricing, so we return the first available course offer price
       if (offer.courseOffers && offer.courseOffers.length > 0) {
         const firstCourseOffer = offer.courseOffers[0];
-        // console.log(`🎯 Using first course offer price: ₹${firstCourseOffer.offerPrice}`);
         return firstCourseOffer.offerPrice;
       }
     }
-
-    // console.log(`❌ No offer found for institute: "${student.institute}"`);
     return null;
   } catch (error) {
-    // console.error('Error getting offer price:', error);
     return null;
   }
 };
@@ -102,23 +88,15 @@ if (process.env.RAZORPAY_KEY_ID && process.env.RAZORPAY_KEY_SECRET) {
     key_secret: process.env.RAZORPAY_KEY_SECRET
   });
 } else {
-  // console.log('⚠️  Razorpay credentials not found. Using dummy payment mode only.');
 }
 
 // Get all courses with pricing
 export const getCourses = async (req, res) => {
   try {
-    // console.log('🔍 getCourses called - checking database connection...');
-    // console.log('🔍 Request headers:', req.headers);
-    // console.log('🔍 User info:', req.user || 'No user info');
-    
     // Check MongoDB connection state
     const connectionState = mongoose.connection.readyState;
-    // console.log('MongoDB connection state:', connectionState, '(0=disconnected, 1=connected, 2=connecting, 3=disconnecting)');
-    
     // Wait for connection if not ready
     if (connectionState !== 1) {
-      // console.log('⚠️ MongoDB not connected, waiting for connection...');
       await new Promise((resolve, reject) => {
         if (connectionState === 1) {
           resolve();
@@ -138,32 +116,22 @@ export const getCourses = async (req, res) => {
           });
         }
       });
-      // console.log('✅ MongoDB connection established');
     }
     
     // First, let's check if we can find any courses at all
     const totalCourses = await RealTimeCourse.countDocuments({});
-    // console.log('Total courses in database:', totalCourses);
-    
     // Check published courses
     const publishedCoursesCount = await RealTimeCourse.countDocuments({ status: 'published' });
-    // console.log('Published courses count:', publishedCoursesCount);
-    
     // Try to get all courses first
     const allCourses = await RealTimeCourse.find({});
-    // console.log('All courses found:', allCourses.length);
-    
     // Log first course structure for debugging
     if (allCourses.length > 0) {
-      // console.log('📚 First course structure:', JSON.stringify(allCourses[0], null, 2));
     }
     
     // Get published courses (RealTimeCourse uses 'status' field instead of 'isActive')
     const regularCourses = await RealTimeCourse.find({ 
       status: 'published' 
     }).select('title description price estimatedDuration category instructor level status');
-    // console.log('Published courses found:', regularCourses.length);
-    
     // Map RealTimeCourse fields to expected frontend format
     const mappedCourses = regularCourses.map(course => ({
       _id: course._id,
@@ -206,20 +174,12 @@ export const getCourses = async (req, res) => {
         status: tegaExam.status
       };
       courses.push(mappedTegaExam);
-      // console.log('✅ Added Tega Exam to payment page with price:', tegaExam.price);
     }
-    
-    // console.log('Total courses for payment page:', courses.length);
-    // console.log('Contains Tega Exam:', tegaExam ? '✅ YES (GOOD for payment)' : '❌ NO');
-    
     if (courses.length === 0) {
-      // console.log('⚠️ No published courses found. This might be the issue.');
       // Let's return all courses instead of just published ones for debugging
       const fallbackCourses = await RealTimeCourse.find({ 
         status: 'published'
       }).select('title description price estimatedDuration category instructor level status');
-      // console.log('Fallback courses:', fallbackCourses.length);
-      
       // Map fallback courses to expected format
       const mappedFallbackCourses = fallbackCourses.map(course => ({
         _id: course._id,
@@ -268,7 +228,6 @@ export const getCourses = async (req, res) => {
       });
     }
   } catch (error) {
-    // console.error('❌ Error fetching courses:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to fetch courses',
@@ -280,31 +239,19 @@ export const getCourses = async (req, res) => {
 // Get available TEGA exams for payment (filtered by time)
 export const getAvailableTegaExams = async (req, res) => {
   try {
-    // console.log('🔍 getAvailableTegaExams called - fetching TEGA exams...');
-    
     const now = new Date();
-    // console.log('⏰ Current time:', now.toISOString());
-    
     // Find all active TEGA exams
     const allTegaExams = await Exam.find({
       isTegaExam: true,
       isActive: true,
       requiresPayment: true
     });
-    
-    // console.log('📋 Total TEGA exams found:', allTegaExams.length);
-    
     // Filter exams based on payment deadline (5 minutes before exam start)
     const availableExams = [];
     
     for (const exam of allTegaExams) {
-      // console.log(`\n🔍 Checking exam: ${exam.title}`);
-      // console.log(`   Exam Date: ${exam.examDate}`);
-      // console.log(`   Slots: ${exam.slots?.length || 0}`);
-      
       // Check if exam has slots
       if (!exam.slots || exam.slots.length === 0) {
-        // console.log(`   ❌ No slots available for exam: ${exam.title}`);
         continue;
       }
       
@@ -320,18 +267,11 @@ export const getAvailableTegaExams = async (req, res) => {
         const [hours, minutes] = slot.startTime.split(':').map(Number);
         const slotDateTime = new Date(exam.examDate);
         slotDateTime.setHours(hours, minutes, 0, 0);
-        
-        // console.log(`   Slot ${slot.slotId}: ${slot.startTime} -> ${slotDateTime.toISOString()}`);
-        
         // Calculate slot registration cutoff (5 minutes before slot start)
         const slotRegistrationCutoff = new Date(slotDateTime.getTime() - 5 * 60 * 1000);
         
         // Check if slot is still available for registration
         const isSlotAvailable = now < slotRegistrationCutoff;
-        
-        // console.log(`   Slot ${slot.slotId} registration cutoff: ${slotRegistrationCutoff.toISOString()}`);
-        // console.log(`   Slot ${slot.slotId} available for registration: ${isSlotAvailable ? '✅ YES' : '❌ NO'}`);
-        
         if (isSlotAvailable) {
           availableSlots.push({
             ...slot.toObject(),
@@ -349,24 +289,16 @@ export const getAvailableTegaExams = async (req, res) => {
       
       // If no slots are available for registration, skip the exam
       if (availableSlots.length === 0) {
-        // console.log(`   ❌ No available slots for registration`);
         continue;
       }
       
       if (!earliestSlotTime) {
-        // console.log(`   ❌ No earliest slot time found`);
         continue;
       }
-      
-      // console.log(`   Earliest available slot time: ${earliestSlotTime.toISOString()}`);
-      
       // Calculate payment cutoff time (5 minutes before earliest available slot)
       const paymentCutoff = new Date(earliestSlotTime.getTime() - 5 * 60 * 1000);
-      // console.log(`   Payment cutoff (5 min before earliest slot): ${paymentCutoff.toISOString()}`);
-      
       // Check if current time is before the payment cutoff
       if (now < paymentCutoff) {
-        // console.log(`   ✅ Exam available for payment with ${availableSlots.length} slots`);
         availableExams.push({
           ...exam.toObject(),
           slots: availableSlots, // Replace with filtered slots
@@ -375,12 +307,8 @@ export const getAvailableTegaExams = async (req, res) => {
           totalAvailableSlots: availableSlots.length
         });
       } else {
-        // console.log(`   ❌ Payment deadline passed`);
       }
     }
-    
-    // console.log(`\n✅ Total available exams for payment: ${availableExams.length}`);
-    
     res.json({
       success: true,
       data: availableExams,
@@ -392,7 +320,6 @@ export const getAvailableTegaExams = async (req, res) => {
       }
     });
   } catch (error) {
-    // console.error('❌ Error fetching available TEGA exams:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to fetch available TEGA exams',
@@ -410,7 +337,6 @@ export const getCoursePricing = async (req, res) => {
       data: pricing
     });
   } catch (error) {
-    // console.error('Error fetching course pricing:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to fetch course pricing'
@@ -485,7 +411,6 @@ export const createPaymentOrder = async (req, res) => {
       }
     });
   } catch (error) {
-    // console.error('Error creating payment order:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to create payment order'
@@ -498,17 +423,12 @@ export const processDummyPayment = async (req, res) => {
   try {
     const { courseId, paymentMethod, paymentDetails, offerInfo } = req.body;
     const userId = req.studentId; // Changed from req.user.id
-
-    // console.log('Processing dummy payment for user:', userId, 'course:', courseId);
-    // console.log('Offer info:', offerInfo);
-
     // Validate course (try MongoDB first, fallback to static data)
     let course = null;
     if (isMongoConnected()) {
       try {
         course = await RealTimeCourse.findOne({ _id: courseId, status: 'published' });
       } catch (error) {
-        // console.log('MongoDB course query failed, using static data');
       }
     }
     
@@ -543,7 +463,6 @@ export const processDummyPayment = async (req, res) => {
         discountPercentage: offerInfo.discountPercentage,
         instituteName: offerInfo.instituteName
       };
-      // console.log(`💰 Using frontend offer info: Original ₹${offerInfo.originalPrice}, Offer ₹${offerInfo.offerPrice}, Final ₹${finalPrice}`);
     } else {
       // Fallback to backend offer checking
       const offerPrice = await getOfferPriceForStudent(userId, 'Course');
@@ -555,7 +474,6 @@ export const processDummyPayment = async (req, res) => {
           discountPercentage: Math.round(((course.price - offerPrice) / course.price) * 100)
         };
       }
-      // console.log(`💰 Payment pricing: Original price ₹${course.price}, Backend offer price ₹${offerPrice}, Final price ₹${finalPrice}`);
     }
 
     // Check if user already paid for this course
@@ -564,7 +482,6 @@ export const processDummyPayment = async (req, res) => {
       try {
         existingPayment = await Payment.hasUserPaidForCourse(userId, courseId);
       } catch (error) {
-        // console.log('MongoDB payment check failed, checking in-memory storage');
       }
     }
     
@@ -603,11 +520,8 @@ export const processDummyPayment = async (req, res) => {
           transactionId: `TXN${Date.now()}${Math.random().toString(36).substr(2, 9).toUpperCase()}`,
           paymentDate: new Date()
         });
-        // console.log('Attempting to save payment to MongoDB:', payment);
         await payment.save();
-        // console.log('Payment saved to MongoDB for user:', userId, 'payment ID:', payment._id);
       } catch (error) {
-        // console.log('MongoDB payment save failed, using in-memory storage:', error.message);
         payment = null;
       }
     }
@@ -642,8 +556,6 @@ export const processDummyPayment = async (req, res) => {
         userCourseAccess.set(userId, []);
       }
       userCourseAccess.get(userId).push(courseId);
-      
-      // console.log(`Payment saved to in-memory storage for user ${userId}, payment ID: ${payment._id}`);
     }
 
     // Create payment success notification (try MongoDB first, fallback to in-memory)
@@ -656,9 +568,7 @@ export const processDummyPayment = async (req, res) => {
           type: 'payment_success'
         });
         await notification.save();
-        // console.log('Payment notification saved to MongoDB for user:', userId);
       } catch (error) {
-        // console.log('MongoDB notification save failed, using in-memory storage');
       }
     }
     
@@ -701,15 +611,10 @@ export const processDummyPayment = async (req, res) => {
             }
           });
           await adminNotification.save();
-          // console.log('Admin payment notification saved to MongoDB');
         }
       }
     } catch (error) {
-      // console.log('Failed to create admin notification:', error.message);
     }
-
-    // console.log('Payment processing completed successfully for user:', userId);
-
     res.json({
       success: true,
       message: 'Payment completed successfully',
@@ -723,7 +628,6 @@ export const processDummyPayment = async (req, res) => {
       }
     });
   } catch (error) {
-    // console.error('Error processing dummy payment:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to process payment'
@@ -791,7 +695,6 @@ export const verifyPayment = async (req, res) => {
       }
     });
   } catch (error) {
-    // console.error('Error verifying payment:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to verify payment'
@@ -803,15 +706,6 @@ export const verifyPayment = async (req, res) => {
 export const verifyUPIPayment = async (req, res) => {
   try {
     const { transactionId, amount, courseId, studentId, upiId } = req.body;
-
-    // console.log('UPI Payment Verification Request:', {
-    //   transactionId,
-    //   amount,
-    //   courseId,
-    //   studentId,
-    //   upiId
-    // });
-
     // Validation
     if (!transactionId || !amount || !courseId || !studentId || !upiId) {
       return res.status(400).json({
@@ -841,9 +735,6 @@ export const verifyUPIPayment = async (req, res) => {
     // Check for institute offer price
     const offerPrice = await getOfferPriceForStudent(studentId, 'Course');
     const expectedPrice = offerPrice !== null ? offerPrice : course.price;
-    
-    // console.log(`💰 UPI Payment pricing: Original price ₹${course.price}, Offer price ₹${offerPrice}, Expected price ₹${expectedPrice}, Received ₹${amount}`);
-
     // Verify amount matches expected price (either offer price or course price)
     if (expectedPrice !== amount) {
       return res.status(400).json({
@@ -885,21 +776,12 @@ export const verifyUPIPayment = async (req, res) => {
     });
 
     await payment.save();
-    // console.log('Payment record created successfully:', payment._id);
-
     // Increment course enrollment
     await course.incrementEnrollment();
 
     // Create notification for admin
     const admin = await Admin.findOne();
     if (admin) {
-      // console.log('Creating admin notification for payment:', {
-      //   adminId: admin._id,
-      //   amount,
-      //   courseName: course.courseName,
-      //   studentId
-      // });
-      
       const notification = new Notification({
         recipient: admin._id,
         recipientModel: 'Admin',
@@ -907,19 +789,12 @@ export const verifyUPIPayment = async (req, res) => {
         type: 'info'
       });
       await notification.save();
-      // console.log('Admin notification created successfully:', notification._id);
     } else {
-      // console.log('No admin found to create notification for');
     }
 
     // Create notification for student
     const student = await Student.findById(studentId);
     if (student) {
-      // console.log('Creating student notification for payment:', {
-      //   studentId: student._id,
-      //   courseName: course.courseName
-      // });
-      
       const studentNotification = new Notification({
         recipient: student._id,
         recipientModel: 'Student',
@@ -927,9 +802,7 @@ export const verifyUPIPayment = async (req, res) => {
         type: 'info'
       });
       await studentNotification.save();
-      // console.log('Student notification created successfully:', studentNotification._id);
     } else {
-      // console.log('Student not found for notification creation');
     }
 
     res.json({
@@ -946,7 +819,6 @@ export const verifyUPIPayment = async (req, res) => {
     });
 
   } catch (error) {
-    // console.error('UPI payment verification error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to verify payment'
@@ -982,7 +854,6 @@ export const getUPIPaymentStatus = async (req, res) => {
     });
 
   } catch (error) {
-    // console.error('Get payment status error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to get payment status'
@@ -994,9 +865,6 @@ export const getUPIPaymentStatus = async (req, res) => {
 export const getPaymentHistory = async (req, res) => {
   try {
     const userId = req.studentId; // Changed from req.user.id
-    
-    // console.log('📊 Fetching payment history for user:', userId);
-    
     // Try MongoDB first, fallback to in-memory storage
     let oldPayments = [];
     let razorpayPayments = [];
@@ -1007,26 +875,18 @@ export const getPaymentHistory = async (req, res) => {
         oldPayments = await Payment.find({ studentId: userId })
           .sort({ createdAt: -1 })
           .populate('studentId', 'username email firstName lastName');
-        
-        // console.log(`📊 Found ${oldPayments.length} old payments in MongoDB for user ${userId}`);
-        
         // Get payments from new RazorpayPayment model
         const RazorpayPayment = (await import('../models/RazorpayPayment.js')).default;
         razorpayPayments = await RazorpayPayment.find({ studentId: userId })
           .sort({ createdAt: -1 })
           .populate('studentId', 'username email firstName lastName');
-        
-        // console.log(`📊 Found ${razorpayPayments.length} Razorpay payments in MongoDB for user ${userId}`);
-        
       } catch (error) {
-        // console.log('❌ MongoDB payment history query failed, using in-memory storage:', error.message);
       }
     }
     
     // Get from in-memory storage if MongoDB failed or not connected
     if (oldPayments.length === 0 && userPayments.has(userId)) {
       oldPayments = userPayments.get(userId);
-      // console.log(`📊 Retrieved ${oldPayments.length} payments from in-memory storage for user ${userId}`);
     }
 
     // Normalize both payment types to a common format
@@ -1075,16 +935,11 @@ export const getPaymentHistory = async (req, res) => {
     // Combine and sort by creation date
     const allPayments = [...normalizedOldPayments, ...normalizedRazorpayPayments]
       .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-
-    // console.log(`📊 Total combined payments: ${allPayments.length} (${normalizedOldPayments.length} old + ${normalizedRazorpayPayments.length} Razorpay)`);
-    // console.log('📊 Combined payments data being sent:', allPayments);
-
     res.json({
       success: true,
       data: allPayments
     });
   } catch (error) {
-    // console.error('Error fetching payment history:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to fetch payment history'
@@ -1097,21 +952,12 @@ export const checkCourseAccess = async (req, res) => {
   try {
     const { courseId } = req.params;
     const userId = req.studentId;
-    
-    // console.log('🔍 Checking course access for user:', userId, 'course:', courseId);
-    // console.log('🔍 User ID type:', typeof userId, 'Course ID type:', typeof courseId);
-    // console.log('🔍 User ID value:', userId, 'Course ID value:', courseId);
-    // console.log('🔍 Request headers:', req.headers);
-    // console.log('🔍 Request user from auth middleware:', req.user);
-    
     // Convert string IDs to ObjectId if needed
     let userIdObj, courseIdObj;
     try {
       userIdObj = typeof userId === 'string' ? new mongoose.Types.ObjectId(userId) : userId;
       courseIdObj = typeof courseId === 'string' ? new mongoose.Types.ObjectId(courseId) : courseId;
-      // console.log('🔍 Converted User ID:', userIdObj, 'Converted Course ID:', courseIdObj);
     } catch (error) {
-      // console.log('❌ Error converting IDs to ObjectId:', error.message);
       return res.status(400).json({
         success: false,
         message: 'Invalid user ID or course ID format'
@@ -1123,86 +969,59 @@ export const checkCourseAccess = async (req, res) => {
 
     // Debug: Check what's actually in the database
     try {
-      // console.log('🔍 DEBUG: Checking database for any payments...');
-      
       // Check all payments for this user
       const allUserPayments = await Payment.find({ studentId: userIdObj });
-      // console.log('🔍 DEBUG: All payments for user:', allUserPayments.length, allUserPayments.map(p => ({ id: p._id, courseId: p.courseId, status: p.status })));
-      
       // Check all RazorpayPayments for this user
       const RazorpayPayment = (await import('../models/RazorpayPayment.js')).default;
       const allUserRazorpayPayments = await RazorpayPayment.find({ studentId: userIdObj });
-      // console.log('🔍 DEBUG: All RazorpayPayments for user:', allUserRazorpayPayments.length, allUserRazorpayPayments.map(p => ({ id: p._id, courseId: p.courseId, status: p.status })));
-      
       // Check all UserCourses for this user
       const UserCourse = (await import('../models/UserCourse.js')).default;
       const allUserCourses = await UserCourse.find({ studentId: userIdObj });
-      // console.log('🔍 DEBUG: All UserCourses for user:', allUserCourses.length, allUserCourses.map(uc => ({ id: uc._id, courseId: uc.courseId, isActive: uc.isActive })));
-      
     } catch (error) {
-      // console.log('❌ DEBUG: Error checking database:', error.message);
     }
 
     // Check old Payment system
     try {
-      // console.log('🔍 Checking old Payment system...');
       const hasPaidOld = await Payment.hasUserPaidForCourse(userIdObj, courseIdObj);
-      // console.log('🔍 Old Payment system result:', hasPaidOld);
       if (hasPaidOld) {
         hasAccess = true;
         accessSource = 'old_payment';
-        // console.log('✅ Access found via old Payment system');
       } else {
-        // console.log('❌ No access found via old Payment system');
       }
     } catch (error) {
-      // console.log('❌ Error checking old Payment system:', error.message);
     }
 
     // Check new Razorpay/UserCourse system
     if (!hasAccess) {
       try {
-        // console.log('🔍 Checking UserCourse system...');
         const UserCourse = (await import('../models/UserCourse.js')).default;
         const hasPaidNew = await UserCourse.hasAccess(userIdObj, courseIdObj);
-        // console.log('🔍 UserCourse system result:', hasPaidNew);
         if (hasPaidNew) {
           hasAccess = true;
           accessSource = 'razorpay_payment';
-          // console.log('✅ Access found via UserCourse system');
         } else {
-          // console.log('❌ No access found via UserCourse system');
         }
       } catch (error) {
-        // console.log('❌ Error checking UserCourse system:', error.message);
       }
     }
 
     // Check RazorpayPayment model directly as fallback
     if (!hasAccess) {
       try {
-        // console.log('🔍 Checking RazorpayPayment directly...');
         const RazorpayPayment = (await import('../models/RazorpayPayment.js')).default;
         const razorpayPayment = await RazorpayPayment.findOne({
           studentId: userIdObj,
           courseId: courseIdObj,
           status: 'completed'
         });
-        // console.log('🔍 RazorpayPayment direct result:', razorpayPayment ? 'Found' : 'Not found');
         if (razorpayPayment) {
           hasAccess = true;
           accessSource = 'razorpay_payment_direct';
-          // console.log('✅ Access found via direct RazorpayPayment check');
         } else {
-          // console.log('❌ No access found via direct RazorpayPayment check');
         }
       } catch (error) {
-        // console.log('❌ Error checking RazorpayPayment directly:', error.message);
       }
     }
-
-    // console.log('🔍 Final access result:', { hasAccess, accessSource });
-
     res.json({
       success: true,
       data: {
@@ -1212,7 +1031,6 @@ export const checkCourseAccess = async (req, res) => {
       }
     });
   } catch (error) {
-    // console.error('❌ Error checking course access:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to check course access'
@@ -1225,8 +1043,6 @@ export const checkCourseAccess = async (req, res) => {
 // Utility function to check TEGA exam payment (can be called from other controllers)
 export const checkTegaExamPaymentUtil = async (userId) => {
   try {
-    // console.log('🔍 Checking Tega exam payment for user:', userId);
-    
     let hasPaidForTegaExam = false;
     let paymentSource = null;
     let paymentDetails = null;
@@ -1234,9 +1050,7 @@ export const checkTegaExamPaymentUtil = async (userId) => {
     // Debug: Check all payments for this user to see what's in the database
     const RazorpayPayment = (await import('../models/RazorpayPayment.js')).default;
     const allPayments = await RazorpayPayment.find({ studentId: userId });
-    // console.log(`🔍 Found ${allPayments.length} total payments for user`);
     allPayments.forEach((payment, index) => {
-      // console.log(`🔍 Payment ${index + 1}: Amount=₹${payment.amount}, Status=${payment.status}, ExamAccess=${payment.examAccess}, Date=${payment.paymentDate}`);
     });
     
     if (isMongoConnected()) {
@@ -1258,7 +1072,6 @@ export const checkTegaExamPaymentUtil = async (userId) => {
             paymentDate: tegaPayment.paymentDate,
             validUntil: tegaPayment.validUntil
           };
-          // console.log('✅ Found Tega exam payment in Payment model');
         }
         
         // Also check RazorpayPayment model for Tega exam payments
@@ -1271,25 +1084,12 @@ export const checkTegaExamPaymentUtil = async (userId) => {
             isTegaExam: true,
             status: 'completed'
           });
-          
-          // console.log('🔍 Checking for isTegaExam=true payments:', tegaRazorpayPayment ? 'Found' : 'Not found');
-          
           // Also check for any completed payments that might be TEGA exam payments
           const anyCompletedPayment = await RazorpayPayment.findOne({
             studentId: userId,
             status: 'completed'
           });
-          
-          // console.log('🔍 Checking for any completed payments:', anyCompletedPayment ? 'Found' : 'Not found');
           if (anyCompletedPayment) {
-            // console.log('🔍 Any completed payment details:', {
-            //   courseId: anyCompletedPayment.courseId,
-            //   courseName: anyCompletedPayment.courseName,
-            //   examAccess: anyCompletedPayment.examAccess,
-            //   isTegaExam: anyCompletedPayment.isTegaExam,
-            //   amount: anyCompletedPayment.amount,
-            //   examId: anyCompletedPayment.examId
-            // });
           }
           
           if (tegaRazorpayPayment) {
@@ -1301,12 +1101,7 @@ export const checkTegaExamPaymentUtil = async (userId) => {
               paymentDate: tegaRazorpayPayment.paymentDate,
               validUntil: tegaRazorpayPayment.validUntil
             };
-            // console.log('✅ Found Tega exam payment in RazorpayPayment model');
-            // console.log('🔍 Payment amount:', tegaRazorpayPayment.amount);
-            // console.log('🔍 Payment date:', tegaRazorpayPayment.paymentDate);
           } else {
-            // console.log('❌ No Tega exam payment found in RazorpayPayment model with isTegaExam=true');
-            
             // Fallback: Check for payments with examAccess=true and no courseId (legacy TEGA exam payments)
             const legacyTegaPayment = await RazorpayPayment.findOne({
               studentId: userId,
@@ -1314,9 +1109,6 @@ export const checkTegaExamPaymentUtil = async (userId) => {
               courseId: null,
               status: 'completed'
             });
-            
-            // console.log('🔍 Checking for legacy TEGA payments (examAccess=true, courseId=null):', legacyTegaPayment ? 'Found' : 'Not found');
-            
             if (legacyTegaPayment) {
               hasPaidForTegaExam = true;
               paymentSource = 'razorpay_legacy';
@@ -1326,7 +1118,6 @@ export const checkTegaExamPaymentUtil = async (userId) => {
                 paymentDate: legacyTegaPayment.paymentDate,
                 validUntil: legacyTegaPayment.validUntil
               };
-              // console.log('✅ Found legacy Tega exam payment (examAccess=true, courseId=null)');
             } else {
               // Additional fallback: Check for payments with examAccess=true but only if they're specifically for TEGA exams
               // This is more restrictive to avoid false positives from regular course payments
@@ -1339,15 +1130,7 @@ export const checkTegaExamPaymentUtil = async (userId) => {
                   { courseName: { $regex: /tega|TEGA/i } } // Payments to courses with "TEGA" in the name
                 ]
               });
-              
-              // console.log('🔍 Checking for any exam access payments (examAccess=true):', anyExamAccessPayment ? 'Found' : 'Not found');
               if (anyExamAccessPayment) {
-                // console.log('🔍 Exam access payment details:', {
-                //   courseId: anyExamAccessPayment.courseId,
-                //   courseName: anyExamAccessPayment.courseName,
-                //   examAccess: anyExamAccessPayment.examAccess,
-                //   amount: anyExamAccessPayment.amount
-                // });
               }
           
               if (anyExamAccessPayment) {
@@ -1363,13 +1146,9 @@ export const checkTegaExamPaymentUtil = async (userId) => {
                     validUntil: anyExamAccessPayment.validUntil,
                     courseName: anyExamAccessPayment.courseName
                   };
-                  // console.log('✅ Found TEGA exam payment with exam access (examAccess=true)');
-                  // console.log('🔍 Course name:', anyExamAccessPayment.courseName);
                 } else {
-                  // console.log('❌ Found payment with exam access but it\'s for a regular course, not TEGA exam');
                 }
               } else {
-                // console.log('❌ No TEGA exam payment found - user has not paid for TEGA exam');
               }
             }
           }
@@ -1386,8 +1165,6 @@ export const checkTegaExamPaymentUtil = async (userId) => {
             });
             
             if (tegaExamCourse) {
-              // console.log('🔍 Found TEGA exam course:', tegaExamCourse.courseName, 'with ID:', tegaExamCourse._id);
-              
               // Check RazorpayPayment with more flexible criteria
               const tegaCoursePayment = await RazorpayPayment.findOne({
                 studentId: userId,
@@ -1406,13 +1183,7 @@ export const checkTegaExamPaymentUtil = async (userId) => {
                   validUntil: tegaCoursePayment.validUntil,
                   courseName: tegaCoursePayment.courseName
                 };
-                // console.log('✅ Found payment for Tega Exam course in RazorpayPayment:', {
-                //   amount: tegaCoursePayment.amount,
-                //   paymentDate: tegaCoursePayment.paymentDate
-                // });
               } else {
-                // console.log('❌ No RazorpayPayment found for TEGA exam course');
-                
                 // Also check Payment model for this course
                 const Payment = (await import('../models/Payment.js')).default;
                 const tegaCoursePaymentLegacy = await Payment.findOne({
@@ -1432,29 +1203,18 @@ export const checkTegaExamPaymentUtil = async (userId) => {
                     validUntil: tegaCoursePaymentLegacy.validUntil,
                     note: 'Payment for TEGA exam course (legacy)'
                   };
-                  // console.log('✅ Found payment for Tega Exam course in Payment model:', {
-                  //   amount: tegaCoursePaymentLegacy.amount,
-                  //   paymentDate: tegaCoursePaymentLegacy.paymentDate
-                  // });
                 } else {
-                  // console.log('❌ No Payment found for TEGA exam course');
                 }
               }
             } else {
-              // console.log('❌ No TEGA exam course found in database');
             }
           }
         }
         
       } catch (error) {
-        // console.log('❌ MongoDB Tega exam payment check failed:', error.message);
       }
     }
-    
-    // console.log(`🔍 Tega exam payment status: ${hasPaidForTegaExam ? 'PAID' : 'NOT PAID'}`);
     if (hasPaidForTegaExam) {
-      // console.log(`🔍 Payment source: ${paymentSource}`);
-      // console.log(`🔍 Payment details:`, paymentDetails);
     }
     
     return {
@@ -1465,7 +1225,6 @@ export const checkTegaExamPaymentUtil = async (userId) => {
     };
     
   } catch (error) {
-    // console.error('Error checking Tega exam payment:', error);
     return {
       success: false,
       hasPaidForTegaExam: false,
@@ -1481,7 +1240,6 @@ export const checkTegaExamPayment = async (req, res) => {
     const result = await checkTegaExamPaymentUtil(userId);
     res.json(result);
   } catch (error) {
-    // console.error('Error in checkTegaExamPayment route:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to check Tega exam payment status'
@@ -1492,9 +1250,6 @@ export const checkTegaExamPayment = async (req, res) => {
 export const getUserPaidCourses = async (req, res) => {
   try {
     const userId = req.studentId; // Changed from req.user.id
-    
-    // console.log('📚 Fetching paid courses for user:', userId);
-    
     // Try MongoDB first, fallback to in-memory storage
     let oldPaidCourses = [];
     let razorpayPaidCourses = [];
@@ -1506,8 +1261,6 @@ export const getUserPaidCourses = async (req, res) => {
       try {
         // Get paid courses from old Payment model
         oldPaidCourses = await Payment.getUserPaidCourses(userId);
-        // console.log(`📚 Found ${oldPaidCourses.length} paid courses from old Payment model for user ${userId}`);
-        
         // Get paid courses from new RazorpayPayment model
         const RazorpayPayment = (await import('../models/RazorpayPayment.js')).default;
         const razorpayPayments = await RazorpayPayment.find({ 
@@ -1515,8 +1268,6 @@ export const getUserPaidCourses = async (req, res) => {
           status: 'completed' 
         });
         razorpayPaidCourses = razorpayPayments.map(payment => payment.courseId);
-        // console.log(`📚 Found ${razorpayPaidCourses.length} paid courses from RazorpayPayment model for user ${userId}`);
-        
         // Get paid courses from UserCourse model
         const UserCourse = (await import('../models/UserCourse.js')).default;
         const userCourses = await UserCourse.getActiveCourses(userId);
@@ -1524,24 +1275,17 @@ export const getUserPaidCourses = async (req, res) => {
         userCourseAccessIds = userCourses
           .map(userCourse => (userCourse.courseId && userCourse.courseId._id) ? userCourse.courseId._id : userCourse.courseId)
           .filter(Boolean);
-        // console.log(`📚 Found ${userCourseAccessIds.length} paid courses from UserCourse model for user ${userId}`);
-        
       } catch (error) {
-        // console.log('❌ MongoDB paid courses query failed, using in-memory storage:', error.message);
       }
     }
     
     // Get from in-memory storage if MongoDB failed or not connected
     if (oldPaidCourses.length === 0 && userCourseAccess.has(userId)) {
       oldPaidCourses = userCourseAccess.get(userId);
-      // console.log(`📚 Retrieved ${oldPaidCourses.length} paid courses from in-memory storage for user ${userId}`);
     }
 
     // Combine and deduplicate course IDs from all sources
     const allPaidCourseIds = [...new Set([...oldPaidCourses, ...razorpayPaidCourses, ...userCourseAccessIds])];
-    // console.log(`📚 Total unique paid courses: ${allPaidCourseIds.length}`);
-    // console.log(`📚 Breakdown: Old=${oldPaidCourses.length}, Razorpay=${razorpayPaidCourses.length}, UserCourse=${userCourseAccessIds.length}`);
-
     // Normalize all course ids to primitive values first
     const normalizedPaidIds = [...new Set([...oldPaidCourses, ...razorpayPaidCourses, ...userCourseAccessIds]
       .map(id => (id && id._id) ? id._id : id))];
@@ -1597,10 +1341,7 @@ export const getUserPaidCourses = async (req, res) => {
           index === self.findIndex(c => (c._id?.toString ? c._id.toString() : c._id) === (course._id?.toString ? course._id.toString() : course._id))
         );
         courses = uniqueCourses;
-        
-        // console.log(`📚 Courses assembled (db + static): ${courses.length}`);
       } catch (error) {
-        // console.log('❌ Course assembly failed, will use static fallback:', error.message);
       }
     }
     
@@ -1615,11 +1356,7 @@ export const getUserPaidCourses = async (req, res) => {
       };
       
       courses = normalizedPaidIds.map(courseId => staticCourses[courseId]).filter(Boolean);
-      // console.log(`📚 Using static data for ${courses.length} courses`);
     }
-
-    // console.log(`📚 Returning ${courses.length} paid courses for user ${userId}`);
-
     // Normalize for client expectations: include both id and courseId
     const normalizedCourses = courses.map((c) => ({
       id: c._id?.toString ? c._id.toString() : c._id,
@@ -1642,7 +1379,6 @@ export const getUserPaidCourses = async (req, res) => {
       data: normalizedCourses
     });
   } catch (error) {
-    // console.error('Error fetching user paid courses:', error);
     // Soft-fail with empty list to avoid breaking the client UI after refresh
     res.json({ success: true, data: [] });
   }
@@ -1699,7 +1435,6 @@ export const processRefund = async (req, res) => {
       }
     });
   } catch (error) {
-    // console.error('Error processing refund:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to process refund'
@@ -1735,7 +1470,6 @@ export const getPaymentStats = async (req, res) => {
       }
     });
   } catch (error) {
-    // console.error('Error fetching payment stats:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to fetch payment statistics'
@@ -1747,15 +1481,10 @@ export const getPaymentStats = async (req, res) => {
 export const getOfferPrice = async (req, res) => {
   try {
     const { studentId, feature = 'Course' } = req.params;
-    
-    // console.log(`🔍 Getting offer price for student ${studentId}, feature: ${feature}`);
-    
     const offerPrice = await getOfferPriceForStudent(studentId, feature);
     
     if (offerPrice !== null) {
-      // console.log(`🎯 Offer found: ₹${offerPrice} for ${feature}`);
     } else {
-      // console.log(`❌ No offer found for ${feature}`);
     }
     
     res.json({
@@ -1769,7 +1498,6 @@ export const getOfferPrice = async (req, res) => {
       }
     });
   } catch (error) {
-    // console.error('Error getting offer price:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to get offer price'
@@ -1788,7 +1516,6 @@ export const getAllPayments = async (req, res) => {
           .sort({ createdAt: -1 })
           .populate('studentId', 'username email firstName lastName'); // Populate student details
       } catch (error) {
-        // console.log('MongoDB getAllPayments failed, using in-memory storage:', error.message);
       }
     }
 
@@ -1814,7 +1541,6 @@ export const getAllPayments = async (req, res) => {
 
     res.json({ success: true, data: payments, totals });
   } catch (error) {
-    // console.error('Error fetching all payments (admin):', error);
     res.status(500).json({ success: false, message: 'Failed to fetch payments' });
   }
 };
@@ -1823,9 +1549,6 @@ export const getAllPayments = async (req, res) => {
 export const getCourseSpecificOffer = async (req, res) => {
   try {
     const { studentId, courseId } = req.params;
-    
-    // console.log(`🔍 Getting course-specific offer for student ${studentId}, course: ${courseId}`);
-    
     if (!isMongoConnected()) {
       return res.json({
         success: true,
@@ -1840,7 +1563,6 @@ export const getCourseSpecificOffer = async (req, res) => {
     // Get student's institute
     const student = await Student.findById(studentId);
     if (!student || !student.institute) {
-      // console.log(`❌ Student not found or no institute: ${studentId}`);
       return res.json({
         success: true,
         data: {
@@ -1855,7 +1577,6 @@ export const getCourseSpecificOffer = async (req, res) => {
     const RealTimeCourse = (await import('../models/RealTimeCourse.js')).default;
     const course = await RealTimeCourse.findById(courseId);
     if (!course) {
-      // console.log(`❌ Course not found: ${courseId}`);
       return res.json({
         success: true,
         data: {
@@ -1865,9 +1586,6 @@ export const getCourseSpecificOffer = async (req, res) => {
         }
       });
     }
-
-    // console.log(`🔍 Looking for course-specific offers for institute: "${student.institute}", course: "${course.title}"`);
-
     // Escape special regex characters in the institute name
     const escapedInstitute = student.institute.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     
@@ -1880,21 +1598,14 @@ export const getCourseSpecificOffer = async (req, res) => {
       validUntil: { $gte: new Date() },
       'courseOffers.courseId': courseId
     });
-
-    // console.log(`🔍 Exact match result:`, offer ? `Found offer with course-specific pricing` : 'No exact match');
-
     // If no exact match found, try partial matching
     if (!offer) {
-      // console.log(`🔍 No exact offer match, trying partial match...`);
       const allOffers = await Offer.find({
         isActive: true,
         validFrom: { $lte: new Date() },
         validUntil: { $gte: new Date() },
         'courseOffers.courseId': courseId
       });
-      
-      // console.log(`🔍 Found ${allOffers.length} active offers with this course`);
-      
       // Try to find a partial match
       const partialMatch = allOffers.find(o => 
         o.instituteName.toLowerCase().includes(student.institute.toLowerCase()) ||
@@ -1902,21 +1613,14 @@ export const getCourseSpecificOffer = async (req, res) => {
       );
       
       if (partialMatch) {
-        // console.log(`🔍 Found partial offer match: "${partialMatch.instituteName}" for "${student.institute}"`);
         offer = partialMatch;
       }
     }
 
     if (offer) {
-      // console.log(`🎯 Found course-specific offer for "${student.institute}":`, {
-      //   instituteName: offer.instituteName,
-      //   courseOffers: offer.courseOffers?.length || 0
-      // });
-      
       // Find the specific course offer
       const courseOffer = offer.courseOffers.find(co => co.courseId.toString() === courseId);
       if (courseOffer) {
-        // console.log(`🎯 Using course-specific offer price: ₹${courseOffer.offerPrice}`);
         return res.json({
           success: true,
           data: {
@@ -1929,8 +1633,6 @@ export const getCourseSpecificOffer = async (req, res) => {
         });
       }
     }
-
-    // console.log(`❌ No course-specific offer found for course: "${course.courseName}"`);
     return res.json({
       success: true,
       data: {
@@ -1940,7 +1642,6 @@ export const getCourseSpecificOffer = async (req, res) => {
       }
     });
   } catch (error) {
-    // console.error('Error getting course-specific offer:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to get course-specific offer'
@@ -1953,9 +1654,6 @@ export const getTegaExamSpecificOffer = async (req, res) => {
   try {
     const { studentId, examId } = req.params;
     const { slotId } = req.query; // Get slotId from query params
-    
-    // console.log(`🔍 Getting TEGA exam-specific offer for student ${studentId}, exam: ${examId}, slot: ${slotId || 'all'}`);
-    
     if (!isMongoConnected()) {
       return res.json({
         success: true,
@@ -1970,7 +1668,6 @@ export const getTegaExamSpecificOffer = async (req, res) => {
     // Get student's institute
     const student = await Student.findById(studentId);
     if (!student || !student.institute) {
-      // console.log(`❌ Student not found or no institute: ${studentId}`);
       return res.json({
         success: true,
         data: {
@@ -1985,7 +1682,6 @@ export const getTegaExamSpecificOffer = async (req, res) => {
     const Exam = (await import('../models/Exam.js')).default;
     const exam = await Exam.findById(examId);
     if (!exam) {
-      // console.log(`❌ TEGA exam not found: ${examId}`);
       return res.json({
         success: true,
         data: {
@@ -1995,24 +1691,14 @@ export const getTegaExamSpecificOffer = async (req, res) => {
         }
       });
     }
-
-    // console.log(`🔍 Looking for TEGA exam-specific offers for institute: "${student.institute}", exam: "${exam.title}"`);
-    // console.log(`🔍 Student ID: ${studentId}, Exam ID: ${examId}`);
-
     // Escape special regex characters in the institute name
     const escapedInstitute = student.institute.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    // console.log(`🔍 Escaped institute name: "${escapedInstitute}"`);
-    
     // Check for active offer for this institute with TEGA exam offers
     const Offer = (await import('../models/Offer.js')).default;
     
     // Debug: Check what offers exist in the database
     const allOffers = await Offer.find({ isActive: true });
-    // console.log(`🔍 Found ${allOffers.length} active offers in database:`);
     allOffers.forEach((offer, index) => {
-      // console.log(`  ${index + 1}. Institute: "${offer.instituteName}"`);
-      // console.log(`     TEGA Exam Offers: ${offer.tegaExamOffers?.length || 0}`);
-      // console.log(`     Old TEGA Offer: ${offer.tegaExamOffer ? 'Yes' : 'No'}`);
     });
     
     let offer = await Offer.findOne({
@@ -2025,12 +1711,8 @@ export const getTegaExamSpecificOffer = async (req, res) => {
         { 'tegaExamOffer.examId': examId, 'tegaExamOffer.isActive': true }
       ]
     });
-
-    // console.log(`🔍 Exact match result:`, offer ? `Found offer with TEGA exam pricing` : 'No exact match');
-
     // If no exact match found, try partial matching
     if (!offer) {
-      // console.log(`🔍 No exact offer match, trying partial match...`);
       const allOffers = await Offer.find({
         isActive: true,
         validFrom: { $lte: new Date() },
@@ -2040,9 +1722,6 @@ export const getTegaExamSpecificOffer = async (req, res) => {
           { 'tegaExamOffer.examId': examId, 'tegaExamOffer.isActive': true }
         ]
       });
-      
-      // console.log(`🔍 Found ${allOffers.length} active offers with TEGA exam pricing for exam ${examId}`);
-      
       // Try to find a partial match
       const partialMatch = allOffers.find(o => 
         o.instituteName.toLowerCase().includes(student.institute.toLowerCase()) ||
@@ -2050,7 +1729,6 @@ export const getTegaExamSpecificOffer = async (req, res) => {
       );
       
       if (partialMatch) {
-        // console.log(`🔍 Found partial offer match: "${partialMatch.instituteName}" for "${student.institute}"`);
         offer = partialMatch;
       }
     }
@@ -2061,19 +1739,8 @@ export const getTegaExamSpecificOffer = async (req, res) => {
       const tegaExamOffer = offer.getTegaExamOffer(examId, slotId);
 
       if (tegaExamOffer) {
-        // console.log(`🎯 Found TEGA exam-specific offer (new structure) for "${student.institute}":`, {
-        //   instituteName: offer.instituteName,
-        //   examTitle: tegaExamOffer.examTitle,
-        //   slotId: tegaExamOffer.slotId || 'all slots',
-        //   originalPrice: tegaExamOffer.originalPrice,
-        //   offerPrice: tegaExamOffer.offerPrice,
-        //   discountPercentage: tegaExamOffer.discountPercentage
-        // });
-        
         const offerPrice = tegaExamOffer.offerPrice;
         const originalPrice = tegaExamOffer.originalPrice || exam.price;
-        // console.log(`🎯 Using TEGA exam-specific offer price: ₹${offerPrice} (original: ₹${originalPrice}), slot: ${slotId || 'all'}`);
-        
         return res.json({
           success: true,
           data: {
@@ -2091,15 +1758,8 @@ export const getTegaExamSpecificOffer = async (req, res) => {
 
     // Check for old structure (tegaExamOffer single object) - backward compatibility
     if (offer && offer.tegaExamOffer && offer.tegaExamOffer.isActive) {
-      // console.log(`🎯 Found TEGA exam-specific offer (old structure) for "${student.institute}":`, {
-      //   instituteName: offer.instituteName,
-      //   tegaExamOffer: offer.tegaExamOffer
-      // });
-      
       const offerPrice = offer.tegaExamOffer.offerPrice;
       const originalPrice = offer.tegaExamOffer.originalPrice || exam.price;
-      // console.log(`🎯 Using TEGA exam-specific offer price: ₹${offerPrice} (original: ₹${originalPrice})`);
-      
       return res.json({
         success: true,
         data: {
@@ -2112,8 +1772,6 @@ export const getTegaExamSpecificOffer = async (req, res) => {
         }
       });
     }
-
-    // console.log(`❌ No TEGA exam-specific offer found for exam: "${exam.title}"`);
     return res.json({
       success: true,
       data: {
@@ -2123,7 +1781,6 @@ export const getTegaExamSpecificOffer = async (req, res) => {
       }
     });
   } catch (error) {
-    // console.error('Error getting TEGA exam-specific offer:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to get TEGA exam-specific offer'
@@ -2136,21 +1793,14 @@ export const getPaidSlotsForExam = async (req, res) => {
   try {
     const { examId } = req.params;
     const studentId = req.studentId;
-    
-    // console.log(`🔍 Getting paid slots for exam ${examId}, student: ${studentId}`);
-    
     // Get paid slots from RazorpayPayment
     const paidSlots = await RazorpayPayment.getPaidSlotsForExam(studentId, examId);
-    
-    // console.log(`✅ Found ${paidSlots.length} paid slots:`, paidSlots);
-    
     res.json({
       success: true,
       data: paidSlots,
       message: `Found ${paidSlots.length} paid slot(s)`
     });
   } catch (error) {
-    // console.error('Error getting paid slots:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to get paid slots',
@@ -2164,13 +1814,7 @@ export const checkSlotPayment = async (req, res) => {
   try {
     const { examId, slotId } = req.params;
     const studentId = req.studentId;
-    
-    // console.log(`🔍 Checking slot payment - Exam: ${examId}, Slot: ${slotId}, Student: ${studentId}`);
-    
     const hasPaid = await RazorpayPayment.hasUserPaidForSlot(studentId, examId, slotId);
-    
-    // console.log(`Payment status for slot ${slotId}: ${hasPaid ? '✅ PAID' : '❌ NOT PAID'}`);
-    
     res.json({
       success: true,
       data: {
@@ -2182,7 +1826,6 @@ export const checkSlotPayment = async (req, res) => {
       message: hasPaid ? 'Slot payment found' : 'No payment found for this slot'
     });
   } catch (error) {
-    // console.error('Error checking slot payment:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to check slot payment',
@@ -2195,9 +1838,6 @@ export const checkSlotPayment = async (req, res) => {
 export const getTegaExamPayments = async (req, res) => {
   try {
     const studentId = req.studentId;
-    
-    // console.log(`🔍 Getting all TEGA exam payments for student: ${studentId}`);
-    
     const payments = await RazorpayPayment.find({
       studentId,
       isTegaExam: true,
@@ -2214,16 +1854,12 @@ export const getTegaExamPayments = async (req, res) => {
       paymentDate: p.paymentDate,
       transactionId: p.razorpayPaymentId
     }));
-    
-    // console.log(`✅ Found ${paymentDetails.length} TEGA exam payments`);
-    
     res.json({
       success: true,
       data: paymentDetails,
       count: paymentDetails.length
     });
   } catch (error) {
-    // console.error('Error getting TEGA exam payments:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to get TEGA exam payments',
@@ -2231,4 +1867,3 @@ export const getTegaExamPayments = async (req, res) => {
     });
   }
 };
-

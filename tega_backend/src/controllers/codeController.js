@@ -4,16 +4,13 @@ import { cacheHelpers, cacheKeys } from '../config/redis.js';
 // Judge0 CE configuration
 const JUDGE0_BASE_URL = process.env.JUDGE0_BASE_URL || 'http://localhost:2358';
 const JUDGE0_API_KEY = process.env.JUDGE0_API_KEY || null; // Not needed for CE
-
-// console.log('🔧 Judge0 Configuration:', { JUDGE0_BASE_URL, JUDGE0_API_KEY });
-
 /**
  * Execute code using Judge0 CE
  */
 export const runCode = async (req, res) => {
   try {
     const { language_id, source_code, stdin = '' } = req.body;
-    const userId = req.student?._id || req.studentId || req.user?.id;
+    const userId = req.user?.id || req.student?._id || req.studentId;
 
     // Validate required fields
     if (!language_id || !source_code) {
@@ -51,9 +48,6 @@ export const runCode = async (req, res) => {
     };
 
     // Submit code to Judge0
-    // console.log('🚀 Submitting to Judge0:', `${JUDGE0_BASE_URL}/submissions`);
-    // console.log('📦 Request body:', judge0Request);
-    
     const submissionResponse = await fetch(`${JUDGE0_BASE_URL}/submissions`, {
       method: 'POST',
       headers: {
@@ -62,12 +56,8 @@ export const runCode = async (req, res) => {
       },
       body: JSON.stringify(judge0Request)
     });
-
-    // console.log('📊 Judge0 submission response status:', submissionResponse.status);
-    
     if (!submissionResponse.ok) {
       const errorText = await submissionResponse.text();
-      // console.error('❌ Judge0 submission failed:', errorText);
       throw new Error(`Judge0 submission failed: ${submissionResponse.statusText} - ${errorText}`);
     }
 
@@ -117,7 +107,6 @@ export const runCode = async (req, res) => {
       status: getStatusText(result.status?.id || 0)
     };
 
-
     // Save submission to database
     const submission = new CodeSubmission({
       user: userId,
@@ -146,7 +135,6 @@ export const runCode = async (req, res) => {
     });
 
   } catch (error) {
-    // console.error('Code execution error:', error);
     res.status(500).json({
       success: false,
       message: 'Code execution failed',
@@ -199,7 +187,6 @@ export const getSubmissionHistory = async (req, res) => {
     });
 
   } catch (error) {
-    // console.error('Error fetching submission history:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to fetch submission history'
@@ -239,7 +226,6 @@ export const getSubmission = async (req, res) => {
     });
 
   } catch (error) {
-    // console.error('Error fetching submission:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to fetch submission'
@@ -254,46 +240,19 @@ export const deleteSubmission = async (req, res) => {
   try {
     const { id } = req.params;
     const userId = req.student?._id || req.studentId || req.user?.id;
-
-    // console.log('🗑️ Delete submission request:', { id, userId });
-    // console.log('🔍 User ID types:', { 
-    //   userId: typeof userId, 
-    //   userIdValue: userId,
-    //   reqStudent: req.student,
-    //   reqStudentId: req.studentId,
-    //   reqUser: req.user
-    // });
-
     const submission = await CodeSubmission.findById(id);
 
     if (!submission) {
-      // console.log('❌ Submission not found:', id);
       return res.status(404).json({
         success: false,
         message: 'Submission not found'
       });
     }
-
-    // console.log('📝 Found submission:', { 
-    //   id: submission._id, 
-    //   submissionUserId: submission.user.toString(), 
-    //   requestingUserId: userId,
-    //   userIdMatch: submission.user.toString() === userId
-    // });
-
     // Check if user has permission to delete this submission
     // Convert both to strings for comparison
     const submissionUserId = submission.user.toString();
     const requestingUserId = userId.toString();
-    
-    // console.log('🔍 Final comparison:', {
-    //   submissionUserId,
-    //   requestingUserId,
-    //   areEqual: submissionUserId === requestingUserId
-    // });
-    
     if (submissionUserId !== requestingUserId) {
-      // console.log('❌ Access denied - user mismatch');
       return res.status(403).json({
         success: false,
         message: 'Access denied. You can only delete your own submissions.'
@@ -301,15 +260,12 @@ export const deleteSubmission = async (req, res) => {
     }
 
     await CodeSubmission.findByIdAndDelete(id);
-    // console.log('✅ Submission deleted successfully:', id);
-
     res.json({
       success: true,
       message: 'Submission deleted successfully'
     });
 
   } catch (error) {
-    // console.error('❌ Error deleting submission:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to delete submission'
@@ -347,7 +303,6 @@ export const getUserStats = async (req, res) => {
     });
 
   } catch (error) {
-    // console.error('Error fetching user stats:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to fetch user statistics'
@@ -417,7 +372,6 @@ export const getLanguages = async (req, res) => {
     });
 
   } catch (error) {
-    // console.error('Error fetching languages:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to fetch languages'

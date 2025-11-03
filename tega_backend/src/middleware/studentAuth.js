@@ -20,7 +20,6 @@ const studentAuth = async (req, res, next) => {
       });
     }
 
-    
     const decoded = jwt.verify(token, config.JWT_SECRET);
     
     // Check for both 'id' and 'userId' in the decoded token
@@ -64,8 +63,7 @@ const studentAuth = async (req, res, next) => {
 
     req.student = student;
     req.studentId = student._id;
-    
-    
+
     next();
   } catch (error) {
     res.status(401).json({

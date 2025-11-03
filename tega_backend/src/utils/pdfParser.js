@@ -12,8 +12,7 @@ export async function parsePDFQuestions(filePath, companyName) {
   try {
     const dataBuffer = await fs.readFile(filePath);
     const pdfData = await pdfParse(dataBuffer);
-    
-    
+
     // Extract questions from text
     const questions = extractQuestionsFromText(pdfData.text, companyName, pdfData.numpages);
     
@@ -257,4 +256,3 @@ export default {
   parseWithAI,
   validateQuestions
 };
-

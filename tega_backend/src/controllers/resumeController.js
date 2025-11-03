@@ -62,8 +62,7 @@ const saveResume = async (req, res) => {
       new: true,
       setDefaultsOnInsert: true
     };
-    
-    
+
     // Clean the data to match schema
     const cleanedData = {
       ...resumeData,
@@ -144,8 +143,7 @@ const saveResume = async (req, res) => {
         title: resumeData.personalInfo?.title || ''
       }
     };
-    
-    
+
     const updatedResume = await Resume.findOneAndUpdate(
       query,
       cleanedData,
@@ -202,8 +200,7 @@ const downloadResume = async (req, res) => {
   try {
     const { templateName } = req.params;
     const resumeData = req.body;
-    
-    
+
     // Validate required data
     if (!resumeData) {
       return res.status(400).json({ 
@@ -295,7 +292,6 @@ const uploadResume = async (req, res) => {
       uploadStream.end(req.file.buffer);
     });
 
-
     // Create or update the resume record with Cloudinary file information
     const resumeData = {
       student: studentId,
@@ -321,7 +317,6 @@ const uploadResume = async (req, res) => {
       resumeData,
       options
     );
-
 
     res.status(200).json({
       success: true,
@@ -364,7 +359,6 @@ const handleLocalStorageUpload = async (req, res, studentId) => {
     // Save file to local storage
     fs.writeFileSync(filepath, req.file.buffer);
 
-
     // Create or update the resume record with local file information
     const resumeData = {
       student: studentId,
@@ -390,7 +384,6 @@ const handleLocalStorageUpload = async (req, res, studentId) => {
       resumeData,
       options
     );
-
 
     res.status(200).json({
       success: true,

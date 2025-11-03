@@ -178,4 +178,3 @@ certificateSchema.statics.verifyCertificate = async function(verificationCode) {
 };
 
 export default mongoose.model('Certificate', certificateSchema);
-

@@ -52,7 +52,6 @@ export const uploadPDF = async (req, res) => {
     // Validate extracted questions
     const validation = validateQuestions(parseResult.questions);
 
-
     // Clean up PDF file
     await fs.unlink(req.file.path);
 
@@ -109,7 +108,6 @@ export const saveExtractedQuestions = async (req, res) => {
 
     // Insert into database
     const savedQuestions = await CompanyQuestion.insertMany(questionsWithMeta);
-
 
     res.status(201).json({
       success: true,
@@ -617,4 +615,3 @@ export default {
   getStudentProgress,
   getLeaderboard
 };
-

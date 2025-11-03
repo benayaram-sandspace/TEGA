@@ -195,7 +195,6 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
 
   @override
   void dispose() {
-    _emailController.removeListener(_onEmailChanged);
     _emailController.dispose();
     _passwordController.dispose();
     _fadeController.dispose();
@@ -275,18 +274,42 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
     final password = _passwordController.text.trim();
 
     // Check if this is a new account (not saved) and Remember Me is checked
-    final isNewAccount = !_credentialManager.hasAccount(email);
-    
+    final isNewAccount = !(await _credentialManager.hasCredentials(email));
+
     if (isNewAccount && _rememberMe) {
       // Show save account dialog first
       final shouldSave = await showDialog<bool>(
         context: context,
-        builder: (context) => SaveCredentialsDialog(
-          email: email,
-          password: password,
-          translate: _tr,
-          isMobile: isMobile,
-        ),
+        builder: (context) {
+          return AlertDialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            title: Text(
+              _tr('remember_me_title'),
+              style: const TextStyle(fontWeight: FontWeight.w600),
+            ),
+            content: Text(_tr('remember_me_message')),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(false),
+                child: Text(_tr('dont_save')),
+              ),
+              TextButton(
+                onPressed: () async {
+                  final saved = await _credentialManager.saveCredentials(
+                    domain: 'tega.app',
+                    username: email,
+                    password: password,
+                    displayName: email.split('@').first,
+                  );
+                  Navigator.of(context).pop(saved);
+                },
+                child: Text(_tr('save_credentials')),
+              ),
+            ],
+          );
+        },
       );
 
       if (shouldSave == null || shouldSave == false) {
@@ -294,7 +317,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
         debugPrint('🔍 LOGIN: User cancelled saving account');
         return;
       }
-      
+
       // Account saved successfully, now proceed with login
       debugPrint('🔍 LOGIN: Account saved, proceeding with login');
     }
@@ -781,7 +804,9 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                     width: 24,
                     child: Checkbox(
                       value: _rememberMe,
-                      onChanged: _currentSelectedEmail == null ? _handleRememberMeToggle : null,
+                      onChanged: _currentSelectedEmail == null
+                          ? _handleRememberMeToggle
+                          : null,
                       activeColor: const Color(0xFF27AE60),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(4),
@@ -792,7 +817,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                   Text(
                     _tr('remember_me'),
                     style: TextStyle(
-                      color: _currentSelectedEmail == null 
+                      color: _currentSelectedEmail == null
                           ? const Color(0xFF5D6D7E)
                           : Colors.grey.shade400,
                       fontSize: 14,

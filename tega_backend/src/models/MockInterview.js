@@ -105,4 +105,3 @@ mockInterviewSchema.index({ domain: 1, 'scores.overall': -1 });
 mockInterviewSchema.index({ status: 1, completedAt: -1 });
 
 export default mongoose.model('MockInterview', mockInterviewSchema);
-

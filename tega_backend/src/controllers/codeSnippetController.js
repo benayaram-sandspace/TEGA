@@ -56,7 +56,6 @@ export const createSnippet = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Error creating code snippet:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to create code snippet',
@@ -102,7 +101,6 @@ export const getUserSnippets = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Error fetching user snippets:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to fetch code snippets'
@@ -146,7 +144,6 @@ export const getSnippet = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Error fetching snippet:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to fetch code snippet'
@@ -224,7 +221,6 @@ export const updateSnippet = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Error updating snippet:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to update code snippet',
@@ -270,7 +266,6 @@ export const deleteSnippet = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Error deleting snippet:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to delete code snippet'
@@ -313,7 +308,6 @@ export const getPublicSnippets = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Error fetching public snippets:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to fetch public code snippets'
@@ -361,7 +355,6 @@ export const toggleFavorite = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Error toggling favorite:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to update favorite status'
@@ -421,7 +414,6 @@ export const getSnippetStats = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Error fetching snippet stats:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to fetch snippet statistics'

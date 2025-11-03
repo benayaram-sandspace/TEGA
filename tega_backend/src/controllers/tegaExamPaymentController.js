@@ -80,7 +80,6 @@ export const createTegaExamPaymentOrder = async (req, res) => {
       }
     });
   } catch (error) {
-    // console.error('Error creating Tega Exam payment order:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to create payment order'
@@ -93,9 +92,6 @@ export const processTegaExamDummyPayment = async (req, res) => {
   try {
     const { examId, paymentMethod, paymentDetails } = req.body;
     const userId = req.studentId;
-
-    // console.log('Processing Tega Exam dummy payment for user:', userId, 'exam:', examId);
-
     // Validate exam
     const exam = await Exam.findById(examId);
     if (!exam || !exam.isActive) {
@@ -198,7 +194,6 @@ export const processTegaExamDummyPayment = async (req, res) => {
       }
     });
   } catch (error) {
-    // console.error('Error processing Tega Exam dummy payment:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to process payment'
@@ -227,7 +222,6 @@ export const checkTegaExamPayment = async (req, res) => {
       }
     });
   } catch (error) {
-    // console.error('Error checking Tega Exam payment:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to check payment status'
@@ -255,7 +249,6 @@ export const getTegaExamPaymentHistory = async (req, res) => {
       }
     });
   } catch (error) {
-    // console.error('Error fetching Tega Exam payment history:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to fetch payment history'

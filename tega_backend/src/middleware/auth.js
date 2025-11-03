@@ -2,7 +2,11 @@ import jwt from 'jsonwebtoken'
 
 export function authRequired(req, res, next) {
   const auth = req.headers.authorization || ''
-  const token = auth.startsWith('Bearer ') ? auth.slice(7) : null
+  let token = auth.startsWith('Bearer ') ? auth.slice(7) : null
+  // Fallback to httpOnly cookie set by the server during login
+  if (!token && req.cookies && req.cookies.authToken) {
+    token = req.cookies.authToken
+  }
   if (!token) return res.status(401).json({ message: 'Missing token' })
   try {
     const payload = jwt.verify(token, process.env.JWT_SECRET)
@@ -19,8 +23,7 @@ export function authRequired(req, res, next) {
       id: userId,
       role: payload.role
     };
-    
-    
+
     next()
   } catch (error) {
     return res.status(401).json({ message: 'Invalid token' })

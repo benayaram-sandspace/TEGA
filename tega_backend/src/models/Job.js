@@ -26,5 +26,3 @@ jobSchema.index({ isActive: 1, status: 1, createdAt: -1 });
 jobSchema.index({ title: 'text', description: 'text', company: 'text', location: 'text' });
 
 export default mongoose.model('Job', jobSchema);
-
-

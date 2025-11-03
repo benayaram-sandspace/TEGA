@@ -24,4 +24,3 @@ router.get('/verify/:verificationCode', verifyCertificate);
 router.get('/sample/preview', getCertificateSample);
 
 export default router;
-

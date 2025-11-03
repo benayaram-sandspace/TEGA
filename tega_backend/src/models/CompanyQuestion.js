@@ -126,4 +126,3 @@ companyQuestionSchema.pre('save', function(next) {
 const CompanyQuestion = mongoose.model('CompanyQuestion', companyQuestionSchema);
 
 export default CompanyQuestion;
-

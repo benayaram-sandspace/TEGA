@@ -54,8 +54,7 @@ export const parseQuestionExcel = async (filePath, examId, createdBy, subject) =
     const optionCIndex = getColumnIndex('optionc');
     const optionDIndex = getColumnIndex('optiond');
     const correctIndex = getColumnIndex('correct');
-    
-    
+
     // Check if all required columns were found
     if (snoIndex === -1 || questionIndex === -1 || optionAIndex === -1 || 
         optionBIndex === -1 || optionCIndex === -1 || optionDIndex === -1 || correctIndex === -1) {

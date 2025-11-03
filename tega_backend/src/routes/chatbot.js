@@ -101,7 +101,6 @@ const generateIntelligentResponse = (userMessage) => {
   const matchedPatterns = Object.entries(patterns)
     .filter(([key, pattern]) => pattern.test(lowerMessage))
     .map(([key]) => key);
-  
 
   // Generate contextual response based on matched patterns
   if (matchedPatterns.includes('greeting')) {

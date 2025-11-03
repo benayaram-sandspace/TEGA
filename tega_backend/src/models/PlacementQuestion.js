@@ -85,4 +85,3 @@ placementQuestionSchema.index({ isActive: 1 });
 const PlacementQuestion = mongoose.model('PlacementQuestion', placementQuestionSchema);
 
 export default PlacementQuestion;
-

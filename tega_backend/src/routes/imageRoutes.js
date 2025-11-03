@@ -46,8 +46,7 @@ router.post('/upload', adminAuth, upload.single('image'), (req, res) => {
     }
 
     const imageUrl = `/uploads/question-images/${req.file.filename}`;
-    
-    
+
     res.json({
       success: true,
       message: 'Image uploaded successfully',
@@ -77,8 +76,7 @@ router.post('/upload-multiple', adminAuth, upload.array('images', 10), (req, res
       url: `/uploads/question-images/${file.filename}`,
       filename: file.filename
     }));
-    
-    
+
     res.json({
       success: true,
       message: `${imageUrls.length} images uploaded successfully`,
@@ -101,8 +99,7 @@ router.delete('/delete/:filename', adminAuth, async (req, res) => {
     
     const fs = await import('fs/promises');
     await fs.unlink(filePath);
-    
-    
+
     res.json({
       success: true,
       message: 'Image deleted successfully'
@@ -117,4 +114,3 @@ router.delete('/delete/:filename', adminAuth, async (req, res) => {
 });
 
 export default router;
-

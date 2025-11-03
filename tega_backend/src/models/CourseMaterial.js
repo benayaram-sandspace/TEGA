@@ -117,4 +117,3 @@ courseMaterialSchema.methods.getFormattedFileSize = function() {
 };
 
 export default mongoose.model('CourseMaterial', courseMaterialSchema);
-

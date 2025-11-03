@@ -145,11 +145,9 @@ export const createJob = async (req, res) => {
       status: req.body.status || 'open', // Default to 'open' if not specified
       isActive: req.body.isActive !== undefined ? req.body.isActive : true // Default to true if not specified
     };
-    
-    
+
     const job = await Job.create(jobData);
-    
-    
+
     res.status(201).json({ success: true, data: job });
   } catch (error) {
     res.status(400).json({ success: false, message: 'Failed to create job' });
@@ -194,8 +192,7 @@ export const applyForJob = async (req, res) => {
     
     // Try to get user ID from different possible sources
     const userId = req.user?.id || req.student?._id || req.studentId;
-    
-    
+
     if (!userId) {
       return res.status(401).json({ 
         success: false,
@@ -228,8 +225,7 @@ export const applyForJob = async (req, res) => {
         message: 'Job not found' 
       });
     }
-    
-    
+
     // Check if job is active and accepting applications
     // Allow applications for jobs with status 'open' or 'active'
     const acceptableStatuses = ['open', 'active'];
@@ -237,8 +233,7 @@ export const applyForJob = async (req, res) => {
     // If status is acceptable, allow application regardless of isActive flag
     // (since some jobs might have status 'active' but isActive not set)
     const canApply = isStatusAcceptable;
-    
-    
+
     if (!canApply) {
       return res.status(400).json({ 
         success: false, 
@@ -303,4 +298,3 @@ export const updateJobStatus = async (req, res) => {
     res.status(400).json({ success: false, message: 'Failed to update job status' });
   }
 };
-

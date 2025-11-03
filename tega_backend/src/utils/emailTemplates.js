@@ -5,7 +5,7 @@ import fs from 'fs';
 // Minimal email template with official TEGA logo (small size to avoid "View entire message")
 const getBaseEmailTemplate = (title, content, showLogo = true) => {
   // Multiple fallback options for logo to ensure it displays in all environments
-  const clientUrl = process.env.CLIENT_URL || 'http://localhost:3000';
+  const clientUrl = process.env.CLIENT_URL || process.env.FRONTEND_URL || 'http://localhost:3000';
   const logoUrl = showLogo ? `${clientUrl}/maillogo.jpg` : '';
   
   return `
@@ -42,10 +42,10 @@ export const getLoginNotificationTemplate = (userName, loginTime, userAgent, ipA
     </div>
     
     <div style="text-align: center; margin: 20px 0;">
-      <a href="${process.env.CLIENT_URL || 'http://localhost:3000'}/dashboard" style="background: #1e3a8a; color: white; padding: 12px 24px; text-decoration: none; font-size: 14px; border-radius: 6px; display: inline-block; font-weight: 500;">Go to Dashboard</a>
+      <a href="${process.env.CLIENT_URL || process.env.FRONTEND_URL || 'http://localhost:3000'}/dashboard" style="background: #1e3a8a; color: white; padding: 12px 24px; text-decoration: none; font-size: 14px; border-radius: 6px; display: inline-block; font-weight: 500;">Go to Dashboard</a>
     </div>
     
-    <p style="color: #dc3545; font-size: 12px; margin: 15px 0 0 0; text-align: center;">⚠️ If this wasn't you, please reset your password immediately.</p>
+    <p style="color: #dc3545; font-size: 12px; margin: 15px 0 0 0; text-align: center;"> If this wasn't you, please reset your password immediately.</p>
   `;
   
   return getBaseEmailTemplate('Login Successful - TEGA Platform', content);
@@ -128,7 +128,7 @@ export const getWelcomeTemplate = (userName) => {
     </div>
     
     <div style="text-align: center; margin: 25px 0;">
-      <a href="${process.env.CLIENT_URL || 'http://localhost:3000'}/dashboard" style="background: #1e3a8a; color: white; padding: 15px 30px; text-decoration: none; font-size: 16px; border-radius: 8px; display: inline-block; font-weight: 500;">Start Your Journey</a>
+      <a href="${process.env.CLIENT_URL || process.env.FRONTEND_URL || 'http://localhost:3000'}/dashboard" style="background: #1e3a8a; color: white; padding: 15px 30px; text-decoration: none; font-size: 16px; border-radius: 8px; display: inline-block; font-weight: 500;">Start Your Journey</a>
     </div>
     
     <p style="color: #6c757d; font-size: 13px; margin: 15px 0 0 0; text-align: center;">💡 Complete your profile to get personalized recommendations and better opportunities.</p>
@@ -150,7 +150,7 @@ export const getPrincipalWelcomeTemplate = (principalName, email, password) => {
         <p style="color: #495057; font-size: 14px; margin: 0 0 8px 0;"><strong>Email:</strong> ${email}</p>
         <p style="color: #495057; font-size: 14px; margin: 0;"><strong>Temporary Password:</strong> <code style="background: #f8f9fa; padding: 4px 8px; border-radius: 4px; font-family: 'Courier New', monospace; color: #1e3a8a;">${password}</code></p>
       </div>
-      <p style="color: #dc3545; font-size: 13px; margin: 15px 0 0 0;">⚠️ We strongly recommend changing your password after your first login.</p>
+      <p style="color: #dc3545; font-size: 13px; margin: 15px 0 0 0;"> We strongly recommend changing your password after your first login.</p>
     </div>
     
     <div style="background-color: #f8f9fa; padding: 15px; border-radius: 6px; margin: 15px 0;">
@@ -164,7 +164,7 @@ export const getPrincipalWelcomeTemplate = (principalName, email, password) => {
     </div>
     
     <div style="text-align: center; margin: 25px 0;">
-      <a href="${process.env.CLIENT_URL || 'http://localhost:3000'}/principal/login" style="background: #1e3a8a; color: white; padding: 15px 30px; text-decoration: none; font-size: 16px; border-radius: 8px; display: inline-block; font-weight: 500;">Login to Your Account</a>
+      <a href="${process.env.CLIENT_URL || process.env.FRONTEND_URL || 'http://localhost:3000'}/principal/login" style="background: #1e3a8a; color: white; padding: 15px 30px; text-decoration: none; font-size: 16px; border-radius: 8px; display: inline-block; font-weight: 500;">Login to Your Account</a>
     </div>
     
     <p style="color: #6c757d; font-size: 13px; margin: 15px 0 0 0; text-align: center;">If you did not expect this account creation, please contact your admin immediately.</p>
