@@ -36,6 +36,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
   bool _isLoading = false;
   bool _rememberMe = false;
   String _selectedLanguage = 'EN';
+  String? _currentSelectedEmail; // Track currently selected account email
 
   late AnimationController _fadeController;
   late AnimationController _slideController;
@@ -194,6 +195,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
 
   @override
   void dispose() {
+    _emailController.removeListener(_onEmailChanged);
     _emailController.dispose();
     _passwordController.dispose();
     _fadeController.dispose();
@@ -227,6 +229,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
       setState(() {
         _rememberMe = false;
       });
+      debugPrint('🔍 LOGIN: Remember Me unchecked');
     }
   }
 
@@ -268,6 +271,40 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
     // Dismiss keyboard
     FocusScope.of(context).unfocus();
 
+    final email = _emailController.text.trim();
+    final password = _passwordController.text.trim();
+
+    // Check if this is a new account (not saved) and Remember Me is checked
+    final isNewAccount = !_credentialManager.hasAccount(email);
+    
+    if (isNewAccount && _rememberMe) {
+      // Show save account dialog first
+      final shouldSave = await showDialog<bool>(
+        context: context,
+        builder: (context) => SaveCredentialsDialog(
+          email: email,
+          password: password,
+          translate: _tr,
+          isMobile: isMobile,
+        ),
+      );
+
+      if (shouldSave == null || shouldSave == false) {
+        // User cancelled saving, don't proceed with login
+        debugPrint('🔍 LOGIN: User cancelled saving account');
+        return;
+      }
+      
+      // Account saved successfully, now proceed with login
+      debugPrint('🔍 LOGIN: Account saved, proceeding with login');
+    }
+
+    // Proceed with actual login
+    await _performLogin(email, password);
+  }
+
+  /// Perform the actual login
+  Future<void> _performLogin(String email, String password) async {
     setState(() => _isLoading = true);
 
     try {
@@ -731,7 +768,12 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             GestureDetector(
-              onTap: () => _handleRememberMeToggle(!_rememberMe),
+              onTap: () {
+                // Only allow toggle if it's not a saved account
+                if (_currentSelectedEmail == null) {
+                  _handleRememberMeToggle(!_rememberMe);
+                }
+              },
               child: Row(
                 children: [
                   SizedBox(
@@ -739,7 +781,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                     width: 24,
                     child: Checkbox(
                       value: _rememberMe,
-                      onChanged: _handleRememberMeToggle,
+                      onChanged: _currentSelectedEmail == null ? _handleRememberMeToggle : null,
                       activeColor: const Color(0xFF27AE60),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(4),
@@ -749,8 +791,10 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                   const SizedBox(width: 8),
                   Text(
                     _tr('remember_me'),
-                    style: const TextStyle(
-                      color: Color(0xFF5D6D7E),
+                    style: TextStyle(
+                      color: _currentSelectedEmail == null 
+                          ? const Color(0xFF5D6D7E)
+                          : Colors.grey.shade400,
                       fontSize: 14,
                       fontWeight: FontWeight.w500,
                     ),
