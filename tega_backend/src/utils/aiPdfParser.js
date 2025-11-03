@@ -21,11 +21,9 @@ export async function parseWithAI(filePath, companyName) {
       return await parseWithBasicMethod(filePath, companyName);
     }
 
-
     // Read PDF text
     const dataBuffer = await fs.readFile(filePath);
     const pdfData = await pdfParse(dataBuffer);
-    
 
     // Use Gemini AI to extract questions intelligently
     const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
@@ -68,7 +66,6 @@ Important:
     const result = await model.generateContent(prompt);
     const response = await result.response;
     const aiText = response.text();
-    
 
     // Parse AI response (should be JSON)
     let aiQuestions = [];
@@ -98,7 +95,6 @@ Important:
       uploadedFrom: 'pdf-ai',
       isActive: true
     }));
-
 
     return {
       success: true,
@@ -156,4 +152,3 @@ function mapCategory(aiCategory) {
 export default {
   parseWithAI
 };
-

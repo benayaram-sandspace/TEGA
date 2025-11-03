@@ -8,8 +8,6 @@ const createSampleRealTimeCourse = async () => {
   try {
     // Connect to MongoDB
     await mongoose.connect(process.env.MONGODB_URI);
-    console.log('Connected to MongoDB');
-
     // Create a sample real-time course
     const sampleCourse = new RealTimeCourse({
       title: "Modern React Development",
@@ -258,17 +256,9 @@ const createSampleRealTimeCourse = async () => {
     });
 
     await sampleCourse.save();
-    console.log('✅ Sample real-time course created successfully!');
-    console.log(`Course ID: ${sampleCourse._id}`);
-    console.log(`Course Title: ${sampleCourse.title}`);
-    console.log(`Course Slug: ${sampleCourse.slug}`);
-    console.log(`Access URL: http://localhost:3000/course/${sampleCourse._id}`);
-
   } catch (error) {
-    console.error('❌ Error creating sample course:', error);
   } finally {
     await mongoose.disconnect();
-    console.log('Disconnected from MongoDB');
   }
 };
 

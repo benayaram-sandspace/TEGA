@@ -21,7 +21,6 @@ class Logger {
   // Info level logging
   info(message, ...args) {
     if (this.isDevelopment) {
-      console.log(this.formatMessage('info', message, ...args));
     }
     // In production, you might want to send to external logging service
   }
@@ -29,63 +28,53 @@ class Logger {
   // Error level logging
   error(message, ...args) {
     if (this.isDevelopment) {
-      // console.error(this.formatMessage('error', message, ...args));
     }
     // In production, always log errors
     if (this.isProduction) {
-      // console.error(this.formatMessage('error', message, ...args));
     }
   }
 
   // Warning level logging
   warn(message, ...args) {
     if (this.isDevelopment) {
-      // console.warn(this.formatMessage('warn', message, ...args));
     }
     // In production, log warnings
     if (this.isProduction) {
-      // console.warn(this.formatMessage('warn', message, ...args));
     }
   }
 
   // Debug level logging (development only)
   debug(message, ...args) {
     if (this.isDevelopment) {
-      console.log(this.formatMessage('debug', message, ...args));
     }
   }
 
   // Success level logging
   success(message, ...args) {
     if (this.isDevelopment) {
-      console.log(`✅ ${this.formatMessage('success', message, ...args)}`);
     }
   }
 
   // Database operation logging
   db(operation, message, ...args) {
     if (this.isDevelopment) {
-      console.log(`🗄️ [DB ${operation.toUpperCase()}] ${message}`, ...args);
     }
   }
 
   // API request logging
   api(method, url, status, duration, ...args) {
     if (this.isDevelopment) {
-      console.log(`🌐 [API ${method}] ${url} - ${status} (${duration}ms)`, ...args);
     }
   }
 
   // Security event logging
   security(event, message, ...args) {
     // Always log security events
-    // console.warn(`🔒 [SECURITY ${event.toUpperCase()}] ${message}`, ...args);
   }
 
   // Performance logging
   performance(operation, duration, ...args) {
     if (this.isDevelopment || duration > 1000) { // Log slow operations
-      console.log(`⚡ [PERF] ${operation} took ${duration}ms`, ...args);
     }
   }
 }

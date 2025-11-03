@@ -103,4 +103,3 @@ companyProgressSchema.virtual('overallAccuracy').get(function() {
 const CompanyProgress = mongoose.model('CompanyProgress', companyProgressSchema);
 
 export default CompanyProgress;
-

@@ -128,4 +128,3 @@ placementProgressSchema.pre('save', function(next) {
 const PlacementProgress = mongoose.model('PlacementProgress', placementProgressSchema);
 
 export default PlacementProgress;
-

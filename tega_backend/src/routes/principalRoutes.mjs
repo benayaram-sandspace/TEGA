@@ -140,7 +140,7 @@ router.post('/forgot-password', async (req, res) => {
       // Return OTP in development for testing
       return res.json({
         success: true,
-        message: 'OTP generated (email failed - check console)',
+        message: 'OTP generated',
         otp: process.env.NODE_ENV === 'development' ? otp : undefined,
         emailError: emailError.message
       });
@@ -480,7 +480,6 @@ router.get('/placement-readiness', async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Placement readiness error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to load placement readiness data',
@@ -641,7 +640,6 @@ router.put('/account', async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Account update error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to update account information.'
@@ -739,7 +737,6 @@ router.put('/college', async (req, res) => {
     });
 
   } catch (error) {
-    console.error('College update error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to update college information.'
@@ -853,7 +850,6 @@ router.get('/course-engagement', async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Course engagement error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to load course engagement data',
@@ -943,7 +939,6 @@ router.post('/change-password', async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Password change error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to change password.'

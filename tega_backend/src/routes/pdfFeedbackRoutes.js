@@ -93,7 +93,6 @@ router.get('/debug-attempt/:attemptId', studentAuth, async (req, res) => {
     });
     
   } catch (error) {
-    console.error('Debug route error:', error);
     res.status(500).json({
       success: false,
       message: 'Debug failed',

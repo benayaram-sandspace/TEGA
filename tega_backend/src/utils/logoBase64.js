@@ -9,5 +9,5 @@ export const getLogoBase64 = () => {
 
 // Alternative: Use a reliable external CDN URL
 export const getLogoUrl = () => {
-  return `${process.env.CLIENT_URL || 'http://localhost:3000'}/maillogo.jpg`;
+  return `${process.env.CLIENT_URL || process.env.FRONTEND_URL || 'http://localhost:3000'}/maillogo.jpg`;
 };

@@ -50,7 +50,6 @@ const submitContactForm = async (req, res) => {
     try {
       await sendAdminNotification(submission);
     } catch (emailError) {
-      // console.error('Failed to send admin notification:', emailError);
       // Don't fail the submission if email fails
     }
 
@@ -61,7 +60,6 @@ const submitContactForm = async (req, res) => {
     });
 
   } catch (error) {
-    // console.error('Contact form submission error:', error);
     res.status(500).json({
       success: false,
       message: 'Internal server error. Please try again later.'
@@ -118,7 +116,6 @@ const getAllSubmissions = async (req, res) => {
     });
 
   } catch (error) {
-    // console.error('Get submissions error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to fetch submissions'
@@ -144,7 +141,6 @@ const getSubmissionById = async (req, res) => {
     });
 
   } catch (error) {
-    // console.error('Get submission error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to fetch submission'
@@ -181,7 +177,6 @@ const updateSubmissionStatus = async (req, res) => {
     });
 
   } catch (error) {
-    // console.error('Update submission error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to update submission'
@@ -207,7 +202,6 @@ const deleteSubmission = async (req, res) => {
     });
 
   } catch (error) {
-    // console.error('Delete submission error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to delete submission'
@@ -249,7 +243,6 @@ const getSubmissionStats = async (req, res) => {
     });
 
   } catch (error) {
-    // console.error('Get stats error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to fetch statistics'
@@ -285,7 +278,7 @@ const sendAdminNotification = async (submission) => {
         </div>
         
         <div style="margin-top: 20px; text-align: center;">
-          <a href="${process.env.ADMIN_URL || 'http://localhost:3000'}/admin/contact-submissions" 
+          <a href="${process.env.ADMIN_URL || process.env.CLIENT_URL || 'http://localhost:3000'}/admin/contact-submissions" 
              style="background-color: #4F46E5; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">
             View in Admin Panel
           </a>

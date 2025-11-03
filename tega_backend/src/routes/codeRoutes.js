@@ -8,11 +8,12 @@ import {
   getLanguages 
 } from '../controllers/codeController.js';
 import { studentAuth } from '../middleware/studentAuth.js';
+import { authRequired } from '../middleware/auth.js';
 
 const router = express.Router();
 
-// Code execution routes
-router.post('/run', studentAuth, runCode);
+// Code execution routes - Allow all authenticated users
+router.post('/run', authRequired, runCode);
 router.get('/history', studentAuth, getSubmissionHistory);
 router.get('/submission/:id', studentAuth, getSubmission);
 router.delete('/history/:id', studentAuth, deleteSubmission);
@@ -31,6 +32,4 @@ router.get('/auth-test', studentAuth, (req, res) => {
   });
 });
 
-
 export default router;
-

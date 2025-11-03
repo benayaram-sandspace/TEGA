@@ -33,4 +33,3 @@ router.get('/stats/:userId', getInterviewStats);
 router.get('/leaderboard', getLeaderboard);
 
 export default router;
-

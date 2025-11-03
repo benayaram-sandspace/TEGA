@@ -82,8 +82,6 @@ export const enrollInCourse = async (req, res) => {
     });
 
   } catch (error) {
-    // console.error('❌ Enrollment error:', error);
-    // console.error('❌ Error stack:', error.stack);
     res.status(500).json({
       success: false,
       message: 'Failed to enroll in course',
@@ -128,7 +126,6 @@ export const checkEnrollment = async (req, res) => {
       accessExpiresAt: { $gt: new Date() }
     });
 
-
     const isEnrolled = !!(enrollment || userCourse);
 
     res.json({
@@ -155,35 +152,22 @@ export const checkEnrollment = async (req, res) => {
 export const getStudentEnrollments = async (req, res) => {
   try {
     const studentId = req.studentId;
-    // console.log('🔍 getStudentEnrollments called with studentId:', studentId);
-
     if (!studentId) {
-      // console.log('❌ No studentId found in request');
       return res.status(401).json({
         success: false,
         message: 'Student authentication required'
       });
     }
-
-    // console.log('📊 Fetching enrollments for studentId:', studentId);
     const enrollments = await Enrollment.getStudentEnrollments(studentId);
-    // console.log('📚 Found enrollments:', enrollments.length);
-    
-    // console.log('📊 Fetching userCourses for studentId:', studentId);
     const userCourses = await Enrollment.getActiveCourses(studentId);
-    // console.log('📚 Found userCourses:', userCourses.length);
-
     // Combine both enrollment types
     const allEnrollments = [...enrollments, ...userCourses];
-    // console.log('✅ Total enrollments:', allEnrollments.length);
-
     res.json({
       success: true,
       enrollments: allEnrollments
     });
 
   } catch (error) {
-    // console.error('❌ getStudentEnrollments error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to get enrollments',

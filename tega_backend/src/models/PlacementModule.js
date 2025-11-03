@@ -51,4 +51,3 @@ placementModuleSchema.index({ order: 1 });
 const PlacementModule = mongoose.model('PlacementModule', placementModuleSchema);
 
 export default PlacementModule;
-

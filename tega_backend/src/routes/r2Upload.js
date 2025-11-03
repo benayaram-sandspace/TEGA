@@ -42,7 +42,6 @@ router.post('/profile-picture/generate-upload-url', studentAuth, generateProfile
 // Test route to verify R2 connection
 router.get('/test-r2', async (req, res) => {
   try {
-    // console.log('🔍 Testing R2 connection...');
     const { generatePresignedDownloadUrl } = await import('../config/r2.js');
     
     // Test with a dummy key to see if R2 service is working
@@ -56,7 +55,6 @@ router.get('/test-r2', async (req, res) => {
       r2Key: testKey
     });
   } catch (error) {
-    // console.error('R2 test error:', error);
     res.status(500).json({
       success: false,
       message: 'R2 service error',
@@ -76,9 +74,6 @@ router.post('/fix-profile-picture', async (req, res) => {
         message: 'Student ID and correct R2 key are required' 
       });
     }
-    
-    // console.log('🔍 Fixing profile picture for student:', studentId, 'with key:', correctR2Key);
-    
     // Find the student
     const Student = (await import('../models/Student.js')).default;
     let student = null;
@@ -92,7 +87,7 @@ router.post('/fix-profile-picture', async (req, res) => {
     }
     
     // Update the profile picture with the correct R2 key
-    const publicUrl = `${process.env.SERVER_URL || 'http://localhost:5001'}/api/r2/profile-picture/${correctR2Key}`;
+    const publicUrl = `${process.env.SERVER_URL || process.env.CLIENT_URL || 'http://localhost:5001'}/api/r2/profile-picture/${correctR2Key}`;
     
     student.profilePicture = {
       url: publicUrl,
@@ -106,9 +101,6 @@ router.post('/fix-profile-picture', async (req, res) => {
     student.profilePhoto = publicUrl; // Legacy field
     
     await student.save();
-    
-    // console.log('🔍 Profile picture fixed successfully');
-    
     res.json({
       success: true,
       message: 'Profile picture fixed successfully',
@@ -116,7 +108,6 @@ router.post('/fix-profile-picture', async (req, res) => {
     });
     
   } catch (error) {
-    // console.error('🔍 Fix profile picture error:', error);
     res.status(500).json({ 
       success: false, 
       message: 'Fix failed', 
@@ -128,7 +119,6 @@ router.post('/fix-profile-picture', async (req, res) => {
 // Debug route to list all files in R2 bucket
 router.get('/list-all-files', async (req, res) => {
   try {
-    // console.log('🔍 Listing all files in R2 bucket...');
     const { r2Client, R2_BUCKET_NAME } = await import('../config/r2.js');
     const { ListObjectsV2Command } = await import('@aws-sdk/client-s3');
     
@@ -152,10 +142,6 @@ router.get('/list-all-files', async (req, res) => {
       file.key.includes('1760423649751') || // Your specific file
       file.key.includes('68d27254a697da05f493b9aa') // Your user ID
     );
-    
-    // console.log('🔍 All files in bucket:', allFiles.length);
-    // console.log('🔍 Profile pictures found:', profilePictures);
-    
     res.json({ 
       success: true, 
       message: 'R2 bucket listing successful',
@@ -165,7 +151,6 @@ router.get('/list-all-files', async (req, res) => {
       profilePictures: profilePictures
     });
   } catch (error) {
-    // console.error('🔍 R2 bucket listing failed:', error);
     res.status(500).json({ 
       success: false, 
       message: 'R2 bucket listing failed',
@@ -178,8 +163,6 @@ router.get('/list-all-files', async (req, res) => {
 router.get('/profile-picture/:r2Key', async (req, res) => {
   try {
     const { r2Key } = req.params;
-    // console.log('🔍 Proxy route called for R2 key:', r2Key);
-    
     // Set CORS headers first
     res.header('Access-Control-Allow-Origin', '*');
     res.header('Access-Control-Allow-Methods', 'GET, HEAD');
@@ -207,8 +190,6 @@ router.get('/profile-picture/:r2Key', async (req, res) => {
     response.Body.pipe(res);
     
   } catch (error) {
-    // console.error('Error serving profile picture:', error);
-    
     // Set CORS headers even for errors
     res.header('Access-Control-Allow-Origin', '*');
     res.header('Access-Control-Allow-Methods', 'GET, HEAD');
@@ -216,8 +197,6 @@ router.get('/profile-picture/:r2Key', async (req, res) => {
     
     // If the key doesn't exist, try to find it with different paths
     if (error.Code === 'NoSuchKey') {
-      // console.log('🔍 Key not found, trying alternative paths...');
-      
       try {
         const { r2Client, R2_BUCKET_NAME } = await import('../config/r2.js');
         const { GetObjectCommand } = await import('@aws-sdk/client-s3');
@@ -232,7 +211,6 @@ router.get('/profile-picture/:r2Key', async (req, res) => {
         
         for (const path of alternativePaths) {
           try {
-            // console.log('🔍 Trying path:', path);
             const command = new GetObjectCommand({
               Bucket: R2_BUCKET_NAME,
               Key: path
@@ -252,12 +230,10 @@ router.get('/profile-picture/:r2Key', async (req, res) => {
             return; // Success, exit the function
             
           } catch (pathError) {
-            // console.log('🔍 Path failed:', path, pathError.Code);
             continue; // Try next path
           }
         }
       } catch (fallbackError) {
-        // console.error('🔍 All fallback paths failed:', fallbackError);
       }
     }
     
@@ -271,4 +247,3 @@ router.get('/profile-picture/:r2Key', async (req, res) => {
 });
 
 export default router;
-

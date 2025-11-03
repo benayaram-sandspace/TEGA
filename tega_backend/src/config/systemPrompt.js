@@ -31,7 +31,6 @@ You must respond like:
 ### 1. Function Declaration
 \`\`\`javascript
 function greet() {
-  console.log("Hello!");
 }
 \`\`\`
 - Defined using the **function** keyword.
@@ -40,7 +39,6 @@ function greet() {
 ### 2. Function Expression
 \`\`\`javascript
 const greet = function() {
-  console.log("Hi there!");
 };
 \`\`\`
 - Stored in a variable.

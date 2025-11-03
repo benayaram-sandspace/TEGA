@@ -69,15 +69,8 @@ const questionPaperSchema = new mongoose.Schema({
 
 // Pre-save validation hook
 questionPaperSchema.pre('save', function(next) {
-  console.log('🔍 Pre-save hook triggered:', {
-    isTegaExamPaper: this.isTegaExamPaper,
-    courseId: this.courseId,
-    hasCourseId: !!this.courseId
-  });
-
   // If it's not a TEGA exam paper, courseId is required
   if (!this.isTegaExamPaper && !this.courseId) {
-    console.log('❌ Validation failed: courseId required for non-TEGA exam papers');
     const error = new Error('courseId is required for non-TEGA exam question papers');
     error.name = 'ValidationError';
     return next(error);
@@ -85,11 +78,8 @@ questionPaperSchema.pre('save', function(next) {
   
   // If it's a TEGA exam paper, courseId should not be present
   if (this.isTegaExamPaper && this.courseId) {
-    console.log('⚠️ Warning: TEGA exam question paper should not have courseId, removing it');
     this.courseId = undefined;
   }
-  
-  console.log('✅ Pre-save validation passed');
   next();
 });
 

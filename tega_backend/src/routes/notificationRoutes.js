@@ -64,10 +64,6 @@ router.patch('/admin/:notificationId/read', adminAuth, async (req, res) => {
 router.get('/user', studentAuth, async (req, res) => {
   try {
     const userId = req.studentId;
-    
-    // console.log('🔔 Fetching notifications for student ID:', userId);
-    // console.log('🔗 MongoDB connected:', isMongoConnected());
-    
     // Try MongoDB first, fallback to in-memory storage
     let notifications = [];
     if (isMongoConnected()) {
@@ -76,22 +72,16 @@ router.get('/user', studentAuth, async (req, res) => {
           recipient: userId,
           recipientModel: 'Student'
         }).sort({ createdAt: -1 });
-        // console.log(`📋 Found ${notifications.length} notifications in MongoDB`);
       } catch (error) {
-        // console.error('❌ Error fetching notifications from MongoDB:', error);
       }
     }
     
     // Get from in-memory storage if MongoDB failed or not connected
     if (notifications.length === 0 && userNotifications.has(userId)) {
       notifications = userNotifications.get(userId);
-      // console.log(`💾 Found ${notifications.length} notifications in memory storage`);
     }
-    
-    // console.log(`✅ Returning ${notifications.length} notifications to student`);
     res.json({ success: true, notifications });
   } catch (error) {
-    // console.error('❌ Error in notification route:', error);
     res.status(500).json({ success: false, message: 'Failed to get notifications' });
   }
 });
@@ -177,7 +167,7 @@ router.post('/user', studentAuth, async (req, res) => {
     const { message, type = 'info' } = req.body;
 
     // If MongoDB is connected, store in DB
-    if (isMongoConnected()) {
+  if (isMongoConnected()) {
       const notification = new Notification({
         recipient: req.studentId,
         recipientModel: 'Student',
@@ -186,6 +176,13 @@ router.post('/user', studentAuth, async (req, res) => {
       });
 
       await notification.save();
+      // Emit real-time event to this user's room
+      try {
+        const io = req.app.get('io');
+        if (io) {
+          io.to(`user-${req.studentId}`).emit('notification-created', notification);
+        }
+      } catch {}
       return res.json({ success: true, notification });
     }
 
@@ -204,6 +201,13 @@ router.post('/user', studentAuth, async (req, res) => {
 
     const existing = userNotifications.get(req.studentId) || [];
     userNotifications.set(req.studentId, [fallbackNotification, ...existing]);
+    // Emit real-time event to this user's room
+    try {
+      const io = req.app.get('io');
+      if (io) {
+        io.to(`user-${req.studentId}`).emit('notification-created', fallbackNotification);
+      }
+    } catch {}
     return res.json({ success: true, notification: fallbackNotification, storage: 'memory' });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Failed to create notification' });

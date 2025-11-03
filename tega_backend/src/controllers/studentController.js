@@ -29,14 +29,6 @@ export const getStudentProfile = async (req, res) => {
         message: 'Student not found' 
       });
     }
-    // console.log('🔍 Sending student data to frontend:', {
-    //   dob: student.dob,
-    //   gender: student.gender,
-    //   maritalStatus: student.maritalStatus,
-    //   studentId: student.studentId,
-    //   dobType: typeof student.dob,
-    //   genderType: typeof student.gender
-    // });
     
     res.json({
       success: true,
@@ -84,32 +76,6 @@ export const updateStudentProfile = async (req, res) => {
     const cleaned = { ...src };
     
     // Debug logging
-    // console.log('🔍 Student Profile Update Debug:', {
-    //   studentId,
-    //   requestBody: src,
-    //   cleanedKeys: Object.keys(cleaned),
-    //   dob: {
-    //     original: src.dob,
-    //     cleaned: cleaned.dob,
-    //     type: typeof cleaned.dob
-    //   },
-    //   gender: {
-    //     original: src.gender,
-    //     cleaned: cleaned.gender,
-    //     type: typeof cleaned.gender
-    //   },
-    //   nationality: cleaned.nationality,
-    //   maritalStatus: {
-    //     original: src.maritalStatus,
-    //     cleaned: cleaned.maritalStatus,
-    //     type: typeof cleaned.maritalStatus
-    //   },
-    //   fatherName: cleaned.fatherName,
-    //   fatherOccupation: cleaned.fatherOccupation,
-    //   motherName: cleaned.motherName,
-    //   motherOccupation: cleaned.motherOccupation
-    // });
-
     // Normalize gender - ensure it matches schema enum values
     if (cleaned.gender !== undefined && cleaned.gender !== null && cleaned.gender !== '') {
       const g = String(cleaned.gender).toLowerCase().trim();
@@ -309,54 +275,21 @@ export const updateStudentProfile = async (req, res) => {
     }
     
     // Debug logging after processing
-    // console.log('🔍 After Processing:', {
-    //   dob: student.dob,
-    //   gender: student.gender,
-    //   maritalStatus: student.maritalStatus,
-    //   dobType: typeof student.dob,
-    //   genderType: typeof student.gender,
-    //   maritalStatusType: typeof student.maritalStatus
-    // });
-
     // Check if this is a MongoDB user or in-memory user
     const isValidObjectId = /^[0-9a-fA-F]{24}$/.test(studentId);
 
-
     if (isValidObjectId) {
       // MongoDB user - save to database
-      // console.log('🔍 Saving to MongoDB...');
       try {
       await student.save();
-      // console.log('🔍 Student saved successfully:', {
-      //   _id: student._id,
-      //   dob: student.dob,
-      //   gender: student.gender,
-      //   nationality: student.nationality,
-      //   maritalStatus: student.maritalStatus,
-      //   fatherName: student.fatherName,
-      //   fatherOccupation: student.fatherOccupation,
-      //   motherName: student.motherName,
-      //   motherOccupation: student.motherOccupation,
-      //   dobType: typeof student.dob,
-      //   genderType: typeof student.gender,
-      //   maritalStatusType: typeof student.maritalStatus
-      // });
       } catch (saveError) {
-        // console.error('🔍 Save Error:', saveError);
-        // console.error('🔍 Student data before save:', {
-        //   dob: student.dob,
-        //   gender: student.gender,
-        //   maritalStatus: student.maritalStatus
-        // });
         throw saveError;
       }
     } else {
       // In-memory user - update in memory
-      // console.log('🔍 Updating in-memory user...');
       const userIndex = inMemoryUsers.findIndex(user => user._id === studentId);
       if (userIndex !== -1) {
         inMemoryUsers[userIndex] = { ...inMemoryUsers[userIndex], ...student };
-        // console.log('🔍 In-memory user updated successfully');
       }
     }
 
@@ -366,9 +299,6 @@ export const updateStudentProfile = async (req, res) => {
       message: 'Profile updated successfully'
     });
   } catch (err) {
-
-
-
 
     // Send more helpful messages for common issues
     if (err && err.name === 'ValidationError') {
@@ -421,11 +351,7 @@ export const updateProfilePicture = async (req, res) => {
     // Generate proxy URL to avoid CORS issues
     // Extract just the filename from the R2 key (remove the profile-pictures/ prefix)
     const filename = r2Key.split('/').pop();
-    const publicUrl = `${process.env.SERVER_URL || 'http://localhost:5001'}/api/r2/profile-picture/${filename}`;
-    
-    // console.log('🔍 Generated proxy URL for profile picture:', publicUrl);
-    // console.log('🔍 R2 key:', r2Key, 'Filename:', filename);
-    
+    const publicUrl = `${process.env.SERVER_URL || process.env.CLIENT_URL || 'http://localhost:5001'}/api/r2/profile-picture/${filename}`;
     // Update profile picture data
     student.profilePicture = {
       url: publicUrl,
@@ -461,7 +387,6 @@ export const updateProfilePicture = async (req, res) => {
       }
     });
   } catch (err) {
-    // console.error('Update Profile Picture Error:', err);
     res.status(500).json({
       success: false,
       message: 'Server error while updating profile picture',
@@ -898,4 +823,3 @@ export const getSidebarCounts = async (req, res) => {
     });
   }
 };
-

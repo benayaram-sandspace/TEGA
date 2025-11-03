@@ -4,15 +4,9 @@ import RealTimeProgress from '../models/RealTimeProgress.js';
 
 const setupAdminCourseSystem = async () => {
   try {
-    console.log('🚀 Setting up Admin Course Creation System...');
-
     // Check if we have any existing courses
     const existingCourses = await RealTimeCourse.countDocuments();
-    console.log(`📊 Found ${existingCourses} existing courses`);
-
     if (existingCourses === 0) {
-      console.log('📝 Creating sample admin course...');
-      
       const sampleCourse = new RealTimeCourse({
         title: 'Modern React Development',
         description: 'Learn modern React development with hooks, context, and real-time features. This comprehensive course covers everything from basics to advanced concepts.',
@@ -130,53 +124,24 @@ const setupAdminCourseSystem = async () => {
       });
 
       await sampleCourse.save();
-      console.log('✅ Sample course created successfully!');
-      console.log(`📚 Course ID: ${sampleCourse._id}`);
     }
 
     // Check database connection and models
-    console.log('🔍 Checking database models...');
     const courseCount = await RealTimeCourse.countDocuments();
     const progressCount = await RealTimeProgress.countDocuments();
-    
-    console.log(`📊 Database Status:`);
-    console.log(`   - Courses: ${courseCount}`);
-    console.log(`   - Progress Records: ${progressCount}`);
-
     // Test sample queries
-    console.log('🧪 Testing sample queries...');
     const publishedCourses = await RealTimeCourse.find({ status: 'published' });
-    console.log(`   - Published Courses: ${publishedCourses.length}`);
-    
     const coursesWithPreview = await RealTimeCourse.find({
       'modules.lectures.isPreview': true
     });
-    console.log(`   - Courses with Preview Content: ${coursesWithPreview.length}`);
-
-    console.log('🎉 Admin Course System setup completed successfully!');
-    console.log('');
-    console.log('📋 Next Steps:');
-    console.log('1. Access Admin Dashboard: /admin');
-    console.log('2. Go to Course Builder: /admin/course-builder');
-    console.log('3. Create your first course with video uploads');
-    console.log('4. Publish courses to make them available to students');
-    console.log('');
-    console.log('🔗 Useful URLs:');
-    console.log('- Admin Course Builder: http://localhost:3000/admin/course-builder');
-    console.log('- Student Dashboard: http://localhost:3000/courses');
-    console.log('- Course Player: http://localhost:3000/course/[courseId]');
-
   } catch (error) {
-    console.error('❌ Error setting up admin course system:', error);
     process.exit(1);
   }
 };
 
 // Run the setup
 setupAdminCourseSystem().then(() => {
-  console.log('✅ Setup script completed');
   process.exit(0);
 }).catch((error) => {
-  console.error('❌ Setup script failed:', error);
   process.exit(1);
 });

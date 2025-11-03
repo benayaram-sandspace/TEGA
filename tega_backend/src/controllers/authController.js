@@ -72,7 +72,7 @@ const sendOTPEmail = async (email, otp, firstName) => {
     });
     return true;
   } catch (error) {
-    // console.error('Error sending OTP email:', error);
+
     return false;
   }
 };
@@ -129,7 +129,6 @@ export const login = async (req, res) => {
       email: user.email,
       role: user.role || 'student'
     };
-
 
     // Generate tokens
     const token = generateToken(payload);
@@ -213,7 +212,7 @@ export const login = async (req, res) => {
 
     res.json(response);
   } catch (error) {
-    // console.error('Login error:', error);
+
     res.status(500).json({ 
       success: false, 
       message: 'Server error during login' 
@@ -246,7 +245,7 @@ export const logout = async (req, res) => {
       message: 'Logout successful' 
     });
   } catch (error) {
-    // console.error('Logout error:', error);
+
     res.status(500).json({ 
       success: false, 
       message: 'Server error during logout' 
@@ -291,7 +290,7 @@ export const verifyAuth = async (req, res) => {
       role: decoded.role
     });
   } catch (error) {
-    // console.error('Auth verification error:', error);
+
     res.status(401).json({ 
       success: false, 
       message: 'Invalid or expired token' 
@@ -362,7 +361,7 @@ export const refreshToken = async (req, res) => {
       token: newToken // Include for development
     });
   } catch (error) {
-    // console.error('Token refresh error:', error);
+
     res.status(401).json({ 
       success: false, 
       message: 'Token refresh failed' 
@@ -387,7 +386,7 @@ export const getCSRFToken = async (req, res) => {
       csrfToken 
     });
   } catch (error) {
-    // console.error('CSRF token error:', error);
+
     res.status(500).json({ 
       success: false, 
       message: 'Failed to generate CSRF token' 
@@ -465,7 +464,7 @@ export const register = async (req, res) => {
     });
 
   } catch (error) {
-    // console.error('Registration error:', error);
+
     res.status(500).json({
       success: false,
       message: "Server error during registration"
@@ -528,7 +527,7 @@ export const sendRegistrationOTP = async (req, res) => {
     });
 
   } catch (error) {
-    // console.error('Send OTP error:', error);
+
     res.status(500).json({
       success: false,
       message: "Server error while sending OTP"
@@ -540,7 +539,6 @@ export const sendRegistrationOTP = async (req, res) => {
 export const verifyRegistrationOTP = async (req, res) => {
   try {
     const { email, otp } = req.body;
-    console.log('🔍 Verify OTP request:', { email, otp: otp ? 'provided' : 'missing' });
 
     if (!email || !otp) {
       return res.status(400).json({
@@ -551,10 +549,9 @@ export const verifyRegistrationOTP = async (req, res) => {
 
     // Get stored OTP data
     const otpData = registrationOTPs.get(email.toLowerCase());
-    console.log('🔍 OTP data found:', !!otpData);
-    
+
     if (!otpData) {
-      console.log('❌ No OTP data found for email:', email);
+
       return res.status(400).json({
         success: false,
         message: "OTP not found or expired. Please request a new OTP."
@@ -580,8 +577,7 @@ export const verifyRegistrationOTP = async (req, res) => {
 
     // OTP is valid, create the user
     const { userData } = otpData;
-    console.log('🔍 Creating user with data:', { email: userData.email, firstName: userData.firstName });
-    
+
     // Hash password
     const saltRounds = 12;
     const hashedPassword = await bcrypt.hash(userData.password, saltRounds);
@@ -598,12 +594,11 @@ export const verifyRegistrationOTP = async (req, res) => {
       acceptTerms: true // Required field
     });
 
-    console.log('🔍 Saving user to database...');
     try {
       await user.save();
-      console.log('✅ User saved successfully:', user._id);
+
     } catch (saveError) {
-      console.error('❌ Error saving user:', saveError.message);
+
       throw saveError;
     }
 
@@ -636,7 +631,7 @@ export const verifyRegistrationOTP = async (req, res) => {
     });
 
   } catch (error) {
-    // console.error('Verify OTP error:', error);
+
     res.status(500).json({
       success: false,
       message: "Server error during verification"
@@ -674,7 +669,7 @@ export const checkEmailAvailability = async (req, res) => {
     });
 
   } catch (error) {
-    // console.error('Check email error:', error);
+
     res.status(500).json({
       success: false,
       message: "Server error while checking email"

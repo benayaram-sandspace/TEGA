@@ -95,4 +95,3 @@ router.get('/progress/:companyName', studentAuth, getStudentProgress);
 router.get('/leaderboard/:companyName', studentAuth, getLeaderboard);
 
 export default router;
-

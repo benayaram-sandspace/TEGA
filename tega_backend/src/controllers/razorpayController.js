@@ -11,13 +11,10 @@ const getOfferPriceForStudent = async (studentId, courseId) => {
   try {
     const student = await Student.findById(studentId);
     if (!student || !student.institute) {
-      // console.log('❌ Student not found or no institute:', studentId);
       return null;
     }
 
     const escapedInstitute = student.institute.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    // console.log('🎯 Offer lookup - student:', { id: student._id, institute: student.institute });
-
     // Exact match first
     let offer = await Offer.findOne({
       instituteName: { $regex: new RegExp(`^${escapedInstitute}$`, 'i') },
@@ -25,8 +22,6 @@ const getOfferPriceForStudent = async (studentId, courseId) => {
       validFrom: { $lte: new Date() },
       validUntil: { $gte: new Date() }
     });
-    // console.log('🎯 Offer exact match found:', !!offer, offer ? { instituteName: offer.instituteName, courseOffers: offer.courseOffers?.length || 0 } : 'none');
-
     if (!offer) {
       // Try partial match across active offers
       const allOffers = await Offer.find({ 
@@ -38,7 +33,6 @@ const getOfferPriceForStudent = async (studentId, courseId) => {
         o.instituteName.toLowerCase().includes(student.institute.toLowerCase()) ||
         student.institute.toLowerCase().includes(o.instituteName.toLowerCase())
       );
-      // console.log('🎯 Offer partial match found:', !!offer, offer ? { instituteName: offer.instituteName, courseOffers: offer.courseOffers?.length || 0 } : 'none');
     }
 
     // Ensure we only apply an offer for the requested course
@@ -51,15 +45,12 @@ const getOfferPriceForStudent = async (studentId, courseId) => {
         }
       });
       if (matchingOffer) {
-        // console.log('🎯 Using matched course offer price:', { courseId, offerPrice: matchingOffer.offerPrice });
         return Number(matchingOffer.offerPrice);
       }
-      // console.log('ℹ️ No matching course offer for courseId:', courseId);
     }
 
     return null;
   } catch (e) {
-    // console.log('Offer lookup error:', e.message);
     return null;
   }
 };
@@ -67,33 +58,16 @@ const getOfferPriceForStudent = async (studentId, courseId) => {
 // Create Razorpay order
 export const createOrder = async (req, res) => {
   try {
-    // console.log('🛒 Creating Razorpay order - Request body:', req.body);
-    // console.log('🛒 Student from JWT:', req.student);
-    // console.log('🛒 StudentId from middleware:', req.studentId);
-    // console.log('🛒 All req properties:', Object.keys(req));
-    
     const { courseId, examId, examTitle, attemptNumber, isRetake, offerInfo, slotId } = req.body;
     const studentId = req.studentId; // From studentAuth middleware
-
-    // console.log('🛒 Creating Razorpay order:', { studentId, courseId, examId, examTitle, attemptNumber, isRetake, offerInfo, slotId });
-    // console.log('🛒 Payment type detection:', { 
-    //   hasExamId: !!examId, 
-    //   hasCourseId: !!courseId, 
-    //   courseIdValue: courseId,
-    //   examIdValue: examId 
-    // });
-
     // Check if Razorpay is configured
     if (!razorpay) {
-      // console.log('❌ Razorpay not configured');
       return res.status(503).json({
         success: false,
         message: 'Payment service not configured. Please contact administrator.',
         error: 'Razorpay API keys not configured'
       });
     }
-    // console.log('✅ Razorpay instance is available');
-
     // Handle TEGA exam payments vs course payments
     let course = null;
     let amountToCharge = 0;
@@ -102,15 +76,10 @@ export const createOrder = async (req, res) => {
 
     if (examId && (!courseId || courseId === 'null' || courseId === '')) {
       // TEGA exam payment (standalone exam)
-      // console.log('🎯 Processing TEGA exam payment');
       isTegaExam = true;
       const Exam = (await import('../models/Exam.js')).default;
-      // console.log('🔍 Exam model imported successfully');
       const exam = await Exam.findById(examId);
-      // console.log('🔍 Exam found:', exam ? 'Yes' : 'No', exam ? { id: exam._id, title: exam.title, isTegaExam: exam.isTegaExam } : 'Not found');
-      
       if (!exam) {
-        // console.log('❌ TEGA exam not found for ID:', examId);
         return res.status(404).json({
           success: false,
           message: 'TEGA exam not found'
@@ -141,18 +110,8 @@ export const createOrder = async (req, res) => {
       // Use the price set when creating the TEGA exam
       amountToCharge = exam.price || exam.effectivePrice || 1999;
       courseName = exam.title || 'TEGA Main Exam';
-      
-      // console.log('🎯 TEGA exam payment:', {
-      //   examId: exam._id,
-      //   examTitle: exam.title,
-      //   price: exam.price,
-      //   effectivePrice: exam.effectivePrice,
-      //   amountToCharge: amountToCharge
-      // });
-
     } else if (courseId && courseId !== 'null' && courseId !== '') {
       // Course payment (existing logic)
-      // console.log('📚 Processing course payment');
       const existingPayment = await RazorpayPayment.checkExistingPayment(studentId, courseId);
       if (existingPayment) {
         return res.status(400).json({
@@ -194,11 +153,8 @@ export const createOrder = async (req, res) => {
 
     if (isTegaExam) {
       // TEGA exam payment - use frontend offer info if available, otherwise check backend offers
-      // console.log('🎯 TEGA exam payment - checking for offers...');
-      
       // First, check if frontend sent offer info (preferred)
       if (offerInfo && offerInfo.hasOffer) {
-        // console.log('🎯 Using frontend offer info for TEGA exam:', offerInfo);
         amountToCharge = offerInfo.offerPrice;
         offerDetails = {
           originalPrice: offerInfo.originalPrice,
@@ -206,26 +162,17 @@ export const createOrder = async (req, res) => {
           discountPercentage: offerInfo.discountPercentage,
           offerType: offerInfo.offerType || 'frontend-provided'
         };
-        // console.log('🎯 TEGA exam offer from frontend - using offer price:', amountToCharge);
       } else {
         // Fallback to backend offer checking
-        // console.log('🔍 No frontend offer info, checking backend offers...');
-        
         try {
         // Check for TEGA exam-specific offers for this student's institute
-        // console.log('🔍 Checking TEGA exam offers for student:', studentId, 'exam:', examId);
-        
         // Get student details first
         const Student = (await import('../models/Student.js')).default;
         const student = await Student.findById(studentId);
         
         if (!student) {
-          // console.log('❌ Student not found for offer check');
           return;
         }
-        
-        // console.log('🔍 Student institute:', student.institute);
-        
         // Check for active offers for this institute with TEGA exam offers
         const Offer = (await import('../models/Offer.js')).default;
         const escapedInstitute = student.institute.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -240,9 +187,6 @@ export const createOrder = async (req, res) => {
             { 'tegaExamOffer.examId': examId, 'tegaExamOffer.isActive': true }
           ]
         });
-        
-        // console.log('🔍 Exact offer match result:', offer ? 'Found' : 'Not found');
-        
         // If no exact match, try partial matching
         if (!offer) {
           const allOffers = await Offer.find({
@@ -261,14 +205,11 @@ export const createOrder = async (req, res) => {
           );
           
           if (partialMatch) {
-            // console.log('🔍 Found partial offer match:', partialMatch.instituteName);
             offer = partialMatch;
           }
         }
         
         if (offer) {
-          // console.log('🎯 Found TEGA exam offer for institute:', offer.instituteName);
-          
           // Check for new structure (tegaExamOffers array) with slot support
           if (offer.tegaExamOffers && offer.tegaExamOffers.length > 0) {
             // Use the Offer model method to get slot-specific or general offer
@@ -282,9 +223,6 @@ export const createOrder = async (req, res) => {
                 instituteName: offer.instituteName,
                 slotId: tegaExamOffer.slotId
               };
-              // console.log('🎯 TEGA exam offer found (new structure) - using offer price:', amountToCharge);
-              // console.log('🎯 Slot-specific offer:', slotId ? `Slot ${slotId}` : 'All slots');
-              // console.log('🎯 Offer details:', offerDetails);
             }
           }
           // Check for old structure (tegaExamOffer single object)
@@ -296,15 +234,10 @@ export const createOrder = async (req, res) => {
               discountPercentage: offer.tegaExamOffer.discountPercentage,
               instituteName: offer.instituteName
             };
-            // console.log('🎯 TEGA exam offer found (old structure) - using offer price:', amountToCharge);
-            // console.log('🎯 Offer details:', offerDetails);
           }
         } else {
-          // console.log('🎯 No TEGA exam offer found - using exam price:', amountToCharge);
         }
         } catch (error) {
-          // console.log('🎯 TEGA exam offer check failed:', error.message);
-          // console.log('🎯 Using exam price:', amountToCharge);
         }
       }
     } else {
@@ -326,21 +259,6 @@ export const createOrder = async (req, res) => {
               : rawCoursePrice;
 
       amountToCharge = Number(preferredAmount);
-
-      // console.log('🔍 Course object from database:', {
-      //   id: course._id,
-      //   title: course.title,
-      //   price: rawCoursePrice,
-      //   offerPrice: rawCourseOfferPrice,
-      //   status: course.status,
-      //   chosenAmount: amountToCharge,
-      //   fromFrontend: offerInfo && offerInfo.hasOffer ? {
-      //     finalPrice: rawFrontendFinalPrice,
-      //     offerPrice: rawFrontendOfferPrice,
-      //     originalPrice: Number(offerInfo?.originalPrice) || undefined
-      //   } : null
-      // });
-
       // Build offerDetails if we used an offer
       if (offerInfo && offerInfo.hasOffer && (rawFrontendFinalPrice > 0 || rawFrontendOfferPrice > 0)) {
         offerDetails = {
@@ -349,27 +267,21 @@ export const createOrder = async (req, res) => {
           discountPercentage: offerInfo.discountPercentage,
           instituteName: offerInfo.instituteName
         };
-        // console.log('🎯 Using frontend offer info for Razorpay order:', offerDetails);
       } else {
         // Fallback to backend offer lookup (old system)
         try {
           const offerPrice = await getOfferPriceForStudent(studentId, courseId);
           if (offerPrice !== null && offerPrice >= 0) {
-            // console.log('🎯 Applying backend institute offer price for Razorpay order:', offerPrice);
             amountToCharge = Number(offerPrice);
           }
         } catch (error) {
-          // console.log('Backend offer lookup failed:', error.message);
         }
       }
 
       // Final guard: ensure we never send 0/NaN to Razorpay; use course base price instead
       if (!amountToCharge || Number.isNaN(amountToCharge) || amountToCharge <= 0) {
-        // console.log('⚠️ Invalid amount computed, falling back to course base price');
         amountToCharge = rawCoursePrice > 0 ? rawCoursePrice : 1; // last-resort guard
       }
-
-      // console.log('🎯 Final amount to charge (rupees):', amountToCharge);
     }
 
     // Create Razorpay order
@@ -399,9 +311,7 @@ export const createOrder = async (req, res) => {
     let order;
     try {
       order = await razorpay.orders.create(orderOptions);
-    // console.log('🧾 Razorpay order created with amount (paise):', order.amount, 'chargedAmount (rupees):', amountToCharge);
     } catch (orderError) {
-      // console.error('❌ Error creating Razorpay order:', orderError);
       return res.status(500).json({
         success: false,
         message: 'Failed to create Razorpay order',
@@ -441,18 +351,13 @@ export const createOrder = async (req, res) => {
 
     try {
     await payment.save();
-      // console.log('✅ Payment record saved successfully');
     } catch (saveError) {
-      // console.error('❌ Error saving payment record:', saveError);
       return res.status(500).json({
         success: false,
         message: 'Failed to save payment record',
         error: saveError.message
       });
     }
-
-    // console.log('✅ Razorpay order created:', order.id);
-
     res.json({
       success: true,
       message: 'Order created successfully',
@@ -467,7 +372,6 @@ export const createOrder = async (req, res) => {
     });
 
   } catch (error) {
-    // console.error('❌ Error creating Razorpay order:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to create order',
@@ -479,14 +383,8 @@ export const createOrder = async (req, res) => {
 // Verify payment
 export const verifyPayment = async (req, res) => {
   try {
-    // console.log('🔍 verifyPayment called with body:', req.body);
-    // console.log('🔍 verifyPayment called with studentId:', req.studentId);
-    
     const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body;
     const studentId = req.studentId;
-
-    // console.log('🔍 Verifying Razorpay payment:', { razorpay_order_id, razorpay_payment_id, studentId });
-
     // Verify signature
     const isSignatureValid = verifyRazorpaySignature(
       razorpay_order_id,
@@ -502,26 +400,13 @@ export const verifyPayment = async (req, res) => {
     }
 
     // Find payment record
-    // console.log('🔍 Looking for payment with order ID:', razorpay_order_id);
     const payment = await RazorpayPayment.findByOrderId(razorpay_order_id);
-    // console.log('🔍 Found payment record:', payment);
-    
     if (!payment) {
-      // console.log('❌ Payment record not found for order ID:', razorpay_order_id);
       return res.status(404).json({
         success: false,
         message: 'Payment record not found'
       });
     }
-
-    // console.log('🔍 Payment authorization check:', {
-    //   paymentStudentId: payment.studentId,
-    //   paymentStudentIdString: payment.studentId.toString(),
-    //   requestStudentId: studentId,
-    //   requestStudentIdType: typeof studentId,
-    //   areEqual: payment.studentId.toString() === studentId
-    // });
-
     if (payment.studentId.toString() !== studentId.toString()) {
       return res.status(403).json({
         success: false,
@@ -530,7 +415,6 @@ export const verifyPayment = async (req, res) => {
     }
 
     // Update payment record
-    // console.log('🔍 Updating payment record...');
     payment.status = 'completed';
     payment.razorpayPaymentId = razorpay_payment_id;
     payment.razorpaySignature = razorpay_signature;
@@ -538,14 +422,9 @@ export const verifyPayment = async (req, res) => {
     payment.paymentDate = new Date();
     payment.examAccess = true;
     payment.validUntil = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000); // 1 year
-
-    // console.log('🔍 Saving updated payment record...');
     const savedPayment = await payment.save();
-    // console.log('✅ Payment record saved successfully:', savedPayment._id);
-
     // Create user course access (only for course payments, not TEGA exams)
     if (!payment.isTegaExam && payment.courseId) {
-    // console.log('🔍 Creating user course access...');
     const userCourse = new UserCourse({
       studentId: payment.studentId,
       courseId: payment.courseId,
@@ -553,19 +432,22 @@ export const verifyPayment = async (req, res) => {
       paymentId: payment._id,
       accessExpiresAt: payment.validUntil
     });
-
-    // console.log('🔍 Saving user course access...');
     const savedUserCourse = await userCourse.save();
-    // console.log('✅ User course access saved successfully:', savedUserCourse._id);
+    // CRITICAL: Also create Enrollment record for RealTimeCourse access control
+    const Enrollment = (await import('../models/Enrollment.js')).default;
+    const enrollment = new Enrollment({
+      studentId: payment.studentId,
+      courseId: payment.courseId,
+      isPaid: true, // Mark as paid since payment was successful
+      enrolledAt: new Date(),
+      status: 'active'
+    });
+    const savedEnrollment = await enrollment.save();
     } else if (payment.isTegaExam) {
-      // console.log('🎯 TEGA exam payment verified - exam access granted');
     }
 
     // Send notifications
     await sendPaymentNotifications(payment);
-
-    // console.log('✅ Payment verified successfully:', razorpay_payment_id);
-
     res.json({
       success: true,
       message: 'Payment verified successfully',
@@ -581,7 +463,6 @@ export const verifyPayment = async (req, res) => {
     });
 
   } catch (error) {
-    // console.error('❌ Error verifying payment:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to verify payment',
@@ -595,13 +476,9 @@ export const handleWebhook = async (req, res) => {
   try {
     const signature = req.headers['x-razorpay-signature'];
     const body = JSON.stringify(req.body);
-
-    // console.log('📨 Received Razorpay webhook:', req.body.event);
-
     // Verify webhook signature
     const isSignatureValid = verifyWebhookSignature(body, signature);
     if (!isSignatureValid) {
-      // console.log('❌ Invalid webhook signature');
       return res.status(400).json({ success: false, message: 'Invalid signature' });
     }
 
@@ -616,7 +493,6 @@ export const handleWebhook = async (req, res) => {
     res.json({ success: true, message: 'Webhook processed' });
 
   } catch (error) {
-    // console.error('❌ Error processing webhook:', error);
     res.status(500).json({ success: false, message: 'Webhook processing failed' });
   }
 };
@@ -625,18 +501,13 @@ export const handleWebhook = async (req, res) => {
 const handlePaymentCaptured = async (paymentEntity) => {
   try {
     const { id: razorpay_payment_id, order_id: razorpay_order_id } = paymentEntity;
-
-    // console.log('💰 Payment captured:', { razorpay_payment_id, razorpay_order_id });
-
     // Find payment record
     const payment = await RazorpayPayment.findByOrderId(razorpay_order_id);
     if (!payment) {
-      // console.log('❌ Payment record not found for order:', razorpay_order_id);
       return;
     }
 
     if (payment.status === 'completed') {
-      // console.log('✅ Payment already processed');
       return;
     }
 
@@ -669,16 +540,11 @@ const handlePaymentCaptured = async (paymentEntity) => {
       await userCourse.save();
       }
     } else if (payment.isTegaExam) {
-      // console.log('🎯 TEGA exam payment processed via webhook - exam access granted');
     }
 
     // Send notifications
     await sendPaymentNotifications(payment);
-
-    // console.log('✅ Payment processed successfully via webhook');
-
   } catch (error) {
-    // console.error('❌ Error handling payment captured:', error);
   }
 };
 
@@ -686,13 +552,9 @@ const handlePaymentCaptured = async (paymentEntity) => {
 const handlePaymentFailed = async (paymentEntity) => {
   try {
     const { id: razorpay_payment_id, order_id: razorpay_order_id } = paymentEntity;
-
-    // console.log('❌ Payment failed:', { razorpay_payment_id, razorpay_order_id });
-
     // Find payment record
     const payment = await RazorpayPayment.findByOrderId(razorpay_order_id);
     if (!payment) {
-      // console.log('❌ Payment record not found for order:', razorpay_order_id);
       return;
     }
 
@@ -704,11 +566,7 @@ const handlePaymentFailed = async (paymentEntity) => {
     payment.paymentDate = new Date();
 
     await payment.save();
-
-    // console.log('✅ Payment failure recorded');
-
   } catch (error) {
-    // console.error('❌ Error handling payment failed:', error);
   }
 };
 
@@ -748,7 +606,6 @@ export const getPaymentStatus = async (req, res) => {
     });
 
   } catch (error) {
-    // console.error('❌ Error getting payment status:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to get payment status',
@@ -772,7 +629,6 @@ export const getPaymentHistory = async (req, res) => {
     });
 
   } catch (error) {
-    // console.error('❌ Error getting payment history:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to get payment history',
@@ -818,10 +674,6 @@ const sendPaymentNotifications = async (payment) => {
     });
 
     await adminNotification.save();
-
-    // console.log('✅ Payment notifications sent');
-
   } catch (error) {
-    // console.error('❌ Error sending payment notifications:', error);
   }
 };

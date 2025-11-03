@@ -19,14 +19,6 @@ export const generateExamFeedbackPDF = async (req, res) => {
     const studentId = req.studentId;
 
     // Debug logging (remove in production)
-    // console.log('🔍 PDF Generation Debug:', {
-    //   attemptId,
-    //   studentId,
-    //   studentIdType: typeof studentId,
-    //   hasStudent: !!req.student,
-    //   studentFromReq: req.student?._id
-    // });
-
     if (!attemptId) {
       return res.status(400).json({
         success: false,
@@ -52,19 +44,6 @@ export const generateExamFeedbackPDF = async (req, res) => {
         message: 'Exam attempt not found'
       });
     }
-
-    // console.log('🔍 Exam Attempt Debug:', {
-    //   attemptId,
-    //   examId: examAttempt.examId._id,
-    //   examTitle: examAttempt.examId.title,
-    //   hasQuestionPaperId: !!examAttempt.examId.questionPaperId,
-    //   questionPaperId: examAttempt.examId.questionPaperId,
-    //   hasQuestionsArray: !!examAttempt.examId.questions,
-    //   questionsArrayLength: examAttempt.examId.questions?.length || 0,
-    //   answersCount: examAttempt.answers.size,
-    //   answersKeys: Array.from(examAttempt.answers.keys())
-    // });
-
     if (!examAttempt) {
       return res.status(404).json({
         success: false,
@@ -73,12 +52,6 @@ export const generateExamFeedbackPDF = async (req, res) => {
     }
 
     // Verify ownership
-    // console.log('🔍 Ownership Check:', {
-    //   examAttemptStudentId: examAttempt.studentId._id.toString(),
-    //   requestStudentId: studentId.toString(),
-    //   areEqual: examAttempt.studentId._id.toString() === studentId.toString()
-    // });
-
     // Handle both ObjectId and string comparisons
     const examAttemptStudentId = examAttempt.studentId._id.toString();
     const requestStudentId = studentId.toString();
@@ -107,18 +80,8 @@ export const generateExamFeedbackPDF = async (req, res) => {
           message: 'Exam not found'
         });
       }
-
-      // console.log('🔍 Exam Debug:', {
-      //   examId: exam._id,
-      //   hasQuestionPaperId: !!exam.questionPaperId,
-      //   questionPaperId: exam.questionPaperId,
-      //   hasQuestionsArray: !!exam.questions,
-      //   questionsArrayLength: exam.questions?.length || 0
-      // });
-
       // Use the same logic as getExamQuestions function
       if (exam.questionPaperId) {
-        // console.log('🔍 Fetching questions from question paper...');
         // Import QuestionPaper model
         const QuestionPaper = (await import('../models/QuestionPaper.js')).default;
         const questionPaper = await QuestionPaper.findById(exam.questionPaperId).populate('questions');
@@ -134,30 +97,24 @@ export const generateExamFeedbackPDF = async (req, res) => {
             topic: q.topic,
             difficulty: q.difficulty
           }));
-          // console.log('✅ Found questions via questionPaper:', questions.length);
         }
       } else if (exam.questions && exam.questions.length > 0) {
-        // console.log('🔍 Fetching questions from exam.questions array...');
         questions = await Question.find({ _id: { $in: exam.questions } })
           .select('question options correctAnswer marks explanation subject topic difficulty')
           .sort({ sno: 1 });
-        // console.log('✅ Found questions via exam.questions array:', questions.length);
       }
 
       // If still no questions, try to find questions that were answered
       if (!questions || questions.length === 0) {
-        // console.log('🔍 No questions found via standard methods, trying answered questions...');
         const answeredQuestionIds = Array.from(examAttempt.answers.keys());
         if (answeredQuestionIds.length > 0) {
           questions = await Question.find({ _id: { $in: answeredQuestionIds } })
             .select('question options correctAnswer marks explanation subject topic difficulty')
             .sort({ sno: 1 });
-          // console.log('✅ Found questions via answered questions:', questions.length);
         }
       }
 
     } catch (questionError) {
-      // console.error('❌ Error fetching questions:', questionError);
       return res.status(500).json({
         success: false,
         message: 'Failed to fetch questions for PDF generation',
@@ -166,7 +123,6 @@ export const generateExamFeedbackPDF = async (req, res) => {
     }
 
     if (!questions || questions.length === 0) {
-      // console.log('❌ No questions found by any method');
       return res.status(404).json({
         success: false,
         message: 'Questions not found for this exam',
@@ -178,9 +134,6 @@ export const generateExamFeedbackPDF = async (req, res) => {
         }
       });
     }
-
-    // console.log('✅ Found questions for PDF generation:', questions.length);
-
     // Create PDF document
     const doc = new PDFDocument({
       size: 'A4',
@@ -209,7 +162,6 @@ export const generateExamFeedbackPDF = async (req, res) => {
     try {
       await generatePDFContent(doc, examAttempt, questions);
     } catch (contentError) {
-      // console.error('❌ PDF Content Generation Error:', contentError);
       return res.status(500).json({
         success: false,
         message: 'Failed to generate PDF content',
@@ -221,7 +173,6 @@ export const generateExamFeedbackPDF = async (req, res) => {
     doc.end();
 
   } catch (error) {
-    // console.error('PDF Generation Error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to generate PDF feedback',
@@ -248,7 +199,6 @@ async function addTegaLogo(doc) {
     for (const testPath of possiblePaths) {
       if (fs.existsSync(testPath)) {
         logoPath = testPath;
-        // console.log('✅ Found logo at:', logoPath);
         break;
       }
     }
@@ -260,9 +210,7 @@ async function addTegaLogo(doc) {
         height: 30,
         align: 'right'
       });
-      // console.log('✅ Logo added successfully');
     } else {
-      // console.log('⚠️ Logo file not found, using text fallback');
       // Fallback: Add professional text logo
       doc.fontSize(14)
          .font('Helvetica-Bold')
@@ -272,7 +220,6 @@ async function addTegaLogo(doc) {
          });
     }
   } catch (error) {
-    // console.error('Logo addition error:', error);
     // Fallback: Add professional text logo
     doc.fontSize(14)
        .font('Helvetica-Bold')

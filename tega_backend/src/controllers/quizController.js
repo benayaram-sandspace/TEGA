@@ -73,8 +73,6 @@ export const parseExcelFile = async (req, res) => {
       }
       
       // Log for debugging
-      // console.log(`Row ${rowNum} - Correct Option value:`, correctOption, `(type: ${typeof correctOption})`);
-      
       if (!correctOption || !['A', 'B', 'C', 'D'].includes(correctOption)) {
         errors.push(`Row ${rowNum}: Correct Option must be A, B, C, or D (received: "${correctOption}")`);
         return;
@@ -100,7 +98,6 @@ export const parseExcelFile = async (req, res) => {
       }
     });
   } catch (error) {
-    // console.error('Parse Excel error:', error);
     res.status(500).json({
       success: false,
       message: 'Error parsing Excel file',
@@ -222,9 +219,7 @@ export const uploadQuiz = async (req, res) => {
         },
         { new: true }
       );
-      // console.log('✅ Quiz reference added to course module:', { courseId, moduleId, quizId: quiz._id });
     } catch (updateError) {
-      // console.error('⚠️ Failed to update course module with quiz reference:', updateError);
       // Don't fail the entire operation if module update fails
     }
 
@@ -242,7 +237,6 @@ export const uploadQuiz = async (req, res) => {
       }
     });
   } catch (error) {
-    // console.error('Upload quiz error:', error);
     res.status(500).json({
       success: false,
       message: 'Error uploading quiz',
@@ -288,7 +282,6 @@ export const getQuizByModule = async (req, res) => {
       }
     });
   } catch (error) {
-    // console.error('Get quiz error:', error);
     res.status(500).json({
       success: false,
       message: 'Error loading quiz',
@@ -328,7 +321,6 @@ export const getQuizById = async (req, res) => {
       }
     });
   } catch (error) {
-    // console.error('Get quiz error:', error);
     res.status(500).json({
       success: false,
       message: 'Error fetching quiz',
@@ -413,7 +405,6 @@ export const submitQuizAttempt = async (req, res) => {
       }
     });
   } catch (error) {
-    // console.error('Submit attempt error:', error);
     res.status(500).json({
       success: false,
       message: 'Error submitting quiz',
@@ -446,7 +437,6 @@ export const getQuizAttempts = async (req, res) => {
       }
     });
   } catch (error) {
-    // console.error('Get attempts error:', error);
     res.status(500).json({
       success: false,
       message: 'Error fetching attempts',
@@ -493,7 +483,6 @@ export const getQuizAnalytics = async (req, res) => {
       }
     });
   } catch (error) {
-    // console.error('Get analytics error:', error);
     res.status(500).json({
       success: false,
       message: 'Error fetching analytics',
@@ -510,29 +499,19 @@ export const getQuizStatusForStudent = async (req, res) => {
     const { quizId } = req.params;
     const studentId = req.studentId;
     const MAX_ATTEMPTS = 3;
-
-    // console.log('🔍 getQuizStatusForStudent called:', { quizId, studentId });
-
     // Verify quiz exists first
     const quiz = await Quiz.findById(quizId);
     if (!quiz) {
-      // console.log('❌ Quiz not found:', quizId);
       return res.status(404).json({
         success: false,
         message: 'Quiz not found'
       });
     }
-
-    // console.log('✅ Quiz found:', quiz._id);
-
     // Get all attempts for this student on this quiz
     const attempts = await QuizAttempt.find({
       quizId,
       studentId
     }).sort({ attemptedAt: -1 });
-
-    // console.log('📊 Found attempts:', attempts.length);
-
     const totalAttempts = attempts.length;
     const attemptsLeft = MAX_ATTEMPTS - totalAttempts;
     const canRetake = attemptsLeft > 0;
@@ -560,9 +539,6 @@ export const getQuizStatusForStudent = async (req, res) => {
         passStatus = 'failed';
       }
     }
-
-    // console.log('✅ Returning status:', { status, totalAttempts, attemptsLeft });
-
     res.json({
       success: true,
       data: {
@@ -594,7 +570,6 @@ export const getQuizStatusForStudent = async (req, res) => {
       }
     });
   } catch (error) {
-    // console.error('❌ Get quiz status error:', error);
     res.status(500).json({
       success: false,
       message: 'Error fetching quiz status',
@@ -637,7 +612,6 @@ export const getBestAttempt = async (req, res) => {
       }
     });
   } catch (error) {
-    // console.error('Get best attempt error:', error);
     res.status(500).json({
       success: false,
       message: 'Error fetching best attempt',
