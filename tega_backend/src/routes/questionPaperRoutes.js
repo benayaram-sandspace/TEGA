@@ -1,7 +1,5 @@
 import express from 'express';
 import multer from 'multer';
-import path from 'path';
-import { fileURLToPath } from 'url';
 import {
   getAllQuestionPapers,
   getQuestionPapersByCourse,
@@ -15,24 +13,10 @@ import { adminAuth } from '../middleware/adminAuth.js';
 
 const router = express.Router();
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-// Configure multer for file uploads
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, 'uploads/excel/');
-  },
-  filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
-  }
-});
-
+// Configure multer for in-memory file processing (no disk storage)
 const upload = multer({
-  storage: storage,
+  storage: multer.memoryStorage(), // Store file in memory instead of disk
   fileFilter: (req, file, cb) => {
-    
     if (file.mimetype === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' ||
         file.mimetype === 'application/vnd.ms-excel') {
       cb(null, true);
@@ -60,7 +44,9 @@ const handleMulterError = (err, req, res, next) => {
 router.get('/admin/all', adminAuth, getAllQuestionPapers);
 router.get('/admin/tega-exam', adminAuth, getTegaExamQuestionPapers);
 router.get('/admin/course/:courseId', adminAuth, getQuestionPapersByCourse);
+// Handle both Excel file upload and JSON data upload
 router.post('/admin/upload', adminAuth, upload.single('questionPaper'), handleMulterError, uploadQuestionPaper);
+router.post('/admin/upload-json', adminAuth, uploadQuestionPaper);
 router.delete('/admin/:questionPaperId', adminAuth, deleteQuestionPaper);
 router.get('/admin/template', adminAuth, downloadQuestionTemplate);
 router.get('/admin/:questionPaperId', adminAuth, getQuestionPaperDetails);

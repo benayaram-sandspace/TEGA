@@ -111,23 +111,84 @@ class Transaction {
   });
 
   factory Transaction.fromJson(Map<String, dynamic> json) {
+    // Handle courseId which might be an object (populated) or string
+    String courseId = '';
+    String courseName = 'Unknown Course';
+    
+    if (json['courseId'] != null) {
+      if (json['courseId'] is Map) {
+        // Populated course object
+        courseId = json['courseId']['_id']?.toString() ?? 
+                   json['courseId']['id']?.toString() ?? '';
+        courseName = json['courseId']['title']?.toString() ?? 
+                    json['courseId']['name']?.toString() ?? 
+                    json['courseId']['courseName']?.toString() ?? 
+                    'Unknown Course';
+      } else {
+        // String ID
+        courseId = json['courseId'].toString();
+        courseName = json['courseName']?.toString() ?? 'Unknown Course';
+      }
+    }
+    
+    // Handle amount - might be in paise (cents) or rupees
+    double amount = 0.0;
+    if (json['amount'] != null) {
+      final amountValue = json['amount'];
+      if (amountValue is num) {
+        // If amount is very large (> 10000), it's likely in paise, convert to rupees
+        amount = amountValue > 10000 
+            ? amountValue.toDouble() / 100 
+            : amountValue.toDouble();
+      }
+    }
+    
+    // Handle payment method
+    String paymentMethod = json['paymentMethod']?.toString() ?? 'Unknown';
+    if (paymentMethod == 'Unknown' && json['source'] == 'razorpay_payment') {
+      paymentMethod = 'Razorpay';
+    }
+    
+    // Handle transaction ID - could be in different fields
+    String? transactionId = json['transactionId']?.toString() ?? 
+                           json['razorpayPaymentId']?.toString() ?? 
+                           json['razorpayOrderId']?.toString();
+    
+    // Handle status - normalize to lowercase for consistency
+    String status = (json['status']?.toString() ?? 'pending').toLowerCase();
+    
+    // Handle dates
+    DateTime createdAt = DateTime.now();
+    if (json['createdAt'] != null) {
+      try {
+        createdAt = DateTime.parse(json['createdAt'].toString());
+      } catch (_) {
+        createdAt = DateTime.now();
+      }
+    }
+    
+    DateTime? paymentDate;
+    if (json['paymentDate'] != null) {
+      try {
+        paymentDate = DateTime.parse(json['paymentDate'].toString());
+      } catch (_) {
+        paymentDate = null;
+      }
+    }
+    
     return Transaction(
-      id: json['_id'] ?? '',
-      courseId: json['courseId'] ?? '',
-      courseName: json['courseName'] ?? 'Unknown Course',
-      amount: (json['amount'] ?? 0).toDouble(),
-      currency: json['currency'] ?? 'INR',
-      paymentMethod: json['paymentMethod'] ?? 'Unknown',
-      status: json['status'] ?? 'pending',
-      transactionId: json['transactionId'],
-      createdAt: json['createdAt'] != null
-          ? DateTime.parse(json['createdAt'])
-          : DateTime.now(),
-      paymentDate: json['paymentDate'] != null
-          ? DateTime.parse(json['paymentDate'])
-          : null,
-      description: json['description'],
-      source: json['source'] ?? 'payment',
+      id: json['_id']?.toString() ?? json['id']?.toString() ?? '',
+      courseId: courseId,
+      courseName: courseName,
+      amount: amount,
+      currency: json['currency']?.toString() ?? 'INR',
+      paymentMethod: paymentMethod,
+      status: status,
+      transactionId: transactionId,
+      createdAt: createdAt,
+      paymentDate: paymentDate,
+      description: json['description']?.toString(),
+      source: json['source']?.toString() ?? 'payment',
     );
   }
 

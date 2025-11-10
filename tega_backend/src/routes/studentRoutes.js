@@ -11,7 +11,8 @@ import {
   updateProfilePicture,
   removeProfilePhoto,
   getStudentDashboard,
-  getSidebarCounts 
+  getSidebarCounts,
+  changeStudentPassword
 } from '../controllers/studentController.js';
 import multer from 'multer';
 
@@ -214,6 +215,12 @@ router.delete('/profile/photo',
 router.put('/profile/picture', 
   studentAuth, 
   updateProfilePicture
+);
+
+// Change password route
+router.post('/change-password', 
+  studentAuth, 
+  changeStudentPassword
 );
 
 // Debug route to check user's profile picture data

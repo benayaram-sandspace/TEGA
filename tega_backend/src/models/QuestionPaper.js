@@ -26,22 +26,6 @@ const questionPaperSchema = new mongoose.Schema({
     required: false,
     trim: true
   },
-  fileName: {
-    type: String,
-    required: true
-  },
-  originalFileName: {
-    type: String,
-    required: true
-  },
-  filePath: {
-    type: String,
-    required: true
-  },
-  fileSize: {
-    type: Number,
-    required: true
-  },
   totalQuestions: {
     type: Number,
     default: 0

@@ -124,17 +124,22 @@ class _TransactionHistoryPageState extends State<TransactionHistoryPage> {
     return Scaffold(
       backgroundColor: const Color(0xFFF5F5F5),
       body: SafeArea(
-        child: _isLoading
-            ? const Center(child: CircularProgressIndicator())
-            : _error != null
-            ? _buildErrorState()
-            : _buildContent(),
+        child: RefreshIndicator(
+          onRefresh: _loadData,
+          color: const Color(0xFF9C88FF),
+          child: _isLoading
+              ? const Center(child: CircularProgressIndicator())
+              : _error != null
+              ? _buildErrorState()
+              : _buildContent(),
+        ),
       ),
     );
   }
 
   Widget _buildContent() {
     return SingleChildScrollView(
+      physics: const AlwaysScrollableScrollPhysics(),
       child: Column(
         children: [
           // Combined Header and Stats Section

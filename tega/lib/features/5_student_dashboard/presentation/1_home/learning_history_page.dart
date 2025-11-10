@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../data/learning_history_service.dart';
+import '../../data/student_dashboard_service.dart';
+import '../../../1_authentication/data/auth_repository.dart';
 
 class LearningHistoryPage extends StatefulWidget {
   const LearningHistoryPage({super.key});
@@ -10,15 +12,19 @@ class LearningHistoryPage extends StatefulWidget {
 
 class _LearningHistoryPageState extends State<LearningHistoryPage> {
   final LearningHistoryService _learningService = LearningHistoryService();
+  final StudentDashboardService _dashboardService = StudentDashboardService();
 
   // Data
   LearningStats? _learningStats;
+  List<Map<String, dynamic>> _enrolledCourses = [];
 
   // Loading states
   bool _isLoadingStats = true;
+  bool _isLoadingCourses = true;
 
   // Error states
   String? _statsError;
+  String? _coursesError;
 
   @override
   void initState() {
@@ -27,7 +33,10 @@ class _LearningHistoryPageState extends State<LearningHistoryPage> {
   }
 
   Future<void> _loadData() async {
-    await _loadLearningStats();
+    await Future.wait([
+      _loadLearningStats(),
+      _loadEnrolledCourses(),
+    ]);
   }
 
   Future<void> _loadLearningStats() async {
@@ -46,6 +55,102 @@ class _LearningHistoryPageState extends State<LearningHistoryPage> {
       setState(() {
         _statsError = e.toString();
         _isLoadingStats = false;
+      });
+    }
+  }
+
+  Future<void> _loadEnrolledCourses() async {
+    try {
+      setState(() {
+        _isLoadingCourses = true;
+        _coursesError = null;
+      });
+
+      final auth = AuthService();
+      final headers = auth.getAuthHeaders();
+
+      // Fetch paid courses
+      final paidCourses = await _dashboardService.getEnrolledCourses(headers);
+      
+      // Get progress data to merge with paid courses
+      final progressData = await _dashboardService.getAllProgress(headers);
+      
+      // Create a map of courseId -> progress for quick lookup
+      final progressMap = <String, dynamic>{};
+      for (var progress in progressData) {
+        final courseId = progress['courseId']?.toString() ?? '';
+        if (courseId.isNotEmpty) {
+          progressMap[courseId] = progress;
+        }
+      }
+
+      // Merge paid courses with progress data
+      final mergedCourses = paidCourses.map((course) {
+        final courseId = course['courseId']?.toString() ?? 
+                        course['id']?.toString() ?? 
+                        course['_id']?.toString() ?? '';
+        final progress = progressMap[courseId];
+        
+        // Get course title
+        String title = '';
+        if (course['courseId'] is Map) {
+          title = course['courseId']?['title']?.toString() ?? 
+                 course['courseName']?.toString() ?? 
+                 course['title']?.toString() ?? 
+                 'Untitled Course';
+        } else {
+          title = course['courseName']?.toString() ?? 
+                 course['title']?.toString() ?? 
+                 course['name']?.toString() ?? 
+                 'Untitled Course';
+        }
+        
+        // Get progress percentage
+        double progressPercentage = 0.0;
+        if (progress != null) {
+          progressPercentage = (progress['overallProgress'] ?? 0).toDouble();
+        }
+        
+        // Get enrollment date or last accessed date
+        DateTime? enrollmentDate;
+        if (course['enrolledAt'] != null) {
+          try {
+            enrollmentDate = DateTime.parse(course['enrolledAt'].toString());
+          } catch (_) {}
+        } else if (course['createdAt'] != null) {
+          try {
+            enrollmentDate = DateTime.parse(course['createdAt'].toString());
+          } catch (_) {}
+        } else if (progress != null && progress['lastAccessedAt'] != null) {
+          try {
+            enrollmentDate = DateTime.parse(progress['lastAccessedAt'].toString());
+          } catch (_) {}
+        }
+        
+        return {
+          'id': courseId,
+          'title': title,
+          'progress': progressPercentage,
+          'enrollmentDate': enrollmentDate ?? DateTime.now(),
+          'thumbnail': course['thumbnail']?.toString(),
+        };
+      }).toList();
+
+      // Sort by enrollment date (newest first)
+      mergedCourses.sort((a, b) {
+        final aDate = a['enrollmentDate'] as DateTime;
+        final bDate = b['enrollmentDate'] as DateTime;
+        return bDate.compareTo(aDate);
+      });
+
+      setState(() {
+        _enrolledCourses = mergedCourses;
+        _isLoadingCourses = false;
+      });
+    } catch (e) {
+      setState(() {
+        _coursesError = e.toString();
+        _isLoadingCourses = false;
       });
     }
   }
@@ -80,7 +185,7 @@ class _LearningHistoryPageState extends State<LearningHistoryPage> {
     }
 
     return RefreshIndicator(
-      onRefresh: _loadLearningStats,
+      onRefresh: _loadData,
       color: const Color(0xFF9C88FF),
       child: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
@@ -93,8 +198,8 @@ class _LearningHistoryPageState extends State<LearningHistoryPage> {
             // Search and Filter Section
             _buildSearchAndFilters(),
             const SizedBox(height: 16),
-            // Learning Activities List
-            _buildLearningActivitiesList(),
+            // Enrolled Courses List
+            _buildEnrolledCoursesList(),
           ],
         ),
       ),
@@ -279,20 +384,29 @@ class _LearningHistoryPageState extends State<LearningHistoryPage> {
                     SizedBox(height: isLargeDesktop ? 14 : isDesktop ? 12 : isTablet ? 10 : isSmallScreen ? 6 : 8),
                     _buildStatRow(
                       Icons.school_outlined,
-                      '${stats.coursesEnrolled} Courses',
+                      '${_enrolledCourses.length} Courses',
                       'Enrolled',
+                      isDesktop,
+                      isTablet,
+                      isSmallScreen,
                     ),
                     SizedBox(height: isLargeDesktop ? 12 : isDesktop ? 10 : isTablet ? 8 : isSmallScreen ? 5 : 6),
                     _buildStatRow(
                       Icons.check_circle_outline,
                       '${stats.completedLectures} Completed',
                       'Lectures',
+                      isDesktop,
+                      isTablet,
+                      isSmallScreen,
                     ),
                     SizedBox(height: isLargeDesktop ? 12 : isDesktop ? 10 : isTablet ? 8 : isSmallScreen ? 5 : 6),
                     _buildStatRow(
                       Icons.access_time,
                       stats.formattedTimeSpent,
                       'Study Time',
+                      isDesktop,
+                      isTablet,
+                      isSmallScreen,
                     ),
                   ],
                 ),
@@ -320,7 +434,7 @@ class _LearningHistoryPageState extends State<LearningHistoryPage> {
                   color: Colors.white, 
                   size: isLargeDesktop ? 22 : isDesktop ? 20 : isTablet ? 18 : isSmallScreen ? 16 : 17
                 ),
-                            SizedBox(width: isLargeDesktop ? 14 : isDesktop ? 12 : isTablet ? 10 : 8),
+                SizedBox(width: isLargeDesktop ? 14 : isDesktop ? 12 : isTablet ? 10 : 8),
                 Flexible(
                   child: Text(
                     'Keep up the great work!',
@@ -349,44 +463,46 @@ class _LearningHistoryPageState extends State<LearningHistoryPage> {
     );
   }
 
-  Widget _buildStatRow(IconData icon, String value, String label) {
-    // Get screen width for responsive design
-    final screenWidth = MediaQuery.of(context).size.width;
-    final isTablet = screenWidth >= 600;
-    final isDesktop = screenWidth >= 1024;
-    final isLargeDesktop = screenWidth >= 1440;
-    final isSmallScreen = screenWidth < 400;
+  Widget _buildStatRow(
+    IconData icon,
+    String value,
+    String label,
+    bool isDesktop,
+    bool isTablet,
+    bool isSmallScreen,
+  ) {
+    final isLargeDesktop = MediaQuery.of(context).size.width >= 1440;
     
     return Row(
       children: [
         Icon(
-          icon, 
-          color: Colors.white70, 
-          size: isLargeDesktop 
-              ? 22 
-              : isDesktop 
-              ? 20 
-              : isTablet 
-              ? 18 
-              : isSmallScreen 
-              ? 16 
-              : 17
+          icon,
+          color: Colors.white70,
+          size: isLargeDesktop
+              ? 22
+              : isDesktop
+                  ? 20
+                  : isTablet
+                      ? 18
+                      : isSmallScreen
+                          ? 16
+                          : 17,
         ),
-                            SizedBox(width: isLargeDesktop ? 14 : isDesktop ? 12 : isTablet ? 10 : 8),
+        SizedBox(width: isLargeDesktop ? 14 : isDesktop ? 12 : isTablet ? 10 : 8),
         Flexible(
           child: Text(
             value,
             style: TextStyle(
               color: Colors.white,
-              fontSize: isLargeDesktop 
-                  ? 20 
-                  : isDesktop 
-                  ? 18 
-                  : isTablet 
-                  ? 16 
-                  : isSmallScreen 
-                  ? 14 
-                  : 15,
+              fontSize: isLargeDesktop
+                  ? 20
+                  : isDesktop
+                      ? 18
+                      : isTablet
+                          ? 16
+                          : isSmallScreen
+                              ? 14
+                              : 15,
               fontWeight: FontWeight.w600,
             ),
             maxLines: 1,
@@ -398,16 +514,16 @@ class _LearningHistoryPageState extends State<LearningHistoryPage> {
           child: Text(
             label,
             style: TextStyle(
-              color: Colors.white70, 
-              fontSize: isLargeDesktop 
-                  ? 18 
-                  : isDesktop 
-                  ? 16 
-                  : isTablet 
-                  ? 14 
-                  : isSmallScreen 
-                  ? 12 
-                  : 13
+              color: Colors.white70,
+              fontSize: isLargeDesktop
+                  ? 18
+                  : isDesktop
+                      ? 16
+                      : isTablet
+                          ? 14
+                          : isSmallScreen
+                              ? 12
+                              : 13,
             ),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
@@ -835,9 +951,8 @@ class _LearningHistoryPageState extends State<LearningHistoryPage> {
     );
   }
 
-  Widget _buildLearningActivitiesList() {
+  Widget _buildEnrolledCoursesList() {
     return Container(
-      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
@@ -853,58 +968,260 @@ class _LearningHistoryPageState extends State<LearningHistoryPage> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Header
-          Row(
-            children: [
-              const Text(
-                'Learning Activities',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF2C3E50),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
+            child: const Text(
+              'My Courses',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF2C3E50),
+              ),
+            ),
+          ),
+          // Loading State
+          if (_isLoadingCourses)
+            const Center(
+              child: Padding(
+                padding: EdgeInsets.all(32),
+                child: CircularProgressIndicator(
+                  valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF9C88FF)),
                 ),
               ),
-              const Spacer(),
-              Container(height: 1, width: 100, color: const Color(0xFFE0E0E0)),
-            ],
-          ),
-          const SizedBox(height: 16),
-          // Empty State (matching the reference)
-          Center(
-            child: Column(
-              children: [
-                const SizedBox(height: 40),
-                Container(
-                  padding: const EdgeInsets.all(24),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF5F5F5),
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(
-                    Icons.school_outlined,
-                    size: 48,
-                    color: Colors.grey,
-                  ),
+            )
+          // Error State
+          else if (_coursesError != null)
+            Center(
+              child: Padding(
+                padding: const EdgeInsets.all(32),
+                child: Column(
+                  children: [
+                    const Icon(
+                      Icons.error_outline,
+                      size: 48,
+                      color: Colors.red,
+                    ),
+                    const SizedBox(height: 16),
+                    const Text(
+                      'Failed to load courses',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.red,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      _coursesError!,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(fontSize: 14, color: Colors.grey),
+                    ),
+                    const SizedBox(height: 16),
+                    ElevatedButton.icon(
+                      onPressed: _loadEnrolledCourses,
+                      icon: const Icon(Icons.refresh),
+                      label: const Text('Retry'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF9C88FF),
+                        foregroundColor: Colors.white,
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 16),
-                const Text(
-                  'No learning activities found',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w600,
-                    color: Color(0xFF2C3E50),
+              ),
+            )
+          // Empty State
+          else if (_enrolledCourses.isEmpty)
+            Padding(
+              padding: const EdgeInsets.all(32),
+              child: Center(
+                child: Column(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(24),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF5F5F5),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.school_outlined,
+                        size: 48,
+                        color: Colors.grey,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    const Text(
+                      'No enrolled courses found',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF2C3E50),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    const Text(
+                      'Enroll in courses to see them here',
+                      style: TextStyle(fontSize: 14, color: Colors.grey),
+                    ),
+                  ],
+                ),
+              ),
+            )
+          // Courses List
+          else
+            Column(
+              children: _enrolledCourses.map((course) => _buildCourseCard(course)).toList(),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCourseCard(Map<String, dynamic> course) {
+    final title = course['title'] as String;
+    final progress = (course['progress'] as num).toDouble();
+    final enrollmentDate = course['enrollmentDate'] as DateTime;
+    final progressPercent = progress.round();
+    
+    // Format date
+    final monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 
+                       'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    final dateStr = '${monthNames[enrollmentDate.month - 1]} ${enrollmentDate.day}, ${enrollmentDate.year}';
+    
+    // Progress color
+    final progressColor = progressPercent == 0 
+        ? Colors.red 
+        : progressPercent < 50 
+            ? Colors.orange 
+            : const Color(0xFF4CAF50);
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 1),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        border: Border(
+          bottom: BorderSide(
+            color: const Color(0xFFE9ECEF).withOpacity(0.5),
+            width: 1,
+          ),
+        ),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Course Icon
+          Container(
+            margin: const EdgeInsets.only(top: 2),
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: const Color(0xFF2196F3).withOpacity(0.1),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: const Icon(
+              Icons.menu_book_outlined,
+              color: Color(0xFF2196F3),
+              size: 20,
+            ),
+          ),
+          const SizedBox(width: 16),
+          // Course Details - Expanded to prevent overflow
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Course Title
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF1A1A1A),
+                    height: 1.3,
                   ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
                 ),
                 const SizedBox(height: 8),
-                const Text(
-                  'Start learning to see your activities here',
-                  style: TextStyle(fontSize: 14, color: Colors.grey),
+                // Course Progress Text
+                Text(
+                  'Course progress: $progressPercent%',
+                  style: const TextStyle(
+                    fontSize: 13,
+                    color: Color(0xFF6C757D),
+                    height: 1.4,
+                  ),
                 ),
-                const SizedBox(height: 40),
+                const SizedBox(height: 6),
+                // Date and Status - Wrap in Flexible to prevent overflow
+                Row(
+                  children: [
+                    Flexible(
+                      child: Text(
+                        dateStr,
+                        style: const TextStyle(
+                          fontSize: 13,
+                          color: Color(0xFF6C757D),
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Flexible(
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: progressColor.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(
+                          '$progressPercent% Complete',
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            color: progressColor,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ],
+            ),
+          ),
+          const SizedBox(width: 12),
+          // Progress Indicator - Fixed width to prevent overflow
+          SizedBox(
+            width: 50,
+            child: Padding(
+              padding: const EdgeInsets.only(top: 2),
+              child: Container(
+                height: 4,
+                width: 50,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFE9ECEF),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+                child: FractionallySizedBox(
+                  alignment: Alignment.centerLeft,
+                  widthFactor: (progress / 100).clamp(0.0, 1.0),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: progressColor,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+              ),
             ),
           ),
         ],
       ),
     );
   }
+
 }

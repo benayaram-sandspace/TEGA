@@ -62,15 +62,34 @@ class _CoursesPageState extends State<CoursesPage>
 
       final dashboardService = StudentDashboardService();
 
-      // Fetch enrolled courses from backend
+      // Always fetch all available courses
+      final allCourses = await dashboardService.getAllCourses(headers);
+
+      // Also fetch enrolled courses to mark which ones are enrolled
       final enrolledCourses = await dashboardService.getEnrolledCourses(
         headers,
       );
 
-      // Transform backend data to match UI needs
-      // Backend provides: id, title, instructor, thumbnail, enrolledDate
-      _courses = enrolledCourses.map<Map<String, dynamic>>((course) {
-        // Get the first video URL from modules if available (real-time structure)
+      // Create a set of enrolled course IDs for quick lookup
+      final enrolledCourseIds = <String>{};
+      for (var enrolledCourse in enrolledCourses) {
+        final courseId = enrolledCourse['id']?.toString() ?? 
+                        enrolledCourse['courseId']?.toString() ?? 
+                        enrolledCourse['_id']?.toString() ?? '';
+        if (courseId.isNotEmpty) {
+          enrolledCourseIds.add(courseId);
+        }
+      }
+
+      _hasEnrolledCourses = enrolledCourseIds.isNotEmpty;
+
+      // Transform all courses and mark which ones are enrolled
+      // Backend provides: Real-time course structure with modules and lectures
+      _courses = allCourses.map<Map<String, dynamic>>((course) {
+        final courseId = course['_id']?.toString() ?? course['id']?.toString() ?? '';
+        final isEnrolled = enrolledCourseIds.contains(courseId);
+
+        // Get the first video URL from the first lecture of the first module
         String firstVideoUrl = '';
         if (course['modules'] != null && course['modules'] is List) {
           final modules = course['modules'] as List;
@@ -91,87 +110,32 @@ class _CoursesPageState extends State<CoursesPage>
           }
         }
 
-        final transformedCourse = {
-          'id': course['id']?.toString() ?? course['_id']?.toString() ?? '',
+        return {
+          'id': courseId,
           'title': course['title']?.toString() ?? 'Untitled Course',
           'thumbnail': course['thumbnail']?.toString() ?? '',
           'createdBy':
-              course['instructor'], // Keep as-is, will be handled by _getInstructorName
+              course['instructor'], // Real-time courses have instructor object
           'students': course['enrollmentCount'] ?? 0,
           'difficulty': course['level']?.toString() ?? 'Beginner',
           'duration': _formatRealTimeDuration(course['estimatedDuration']),
-          'progress': 0, // Not provided by enrolled courses endpoint
+          'progress': 0, // Will be updated if progress data is available
           'category': course['category']?.toString() ?? 'General',
-          'isStarted': false, // Will be updated if progress data is available
-          'enrolledDate': course['enrolledDate'], // Available from backend
-          'videoUrl': firstVideoUrl.isNotEmpty
-              ? firstVideoUrl
-              : (course['videoUrl'] ?? ''),
-          'videoLink': firstVideoUrl.isNotEmpty
-              ? firstVideoUrl
-              : (course['videoLink'] ?? ''),
+          'isStarted': isEnrolled, // Mark as started if enrolled
+          'price': course['price'] ?? 0,
+          'isFree': course['isFree'] ?? false,
+          'description': course['description']?.toString() ?? '',
+          'shortDescription': course['shortDescription']?.toString() ?? '',
+          'hasVideoContent': firstVideoUrl.isNotEmpty,
+          'videoUrl': firstVideoUrl, // First video from modules
+          'videoLink': firstVideoUrl, // Same as videoUrl for compatibility
+          'previewVideo': course['previewVideo']?.toString() ?? '',
           'modules':
               course['modules'] ??
               [], // Store full modules for video navigation
+          'isEnrolled': isEnrolled, // Add enrollment status
         };
-        return transformedCourse;
       }).toList();
-
-      _hasEnrolledCourses = _courses.isNotEmpty;
-
-      // If no enrolled courses, fetch available courses
-      if (_courses.isEmpty) {
-        final allCourses = await dashboardService.getAllCourses(headers);
-
-        // Backend provides: Real-time course structure with modules and lectures
-        _courses = allCourses.map<Map<String, dynamic>>((course) {
-          // Get the first video URL from the first lecture of the first module
-          String firstVideoUrl = '';
-          if (course['modules'] != null && course['modules'] is List) {
-            final modules = course['modules'] as List;
-            if (modules.isNotEmpty) {
-              final firstModule = modules[0];
-              if (firstModule['lectures'] != null &&
-                  firstModule['lectures'] is List) {
-                final lectures = firstModule['lectures'] as List;
-                if (lectures.isNotEmpty) {
-                  final firstLecture = lectures[0];
-                  if (firstLecture['videoContent'] != null &&
-                      firstLecture['videoContent']['r2Url'] != null) {
-                    firstVideoUrl = firstLecture['videoContent']['r2Url']
-                        .toString();
-                  }
-                }
-              }
-            }
-          }
-
-          return {
-            'id': course['_id']?.toString() ?? course['id']?.toString() ?? '',
-            'title': course['title']?.toString() ?? 'Untitled Course',
-            'thumbnail': course['thumbnail']?.toString() ?? '',
-            'createdBy':
-                course['instructor'], // Real-time courses have instructor object
-            'students': course['enrollmentCount'] ?? 0,
-            'difficulty': course['level']?.toString() ?? 'Beginner',
-            'duration': _formatRealTimeDuration(course['estimatedDuration']),
-            'progress': 0, // Not applicable for available courses
-            'category': course['category']?.toString() ?? 'General',
-            'isStarted': false, // Not applicable for available courses
-            'price': course['price'] ?? 0,
-            'isFree': course['isFree'] ?? false,
-            'description': course['description']?.toString() ?? '',
-            'shortDescription': course['shortDescription']?.toString() ?? '',
-            'hasVideoContent': firstVideoUrl.isNotEmpty,
-            'videoUrl': firstVideoUrl, // First video from modules
-            'videoLink': firstVideoUrl, // Same as videoUrl for compatibility
-            'previewVideo': course['previewVideo']?.toString() ?? '',
-            'modules':
-                course['modules'] ??
-                [], // Store full modules for video navigation
-          };
-        }).toList();
-      }
 
       if (mounted) {
         setState(() {
@@ -660,7 +624,7 @@ class _CoursesPageState extends State<CoursesPage>
 
   Widget _buildModernEnrollButton(Map<String, dynamic> course, bool isDesktop) {
     final hasPrice = course['price'] != null && course['price'] > 0;
-    final isEnrolled = _hasEnrolledCourses;
+    final isEnrolled = course['isEnrolled'] == true || course['isStarted'] == true;
 
     String buttonText;
     Color buttonColor;

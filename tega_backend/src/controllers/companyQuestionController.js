@@ -1,3 +1,5 @@
+
+
 import CompanyQuestion from '../models/CompanyQuestion.js';
 import CompanyQuizAttempt from '../models/CompanyQuizAttempt.js';
 import CompanyProgress from '../models/CompanyProgress.js';
@@ -246,22 +248,34 @@ export const deleteCompanyQuestion = async (req, res) => {
 
 export const getCompanyList = async (req, res) => {
   try {
+    const { category, difficulty } = req.query;
+    
+    // Build filter object for counting questions
+    const questionFilter = { isActive: true };
+    if (category) questionFilter.category = category;
+    if (difficulty) questionFilter.difficulty = difficulty;
+    
     const companies = await CompanyQuestion.distinct('companyName');
     
-    // Get question count for each company
+    // Get question count for each company with filters applied
     const companiesWithCount = await Promise.all(
       companies.map(async (company) => {
         const count = await CompanyQuestion.countDocuments({ 
           companyName: company,
-          isActive: true
+          ...questionFilter
         });
         return { name: company, questionCount: count };
       })
     );
 
+    // Filter out companies with 0 questions when filters are applied
+    const filteredCompanies = (category || difficulty) 
+      ? companiesWithCount.filter(company => company.questionCount > 0)
+      : companiesWithCount;
+
     res.json({
       success: true,
-      companies: companiesWithCount.sort((a, b) => a.name.localeCompare(b.name))
+      companies: filteredCompanies.sort((a, b) => a.name.localeCompare(b.name))
     });
   } catch (error) {
     res.status(500).json({

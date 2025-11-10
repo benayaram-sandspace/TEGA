@@ -301,7 +301,13 @@ export const verifyAuth = async (req, res) => {
 // Secure token refresh
 export const refreshToken = async (req, res) => {
   try {
-    const refreshToken = req.cookies.refreshToken;
+    // Try to get refresh token from cookies first (production/preferred method)
+    let refreshToken = req.cookies.refreshToken;
+    
+    // Fallback to request body for development (less secure, but needed for localStorage fallback)
+    if (!refreshToken && process.env.NODE_ENV !== 'production' && req.body?.refreshToken) {
+      refreshToken = req.body.refreshToken;
+    }
     
     if (!refreshToken) {
       return res.status(401).json({ 
@@ -358,7 +364,8 @@ export const refreshToken = async (req, res) => {
 
     res.json({
       success: true,
-      token: newToken // Include for development
+      token: newToken, // Include for development
+      refreshToken: process.env.NODE_ENV !== 'production' ? newRefreshToken : undefined // Include for development only
     });
   } catch (error) {
 

@@ -87,7 +87,9 @@ router.post('/fix-profile-picture', async (req, res) => {
     }
     
     // Update the profile picture with the correct R2 key
-    const publicUrl = `${process.env.SERVER_URL || process.env.CLIENT_URL || 'http://localhost:5001'}/api/r2/profile-picture/${correctR2Key}`;
+    const serverUrl = process.env.SERVER_URL || process.env.API_URL || 
+      (process.env.NODE_ENV === 'development' ? `http://localhost:${process.env.PORT || 5001}` : process.env.CLIENT_URL || 'http://localhost:5001');
+    const publicUrl = `${serverUrl}/api/r2/profile-picture/${correctR2Key}`;
     
     student.profilePicture = {
       url: publicUrl,

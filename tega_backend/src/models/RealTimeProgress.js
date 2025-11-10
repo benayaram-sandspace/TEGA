@@ -486,28 +486,121 @@ realTimeProgressSchema.methods.updateRealTimeActivity = function(activityData) {
 };
 
 realTimeProgressSchema.methods.calculateOverallProgress = function() {
-  if (this.lectureProgress.length === 0) {
+  // Production-ready: Calculate module and lecture progress dynamically
+  const totalLectures = this.overallProgress.totalLectures || 0;
+  const totalModules = this.overallProgress.totalModules || 0;
+  
+  if (totalLectures === 0) {
     this.overallProgress.percentage = 0;
-    return;
+    this.overallProgress.completedLectures = 0;
+    this.overallProgress.completedModules = 0;
+    return this.save();
   }
   
-  const totalLectures = this.overallProgress.totalLectures;
-  const completedLectures = this.lectureProgress.filter(l => l.isCompleted).length;
-  
+  // Calculate completed lectures
+  const completedLectures = this.lectureProgress.filter(l => l.isCompleted === true).length;
   this.overallProgress.completedLectures = completedLectures;
+  
+  // Calculate overall progress percentage
   this.overallProgress.percentage = Math.round((completedLectures / totalLectures) * 100);
   
-  // Calculate total time spent
+  // Calculate total time spent from all lectures
   this.overallProgress.timeSpent = this.lectureProgress.reduce((total, lecture) => {
-    return total + (lecture.timeSpent || 0);
+    return total + (Number(lecture.timeSpent) || 0);
   }, 0);
   
-  // Check if course is completed
-  if (this.overallProgress.percentage === 100 && !this.isCompleted) {
+  // Group lectures by module to calculate module progress
+  const lecturesByModule = {};
+  this.lectureProgress.forEach(lecture => {
+    const moduleId = lecture.moduleId;
+    if (!moduleId) return;
+    
+    if (!lecturesByModule[moduleId]) {
+      lecturesByModule[moduleId] = {
+        total: 0,
+        completed: 0
+      };
+    }
+    lecturesByModule[moduleId].total++;
+    if (lecture.isCompleted) {
+      lecturesByModule[moduleId].completed++;
+    }
+  });
+  
+  // Update module progress and calculate completed modules
+  let completedModulesCount = 0;
+  Object.keys(lecturesByModule).forEach(moduleId => {
+    const moduleStats = lecturesByModule[moduleId];
+    const moduleProgressIndex = this.moduleProgress.findIndex(m => m.moduleId === moduleId);
+    
+    // Calculate module progress percentage
+    const moduleProgressPercentage = moduleStats.total > 0 
+      ? Math.round((moduleStats.completed / moduleStats.total) * 100)
+      : 0;
+    
+    const isModuleCompleted = moduleStats.total > 0 && moduleStats.completed === moduleStats.total;
+    
+    if (moduleProgressIndex >= 0) {
+      // Update existing module progress
+      const moduleProgress = this.moduleProgress[moduleProgressIndex];
+      moduleProgress.progress = moduleProgressPercentage;
+      moduleProgress.isCompleted = isModuleCompleted;
+      
+      // Update time spent for module (sum of all lectures in module)
+      moduleProgress.timeSpent = this.lectureProgress
+        .filter(l => l.moduleId === moduleId)
+        .reduce((sum, l) => sum + (Number(l.timeSpent) || 0), 0);
+      
+      if (isModuleCompleted && !moduleProgress.isCompleted) {
+        moduleProgress.completedAt = new Date();
+      }
+      
+      moduleProgress.lastAccessedAt = new Date();
+    } else {
+      // Create new module progress entry (should not happen in production, but handle gracefully)
+      const lecture = this.lectureProgress.find(l => l.moduleId === moduleId);
+      if (lecture) {
+        this.moduleProgress.push({
+          moduleId,
+          title: lecture.title || `Module ${moduleId}`,
+          progress: moduleProgressPercentage,
+          isCompleted: isModuleCompleted,
+          completedAt: isModuleCompleted ? new Date() : undefined,
+          timeSpent: this.lectureProgress
+            .filter(l => l.moduleId === moduleId)
+            .reduce((sum, l) => sum + (Number(l.timeSpent) || 0), 0),
+          lastAccessedAt: new Date()
+        });
+      }
+    }
+    
+    if (isModuleCompleted) {
+      completedModulesCount++;
+    }
+  });
+  
+  // Update completed modules count
+  this.overallProgress.completedModules = completedModulesCount;
+  
+  // Check if course is completed (all modules completed or all lectures completed)
+  const isFullyCompleted = (completedModulesCount === totalModules && totalModules > 0) || 
+                          (completedLectures === totalLectures && totalLectures > 0);
+  
+  if (isFullyCompleted && !this.isCompleted) {
     this.isCompleted = true;
     this.completedAt = new Date();
     this.completionPercentage = 100;
+    this.overallProgress.percentage = 100;
+    
+    // Mark certificate as eligible when course is completed
+    if (!this.certificate.isEligible) {
+      this.certificate.isEligible = true;
+    }
   }
+  
+  // Update last accessed timestamp
+  this.overallProgress.lastAccessedAt = new Date();
+  this.lastUpdatedAt = new Date();
   
   return this.save();
 };

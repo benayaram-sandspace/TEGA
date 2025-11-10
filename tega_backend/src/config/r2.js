@@ -19,16 +19,16 @@
  * - R2_PUBLIC_URL: Custom domain for public URLs
  *
  * ## Features:
- * ✅ Multipart uploads for large files (1GB+)
- * ✅ Progress tracking and callbacks
- * ✅ Signed URL generation for secure access
- * ✅ Comprehensive error handling
- * ✅ Input validation and sanitization
- * ✅ Production-ready logging
- * ✅ Automatic retry mechanisms
- * ✅ Metadata support
- * ✅ Public URL generation
- * ✅ Service health checks
+ *    Multipart uploads for large files (1GB+)
+ *    Progress tracking and callbacks
+ *    Signed URL generation for secure access
+ *    Comprehensive error handling
+ *    Input validation and sanitization
+ *    Production-ready logging
+ *    Automatic retry mechanisms
+ *    Metadata support
+ *    Public URL generation
+ *    Service health checks
  *
  * ## Usage Examples:
  *
@@ -551,12 +551,20 @@ class R2Service {
   }
 }
 
-// Create instance for internal use
-const r2ServiceInstance = new R2Service();
+// Create instance for internal use - lazy initialization
+let r2ServiceInstance = null;
+
+const getR2ServiceInstance = () => {
+  if (!r2ServiceInstance) {
+    r2ServiceInstance = new R2Service();
+  }
+  return r2ServiceInstance;
+};
 
 // Export individual functions to match old r2.js API
 export const uploadToR2 = async (file, key, contentType, metadata = {}) => {
-  return await r2ServiceInstance.uploadFile(key, file, contentType, {
+  const service = getR2ServiceInstance();
+  return await service.uploadFile(key, file, contentType, {
     metadata,
   });
 };
@@ -566,7 +574,8 @@ export const generatePresignedUploadUrl = async (
   contentType,
   expiresIn = 3600
 ) => {
-  return await r2ServiceInstance.generatePresignedUploadUrl(
+  const service = getR2ServiceInstance();
+  return await service.generatePresignedUploadUrl(
     key,
     contentType,
     expiresIn
@@ -574,29 +583,41 @@ export const generatePresignedUploadUrl = async (
 };
 
 export const generatePresignedDownloadUrl = async (key, expiresIn = 3600) => {
-  return await r2ServiceInstance.getSignedUrl(key, expiresIn);
+  const service = getR2ServiceInstance();
+  return await service.getSignedUrl(key, expiresIn);
 };
 
 export const deleteFromR2 = async (key) => {
-  return await r2ServiceInstance.deleteFile(key);
+  const service = getR2ServiceInstance();
+  return await service.deleteFile(key);
 };
 
 export const fileExistsInR2 = async (key) => {
-  const result = await r2ServiceInstance.getFileMetadata(key);
+  const service = getR2ServiceInstance();
+  const result = await service.getFileMetadata(key);
   return result.exists;
 };
 
 export const getR2FileMetadata = async (key) => {
-  return await r2ServiceInstance.getFileMetadata(key);
+  const service = getR2ServiceInstance();
+  return await service.getFileMetadata(key);
 };
 
 export const generateR2Key = (prefix, filename) => {
-  return r2ServiceInstance.generateKey(prefix, filename);
+  const service = getR2ServiceInstance();
+  return service.generateKey(prefix, filename);
 };
 
 // Export additional utilities that might be used by MERN team
-export const r2Client = r2ServiceInstance.s3Client;
-export const R2_BUCKET_NAME = r2ServiceInstance.bucketName;
+export const getR2Client = () => {
+  const service = getR2ServiceInstance();
+  return service.s3Client;
+};
+
+export const getR2BucketName = () => {
+  const service = getR2ServiceInstance();
+  return service.bucketName;
+};
 
 // Also export the service instance for advanced usage
-export default r2ServiceInstance;
+export default getR2ServiceInstance;

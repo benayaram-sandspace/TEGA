@@ -134,14 +134,14 @@ export const generateExamFeedbackPDF = async (req, res) => {
         }
       });
     }
-    // Create PDF document
+    // Create PDF document with optimized margins (0.75 inch = 54 points for more space)
     const doc = new PDFDocument({
       size: 'A4',
       margins: {
-        top: 50,
-        bottom: 50,
-        left: 50,
-        right: 50
+        top: 54,
+        bottom: 54,
+        left: 54,
+        right: 54
       }
     });
 
@@ -239,11 +239,11 @@ function addWatermark(doc) {
   
   // Override endPage to add watermark
   doc.on('endPage', function() {
-    // Add subtle watermark with TEGA logo
+    // Add subtle watermark with TEGA logo in maroon
     doc.save();
     doc.rotate(-45, { origin: [doc.page.width / 2, doc.page.height / 2] });
     doc.fontSize(60)
-       .fillColor('#E0E0E0', 0.1) // Very subtle watermark
+       .fillColor('#8B0000', 0.05) // Very subtle maroon watermark
        .text('TEGA', doc.page.width / 2 - 90, doc.page.height / 2 - 30);
     doc.restore();
     
@@ -255,307 +255,484 @@ function addWatermark(doc) {
 }
 
 /**
- * Generate main PDF content
+ * Generate main PDF content with clean, well-formatted layout
  */
 async function generatePDFContent(doc, examAttempt, questions) {
   const { studentId, examId, score, totalMarks, correctAnswers, wrongAnswers, unattempted, percentage, endTime } = examAttempt;
   
-  // Professional Header Section with TEGA branding
-  doc.fontSize(24)
+  // Set consistent margins (0.75 inch = 54 points for more efficient space usage)
+  const margin = 54;
+  let currentY = margin;
+  
+  // TEGA EXAM FEEDBACK REPORT - Main Title with maroon theme (compact)
+  doc.fontSize(20) // Reduced from 22
      .font('Helvetica-Bold')
-     .fillColor('#003366')
-     .text('TEGA EXAM FEEDBACK REPORT', 0, 60, {
+     .fillColor('#8B0000') // Maroon color
+     .text('TEGA EXAM FEEDBACK REPORT', margin, currentY, {
        align: 'center',
-       width: doc.page.width
+       width: doc.page.width - (2 * margin)
      });
-
-  // Add professional line separator
-  doc.strokeColor('#003366')
-     .lineWidth(2)
-     .moveTo(doc.page.width / 2 - 80, 90)
-     .lineTo(doc.page.width / 2 + 80, 90)
+  
+  currentY += 22; // Reduced spacing
+  
+  // Add decorative line under title
+  doc.strokeColor('#8B0000')
+     .lineWidth(1) // Thinner line
+     .moveTo(margin + 50, currentY - 6)
+     .lineTo(doc.page.width - margin - 50, currentY - 6)
      .stroke();
-
-  // Add generation timestamp
-  doc.fontSize(10)
+  
+  currentY += 12; // Reduced spacing
+  
+  // Generated on timestamp (smaller)
+  doc.fontSize(9) // Reduced from 10
      .font('Helvetica')
-     .fillColor('#555555')
-     .text(`Generated on: ${new Date().toLocaleString('en-IN')}`, 0, 100, {
+     .fillColor('#666666')
+     .text(`Generated on: ${new Date().toLocaleString('en-IN')}`, margin, currentY, {
        align: 'center',
-       width: doc.page.width
+       width: doc.page.width - (2 * margin)
      });
-
-  // Student Details Section with professional styling
-  doc.rect(40, 120, doc.page.width - 80, 100)
-     .fillColor('#F5F5F5')
-     .fill()
-     .strokeColor('#003366')
-     .lineWidth(1)
-     .stroke();
-
-  doc.fontSize(14)
-     .font('Helvetica-Bold')
-     .fillColor('#003366')
-     .text('Student Details', 50, 135);
-
-  // Student details with proper formatting
+  
+  currentY += 15; // Reduced spacing
+  
+  // Compact layout: Combine all summary sections in a two-column layout
+  // Left column: Student Details + Exam Details
+  // Right column: Performance Summary
+  
+  const leftColumnWidth = (doc.page.width - (2 * margin)) / 2 - 10;
+  const rightColumnWidth = (doc.page.width - (2 * margin)) / 2 - 10;
+  const leftColumnX = margin;
+  const rightColumnX = margin + leftColumnWidth + 20;
+  
+  // Left Column: Student Details
+  addSectionHeader(doc, 'Student Details', leftColumnX, currentY, leftColumnWidth);
+  currentY += 22; // Reduced spacing
+  
   const studentDetails = [
     { label: 'Name', value: `${studentId.firstName} ${studentId.lastName}` },
     { label: 'Student ID', value: studentId.studentId || 'N/A' },
     { label: 'Institute', value: studentId.institute || 'N/A' },
     { label: 'Email', value: studentId.email || 'N/A' }
   ];
-
-  let yPos = 155;
+  
+  let leftColumnY = currentY;
   studentDetails.forEach(detail => {
-    doc.fontSize(12)
-       .font('Helvetica-Bold')
-       .fillColor('#003366')
-       .text(`${detail.label}:`, 50, yPos);
-    
-    doc.fontSize(12)
-       .font('Helvetica')
-       .fillColor('#555555')
-       .text(detail.value, 50, yPos + 15, {
-         width: doc.page.width - 100
-       });
-    
-    yPos += 30;
+    leftColumnY = addFieldWithLabel(doc, detail.label, detail.value, leftColumnX, leftColumnY, leftColumnWidth);
   });
-
-  // Horizontal rule separator
-  doc.strokeColor('#003366')
-     .lineWidth(1)
-     .moveTo(40, 240)
-     .lineTo(doc.page.width - 40, 240)
-     .stroke();
-
-  // Exam Details Section with professional styling
-  doc.fontSize(14)
-     .font('Helvetica-Bold')
-     .fillColor('#003366')
-     .text('Exam Details', 50, 255);
-
-  // Exam name and subject in dark blue bold
-  doc.fontSize(13)
-     .font('Helvetica-Bold')
-     .fillColor('#003366')
-     .text(`Exam: ${examId.title}`, 50, 275);
-
-  doc.fontSize(13)
-     .font('Helvetica-Bold')
-     .fillColor('#003366')
-     .text(`Subject: ${examId.subject || 'N/A'}`, 50, 295);
-
-  // Date and duration in smaller gray text
-  doc.fontSize(11)
-     .font('Helvetica')
-     .fillColor('#555555')
-     .text(`Date: ${new Date(endTime).toLocaleDateString('en-IN')}`, 50, 315);
-
-  doc.fontSize(11)
-     .font('Helvetica')
-     .fillColor('#555555')
-     .text(`Duration: ${examId.duration} minutes`, 50, 330);
-
-  // Performance Summary Section with light blue box
-  doc.rect(40, 350, doc.page.width - 80, 120)
-     .fillColor('#E3F2FD')
-     .fill()
-     .strokeColor('#003366')
-     .lineWidth(1)
-     .stroke();
-
-  doc.fontSize(14)
-     .font('Helvetica-Bold')
-     .fillColor('#003366')
-     .text('Performance Summary', 50, 365);
-
-  // Performance metrics with consistent alignment
-  const metrics = [
-    { label: 'Total Questions', value: questions.length },
-    { label: 'Correct Answers', value: correctAnswers },
-    { label: 'Incorrect Answers', value: wrongAnswers },
-    { label: 'Unattempted', value: unattempted },
+  
+  // Right Column: Performance Summary
+  addSectionHeader(doc, 'Performance Summary', rightColumnX, currentY, rightColumnWidth);
+  currentY += 22; // Reduced spacing
+  
+  const performanceDetails = [
+    { label: 'Total Questions', value: questions.length.toString() },
+    { label: 'Correct Answers', value: correctAnswers.toString() },
+    { label: 'Incorrect Answers', value: wrongAnswers.toString() },
+    { label: 'Unattempted', value: unattempted.toString() },
     { label: 'Score', value: `${score}/${totalMarks}` },
     { label: 'Percentage', value: `${percentage.toFixed(2)}%` }
   ];
-
-  let metricsYPos = 385;
-  metrics.forEach((metric, index) => {
-    const xPos = 50 + (index % 2) * 250;
-    if (index % 2 === 0 && index > 0) metricsYPos += 25;
-    
-    doc.fontSize(12)
-       .font('Helvetica-Bold')
-       .fillColor('#003366')
-       .text(`${metric.label}:`, xPos, metricsYPos);
-    
-    doc.fontSize(12)
-       .font('Helvetica-Bold')
-       .fillColor('#003366')
-       .text(metric.value, xPos + 120, metricsYPos);
+  
+  let rightColumnY = currentY;
+  performanceDetails.forEach(detail => {
+    rightColumnY = addFieldWithLabel(doc, detail.label, detail.value, rightColumnX, rightColumnY, rightColumnWidth);
   });
-
-  // Overall performance suggestion
-  const performanceSuggestion = generatePerformanceSuggestion(percentage);
-  doc.fontSize(12)
-     .font('Helvetica-BoldOblique')
-     .fillColor(percentage >= 70 ? '#00A859' : '#D32F2F')
-     .text(performanceSuggestion, 50, metricsYPos + 30, {
-       width: doc.page.width - 100
-     });
-
-  // Check if we need a new page for questions
-  if (metricsYPos + 100 > doc.page.height - 100) {
+  
+  // Use the maximum Y from both columns
+  currentY = Math.max(leftColumnY, rightColumnY) + 12;
+  
+  // Exam Details section (full width, below the columns)
+  addSectionHeader(doc, 'Exam Details', margin, currentY);
+  currentY += 22; // Reduced spacing
+  
+  const examDetails = [
+    { label: 'Exam', value: examId.title },
+    { label: 'Subject', value: examId.subject || 'N/A' },
+    { label: 'Date', value: new Date(endTime).toLocaleDateString('en-IN') },
+    { label: 'Duration', value: `${examId.duration} minutes` }
+  ];
+  
+  examDetails.forEach(detail => {
+    currentY = addFieldWithLabel(doc, detail.label, detail.value, margin, currentY);
+  });
+  
+  // Overall Feedback
+  currentY += 12;
+  const overallFeedback = generateOverallFeedback(percentage, correctAnswers, questions.length);
+  currentY = addFieldWithLabel(doc, 'Overall Feedback', overallFeedback, margin, currentY);
+  
+  currentY += 15; // Reduced spacing
+  
+  // Check if we need a new page for questions (only if really necessary)
+  if (currentY > doc.page.height - 150) {
     doc.addPage();
     addWatermark(doc);
+    currentY = margin;
   }
-
-  // Question-wise Feedback Section with professional styling
-  doc.fontSize(16)
-     .font('Helvetica-Bold')
-     .fillColor('#003366')
-     .text('Question-wise Feedback', 50, 50);
-
-  let currentY = 70;
-  const questionsPerPage = 3; // Optimized for better spacing
-  let questionCount = 0;
-
+  
+  // Section 4: Question-wise Feedback
+  addSectionHeader(doc, 'Question-wise Feedback', margin, currentY);
+  currentY += 20; // Reduced spacing
+  
   for (let i = 0; i < questions.length; i++) {
     const question = questions[i];
     const userAnswer = examAttempt.answers.get(question._id.toString());
     const isCorrect = userAnswer === question.correctAnswer;
     
-    // Check if we need a new page
-    if (currentY > doc.page.height - 250) {
+    // Check if we need a new page (more aggressive check - only break when really needed)
+    // Calculate estimated height needed for this question (more compact)
+    const baseHeight = 180;
+    const optionsHeight = question.options ? question.options.length * 11 : 0;
+    const estimatedQuestionHeight = baseHeight + optionsHeight;
+    
+    // Only add page if question truly won't fit
+    if (currentY + estimatedQuestionHeight > doc.page.height - margin - 30) {
       doc.addPage();
       addWatermark(doc);
-      currentY = 50;
+      currentY = margin;
     }
-
-    // Add a subtle background for each question with proper padding
-    doc.rect(40, currentY - 5, doc.page.width - 80, 180)
-       .fillColor('#F5F5F5')
-       .fill()
-       .strokeColor('#E0E0E0')
-       .lineWidth(1)
+    
+    // Store starting Y position for question container
+    const questionStartY = currentY;
+    
+    // Calculate question block height dynamically (more compact)
+    // Reuse optionsHeight from above, but recalculate for background (slightly different spacing)
+    const backgroundOptionsHeight = question.options && question.options.length > 0 ? question.options.length * 12 : 0;
+    const estimatedHeight = 180 + backgroundOptionsHeight; // More compact estimate
+    const bgColor = isCorrect ? '#F8FCF8' : '#FFFBFB'; // Very light green/red
+    
+    // Draw background rectangle first (before text, so text appears on top)
+    doc.rect(margin - 5, questionStartY - 5, doc.page.width - (2 * margin) + 10, estimatedHeight)
+       .fillColor(bgColor)
+       .fill();
+    
+    // Draw border
+    doc.rect(margin - 5, questionStartY - 5, doc.page.width - (2 * margin) + 10, estimatedHeight)
+       .strokeColor(isCorrect ? '#28A745' : '#DC3545')
+       .lineWidth(1.2)
        .stroke();
-
-    // Question number with bold font
-    doc.fontSize(12)
+    
+    // Question header with status and better styling
+    const status = isCorrect ? 'Correct' : 'Incorrect';
+    const statusColor = isCorrect ? '#28A745' : '#DC3545';
+    const statusIcon = isCorrect ? '✓' : '✗';
+    
+    doc.fontSize(12) // Reduced from 13
        .font('Helvetica-Bold')
-       .fillColor('#003366')
-       .text(`Question ${i + 1}`, 50, currentY + 10);
-
-    // Correct/Incorrect indicator with proper colors
-    doc.fontSize(12)
+       .fillColor('#8B0000')
+       .text(`Question ${i + 1}`, margin, currentY + 3);
+    
+    doc.fontSize(10) // Reduced from 11
        .font('Helvetica-Bold')
-       .fillColor(isCorrect ? '#00A859' : '#D32F2F')
-       .text(isCorrect ? 'Correct' : 'Incorrect', doc.page.width - 120, currentY + 10);
-
-    currentY += 30;
-
-    // Question text with proper formatting
-    doc.fontSize(11)
+       .fillColor(statusColor)
+       .text(`${statusIcon} ${status}`, doc.page.width - margin - 100, currentY + 3);
+    
+    currentY += 18; // Reduced from 22
+    
+    // Question text with better formatting (compact)
+    doc.fontSize(9.5) // Reduced from 10
+       .font('Helvetica-Bold')
+       .fillColor('#8B0000')
+       .text('Q:', margin, currentY);
+    
+    const questionHeight = doc.heightOfString(question.question, {
+      width: doc.page.width - margin - 18 - margin,
+      align: 'justify',
+      lineGap: 2
+    });
+    
+    doc.fontSize(9.5) // Reduced from 10
        .font('Helvetica')
-       .fillColor('#555555')
-       .text(question.question, 50, currentY, {
-         width: doc.page.width - 100,
-         align: 'justify'
+       .fillColor('#333333')
+       .text(question.question, margin + 18, currentY, {
+         width: doc.page.width - margin - 18 - margin,
+         align: 'justify',
+         lineGap: 2
        });
-
-    currentY += 35;
-
-    // User's answer and correct answer side-by-side
-    doc.fontSize(11)
+    
+    currentY += questionHeight + 8; // Reduced spacing
+    
+    // Display options if available (and remove HTML entities like &amp;)
+    if (question.options && question.options.length > 0) {
+      doc.fontSize(8.5) // Reduced from 9
+         .font('Helvetica-Bold')
+         .fillColor('#666666')
+         .text('Options:', margin, currentY);
+      
+      currentY += 10; // Reduced from 12
+      
+      question.options.forEach((option, optIndex) => {
+        const optionLetter = String.fromCharCode(65 + optIndex); // A, B, C, D
+        const cleanOption = (option || '').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"');
+        const isUserChoice = userAnswer === option;
+        const isCorrectOption = option === question.correctAnswer;
+        
+        let optionColor = '#666666';
+        if (isCorrectOption) {
+          optionColor = '#28A745';
+        } else if (isUserChoice && !isCorrect) {
+          optionColor = '#DC3545';
+        }
+        
+        doc.fontSize(8.5) // Reduced from 9
+           .font(isUserChoice || isCorrectOption ? 'Helvetica-Bold' : 'Helvetica')
+           .fillColor(optionColor)
+           .text(`${optionLetter}. ${cleanOption}`, margin + 12, currentY, {
+             width: doc.page.width - margin - 12 - margin,
+             lineGap: 1.5
+           });
+        
+        currentY += 11; // Reduced from 14
+      });
+      
+      currentY += 6; // Reduced from 8
+    }
+    
+    // User's answer with proper spacing - label on separate line (compact)
+    doc.fontSize(9.5) // Reduced from 10
        .font('Helvetica-Bold')
-       .fillColor('#555555')
-       .text(`Your Answer: ${userAnswer || 'Not Attempted'}`, 50, currentY);
-
-    doc.fontSize(11)
+       .fillColor('#8B0000')
+       .text('Your Answer:', margin, currentY);
+    
+    currentY += 12; // Reduced from 15
+    
+    const userAnswerText = userAnswer || 'Not Attempted';
+    const userAnswerClean = userAnswerText.replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"');
+    
+    doc.fontSize(9) // Reduced from 10
+       .font('Helvetica')
+       .fillColor(userAnswer ? '#333333' : '#DC3545')
+       .text(userAnswerClean, margin + 8, currentY, {
+         width: doc.page.width - margin - 8 - margin,
+         lineGap: 1.5
+       });
+    
+    const userAnswerHeight = doc.heightOfString(userAnswerClean, {
+      width: doc.page.width - margin - 8 - margin,
+      lineGap: 1.5
+    });
+    
+    currentY += userAnswerHeight + 10; // Reduced from 12
+    
+    // Correct answer with proper spacing - label on separate line (compact)
+    doc.fontSize(9.5) // Reduced from 10
        .font('Helvetica-Bold')
-       .fillColor(isCorrect ? '#00A859' : '#D32F2F')
-       .text(`Correct Answer: ${question.correctAnswer}`, 50, currentY + 15);
-
-    currentY += 35;
-
-    // Dynamic feedback message in italic gray font
+       .fillColor('#8B0000')
+       .text('Correct Answer:', margin, currentY);
+    
+    currentY += 12; // Reduced from 15
+    
+    const correctAnswerClean = (question.correctAnswer || '').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"');
+    
+    doc.fontSize(9) // Reduced from 10
+       .font('Helvetica')
+       .fillColor('#28A745')
+       .text(correctAnswerClean, margin + 8, currentY, {
+         width: doc.page.width - margin - 8 - margin,
+         lineGap: 1.5
+       });
+    
+    const correctAnswerHeight = doc.heightOfString(correctAnswerClean, {
+      width: doc.page.width - margin - 8 - margin,
+      lineGap: 1.5
+    });
+    
+    currentY += correctAnswerHeight + 12; // Reduced from 15
+    
+    // Individual feedback with better styling (compact)
     const individualFeedback = generateIndividualFeedback(question, isCorrect, userAnswer);
     if (individualFeedback) {
-      doc.fontSize(10)
+      doc.fontSize(9.5) // Reduced from 10
+         .font('Helvetica-Bold')
+         .fillColor('#8B0000')
+         .text('Feedback:', margin, currentY);
+      
+      currentY += 12; // Reduced from 15
+      
+      doc.fontSize(8.5) // Reduced from 9
          .font('Helvetica-Oblique')
-         .fillColor('#555555')
-         .text(`Feedback: ${individualFeedback}`, 50, currentY, {
-           width: doc.page.width - 100,
-           align: 'justify'
+         .fillColor('#666666')
+         .text(individualFeedback, margin + 8, currentY, {
+           width: doc.page.width - margin - 8 - margin,
+           align: 'justify',
+           lineGap: 1.5
          });
-      currentY += 25;
+      
+      const feedbackHeight = doc.heightOfString(individualFeedback, {
+        width: doc.page.width - margin - 8 - margin,
+        align: 'justify',
+        lineGap: 1.5
+      });
+      
+      currentY += feedbackHeight + 10; // Reduced from 12
     }
-
-    currentY += 20; // Space between questions
-    questionCount++;
+    
+    // Add separator line with maroon color (lighter and thinner)
+    currentY += 8; // Reduced spacing
+    doc.strokeColor('#8B0000')
+       .lineWidth(0.3) // Thinner line
+       .moveTo(margin, currentY)
+       .lineTo(doc.page.width - margin, currentY)
+       .stroke();
+    
+    currentY += 10; // Reduced spacing
   }
-
-  // Final page with recommendations - Professional Design
-  doc.addPage();
-  addWatermark(doc);
-
-  // Professional header for recommendations page
-  doc.fontSize(18)
-     .font('Helvetica-Bold')
-     .fillColor('#003366')
-     .text('Recommendations & Next Steps', 0, 50, {
-       align: 'center',
-       width: doc.page.width
-     });
-
-  // Add professional line separator
-  doc.strokeColor('#003366')
-     .lineWidth(2)
-     .moveTo(doc.page.width / 2 - 100, 80)
-     .lineTo(doc.page.width / 2 + 100, 80)
-     .stroke();
-
+  
+  // Recommendations & Next Steps (continue on same page if space available)
+  // Check if we have enough space, otherwise add new page
+  if (currentY > doc.page.height - 200) {
+    doc.addPage();
+    addWatermark(doc);
+    currentY = margin;
+  } else {
+    currentY += 20; // Small gap before recommendations
+  }
+  
+  // Section 5: Recommendations & Next Steps
+  addSectionHeader(doc, 'Recommendations & Next Steps', margin, currentY);
+  currentY += 20; // Reduced spacing
+  
   const recommendations = generateRecommendations(percentage, examAttempt, questions);
   
-  // Professional card design for recommendations
-  doc.rect(40, 100, doc.page.width - 80, 200)
-     .fillColor('#F5F5F5')
+  // Calculate recommendations height dynamically
+  const recommendationsHeight = doc.heightOfString(recommendations, {
+    width: doc.page.width - (2 * margin) - 30,
+    lineGap: 2
+  }) + 40;
+  
+  // Add background box for recommendations (dynamic height)
+  doc.rect(margin - 5, currentY - 5, doc.page.width - (2 * margin) + 10, recommendationsHeight)
+     .fillColor('#F8F8F8')
      .fill()
-     .strokeColor('#003366')
-     .lineWidth(1)
+     .strokeColor('#8B0000')
+     .lineWidth(0.8)
      .stroke();
-
-  doc.fontSize(14)
-     .font('Helvetica-Bold')
-     .fillColor('#003366')
-     .text('Personalized Recommendations', 50, 120);
+  
+  currentY += 8;
+  
+  // Split recommendations into lines and add as bullet points
+  const recommendationLines = recommendations.split('\n');
+  recommendationLines.forEach(line => {
+    if (line.trim()) {
+      if (line.startsWith('•')) {
+        // Bullet point with maroon bullet
+        doc.fontSize(10) // Reduced from 11
+           .font('Helvetica')
+           .fillColor('#8B0000')
+           .text('•', margin, currentY);
+        
+        doc.fontSize(10) // Reduced from 11
+           .font('Helvetica')
+           .fillColor('#333333')
+           .text(line.substring(1).trim(), margin + 12, currentY, {
+             width: doc.page.width - (2 * margin) - 12,
+             lineGap: 1.5
+           });
+        currentY += 15; // Reduced spacing
+      } else {
+        // Regular text
+        doc.fontSize(10) // Reduced from 11
+           .font('Helvetica')
+           .fillColor('#333333')
+           .text(line, margin, currentY, {
+             width: doc.page.width - (2 * margin),
+             lineGap: 1.5
+           });
+        currentY += 15; // Reduced spacing
+      }
+    }
+  });
+  
+  // Enhanced footer with maroon styling
+  currentY = doc.page.height - 80;
+  
+  // Add decorative line above footer
+  doc.strokeColor('#8B0000')
+     .lineWidth(1)
+     .moveTo(margin, currentY - 10)
+     .lineTo(doc.page.width - margin, currentY - 10)
+     .stroke();
   
   doc.fontSize(11)
-     .font('Helvetica')
-     .fillColor('#555555')
-     .text(recommendations, 50, 145, {
-       width: doc.page.width - 100,
-       align: 'justify'
-     });
-
-  // Professional footer
-  doc.fontSize(10)
      .font('Helvetica-Bold')
-     .fillColor('#555555')
-     .text('Generated by TEGA - Training and Employment Generation Activity', 0, doc.page.height - 50, {
+     .fillColor('#8B0000')
+     .text('Generated by TEGA - Training and Employment Generation Activity', margin, currentY, {
        align: 'center',
-       width: doc.page.width
+       width: doc.page.width - (2 * margin)
      });
-
+  
   doc.fontSize(9)
      .font('Helvetica')
-     .fillColor('#555555')
-     .text(`Generated on: ${new Date().toLocaleString('en-IN')}`, 0, doc.page.height - 30, {
+     .fillColor('#666666')
+     .text(`Generated on: ${new Date().toLocaleString('en-IN')}`, margin, currentY + 15, {
        align: 'center',
-       width: doc.page.width
+       width: doc.page.width - (2 * margin)
      });
+}
+
+/**
+ * Add a section header with maroon styling
+ */
+function addSectionHeader(doc, title, x, y, width = null) {
+  const sectionWidth = width || (doc.page.width - (2 * x));
+  const headerHeight = 28; // Reduced from 35
+  
+  // Add background box for section header
+  doc.rect(x - 5, y - 5, sectionWidth + 10, headerHeight)
+     .fillColor('#F8F8F8')
+     .fill()
+     .strokeColor('#8B0000')
+     .lineWidth(0.8)
+     .stroke();
+  
+  // Section title with maroon color
+  doc.fontSize(13) // Reduced from 15
+     .font('Helvetica-Bold')
+     .fillColor('#8B0000')
+     .text(title, x, y, {
+       width: sectionWidth
+     });
+  
+  // Add a subtle line under the title
+  const textWidth = Math.min(doc.widthOfString(title), sectionWidth);
+  doc.strokeColor('#8B0000')
+     .lineWidth(1)
+     .moveTo(x, y + 16)
+     .lineTo(x + textWidth, y + 16)
+     .stroke();
+}
+
+/**
+ * Add a field with label and value, returning new Y position
+ */
+function addFieldWithLabel(doc, label, value, x, y, width = null) {
+  const margin = 54; // 0.75 inch margin for more space
+  const fieldWidth = width || (doc.page.width - x - margin);
+  
+  // Label with maroon color (compact)
+  doc.fontSize(10) // Reduced from 11
+     .font('Helvetica-Bold')
+     .fillColor('#8B0000')
+     .text(`${label}:`, x, y);
+  
+  // Value with proper text wrapping and better styling
+  const valueY = y + 14; // Reduced from 16
+  const textHeight = doc.heightOfString(value, {
+    width: fieldWidth - 20,
+    align: 'left',
+    lineGap: 1.5
+  });
+  
+  doc.fontSize(9.5) // Slightly smaller
+     .font('Helvetica')
+     .fillColor('#333333')
+     .text(value, x + 18, valueY, {
+       width: fieldWidth - 18,
+       align: 'left',
+       lineGap: 1.5
+     });
+  
+  return valueY + textHeight + 8; // Return new Y position with compact padding
 }
 
 /**
@@ -597,25 +774,32 @@ function generateOverallFeedback(percentage, correctAnswers, totalQuestions) {
 }
 
 /**
- * Generate individual question feedback
+ * Generate individual question feedback with more specific and helpful content
  */
 function generateIndividualFeedback(question, isCorrect, userAnswer) {
   if (isCorrect) {
     const feedbacks = [
-      "Good understanding of this concept!",
-      "Excellent! You've mastered this topic.",
-      "Well done! Your answer shows clear comprehension.",
-      "Perfect! You have a solid grasp of this area.",
-      "Great work! This demonstrates good knowledge."
+      "Excellent! You have a strong understanding of this concept.",
+      "Well done! Your answer demonstrates clear comprehension of the topic.",
+      "Perfect! This shows you've mastered the fundamentals here.",
+      "Great work! Your knowledge in this area is solid.",
+      "Outstanding! You've applied the concept correctly.",
+      "Brilliant! This answer shows deep understanding.",
+      "Superb! You've grasped this topic completely."
     ];
     return feedbacks[Math.floor(Math.random() * feedbacks.length)];
   } else {
+    if (!userAnswer) {
+      return "This question was not attempted. Consider reviewing the topic and practicing similar questions to improve your understanding.";
+    }
+    
     const feedbacks = [
-      `Review topic: ${question.subject || 'This concept'}`,
-      "Consider revisiting the fundamentals of this topic.",
-      "This area needs more attention and practice.",
-      "Focus on understanding the core concepts here.",
-      "Additional study recommended for this topic."
+      `This concept needs more attention. Focus on understanding ${question.subject || 'the fundamentals'} and practice similar problems.`,
+      "Review the core principles of this topic. Consider seeking additional help or resources to strengthen your understanding.",
+      "This area requires more study. Break down the concept into smaller parts and practice step by step.",
+      "Take time to understand the underlying principles here. Practice with similar examples to build confidence.",
+      "This topic needs reinforcement. Consider reviewing course materials and asking for clarification if needed.",
+      "Focus on the basics of this concept first. Once you understand the fundamentals, you'll find it easier to solve similar problems."
     ];
     return feedbacks[Math.floor(Math.random() * feedbacks.length)];
   }

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:tega/features/1_authentication/data/auth_repository.dart';
 import 'package:tega/features/5_student_dashboard/data/student_dashboard_service.dart';
 import 'package:tega/features/5_student_dashboard/presentation/5_placement_prep/company_specific_questions_page.dart';
+import 'package:tega/features/5_student_dashboard/presentation/5_placement_prep/skill_assessment_modules_page.dart';
 // import removed: mock interview is locked for now
 
 class PlacementPrepPage extends StatefulWidget {
@@ -43,11 +44,9 @@ class _PlacementPrepPageState extends State<PlacementPrepPage> {
   }
 
   void _handleTakeSkillAssessment() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Skill Assessment - Coming Soon!'),
-        behavior: SnackBarBehavior.floating,
-        backgroundColor: Color(0xFF6B5FFF),
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => const SkillAssessmentModulesPage(),
       ),
     );
   }
@@ -106,12 +105,9 @@ class _PlacementPrepPageState extends State<PlacementPrepPage> {
               ? 20
               : 16,
         ),
-        padding: EdgeInsets.all(
-          isDesktop
-              ? 32
-              : isTablet
-              ? 28
-              : 24,
+        padding: EdgeInsets.symmetric(
+          horizontal: isDesktop ? 24 : isTablet ? 20 : 16,
+          vertical: isDesktop ? 20 : isTablet ? 18 : 16,
         ),
         decoration: BoxDecoration(
           gradient: const LinearGradient(
@@ -128,86 +124,31 @@ class _PlacementPrepPageState extends State<PlacementPrepPage> {
             ),
           ],
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        child: Row(
           children: [
-            Row(
-              children: [
-                Container(
-                  padding: EdgeInsets.all(isDesktop ? 16 : 12),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(isDesktop ? 16 : 12),
-                  ),
-                  child: Icon(
-                    Icons.rocket_launch_rounded,
-                    color: Colors.white,
-                    size: isDesktop ? 32 : 28,
-                  ),
-                ),
-                SizedBox(width: isDesktop ? 16 : 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Placement Prep',
-                        style: TextStyle(
-                          fontSize: isDesktop ? 28 : 24,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
-                      ),
-                      SizedBox(height: isDesktop ? 4 : 2),
-                      Text(
-                        'Ready to land your dream job?',
-                        style: TextStyle(
-                          fontSize: isDesktop ? 16 : 14,
-                          color: Colors.white.withOpacity(0.9),
-                        ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-            SizedBox(height: isDesktop ? 24 : 20),
             Container(
-              padding: EdgeInsets.symmetric(
-                horizontal: isDesktop ? 20 : 16,
-                vertical: isDesktop ? 12 : 10,
-              ),
+              padding: EdgeInsets.all(isDesktop ? 14 : isTablet ? 12 : 10),
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.15),
-                borderRadius: BorderRadius.circular(isDesktop ? 12 : 10),
-                border: Border.all(
-                  color: Colors.white.withOpacity(0.2),
-                  width: 1,
-                ),
+                color: Colors.white.withOpacity(0.2),
+                borderRadius: BorderRadius.circular(isDesktop ? 14 : 12),
               ),
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.trending_up_rounded,
-                    color: Colors.white,
-                    size: isDesktop ? 20 : 18,
-                  ),
-                  SizedBox(width: isDesktop ? 12 : 8),
-                  Expanded(
-                    child: Text(
-                      'Track your progress and boost your skills',
-                      style: TextStyle(
-                        fontSize: isDesktop ? 14 : 12,
-                        color: Colors.white,
-                        fontWeight: FontWeight.w500,
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                ],
+              child: Icon(
+                Icons.rocket_launch_rounded,
+                color: Colors.white,
+                size: isDesktop ? 28 : isTablet ? 26 : 24,
+              ),
+            ),
+            SizedBox(width: isDesktop ? 16 : isTablet ? 14 : 12),
+            Expanded(
+              child: Text(
+                'Ready to land your dream job?',
+                style: TextStyle(
+                  fontSize: isDesktop ? 18 : isTablet ? 17 : 16,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.white,
+                ),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
               ),
             ),
           ],
@@ -256,8 +197,8 @@ class _PlacementPrepPageState extends State<PlacementPrepPage> {
         'icon': Icons.assessment_rounded,
         'color': const Color(0xFF667eea),
         'onTap': _handleTakeSkillAssessment,
-        'status': 'Coming Soon',
-        'isAvailable': false,
+        'status': 'Available',
+        'isAvailable': true,
       },
       {
         'title': 'Company Specific Revision',

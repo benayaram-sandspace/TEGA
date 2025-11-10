@@ -13,7 +13,7 @@ import 'package:tega/features/5_student_dashboard/presentation/1_home/widgets/we
 import 'package:tega/features/5_student_dashboard/presentation/1_home/widgets/upcoming_events_widget.dart';
 import 'package:tega/features/5_student_dashboard/presentation/1_home/widgets/recent_activity_widget.dart';
 import 'package:tega/features/5_student_dashboard/presentation/1_home/widgets/achievements_widget.dart';
-import 'package:tega/features/5_student_dashboard/presentation/1_home/widgets/quick_actions_widget.dart';
+import 'package:tega/features/5_student_dashboard/presentation/1_home/widgets/enrolled_courses_widget.dart';
 import 'package:tega/features/5_student_dashboard/presentation/1_home/widgets/recommended_courses_widget.dart';
 import 'package:tega/features/5_student_dashboard/presentation/2_learning_hub/courses_page.dart';
 import 'package:tega/features/5_student_dashboard/presentation/3_ai_tools/student_ai_job_search_page.dart';
@@ -27,7 +27,6 @@ import 'package:tega/features/5_student_dashboard/presentation/5_placement_prep/
 import 'package:tega/features/5_student_dashboard/presentation/6_exams/exams_page.dart';
 import 'package:tega/features/5_student_dashboard/presentation/7_results/my_results_page.dart';
 import 'package:tega/features/5_student_dashboard/presentation/shared/widgets/coming_soon_overlay.dart';
-import 'package:tega/core/config/env_config.dart';
 import 'package:tega/features/5_student_dashboard/presentation/3_ai_tools/ai_assistant_page.dart'
     as ai;
 
@@ -112,7 +111,6 @@ class _StudentHomePageState extends State<StudentHomePage>
         _isLoading = false;
       });
 
-      if (EnvConfig.enableDebugLogs) {}
       // Reinitialize pages with new data
       _initializePages();
     } catch (_) {
@@ -693,8 +691,8 @@ class _HomePageContent extends StatelessWidget {
             currentStreak: userProgress['currentStreak'] ?? 0,
           ),
           SizedBox(height: isDesktop ? 24 : 20),
-          // Quick Actions
-          const QuickActionsWidget(),
+          // Enrolled Courses
+          const EnrolledCoursesWidget(),
           SizedBox(height: isDesktop ? 24 : 20),
           // Recent Activity and Upcoming Events - Side by side on large screens
           isDesktop

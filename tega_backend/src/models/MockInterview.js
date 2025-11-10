@@ -26,6 +26,23 @@ const mockInterviewSchema = new mongoose.Schema({
   
   // Interview Sections
   sections: {
+    conversation: {
+      history: [{
+        question: String,
+        answer: String,
+        timestamp: Date,
+        topic: String,
+        score: { type: Number, min: 0, max: 100 },
+        feedback: String,
+        sentiment: { type: String, enum: ['positive', 'neutral', 'negative'] },
+        confidence: { type: Number, min: 0, max: 1 },
+        responseTime: Number // in seconds
+      }],
+      currentQuestion: String,
+      currentTopic: String,
+      topicsCovered: [String],
+      startTime: Date
+    },
     selfIntroduction: {
       question: String,
       response: String,
@@ -68,6 +85,23 @@ const mockInterviewSchema = new mongoose.Schema({
       }],
       totalScore: { type: Number, min: 0, max: 100 }
     }
+  },
+  
+  interviewType: {
+    type: String,
+    enum: ['conversational', 'coding', 'mixed'],
+    default: 'conversational'
+  },
+  
+  timeLimit: {
+    type: Number,
+    default: 40 // minutes
+  },
+  
+  currentDifficulty: {
+    type: String,
+    enum: ['easy', 'medium', 'hard'],
+    default: 'medium'
   },
   
   // Overall Scores

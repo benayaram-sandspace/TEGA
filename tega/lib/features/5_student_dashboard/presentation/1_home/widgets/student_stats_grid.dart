@@ -56,6 +56,11 @@ class _StudentStatsGridState extends State<StudentStatsGrid>
       final headers = auth.getAuthHeaders();
       final api = StudentDashboardService();
       final dashData = await api.getDashboard(headers);
+      
+      // Fetch enrolled courses count
+      final enrolledCourses = await api.getEnrolledCourses(headers);
+      final enrolledCount = enrolledCourses.length;
+      
       if (!mounted) return;
 
       final userProgress = dashData['userProgress'] ?? {};
@@ -71,7 +76,7 @@ class _StudentStatsGridState extends State<StudentStatsGrid>
           ),
           _StatInfo(
             'In Progress',
-            '${userProgress['inProgress'] ?? 0}',
+            '$enrolledCount',
             Icons.pending_actions_rounded,
             const Color(0xFF4CAF50),
           ),

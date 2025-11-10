@@ -26,6 +26,8 @@ const markCompletedExamsAsInactive = async () => {
       examDate: { $exists: true },
       duration: { $exists: true }
     });
+
+
     const completedExamIds = [];
     for (const exam of activeExams) {
       // Calculate exam end time based on the latest slot end time + duration
@@ -196,10 +198,34 @@ export const getAllExams = async (req, res) => {
   }
 };
 
+// Simple test endpoint to check database
+export const testDatabase = async (req, res) => {
+  try {
+    const allExams = await Exam.find({}).select('_id title isTegaExam isActive requiresPayment price examDate slots createdAt');
+    res.json({
+      success: true,
+      count: allExams.length,
+      exams: allExams
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+};
+
 // Get available exams for students
 export const getAvailableExams = async (req, res) => {
   try {
     const { studentId } = req.params;
+    
+    // First, let's check what's actually in the database
+    const allExamsInDB = await Exam.find({}).select('_id title isTegaExam isActive requiresPayment price examDate slots createdAt');
+    allExamsInDB.forEach((exam, index) => {
+
+    });
+    
     // First, mark completed exams as inactive
     await markCompletedExamsAsInactive();
     
@@ -208,6 +234,13 @@ export const getAvailableExams = async (req, res) => {
       .populate('courseId', 'courseName price')
       .populate('questionPaperId', 'totalQuestions')
       .sort({ examDate: 1 });
+    
+    allExams.forEach((exam, index) => {
+
+    });
+    
+
+    
     // Filter out completed exams directly in the query
     const currentTime = new Date();
     const activeExams = allExams.filter(exam => {
@@ -246,6 +279,7 @@ export const getAvailableExams = async (req, res) => {
       
       return true;
     });
+
     // Check registration status and payment status for each exam
     const examsWithRegistration = await Promise.all(
       activeExams.map(async (exam) => {
@@ -308,7 +342,6 @@ export const getAvailableExams = async (req, res) => {
           
           return true;
         });
-
         return {
           ...exam.toObject(),
           isRegistered: !!registration,
@@ -327,6 +360,7 @@ export const getAvailableExams = async (req, res) => {
       const hasSlots = exam.availableSlots && exam.availableSlots.length > 0;
       return hasSlots;
     });
+
     res.json({
       success: true,
       exams: examsWithSlots
@@ -473,6 +507,7 @@ export const createExam = async (req, res) => {
       createdBy: adminId
     });
     await exam.save();
+
     // Update question paper to mark it as used
     if (questionPaperId) {
       await QuestionPaper.findByIdAndUpdate(questionPaperId, {
@@ -878,12 +913,13 @@ export const startExam = async (req, res) => {
         if (registration.paymentStatus === 'paid') {
           hasAccess = true;
         } else {
-          // Fallback to TEGA exam payment check
+          // Fallback to TEGA exam payment check - include package payments
           const tegaExamPaymentStatus = await checkTegaExamPayment(studentId, exam._id);
           hasAccess = tegaExamPaymentStatus.hasPaid;
-          // If still no access, check for any TEGA exam payment (general check)
+          // If still no access, check for any TEGA exam payment (general check) including packages
           if (!hasAccess) {
-            const generalTegaPaymentStatus = await checkTegaExamPaymentUtil(studentId);
+            const { checkTegaExamPaymentUtil } = await import('../controllers/paymentController.js');
+            const generalTegaPaymentStatus = await checkTegaExamPaymentUtil(studentId, exam._id.toString());
             if (generalTegaPaymentStatus && generalTegaPaymentStatus.hasPaidForTegaExam) {
               hasAccess = true;
             }
@@ -1285,6 +1321,31 @@ export const submitExam = async (req, res) => {
     examAttempt.isQualified = isQualified;
     await examAttempt.save();
 
+    // Emit WebSocket event for new exam completion
+    const io = req.app.get('io');
+    if (io) {
+      io.emit('exam-completed', {
+        examId,
+        studentId,
+        examTitle: exam.title,
+        score: totalScore,
+        percentage: percentage,
+        isPassed: examAttempt.isPassed,
+        timestamp: new Date()
+      });
+      
+      // Also emit a general exam result update event
+      io.emit('new-exam-attempt', {
+        examId,
+        studentId,
+        examTitle: exam.title,
+        score: totalScore,
+        percentage: percentage,
+        isPassed: examAttempt.isPassed,
+        timestamp: new Date()
+      });
+    }
+
     res.json({
       success: true,
       message: 'Exam submitted successfully',
@@ -1316,7 +1377,7 @@ export const getAllUserExamResults = async (req, res) => {
     const examAttempts = await ExamAttempt.find({
       studentId,
       status: 'completed',
-      published: true // ✅ Only return published results
+      published: true //    Only return published results
     })
     .populate('examId', 'title subject examDate duration totalMarks passingMarks')
     .populate('courseId', 'courseName')
@@ -1528,7 +1589,7 @@ export const getExamResults = async (req, res) => {
       studentId,
       examId,
       status: 'completed',
-      published: true // ✅ Only return published results
+      published: true //    Only return published results
     }).sort({ createdAt: -1 });
     const exam = await Exam.findById(examId).populate('courseId', 'courseName');
 

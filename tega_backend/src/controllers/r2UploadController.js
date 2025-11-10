@@ -411,28 +411,82 @@ export const generateMaterialDownloadUrl = async (req, res) => {
     const { materialId } = req.params;
     const studentId = req.studentId;
 
-    const material = await CourseMaterial.findById(materialId);
 
+    // First, try to find in CourseMaterial collection
+    let material = await CourseMaterial.findById(materialId);
+    
     if (!material) {
-      return res.status(404).json({
-        success: false,
-        message: 'Material not found'
+      
+      // If not found in CourseMaterial, search in course materials
+      const courses = await RealTimeCourse.find({
+        'modules.lectures.materials.id': materialId
+      });
+      
+      if (courses.length === 0) {
+        return res.status(404).json({
+          success: false,
+          message: 'Material not found'
+        });
+      }
+      
+      // Find the material in course data
+      let foundMaterial = null;
+      for (const course of courses) {
+        for (const module of course.modules) {
+          for (const lecture of module.lectures) {
+            const courseMaterial = lecture.materials.find(m => m.id === materialId);
+            if (courseMaterial) {
+              foundMaterial = courseMaterial;
+              break;
+            }
+          }
+          if (foundMaterial) break;
+        }
+        if (foundMaterial) break;
+      }
+      
+      if (!foundMaterial) {
+        return res.status(404).json({
+          success: false,
+          message: 'Material not found in course data'
+        });
+      }
+      
+      
+      // Generate presigned download URL (valid for 1 hour)
+      const result = await generatePresignedDownloadUrl(foundMaterial.r2Key, 3600);
+      
+      // Update download count in course data
+      await RealTimeCourse.findOneAndUpdate(
+        { 'modules.lectures.materials.id': materialId },
+        { $inc: { 'modules.$[].lectures.$[].materials.$[material].downloadCount': 1 } },
+        { arrayFilters: [{ 'material.id': materialId }] }
+      );
+
+      res.json({
+        success: true,
+        downloadUrl: result.downloadUrl,
+        fileName: foundMaterial.name,
+        fileSize: foundMaterial.fileSize,
+        expiresIn: result.expiresIn
+      });
+      
+    } else {
+      
+      // Generate presigned download URL (valid for 1 hour)
+      const result = await generatePresignedDownloadUrl(material.r2Key, 3600);
+
+      // Increment download count
+      await material.incrementDownloadCount();
+
+      res.json({
+        success: true,
+        downloadUrl: result.downloadUrl,
+        fileName: material.fileName,
+        fileSize: material.fileSize,
+        expiresIn: result.expiresIn
       });
     }
-
-    // Generate presigned download URL (valid for 1 hour)
-    const result = await generatePresignedDownloadUrl(material.r2Key, 3600);
-
-    // Increment download count
-    await material.incrementDownloadCount();
-
-    res.json({
-      success: true,
-      downloadUrl: result.downloadUrl,
-      fileName: material.fileName,
-      fileSize: material.fileSize,
-      expiresIn: result.expiresIn
-    });
 
   } catch (error) {
     res.status(500).json({

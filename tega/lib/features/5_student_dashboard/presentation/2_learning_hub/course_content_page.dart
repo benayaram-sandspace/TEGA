@@ -118,11 +118,17 @@ class _CourseContentPageState extends State<CourseContentPage> {
               final dynamic durationSecondsRaw =
                   lecture['videoContent']?['durationSeconds'] ??
                   lecture['durationSeconds'] ??
-                  ((lecture['videoContent']?['durationMs'] ?? lecture['durationMs']) is int
-                      ? ((lecture['videoContent']?['durationMs'] ?? lecture['durationMs']) / 1000).round()
+                  ((lecture['videoContent']?['durationMs'] ??
+                              lecture['durationMs'])
+                          is int
+                      ? ((lecture['videoContent']?['durationMs'] ??
+                                    lecture['durationMs']) /
+                                1000)
+                            .round()
                       : null);
 
-              final dynamic durationValue = durationSecondsRaw ?? lecture['duration'] ?? '0:00';
+              final dynamic durationValue =
+                  durationSecondsRaw ?? lecture['duration'] ?? '0:00';
 
               final lectureData = {
                 'id': lecture['_id'] ?? lecture['id'] ?? '',
@@ -151,8 +157,9 @@ class _CourseContentPageState extends State<CourseContentPage> {
           // Ensure only Introduction is marked as preview
           if (_lectures.isNotEmpty) {
             // Find an introduction lecture by title; fallback to the very first lecture
-            int introIndex = _lectures.indexWhere((l) =>
-                (l['title'] as String).toLowerCase().contains('intro'));
+            int introIndex = _lectures.indexWhere(
+              (l) => (l['title'] as String).toLowerCase().contains('intro'),
+            );
             if (introIndex < 0) introIndex = 0;
             for (int i = 0; i < _lectures.length; i++) {
               final bool isIntro = i == introIndex;
@@ -543,26 +550,29 @@ class _CourseContentPageState extends State<CourseContentPage> {
       _isPaymentLoading = false;
     });
 
-  try {
-    final int code = (response.code is int) ? response.code as int : -1;
-    final String msg = (response.message ?? '').toString();
-    final bool isCancelled = code == 2 || msg.toLowerCase().contains('cancel');
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(isCancelled ? 'Payment cancelled' : 'Payment failed: $msg'),
-        backgroundColor: isCancelled ? Colors.grey : Colors.red,
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
-  } catch (_) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Payment failed'),
-        backgroundColor: Colors.red,
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
-  }
+    try {
+      final int code = (response.code is int) ? response.code as int : -1;
+      final String msg = (response.message ?? '').toString();
+      final bool isCancelled =
+          code == 2 || msg.toLowerCase().contains('cancel');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            isCancelled ? 'Payment cancelled' : 'Payment failed: $msg',
+          ),
+          backgroundColor: isCancelled ? Colors.grey : Colors.red,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    } catch (_) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Payment failed'),
+          backgroundColor: Colors.red,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
   }
 
   void _handleExternalWallet(ExternalWalletResponse response) {
@@ -596,17 +606,22 @@ class _CourseContentPageState extends State<CourseContentPage> {
         final user = authService.currentUser;
 
         // Open Razorpay payment
+        // Backend returns amount in paise, so use it directly
+        final amountPaise = orderResult['amount'] is int
+            ? orderResult['amount'] as int
+            : ((orderResult['chargedAmount'] ?? 0) is num
+                  ? ((orderResult['chargedAmount'] as num) * 100).round()
+                  : 0);
+
         _paymentService.openPayment(
           orderId: orderResult['orderId'],
-          keyId: (orderResult['keyId'] ?? EnvConfig.razorpayKeyId),
+          keyId: EnvConfig
+              .razorpayKeyId, // Backend doesn't return keyId, use env config
           name: 'TEGA Learning Platform',
           description:
               'Course Enrollment - ${widget.course['title'] ?? 'Course'}',
-          amount: (orderResult['amount'] ??
-              ((orderResult['chargedAmount'] ?? 0) is int
-                  ? (orderResult['chargedAmount'] * 100)
-                  : 0)),
-          currency: 'INR',
+          amount: amountPaise,
+          currency: orderResult['currency'] ?? 'INR',
           prefillEmail: user?.email ?? '',
           prefillContact: user?.phone ?? '',
           notes: {
@@ -823,10 +838,7 @@ class _CourseContentPageState extends State<CourseContentPage> {
                       const SizedBox(height: 8),
                       Text(
                         'Buy the course to unlock all premium videos or go back.',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.grey,
-                        ),
+                        style: TextStyle(fontSize: 14, color: Colors.grey),
                         textAlign: TextAlign.center,
                       ),
                       const SizedBox(height: 16),
@@ -906,7 +918,9 @@ class _CourseContentPageState extends State<CourseContentPage> {
                                         ),
                                         const SizedBox(width: 8),
                                         Text(
-                                          _isEnrolled ? 'Continue Learning' : 'Buy Course',
+                                          _isEnrolled
+                                              ? 'Continue Learning'
+                                              : 'Buy Course',
                                           style: const TextStyle(
                                             fontSize: 16,
                                             fontWeight: FontWeight.w600,

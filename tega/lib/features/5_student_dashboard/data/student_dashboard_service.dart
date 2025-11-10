@@ -59,14 +59,19 @@ class StudentDashboardService {
   }
 
   Future<List<dynamic>> getEnrolledCourses(Map<String, String> headers) async {
-    final uri = Uri.parse(ApiEndpoints.studentDashboard);
-    final res = await http.get(uri, headers: headers);
     try {
-      final body = json.decode(res.body);
-      if (res.statusCode == 200 && body['success'] == true) {
-        final data = body['data'] as Map<String, dynamic>;
-        return data['enrolledCourses'] as List<dynamic>? ?? [];
+      // Use paid-courses endpoint
+      final paidCoursesUri = Uri.parse(ApiEndpoints.paymentPaidCourses);
+      final paidCoursesRes = await http.get(paidCoursesUri, headers: headers);
+
+      if (paidCoursesRes.statusCode == 200) {
+        final paidCoursesBody = json.decode(paidCoursesRes.body);
+        if (paidCoursesBody['success'] == true &&
+            paidCoursesBody['data'] != null) {
+          return paidCoursesBody['data'] as List<dynamic>;
+        }
       }
+
       return [];
     } catch (_) {
       return [];
@@ -235,6 +240,57 @@ class StudentDashboardService {
       return {'success': false, 'message': 'Failed to apply'};
     } catch (_) {
       return {'success': false, 'message': 'Error applying for job'};
+    }
+  }
+
+  Future<List<dynamic>> getAllProgress(Map<String, String> headers) async {
+    try {
+      final uri = Uri.parse(ApiEndpoints.realTimeCoursesProgressAll);
+      final res = await http.get(uri, headers: headers);
+
+      if (res.statusCode == 200) {
+        final body = json.decode(res.body);
+        if (body['success'] == true && body['progress'] != null) {
+          return body['progress'] as List<dynamic>;
+        }
+      }
+      return [];
+    } catch (_) {
+      return [];
+    }
+  }
+
+  Future<Map<String, dynamic>> getSkillAssessments(
+    Map<String, String> headers,
+  ) async {
+    try {
+      final uri = Uri.parse(ApiEndpoints.studentSkillAssessments);
+      final res = await http.get(uri, headers: headers);
+
+      if (res.statusCode == 200) {
+        final body = json.decode(res.body);
+        if (body['success'] == true) {
+          return {
+            'questions': body['questions'] ?? [],
+            'questionsByTopic': body['questionsByTopic'] ?? {},
+            'modules': body['modules'] ?? [],
+            'totalQuestions': body['totalQuestions'] ?? 0,
+          };
+        }
+      }
+      return {
+        'questions': [],
+        'questionsByTopic': {},
+        'modules': [],
+        'totalQuestions': 0,
+      };
+    } catch (_) {
+      return {
+        'questions': [],
+        'questionsByTopic': {},
+        'modules': [],
+        'totalQuestions': 0,
+      };
     }
   }
 }

@@ -5,6 +5,7 @@ import { fileURLToPath } from 'url';
 import {
   getAllExams,
   getAvailableExams,
+  testDatabase,
   createExam,
   registerForExam,
   getExamRegistrations,
@@ -75,6 +76,7 @@ router.post('/admin/reactivate-incorrectly-inactive', adminAuth, reactivateIncor
 router.get('/available/:studentId', studentAuth, getAvailableExams);
 router.get('/student/all', studentAuth, getAvailableExams); // Alias for payment page
 router.get('/my-results', studentAuth, getAllUserExamResults); // Get all user exam results
+router.get('/test-database', testDatabase); // Test endpoint to check database
 
 // Exam payment attempt routes (must be before generic /:examId routes)
 router.post('/payment-attempt', studentAuth, createExamPaymentAttempt);

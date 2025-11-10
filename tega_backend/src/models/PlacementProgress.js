@@ -45,7 +45,8 @@ const placementProgressSchema = new mongoose.Schema({
     answer: mongoose.Schema.Types.Mixed,
     code: String, // for coding questions
     language: String, // programming language used
-    pointsEarned: Number
+    pointsEarned: Number, // Points earned for this attempt
+    pointsAdded: Number // Points actually added to total (0 if duplicate correct answer)
   }],
   
   // Module progress
@@ -112,12 +113,13 @@ placementProgressSchema.pre('save', function(next) {
       // Same day, don't update streak
     } else if (daysDiff === 1) {
       // Consecutive day, increment streak
-      this.learningStreak += 1;
+      this.learningStreak = (this.learningStreak || 0) + 1;
     } else {
-      // Streak broken
+      // Streak broken, reset to 1
       this.learningStreak = 1;
     }
   } else {
+    // First activity, start streak at 1
     this.learningStreak = 1;
   }
   

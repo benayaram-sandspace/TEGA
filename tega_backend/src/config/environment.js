@@ -26,6 +26,7 @@ const config = {
   CLIENT_URL: process.env.CLIENT_URL || (process.env.NODE_ENV === 'development' ? 'http://localhost:3000' : undefined),
   FRONTEND_URL: process.env.FRONTEND_URL || (process.env.NODE_ENV === 'development' ? 'http://localhost:3000' : undefined),
   ADMIN_URL: process.env.ADMIN_URL || (process.env.NODE_ENV === 'development' ? 'http://localhost:3000' : undefined),
+  SERVER_URL: process.env.SERVER_URL || process.env.API_URL || (process.env.NODE_ENV === 'development' ? `http://localhost:${process.env.PORT || 5001}` : undefined),
   
   // Email
   EMAIL_USER: process.env.EMAIL_USER,

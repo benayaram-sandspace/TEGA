@@ -1,9 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:tega/features/3_admin_panel/data/services/admin_dashboard_service.dart';
 import 'package:tega/features/3_admin_panel/data/models/course_model.dart';
-import 'package:tega/features/3_admin_panel/presentation/0_dashboard/admin_dashboard_styles.dart';
-import 'package:tega/features/3_admin_panel/presentation/1_management/courses/create_course_page.dart';
 import 'package:tega/features/3_admin_panel/presentation/1_management/courses/edit_course_page.dart';
 
 class CourseManagementPage extends StatefulWidget {
@@ -172,7 +169,6 @@ class _CourseManagementPageState extends State<CourseManagementPage>
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC), // Light background
       body: _buildContent(),
-      floatingActionButton: _buildCreateCourseFAB(),
     );
   }
 
@@ -242,18 +238,9 @@ class _CourseManagementPageState extends State<CourseManagementPage>
             ),
             const SizedBox(height: 8),
             Text(
-              'Create your first course to get started',
+              'Courses will appear here once they are created',
               style: TextStyle(fontSize: 14, color: Colors.grey[500]),
-            ),
-            const SizedBox(height: 24),
-            ElevatedButton.icon(
-              onPressed: _navigateToCreateCourse,
-              icon: const Icon(Icons.add_rounded),
-              label: const Text('Create Course'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF3B82F6),
-                foregroundColor: Colors.white,
-              ),
+              textAlign: TextAlign.center,
             ),
           ],
         ),
@@ -834,46 +821,6 @@ class _CourseManagementPageState extends State<CourseManagementPage>
       default:
         return 'Unknown';
     }
-  }
-
-  Widget _buildCreateCourseFAB() {
-    return Container(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(16),
-            boxShadow: [
-              BoxShadow(
-                color: AdminDashboardStyles.primary.withOpacity(0.3),
-                blurRadius: 20,
-                offset: const Offset(0, 8),
-              ),
-            ],
-          ),
-          child: FloatingActionButton.extended(
-            onPressed: _navigateToCreateCourse,
-            backgroundColor: AdminDashboardStyles.primary,
-            foregroundColor: Colors.white,
-            elevation: 0,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-            ),
-            icon: const Icon(Icons.add_rounded, size: 20),
-            label: const Text(
-              'Create Course',
-              style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
-            ),
-          ),
-        )
-        .animate()
-        .fadeIn(duration: 1000.ms, delay: 300.ms)
-        .scale(begin: const Offset(0.8, 0.8));
-  }
-
-  void _navigateToCreateCourse() {
-    Navigator.of(context)
-        .push(MaterialPageRoute(builder: (context) => const CreateCoursePage()))
-        .then((_) {
-          _loadCourses(); // Refresh the list when returning
-        });
   }
 
   void _navigateToEditCourse(Course course) {

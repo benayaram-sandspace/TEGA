@@ -43,6 +43,7 @@
     "pdfkit": "^0.17.2",
     "prismjs": "^1.30.0",
     "razorpay": "^2.9.6",
+    "react-hot-toast": "^2.6.0",
     "react-quill": "^2.0.0",
     "react-webcam": "^7.2.0",
     "socket.io": "^4.8.1",
