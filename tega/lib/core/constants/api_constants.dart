@@ -270,6 +270,8 @@ class ApiEndpoints {
       '${EnvConfig.baseUrl}/api/question-papers/admin/course/$courseId';
   static String get adminQuestionPaperUpload =>
       '${EnvConfig.baseUrl}/api/question-papers/admin/upload';
+  static String get adminQuestionPaperUploadJson =>
+      '${EnvConfig.baseUrl}/api/question-papers/admin/upload-json';
   static String adminQuestionPaperDelete(String id) =>
       '${EnvConfig.baseUrl}/api/question-papers/admin/$id';
   static String get adminQuestionPaperTemplate =>
@@ -427,7 +429,7 @@ class ApiEndpoints {
       '${EnvConfig.baseUrl}/api/offers/admin/institutes';
 
   // Admin routes - CRUD Operations
-  static String get adminOffers => '${EnvConfig.baseUrl}/api/offers/admin/all';
+  static String get adminOffers => '${EnvConfig.baseUrl}/api/offers/admin';
   static String adminOfferById(String id) =>
       '${EnvConfig.baseUrl}/api/offers/admin/$id';
   static String get adminCreateOffer => '${EnvConfig.baseUrl}/api/offers/admin';
@@ -437,6 +439,16 @@ class ApiEndpoints {
       '${EnvConfig.baseUrl}/api/offers/admin/$id';
   static String adminToggleOffer(String id) =>
       '${EnvConfig.baseUrl}/api/offers/admin/$id/toggle';
+
+  // Package Offers routes
+  static String get adminPackageOffers =>
+      '${EnvConfig.baseUrl}/api/offers/admin/packages';
+  static String adminUpdatePackageOffer(String id) =>
+      '${EnvConfig.baseUrl}/api/offers/admin/packages/$id';
+  static String adminDeletePackageOffer(String id) =>
+      '${EnvConfig.baseUrl}/api/offers/admin/packages/$id';
+  static String adminTogglePackageOffer(String id) =>
+      '${EnvConfig.baseUrl}/api/offers/admin/packages/$id/toggle';
 
   // Public routes
   static String offersByInstitute(String instituteName) =>

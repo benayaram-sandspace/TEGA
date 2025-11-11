@@ -37,6 +37,17 @@ class _OfferFormPageState extends State<OfferFormPage> {
   List<CourseOffer> _selectedCourseOffers = [];
   List<TegaExamOffer> _selectedTegaExamOffers = [];
 
+  // Inline input fields for adding offers
+  String? _selectedCourseId;
+  final _courseOriginalPriceController = TextEditingController();
+  final _courseOfferPriceController = TextEditingController();
+
+  String? _selectedTegaExamId;
+  String? _selectedSlotId;
+  final _examOriginalPriceController = TextEditingController();
+  final _examOfferPriceController = TextEditingController();
+  List<Map<String, dynamic>> _availableSlots = [];
+
   @override
   void initState() {
     super.initState();
@@ -92,64 +103,242 @@ class _OfferFormPageState extends State<OfferFormPage> {
     _instituteNameController.dispose();
     _descriptionController.dispose();
     _maxStudentsController.dispose();
+    _courseOriginalPriceController.dispose();
+    _courseOfferPriceController.dispose();
+    _examOriginalPriceController.dispose();
+    _examOfferPriceController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.isEdit ? 'Edit Offer' : 'Create Offer'),
-        backgroundColor: AppColors.warmOrange,
-        elevation: 0,
-        foregroundColor: AppColors.pureWhite,
-        actions: [
-          if (_isLoading)
-            const Padding(
-              padding: EdgeInsets.all(16.0),
-              child: SizedBox(
-                width: 20,
-                height: 20,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  valueColor: AlwaysStoppedAnimation<Color>(
-                    AppColors.pureWhite,
-                  ),
-                ),
-              ),
-            ),
-        ],
-      ),
+      backgroundColor: Colors.grey[50],
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : GestureDetector(
               onTap: () {
-                // Dismiss keyboard when tapping outside input fields
                 FocusScope.of(context).unfocus();
               },
               child: Form(
                 key: _formKey,
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _buildBasicInfoSection(),
-                      const SizedBox(height: 24),
-                      _buildCourseOffersSection(),
-                      const SizedBox(height: 24),
-                      _buildTegaExamOffersSection(),
-                      const SizedBox(height: 24),
-                      _buildValiditySection(),
-                      const SizedBox(height: 24),
-                      _buildStatusSection(),
-                      const SizedBox(height: 32),
-                      _buildActionButtons(),
-                    ],
-                  ),
+                child: Column(
+                  children: [
+                    _buildHeader(),
+                    Expanded(
+                      child: SingleChildScrollView(
+                        padding: const EdgeInsets.all(20.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _buildOfferDetailsSection(),
+                            const SizedBox(height: 24),
+                            _buildCourseOffersSection(),
+                            const SizedBox(height: 24),
+                            _buildTegaExamOffersSection(),
+                            const SizedBox(height: 32),
+                            _buildActionButtons(),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),
+    );
+  }
+
+  Widget _buildHeader() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        border: Border(
+          bottom: BorderSide(color: Colors.grey[200]!, width: 1),
+        ),
+      ),
+      child: Row(
+        children: [
+          Text(
+            widget.isEdit ? 'Edit Offer' : 'Create Offer',
+            style: const TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: AppColors.textPrimary,
+            ),
+          ),
+          const Spacer(),
+          if (_isLoading)
+            const SizedBox(
+              width: 20,
+              height: 20,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            )
+          else
+            IconButton(
+              icon: const Icon(Icons.close),
+              onPressed: () => Navigator.of(context).pop(),
+              color: AppColors.textSecondary,
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildOfferDetailsSection() {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey[200]!, width: 1),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Offer Details',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: AppColors.textPrimary,
+            ),
+          ),
+          const SizedBox(height: 20),
+          // Institute Name
+          DropdownButtonFormField<String>(
+            value: _instituteNameController.text.isNotEmpty
+                ? _instituteNameController.text
+                : null,
+            isExpanded: true,
+            decoration: InputDecoration(
+              labelText: 'Institute Name *',
+              labelStyle: const TextStyle(color: AppColors.textSecondary),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: BorderSide(color: Colors.grey[300]!),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: BorderSide(color: Colors.grey[300]!),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: const BorderSide(color: AppColors.warmOrange, width: 2),
+              ),
+              filled: true,
+              fillColor: Colors.grey[50],
+              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+            ),
+            items: _availableInstitutes.map((institute) {
+              return DropdownMenuItem<String>(
+                value: institute,
+                child: Text(
+                  institute,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              );
+            }).toList(),
+            onChanged: (value) {
+              if (value != null) {
+                setState(() {
+                  _instituteNameController.text = value;
+                });
+              }
+            },
+            validator: (value) {
+              if (value == null || value.isEmpty) {
+                return 'Please select an institute';
+              }
+              return null;
+            },
+          ),
+          const SizedBox(height: 16),
+          // Valid Until
+          InkWell(
+            onTap: () => _selectDate(context, false),
+            child: InputDecorator(
+              decoration: InputDecoration(
+                labelText: 'Valid Until *',
+                labelStyle: const TextStyle(color: AppColors.textSecondary),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: BorderSide(color: Colors.grey[300]!),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: BorderSide(color: Colors.grey[300]!),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: const BorderSide(color: AppColors.warmOrange, width: 2),
+                ),
+                filled: true,
+                fillColor: Colors.grey[50],
+                prefixIcon: const Icon(Icons.calendar_today, color: AppColors.textSecondary),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+              ),
+              child: Text(
+                '${_validUntil.day.toString().padLeft(2, '0')}-${_validUntil.month.toString().padLeft(2, '0')}-${_validUntil.year}',
+                style: const TextStyle(color: AppColors.textPrimary, fontSize: 16),
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+          // Description
+          TextFormField(
+            controller: _descriptionController,
+            maxLines: 3,
+            decoration: InputDecoration(
+              labelText: 'Description',
+              labelStyle: const TextStyle(color: AppColors.textSecondary),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: BorderSide(color: Colors.grey[300]!),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: BorderSide(color: Colors.grey[300]!),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: const BorderSide(color: AppColors.warmOrange, width: 2),
+              ),
+              filled: true,
+              fillColor: Colors.grey[50],
+              contentPadding: const EdgeInsets.all(12),
+            ),
+          ),
+          const SizedBox(height: 16),
+          // Max Students
+          TextFormField(
+            controller: _maxStudentsController,
+            keyboardType: TextInputType.number,
+            decoration: InputDecoration(
+              labelText: 'Max Students (Optional)',
+              hintText: 'Leave empty for unlimited',
+              labelStyle: const TextStyle(color: AppColors.textSecondary),
+              hintStyle: TextStyle(color: Colors.grey[400]),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: BorderSide(color: Colors.grey[300]!),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: BorderSide(color: Colors.grey[300]!),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: const BorderSide(color: AppColors.warmOrange, width: 2),
+              ),
+              filled: true,
+              fillColor: Colors.grey[50],
+              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -369,157 +558,310 @@ class _OfferFormPageState extends State<OfferFormPage> {
   }
 
   Widget _buildCourseOffersSection() {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final isSmallScreen = constraints.maxWidth < 600;
-
-        return Container(
-          margin: EdgeInsets.fromLTRB(
-            isSmallScreen ? 16 : 20,
-            0,
-            isSmallScreen ? 16 : 20,
-            isSmallScreen ? 12 : 16,
-          ),
-          decoration: BoxDecoration(
-            color: AppColors.pureWhite,
-            borderRadius: BorderRadius.circular(16),
-            boxShadow: [
-              BoxShadow(
-                color: AppColors.shadowLight,
-                blurRadius: 12,
-                offset: const Offset(0, 3),
-              ),
-            ],
-            border: Border.all(color: AppColors.borderLight, width: 1),
-          ),
-          child: Padding(
-            padding: EdgeInsets.all(isSmallScreen ? 16.0 : 20.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                LayoutBuilder(
-                  builder: (context, constraints) {
-                    if (constraints.maxWidth < 400) {
-                      // Stack vertically on small screens
-                      return Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.all(8),
-                                decoration: BoxDecoration(
-                                  color: AppColors.info.withOpacity(0.1),
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: Icon(
-                                  Icons.school_rounded,
-                                  color: AppColors.info,
-                                  size: 20,
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                              Text(
-                                'Course Offers',
-                                style: TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                  color: AppColors.textPrimary,
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 12),
-                          SizedBox(
-                            width: double.infinity,
-                            child: ElevatedButton.icon(
-                              onPressed: _addCourseOffer,
-                              icon: const Icon(Icons.add_rounded),
-                              label: const Text('Add Course'),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: AppColors.info,
-                                foregroundColor: AppColors.pureWhite,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      );
-                    } else {
-                      // Side by side on larger screens
-                      return Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Flexible(
-                            child: Row(
-                              children: [
-                                Container(
-                                  padding: const EdgeInsets.all(8),
-                                  decoration: BoxDecoration(
-                                    color: AppColors.info.withOpacity(0.1),
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  child: Icon(
-                                    Icons.school_rounded,
-                                    color: AppColors.info,
-                                    size: 20,
-                                  ),
-                                ),
-                                const SizedBox(width: 12),
-                                Flexible(
-                                  child: Text(
-                                    'Course Offers',
-                                    style: TextStyle(
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.bold,
-                                      color: AppColors.textPrimary,
-                                    ),
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          ElevatedButton.icon(
-                            onPressed: _addCourseOffer,
-                            icon: const Icon(Icons.add_rounded),
-                            label: const Text('Add Course'),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: AppColors.info,
-                              foregroundColor: AppColors.pureWhite,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                            ),
-                          ),
-                        ],
-                      );
-                    }
-                  },
-                ),
-                const SizedBox(height: 16),
-                if (_selectedCourseOffers.isEmpty)
-                  Center(
-                    child: Text(
-                      'No course offers added yet',
-                      style: TextStyle(color: AppColors.textSecondary),
-                    ),
-                  )
-                else
-                  ..._selectedCourseOffers.asMap().entries.map((entry) {
-                    final index = entry.key;
-                    final offer = entry.value;
-                    return _buildCourseOfferItem(offer, index);
-                  }),
-              ],
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey[200]!, width: 1),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Course Offers',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: AppColors.textPrimary,
             ),
           ),
-        );
-      },
+          const SizedBox(height: 16),
+          // Inline input fields for adding course
+          LayoutBuilder(
+            builder: (context, constraints) {
+              if (constraints.maxWidth < 600) {
+                // Stack vertically on small screens
+                return Column(
+                  children: [
+                    DropdownButtonFormField<String>(
+                      value: _selectedCourseId,
+                      isExpanded: true,
+                      decoration: InputDecoration(
+                        labelText: 'Course',
+                        hintText: 'Select Course',
+                        labelStyle: const TextStyle(color: AppColors.textSecondary),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: BorderSide(color: Colors.grey[300]!),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: BorderSide(color: Colors.grey[300]!),
+                        ),
+                        filled: true,
+                        fillColor: Colors.grey[50],
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+                      ),
+                      items: _availableCourses.map((course) {
+                        return DropdownMenuItem<String>(
+                          value: course['_id']?.toString() ?? course['id']?.toString(),
+                          child: Text(
+                            course['title'] ?? course['courseName'] ?? 'Unknown',
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        );
+                      }).toList(),
+                      onChanged: (value) {
+                        setState(() {
+                          _selectedCourseId = value;
+                          // Auto-fill original price from course
+                          if (value != null) {
+                            final course = _availableCourses.firstWhere(
+                              (c) => (c['_id']?.toString() ?? c['id']?.toString()) == value,
+                              orElse: () => {},
+                            );
+                            if (course.isNotEmpty) {
+                              final price = course['price'] ?? 0;
+                              _courseOriginalPriceController.text = price.toString();
+                            }
+                          } else {
+                            _courseOriginalPriceController.clear();
+                          }
+                        });
+                      },
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextFormField(
+                            controller: _courseOriginalPriceController,
+                            keyboardType: TextInputType.number,
+                            readOnly: true,
+                            decoration: InputDecoration(
+                              labelText: 'Original Price',
+                              labelStyle: const TextStyle(color: AppColors.textSecondary),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(8),
+                                borderSide: BorderSide(color: Colors.grey[300]!),
+                              ),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(8),
+                                borderSide: BorderSide(color: Colors.grey[300]!),
+                              ),
+                              filled: true,
+                              fillColor: Colors.grey[200],
+                              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: TextFormField(
+                            controller: _courseOfferPriceController,
+                            keyboardType: TextInputType.number,
+                            decoration: InputDecoration(
+                              labelText: 'Offer Price',
+                              labelStyle: const TextStyle(color: AppColors.textSecondary),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(8),
+                                borderSide: BorderSide(color: Colors.grey[300]!),
+                              ),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(8),
+                                borderSide: BorderSide(color: Colors.grey[300]!),
+                              ),
+                              filled: true,
+                              fillColor: Colors.grey[50],
+                              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: _addCourseFromInline,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.info,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                        child: const Text('Add'),
+                      ),
+                    ),
+                  ],
+                );
+              } else {
+                // Horizontal layout on larger screens
+                return Row(
+                  children: [
+                    Expanded(
+                      flex: 2,
+                      child: DropdownButtonFormField<String>(
+                        value: _selectedCourseId,
+                        isExpanded: true,
+                        decoration: InputDecoration(
+                          labelText: 'Course',
+                          hintText: 'Select Course',
+                          labelStyle: const TextStyle(color: AppColors.textSecondary),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            borderSide: BorderSide(color: Colors.grey[300]!),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            borderSide: BorderSide(color: Colors.grey[300]!),
+                          ),
+                          filled: true,
+                          fillColor: Colors.grey[50],
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+                        ),
+                        items: _availableCourses.map((course) {
+                          return DropdownMenuItem<String>(
+                            value: course['_id']?.toString() ?? course['id']?.toString(),
+                            child: Text(
+                              course['title'] ?? course['courseName'] ?? 'Unknown',
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          );
+                        }).toList(),
+                        onChanged: (value) {
+                          setState(() {
+                            _selectedCourseId = value;
+                          });
+                        },
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: TextFormField(
+                        controller: _courseOriginalPriceController,
+                        keyboardType: TextInputType.number,
+                        decoration: InputDecoration(
+                          labelText: 'Original Price',
+                          labelStyle: const TextStyle(color: AppColors.textSecondary),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            borderSide: BorderSide(color: Colors.grey[300]!),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            borderSide: BorderSide(color: Colors.grey[300]!),
+                          ),
+                          filled: true,
+                          fillColor: Colors.grey[50],
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: TextFormField(
+                        controller: _courseOfferPriceController,
+                        keyboardType: TextInputType.number,
+                        decoration: InputDecoration(
+                          labelText: 'Offer Price',
+                          labelStyle: const TextStyle(color: AppColors.textSecondary),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            borderSide: BorderSide(color: Colors.grey[300]!),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            borderSide: BorderSide(color: Colors.grey[300]!),
+                          ),
+                          filled: true,
+                          fillColor: Colors.grey[50],
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    ElevatedButton(
+                      onPressed: _addCourseFromInline,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.info,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      child: const Text('Add'),
+                    ),
+                  ],
+                );
+              }
+            },
+          ),
+          const SizedBox(height: 20),
+          // List of added course offers
+          if (_selectedCourseOffers.isEmpty)
+            Center(
+              child: Padding(
+                padding: const EdgeInsets.all(20),
+                child: Text(
+                  'No course offers added yet',
+                  style: TextStyle(color: Colors.grey[600]),
+                ),
+              ),
+            )
+          else
+            ..._selectedCourseOffers.asMap().entries.map((entry) {
+              final index = entry.key;
+              final offer = entry.value;
+              return _buildCourseOfferItem(offer, index);
+            }),
+        ],
+      ),
     );
+  }
+
+  void _addCourseFromInline() {
+    if (_selectedCourseId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please select a course')),
+      );
+      return;
+    }
+
+    final originalPrice = double.tryParse(_courseOriginalPriceController.text) ?? 0;
+    final offerPrice = double.tryParse(_courseOfferPriceController.text) ?? 0;
+
+    if (originalPrice <= 0 || offerPrice <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter valid prices')),
+      );
+      return;
+    }
+
+    final course = _availableCourses.firstWhere(
+      (c) => (c['_id']?.toString() ?? c['id']?.toString()) == _selectedCourseId,
+    );
+
+    final discountPercentage = originalPrice > 0
+        ? ((originalPrice - offerPrice) / originalPrice * 100).toDouble()
+        : 0.0;
+
+    setState(() {
+      _selectedCourseOffers.add(CourseOffer(
+        courseId: _selectedCourseId!,
+        courseName: course['title'] ?? course['courseName'] ?? 'Unknown',
+        originalPrice: originalPrice,
+        offerPrice: offerPrice,
+        discountPercentage: discountPercentage,
+      ));
+      _selectedCourseId = null;
+      _courseOriginalPriceController.clear();
+      _courseOfferPriceController.clear();
+    });
   }
 
   Widget _buildCourseOfferItem(CourseOffer offer, int index) {
@@ -627,157 +969,415 @@ class _OfferFormPageState extends State<OfferFormPage> {
   }
 
   Widget _buildTegaExamOffersSection() {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final isSmallScreen = constraints.maxWidth < 600;
-
-        return Container(
-          margin: EdgeInsets.fromLTRB(
-            isSmallScreen ? 16 : 20,
-            0,
-            isSmallScreen ? 16 : 20,
-            isSmallScreen ? 12 : 16,
-          ),
-          decoration: BoxDecoration(
-            color: AppColors.pureWhite,
-            borderRadius: BorderRadius.circular(16),
-            boxShadow: [
-              BoxShadow(
-                color: AppColors.shadowLight,
-                blurRadius: 12,
-                offset: const Offset(0, 3),
-              ),
-            ],
-            border: Border.all(color: AppColors.borderLight, width: 1),
-          ),
-          child: Padding(
-            padding: EdgeInsets.all(isSmallScreen ? 16.0 : 20.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                LayoutBuilder(
-                  builder: (context, constraints) {
-                    if (constraints.maxWidth < 400) {
-                      // Stack vertically on small screens
-                      return Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.all(8),
-                                decoration: BoxDecoration(
-                                  color: AppColors.warning.withOpacity(0.1),
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: Icon(
-                                  Icons.quiz_rounded,
-                                  color: AppColors.warning,
-                                  size: 20,
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                              Text(
-                                'TEGA Exam Offers',
-                                style: TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                  color: AppColors.textPrimary,
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 12),
-                          SizedBox(
-                            width: double.infinity,
-                            child: ElevatedButton.icon(
-                              onPressed: _addTegaExamOffer,
-                              icon: const Icon(Icons.add_rounded),
-                              label: const Text('Add Exam'),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: AppColors.warning,
-                                foregroundColor: AppColors.pureWhite,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      );
-                    } else {
-                      // Side by side on larger screens
-                      return Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Flexible(
-                            child: Row(
-                              children: [
-                                Container(
-                                  padding: const EdgeInsets.all(8),
-                                  decoration: BoxDecoration(
-                                    color: AppColors.warning.withOpacity(0.1),
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  child: Icon(
-                                    Icons.quiz_rounded,
-                                    color: AppColors.warning,
-                                    size: 20,
-                                  ),
-                                ),
-                                const SizedBox(width: 12),
-                                Flexible(
-                                  child: Text(
-                                    'TEGA Exam Offers',
-                                    style: TextStyle(
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.bold,
-                                      color: AppColors.textPrimary,
-                                    ),
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          ElevatedButton.icon(
-                            onPressed: _addTegaExamOffer,
-                            icon: const Icon(Icons.add_rounded),
-                            label: const Text('Add Exam'),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: AppColors.warning,
-                              foregroundColor: AppColors.pureWhite,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                            ),
-                          ),
-                        ],
-                      );
-                    }
-                  },
-                ),
-                const SizedBox(height: 16),
-                if (_selectedTegaExamOffers.isEmpty)
-                  Center(
-                    child: Text(
-                      'No TEGA exam offers added yet',
-                      style: TextStyle(color: AppColors.textSecondary),
-                    ),
-                  )
-                else
-                  ..._selectedTegaExamOffers.asMap().entries.map((entry) {
-                    final index = entry.key;
-                    final offer = entry.value;
-                    return _buildTegaExamOfferItem(offer, index);
-                  }),
-              ],
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey[200]!, width: 1),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'TEGA Exam Offers',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: AppColors.textPrimary,
             ),
           ),
-        );
-      },
+          const SizedBox(height: 16),
+          // Inline input fields for adding TEGA exam
+          LayoutBuilder(
+            builder: (context, constraints) {
+              if (constraints.maxWidth < 700) {
+                // Stack vertically on small screens
+                return Column(
+                  children: [
+                    DropdownButtonFormField<String>(
+                      value: _selectedTegaExamId,
+                      isExpanded: true,
+                      decoration: InputDecoration(
+                        labelText: 'TEGA Exam',
+                        hintText: 'Select TEGA Exam',
+                        labelStyle: const TextStyle(color: AppColors.textSecondary),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: BorderSide(color: Colors.grey[300]!),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: BorderSide(color: Colors.grey[300]!),
+                        ),
+                        filled: true,
+                        fillColor: Colors.grey[50],
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+                      ),
+                      items: _availableTegaExams.map((exam) {
+                        return DropdownMenuItem<String>(
+                          value: exam['_id']?.toString() ?? exam['id']?.toString(),
+                          child: Text(
+                            exam['title'] ?? exam['examTitle'] ?? 'Unknown',
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        );
+                      }).toList(),
+                      onChanged: (value) {
+                        setState(() {
+                          _selectedTegaExamId = value;
+                          _selectedSlotId = null;
+                          // Load slots for selected exam and auto-fill original price
+                          if (value != null) {
+                            final exam = _availableTegaExams.firstWhere(
+                              (e) => (e['_id']?.toString() ?? e['id']?.toString()) == value,
+                              orElse: () => {},
+                            );
+                            if (exam.isNotEmpty) {
+                              _availableSlots = List<Map<String, dynamic>>.from(
+                                exam['slots'] ?? [],
+                              );
+                              // Auto-fill original price from exam
+                              final price = exam['price'] ?? 0;
+                              _examOriginalPriceController.text = price.toString();
+                            }
+                          } else {
+                            _availableSlots = [];
+                            _examOriginalPriceController.clear();
+                          }
+                        });
+                      },
+                    ),
+                    const SizedBox(height: 12),
+                    DropdownButtonFormField<String>(
+                      value: _selectedSlotId,
+                      isExpanded: true,
+                      decoration: InputDecoration(
+                        labelText: 'Slot (Optional)',
+                        hintText: 'All Slots',
+                        labelStyle: const TextStyle(color: AppColors.textSecondary),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: BorderSide(color: Colors.grey[300]!),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: BorderSide(color: Colors.grey[300]!),
+                        ),
+                        filled: true,
+                        fillColor: Colors.grey[50],
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+                      ),
+                      items: [
+                        const DropdownMenuItem<String>(
+                          value: null,
+                          child: Text('All Slots'),
+                        ),
+                        ..._availableSlots.map((slot) {
+                          return DropdownMenuItem<String>(
+                            value: slot['slotId']?.toString(),
+                            child: Text(
+                              '${slot['startTime'] ?? ''} - ${slot['endTime'] ?? ''}',
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          );
+                        }),
+                      ],
+                      onChanged: (value) {
+                        setState(() {
+                          _selectedSlotId = value;
+                        });
+                      },
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextFormField(
+                            controller: _examOriginalPriceController,
+                            keyboardType: TextInputType.number,
+                            readOnly: true,
+                            decoration: InputDecoration(
+                              labelText: 'Original Price',
+                              labelStyle: const TextStyle(color: AppColors.textSecondary),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(8),
+                                borderSide: BorderSide(color: Colors.grey[300]!),
+                              ),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(8),
+                                borderSide: BorderSide(color: Colors.grey[300]!),
+                              ),
+                              filled: true,
+                              fillColor: Colors.grey[200],
+                              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: TextFormField(
+                            controller: _examOfferPriceController,
+                            keyboardType: TextInputType.number,
+                            decoration: InputDecoration(
+                              labelText: 'Offer Price',
+                              labelStyle: const TextStyle(color: AppColors.textSecondary),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(8),
+                                borderSide: BorderSide(color: Colors.grey[300]!),
+                              ),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(8),
+                                borderSide: BorderSide(color: Colors.grey[300]!),
+                              ),
+                              filled: true,
+                              fillColor: Colors.grey[50],
+                              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: _addTegaExamFromInline,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.warning,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                        child: const Text('Add'),
+                      ),
+                    ),
+                  ],
+                );
+              } else {
+                // Horizontal layout on larger screens
+                return Row(
+                  children: [
+                    Expanded(
+                      flex: 2,
+                      child: DropdownButtonFormField<String>(
+                        value: _selectedTegaExamId,
+                        isExpanded: true,
+                        decoration: InputDecoration(
+                          labelText: 'TEGA Exam',
+                          hintText: 'Select TEGA Exam',
+                          labelStyle: const TextStyle(color: AppColors.textSecondary),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            borderSide: BorderSide(color: Colors.grey[300]!),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            borderSide: BorderSide(color: Colors.grey[300]!),
+                          ),
+                          filled: true,
+                          fillColor: Colors.grey[50],
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+                        ),
+                        items: _availableTegaExams.map((exam) {
+                          return DropdownMenuItem<String>(
+                            value: exam['_id']?.toString() ?? exam['id']?.toString(),
+                            child: Text(
+                              exam['title'] ?? exam['examTitle'] ?? 'Unknown',
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          );
+                        }).toList(),
+                        onChanged: (value) {
+                          setState(() {
+                            _selectedTegaExamId = value;
+                            _selectedSlotId = null;
+                            // Load slots for selected exam
+                            if (value != null) {
+                              final exam = _availableTegaExams.firstWhere(
+                                (e) => (e['_id']?.toString() ?? e['id']?.toString()) == value,
+                              );
+                              _availableSlots = List<Map<String, dynamic>>.from(
+                                exam['slots'] ?? [],
+                              );
+                            } else {
+                              _availableSlots = [];
+                            }
+                          });
+                        },
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: DropdownButtonFormField<String>(
+                        value: _selectedSlotId,
+                        isExpanded: true,
+                        decoration: InputDecoration(
+                          labelText: 'Slot (Optional)',
+                          hintText: 'All Slots',
+                          labelStyle: const TextStyle(color: AppColors.textSecondary),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            borderSide: BorderSide(color: Colors.grey[300]!),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            borderSide: BorderSide(color: Colors.grey[300]!),
+                          ),
+                          filled: true,
+                          fillColor: Colors.grey[50],
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+                        ),
+                        items: [
+                          const DropdownMenuItem<String>(
+                            value: null,
+                            child: Text('All Slots'),
+                          ),
+                          ..._availableSlots.map((slot) {
+                            return DropdownMenuItem<String>(
+                              value: slot['slotId']?.toString(),
+                              child: Text(
+                                '${slot['startTime'] ?? ''} - ${slot['endTime'] ?? ''}',
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            );
+                          }),
+                        ],
+                        onChanged: (value) {
+                          setState(() {
+                            _selectedSlotId = value;
+                          });
+                        },
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: TextFormField(
+                        controller: _examOriginalPriceController,
+                        keyboardType: TextInputType.number,
+                        decoration: InputDecoration(
+                          labelText: 'Original Price',
+                          labelStyle: const TextStyle(color: AppColors.textSecondary),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            borderSide: BorderSide(color: Colors.grey[300]!),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            borderSide: BorderSide(color: Colors.grey[300]!),
+                          ),
+                          filled: true,
+                          fillColor: Colors.grey[50],
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: TextFormField(
+                        controller: _examOfferPriceController,
+                        keyboardType: TextInputType.number,
+                        decoration: InputDecoration(
+                          labelText: 'Offer Price',
+                          labelStyle: const TextStyle(color: AppColors.textSecondary),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            borderSide: BorderSide(color: Colors.grey[300]!),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            borderSide: BorderSide(color: Colors.grey[300]!),
+                          ),
+                          filled: true,
+                          fillColor: Colors.grey[50],
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    ElevatedButton(
+                      onPressed: _addTegaExamFromInline,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.warning,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      child: const Text('Add'),
+                    ),
+                  ],
+                );
+              }
+            },
+          ),
+          const SizedBox(height: 20),
+          // List of added TEGA exam offers
+          if (_selectedTegaExamOffers.isEmpty)
+            Center(
+              child: Padding(
+                padding: const EdgeInsets.all(20),
+                child: Text(
+                  'No TEGA exam offers added yet',
+                  style: TextStyle(color: Colors.grey[600]),
+                ),
+              ),
+            )
+          else
+            ..._selectedTegaExamOffers.asMap().entries.map((entry) {
+              final index = entry.key;
+              final offer = entry.value;
+              return _buildTegaExamOfferItem(offer, index);
+            }),
+        ],
+      ),
     );
+  }
+
+  void _addTegaExamFromInline() {
+    if (_selectedTegaExamId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please select a TEGA exam')),
+      );
+      return;
+    }
+
+    final originalPrice = double.tryParse(_examOriginalPriceController.text) ?? 0;
+    final offerPrice = double.tryParse(_examOfferPriceController.text) ?? 0;
+
+    if (originalPrice <= 0 || offerPrice <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter valid prices')),
+      );
+      return;
+    }
+
+    final exam = _availableTegaExams.firstWhere(
+      (e) => (e['_id']?.toString() ?? e['id']?.toString()) == _selectedTegaExamId,
+    );
+
+    final discountPercentage = originalPrice > 0
+        ? ((originalPrice - offerPrice) / originalPrice * 100).toDouble()
+        : 0.0;
+
+    setState(() {
+      _selectedTegaExamOffers.add(TegaExamOffer(
+        examId: _selectedTegaExamId!,
+        examTitle: exam['title'] ?? exam['examTitle'] ?? 'Unknown',
+        slotId: _selectedSlotId,
+        originalPrice: originalPrice,
+        offerPrice: offerPrice,
+        discountPercentage: discountPercentage,
+      ));
+      _selectedTegaExamId = null;
+      _selectedSlotId = null;
+      _availableSlots = [];
+      _examOriginalPriceController.clear();
+      _examOfferPriceController.clear();
+    });
   }
 
   Widget _buildTegaExamOfferItem(TegaExamOffer offer, int index) {
@@ -1229,80 +1829,59 @@ class _OfferFormPageState extends State<OfferFormPage> {
   }
 
   Widget _buildActionButtons() {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final isSmallScreen = constraints.maxWidth < 600;
-
-        return Container(
-          margin: EdgeInsets.fromLTRB(
-            isSmallScreen ? 16 : 20,
-            0,
-            isSmallScreen ? 16 : 20,
-            isSmallScreen ? 16 : 20,
+    return Row(
+      children: [
+        Expanded(
+          child: OutlinedButton(
+            onPressed: () => Navigator.of(context).pop(),
+            style: OutlinedButton.styleFrom(
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              side: BorderSide(color: Colors.grey[300]!),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            child: const Text(
+              'Cancel',
+              style: TextStyle(
+                color: AppColors.textSecondary,
+                fontWeight: FontWeight.w600,
+                fontSize: 16,
+              ),
+            ),
           ),
-          child: Row(
-            children: [
-              Expanded(
-                child: OutlinedButton(
-                  onPressed: () => Navigator.of(context).pop(),
-                  style: OutlinedButton.styleFrom(
-                    padding: EdgeInsets.symmetric(
-                      vertical: isSmallScreen ? 14 : 16,
+        ),
+        const SizedBox(width: 16),
+        Expanded(
+          child: ElevatedButton(
+            onPressed: _isLoading ? null : _saveOffer,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.warmOrange,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            child: _isLoading
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                     ),
-                    side: BorderSide(color: AppColors.warmOrange),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  child: Text(
-                    'Cancel',
-                    style: TextStyle(
-                      color: AppColors.warmOrange,
+                  )
+                : Text(
+                    widget.isEdit ? 'Update Offer' : 'Create Offer',
+                    style: const TextStyle(
                       fontWeight: FontWeight.w600,
-                      fontSize: isSmallScreen ? 14 : 16,
+                      fontSize: 16,
                     ),
                   ),
-                ),
-              ),
-              SizedBox(width: isSmallScreen ? 12 : 16),
-              Expanded(
-                child: ElevatedButton(
-                  onPressed: _isLoading ? null : _saveOffer,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.warmOrange,
-                    foregroundColor: AppColors.pureWhite,
-                    padding: EdgeInsets.symmetric(
-                      vertical: isSmallScreen ? 14 : 16,
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    elevation: 2,
-                  ),
-                  child: _isLoading
-                      ? SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation<Color>(
-                              AppColors.pureWhite,
-                            ),
-                          ),
-                        )
-                      : Text(
-                          widget.isEdit ? 'Update Offer' : 'Create Offer',
-                          style: TextStyle(
-                            fontWeight: FontWeight.w600,
-                            fontSize: isSmallScreen ? 14 : 16,
-                          ),
-                        ),
-                ),
-              ),
-            ],
           ),
-        );
-      },
+        ),
+      ],
     );
   }
 
@@ -1357,38 +1936,10 @@ class _OfferFormPageState extends State<OfferFormPage> {
     }
   }
 
-  void _addCourseOffer() {
-    showDialog(
-      context: context,
-      builder: (context) => _CourseOfferDialog(
-        availableCourses: _availableCourses,
-        onAdd: (offer) {
-          setState(() {
-            _selectedCourseOffers.add(offer);
-          });
-        },
-      ),
-    );
-  }
-
   void _removeCourseOffer(int index) {
     setState(() {
       _selectedCourseOffers.removeAt(index);
     });
-  }
-
-  void _addTegaExamOffer() {
-    showDialog(
-      context: context,
-      builder: (context) => _TegaExamOfferDialog(
-        availableExams: _availableTegaExams,
-        onAdd: (offer) {
-          setState(() {
-            _selectedTegaExamOffers.add(offer);
-          });
-        },
-      ),
-    );
   }
 
   void _removeTegaExamOffer(int index) {

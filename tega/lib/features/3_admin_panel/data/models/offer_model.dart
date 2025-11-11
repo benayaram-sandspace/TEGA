@@ -132,6 +132,7 @@ class CourseOffer {
 class TegaExamOffer {
   final String examId;
   final String examTitle;
+  final String? slotId;
   final double originalPrice;
   final double offerPrice;
   final double discountPercentage;
@@ -139,6 +140,7 @@ class TegaExamOffer {
   TegaExamOffer({
     required this.examId,
     required this.examTitle,
+    this.slotId,
     required this.originalPrice,
     required this.offerPrice,
     required this.discountPercentage,
@@ -148,6 +150,7 @@ class TegaExamOffer {
     return TegaExamOffer(
       examId: json['examId'] ?? '',
       examTitle: json['examTitle'] ?? '',
+      slotId: json['slotId'],
       originalPrice: (json['originalPrice'] ?? 0).toDouble(),
       offerPrice: (json['offerPrice'] ?? 0).toDouble(),
       discountPercentage: (json['discountPercentage'] ?? 0).toDouble(),
@@ -158,6 +161,7 @@ class TegaExamOffer {
     return {
       'examId': examId,
       'examTitle': examTitle,
+      if (slotId != null) 'slotId': slotId,
       'originalPrice': originalPrice,
       'offerPrice': offerPrice,
       'discountPercentage': discountPercentage,

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:intl/intl.dart';
 import 'package:tega/features/1_authentication/data/auth_repository.dart';
 import 'package:tega/features/3_admin_panel/data/services/admin_dashboard_service.dart';
 import 'package:tega/features/3_admin_panel/presentation/0_dashboard/admin_dashboard_styles.dart';
@@ -26,6 +27,7 @@ class _DashboardHomeTabState extends State<DashboardHomeTab> {
   int _totalStudents = 0;
   int _totalAdmins = 0;
   int _recentRegistrations = 0;
+  double _totalRevenue = 0.0;
 
   @override
   void initState() {
@@ -40,11 +42,26 @@ class _DashboardHomeTabState extends State<DashboardHomeTab> {
         _errorMessage = null;
       });
 
+      // Load dashboard data
       final data = await _dashboardService.getDashboardData();
 
       if (data['success'] == true) {
         final stats = data['stats'] as Map<String, dynamic>;
         final recentStudents = data['recentStudents'] as List<dynamic>;
+
+        // Try to load payment stats, but don't fail if it errors
+        // Use getPaymentStats endpoint which includes both Payment and RazorpayPayment models
+        double totalRevenue = 0.0;
+        try {
+          final paymentData = await _dashboardService.getPaymentStats();
+          if (paymentData['success'] == true) {
+            final paymentStatsData = paymentData['data'] as Map<String, dynamic>;
+            totalRevenue = (paymentStatsData['totalRevenue'] ?? 0).toDouble();
+          }
+        } catch (e) {
+          // Silently fail for payment stats - dashboard should still load
+          print('Failed to load payment stats: $e');
+        }
 
         setState(() {
           _recentStudents = recentStudents;
@@ -52,6 +69,7 @@ class _DashboardHomeTabState extends State<DashboardHomeTab> {
           _totalStudents = stats['totalStudents'] ?? 0;
           _totalAdmins = stats['totalAdmins'] ?? 0;
           _recentRegistrations = stats['recentRegistrations'] ?? 0;
+          _totalRevenue = totalRevenue;
           _isLoading = false;
         });
       } else {
@@ -426,6 +444,19 @@ class _DashboardHomeTabState extends State<DashboardHomeTab> {
                       title: 'Recent',
                       value: _recentRegistrations.toString(),
                       color: const Color(0xFF48BB78),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    child: _buildCompactStatItem(
+                      icon: Icons.currency_rupee_rounded,
+                      title: 'Total Revenue',
+                      value: '₹${NumberFormat('#,##,###').format(_totalRevenue.toInt())}',
+                      color: const Color(0xFFF6AD55),
                     ),
                   ),
                 ],

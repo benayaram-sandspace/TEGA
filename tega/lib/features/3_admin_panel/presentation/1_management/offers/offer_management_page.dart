@@ -6,6 +6,7 @@ import 'package:tega/data/colleges_data.dart';
 import 'package:tega/features/3_admin_panel/data/models/offer_model.dart';
 import 'package:tega/features/3_admin_panel/data/repositories/offer_repository.dart';
 import 'package:tega/features/3_admin_panel/presentation/1_management/offers/offer_form_page.dart';
+import 'package:tega/features/3_admin_panel/presentation/1_management/offers/package_offer_form_page.dart';
 
 class OfferManagementPage extends StatefulWidget {
   const OfferManagementPage({super.key});
@@ -18,6 +19,8 @@ class _OfferManagementPageState extends State<OfferManagementPage> {
   final OfferRepository _offerRepository = OfferRepository();
   List<Offer> _offers = [];
   List<Offer> _filteredOffers = [];
+  List<Map<String, dynamic>> _packageOffers = [];
+  List<Map<String, dynamic>> _filteredPackageOffers = [];
   bool _isLoading = true;
   String? _error;
   Map<String, dynamic>? _stats;
@@ -25,11 +28,13 @@ class _OfferManagementPageState extends State<OfferManagementPage> {
   final TextEditingController _searchController = TextEditingController();
   String _selectedInstitute = 'All';
   String _selectedStatus = 'All';
+  bool _isFabExpanded = false;
 
   @override
   void initState() {
     super.initState();
     _fetchOffers();
+    _fetchPackageOffers();
     _fetchStats();
     _searchController.addListener(_filterOffers);
   }
@@ -46,11 +51,26 @@ class _OfferManagementPageState extends State<OfferManagementPage> {
         _filteredOffers = _offers;
         _isLoading = false;
       });
+      _filterOffers();
     } catch (e) {
       setState(() {
         _error = e.toString();
         _isLoading = false;
       });
+    }
+  }
+
+  Future<void> _fetchPackageOffers() async {
+    try {
+      final packages = await _offerRepository.getPackageOffers();
+      setState(() {
+        _packageOffers = packages;
+        _filteredPackageOffers = packages;
+      });
+      _filterOffers();
+    } catch (e) {
+      // Handle error silently for package offers
+      print('Failed to load package offers: $e');
     }
   }
 
@@ -80,6 +100,15 @@ class _OfferManagementPageState extends State<OfferManagementPage> {
         final description = offer.description.toLowerCase();
         return instituteName.contains(query) || description.contains(query);
       }).toList();
+
+      _filteredPackageOffers = _packageOffers.where((package) {
+        final packageName = (package['packageName'] ?? '').toString().toLowerCase();
+        final description = (package['description'] ?? '').toString().toLowerCase();
+        final instituteName = (package['instituteName'] ?? '').toString().toLowerCase();
+        return packageName.contains(query) ||
+            description.contains(query) ||
+            instituteName.contains(query);
+      }).toList();
     });
   }
 
@@ -91,6 +120,82 @@ class _OfferManagementPageState extends State<OfferManagementPage> {
     if (result == true) {
       _fetchOffers();
       _fetchStats();
+    }
+  }
+
+  Future<void> _createPackageOffer() async {
+    final result = await Navigator.of(context).push<bool>(
+      MaterialPageRoute(builder: (context) => const PackageOfferFormPage()),
+    );
+
+    if (result == true) {
+      _fetchOffers();
+      _fetchPackageOffers();
+      _fetchStats();
+    }
+  }
+
+  Future<void> _editPackageOffer(Map<String, dynamic> packageOffer) async {
+    final result = await Navigator.of(context).push<bool>(
+      MaterialPageRoute(
+        builder: (context) => PackageOfferFormPage(
+          packageOffer: packageOffer,
+          isEdit: true,
+        ),
+      ),
+    );
+
+    if (result == true) {
+      _fetchPackageOffers();
+      _fetchStats();
+    }
+  }
+
+  Future<void> _deletePackageOffer(Map<String, dynamic> packageOffer) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete Package Offer'),
+        content: Text(
+          'Are you sure you want to delete the package "${packageOffer['packageName'] ?? 'Unknown'}"?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      try {
+        final packageId = packageOffer['_id'] ?? packageOffer['packageId'];
+        await _offerRepository.deletePackageOffer(packageId.toString());
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Package offer deleted successfully'),
+            backgroundColor: Colors.green,
+          ),
+        );
+        _fetchPackageOffers();
+        _fetchStats();
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to delete package offer: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 
@@ -151,29 +256,6 @@ class _OfferManagementPageState extends State<OfferManagementPage> {
           ),
         );
       }
-    }
-  }
-
-  Future<void> _toggleOfferStatus(Offer offer) async {
-    try {
-      await _offerRepository.toggleOfferStatus(offer.id);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'Offer ${offer.isActive ? 'deactivated' : 'activated'} successfully',
-          ),
-          backgroundColor: Colors.green,
-        ),
-      );
-      _fetchOffers();
-      _fetchStats();
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Failed to toggle offer status: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
     }
   }
 
@@ -635,15 +717,123 @@ class _OfferManagementPageState extends State<OfferManagementPage> {
   }
 
   Widget _buildFloatingActionButton() {
-    return FloatingActionButton.extended(
-      onPressed: _createOffer,
-      backgroundColor: AppColors.warmOrange,
-      foregroundColor: AppColors.pureWhite,
-      elevation: 2,
-      icon: const Icon(Icons.add_rounded),
-      label: const Text(
-        'Create Offer',
-        style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
+    // Animation durations
+    const animationDuration = Duration(milliseconds: 550);
+    const staggerDelay = Duration(milliseconds: 60);
+    
+    return AnimatedContainer(
+      duration: animationDuration,
+      curve: Curves.easeInOut,
+      width: 200,
+      height: _isFabExpanded ? 200 : 56,
+      child: Stack(
+        alignment: Alignment.bottomRight,
+        clipBehavior: Clip.none,
+        children: [
+          // Create Package FAB - slides up from main FAB (appears first)
+          TweenAnimationBuilder<double>(
+            tween: Tween(begin: 0.0, end: _isFabExpanded ? 1.0 : 0.0),
+            duration: animationDuration,
+            curve: Curves.easeOutCubic,
+            builder: (context, value, child) {
+              // Apply stagger delay for opening, immediate for closing
+              final adjustedValue = _isFabExpanded 
+                  ? (value * animationDuration.inMilliseconds - staggerDelay.inMilliseconds) / animationDuration.inMilliseconds
+                  : value;
+              final finalValue = adjustedValue.clamp(0.0, 1.0);
+              
+              return Transform.translate(
+                offset: Offset(0, -140 * finalValue),
+                child: Opacity(
+                  opacity: finalValue,
+                  child: Transform.scale(
+                    scale: 0.75 + (0.25 * finalValue),
+                    alignment: Alignment.bottomRight,
+                    child: FloatingActionButton.extended(
+                      onPressed: () {
+                        setState(() => _isFabExpanded = false);
+                        Future.delayed(animationDuration, () {
+                          _createPackageOffer();
+                        });
+                      },
+                      backgroundColor: AppColors.info,
+                      foregroundColor: AppColors.pureWhite,
+                      elevation: 2 + (4 * finalValue),
+                      heroTag: 'package_offer',
+                      icon: const Icon(Icons.inventory_2_rounded),
+                      label: const Text(
+                        'Create Package',
+                        style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
+          // Create Offer FAB - slides up from main FAB (appears second with delay)
+          TweenAnimationBuilder<double>(
+            tween: Tween(begin: 0.0, end: _isFabExpanded ? 1.0 : 0.0),
+            duration: animationDuration,
+            curve: Curves.easeOutCubic,
+            builder: (context, value, child) {
+              // Apply stagger delay for opening, immediate for closing
+              final adjustedValue = _isFabExpanded 
+                  ? (value * animationDuration.inMilliseconds - (staggerDelay.inMilliseconds * 2)) / animationDuration.inMilliseconds
+                  : value;
+              final finalValue = adjustedValue.clamp(0.0, 1.0);
+              
+              return Transform.translate(
+                offset: Offset(0, -76 * finalValue),
+                child: Opacity(
+                  opacity: finalValue,
+                  child: Transform.scale(
+                    scale: 0.75 + (0.25 * finalValue),
+                    alignment: Alignment.bottomRight,
+                    child: FloatingActionButton.extended(
+                      onPressed: () {
+                        setState(() => _isFabExpanded = false);
+                        Future.delayed(animationDuration, () {
+                          _createOffer();
+                        });
+                      },
+                      backgroundColor: AppColors.warmOrange,
+                      foregroundColor: AppColors.pureWhite,
+                      elevation: 2 + (4 * finalValue),
+                      heroTag: 'regular_offer',
+                      icon: const Icon(Icons.add_rounded),
+                      label: const Text(
+                        'Create Offer',
+                        style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
+          // Main FAB with + icon that rotates to X
+          FloatingActionButton(
+            onPressed: () {
+              setState(() => _isFabExpanded = !_isFabExpanded);
+            },
+            backgroundColor: AppColors.warmOrange,
+            foregroundColor: AppColors.pureWhite,
+            elevation: 4,
+            heroTag: 'main_fab',
+            child: TweenAnimationBuilder<double>(
+              tween: Tween(begin: 0.0, end: _isFabExpanded ? 0.125 : 0.0),
+              duration: animationDuration,
+              curve: Curves.easeInOutCubic,
+              builder: (context, value, child) {
+                return Transform.rotate(
+                  angle: value * 2 * 3.14159, // Convert turns to radians
+                  child: const Icon(Icons.add_rounded, size: 28),
+                );
+              },
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -1193,7 +1383,63 @@ class _OfferManagementPageState extends State<OfferManagementPage> {
   }
 
   Widget _buildOfferList() {
-    if (_filteredOffers.isEmpty) {
+    final allItems = <Widget>[];
+
+    // Add regular offers with refined animations
+    for (var i = 0; i < _filteredOffers.length; i++) {
+      allItems.add(
+        _buildOfferListItem(_filteredOffers[i])
+            .animate()
+            .fadeIn(
+              duration: 600.ms,
+              delay: (i * 80).ms,
+              curve: Curves.easeOut,
+            )
+            .slideY(
+              begin: 0.3,
+              end: 0,
+              duration: 600.ms,
+              delay: (i * 80).ms,
+              curve: Curves.easeOutCubic,
+            )
+            .scale(
+              begin: const Offset(0.9, 0.9),
+              end: const Offset(1.0, 1.0),
+              duration: 600.ms,
+              delay: (i * 80).ms,
+              curve: Curves.easeOutBack,
+            ),
+      );
+    }
+
+    // Add package offers with refined animations
+    for (var i = 0; i < _filteredPackageOffers.length; i++) {
+      allItems.add(
+        _buildPackageOfferListItem(_filteredPackageOffers[i])
+            .animate()
+            .fadeIn(
+              duration: 600.ms,
+              delay: ((_filteredOffers.length + i) * 80).ms,
+              curve: Curves.easeOut,
+            )
+            .slideY(
+              begin: 0.3,
+              end: 0,
+              duration: 600.ms,
+              delay: ((_filteredOffers.length + i) * 80).ms,
+              curve: Curves.easeOutCubic,
+            )
+            .scale(
+              begin: const Offset(0.9, 0.9),
+              end: const Offset(1.0, 1.0),
+              duration: 600.ms,
+              delay: ((_filteredOffers.length + i) * 80).ms,
+              curve: Curves.easeOutBack,
+            ),
+      );
+    }
+
+    if (allItems.isEmpty) {
       return Center(
         child: Container(
           margin: const EdgeInsets.all(24),
@@ -1234,7 +1480,7 @@ class _OfferManagementPageState extends State<OfferManagementPage> {
               ),
               const SizedBox(height: 8),
               Text(
-                _offers.isEmpty
+                _offers.isEmpty && _packageOffers.isEmpty
                     ? 'Create your first institutional offer to get started'
                     : 'Try adjusting your search or filter criteria',
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
@@ -1248,16 +1494,7 @@ class _OfferManagementPageState extends State<OfferManagementPage> {
       );
     }
 
-    return Column(
-      children: _filteredOffers.asMap().entries.map((entry) {
-        final index = entry.key;
-        final offer = entry.value;
-        return _buildOfferListItem(offer)
-            .animate()
-            .fadeIn(duration: 500.ms, delay: (index * 100).ms)
-            .slideY(begin: 0.5);
-      }).toList(),
-    );
+    return Column(children: allItems);
   }
 
   Widget _buildOfferListItem(Offer offer) {
@@ -1269,256 +1506,428 @@ class _OfferManagementPageState extends State<OfferManagementPage> {
       child: Material(
         elevation: 0,
         borderRadius: BorderRadius.circular(16),
+        color: Colors.transparent,
         child: InkWell(
           onTap: () => _showOfferDetails(offer),
           borderRadius: BorderRadius.circular(16),
-          child: Container(
+          splashColor: AppColors.warmOrange.withOpacity(0.1),
+          highlightColor: AppColors.warmOrange.withOpacity(0.05),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            curve: Curves.easeInOut,
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-              color: AppColors.pureWhite,
+              color: Colors.white,
               borderRadius: BorderRadius.circular(16),
               border: Border.all(
                 color: isActive
-                    ? AppColors.success.withOpacity(0.3)
+                    ? AppColors.success.withOpacity(0.2)
                     : isExpired
-                    ? AppColors.error.withOpacity(0.3)
-                    : AppColors.borderLight,
-                width: 1.5,
+                        ? AppColors.error.withOpacity(0.2)
+                        : AppColors.borderLight,
+                width: 1,
               ),
               boxShadow: [
                 BoxShadow(
-                  color: AppColors.shadowLight,
-                  blurRadius: 12,
-                  offset: const Offset(0, 3),
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 10,
+                  offset: const Offset(0, 2),
                 ),
-                if (isActive)
-                  BoxShadow(
-                    color: AppColors.success.withOpacity(0.1),
-                    blurRadius: 20,
-                    offset: const Offset(0, 6),
-                  ),
               ],
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // Header section
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: AppColors.warmOrange.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Icon(
+                        Icons.school_rounded,
+                        color: AppColors.warmOrange,
+                        size: 24,
+                      ),
+                    ),
+                    const SizedBox(width: 16),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Row(
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.all(10),
-                                decoration: BoxDecoration(
-                                  gradient: LinearGradient(
-                                    colors: [
-                                      AppColors.warmOrange.withOpacity(0.15),
-                                      AppColors.warmOrange.withOpacity(0.08),
-                                    ],
-                                    begin: Alignment.topLeft,
-                                    end: Alignment.bottomRight,
-                                  ),
-                                  borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(
-                                    color: AppColors.warmOrange.withOpacity(
-                                      0.2,
-                                    ),
-                                    width: 1,
-                                  ),
-                                ),
-                                child: Icon(
-                                  Icons.school_rounded,
-                                  color: AppColors.warmOrange,
-                                  size: 22,
-                                ),
-                              ),
-                              const SizedBox(width: 16),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      offer.instituteName,
-                                      style: TextStyle(
-                                        fontSize: 19,
-                                        fontWeight: FontWeight.bold,
-                                        color: AppColors.textPrimary,
-                                        letterSpacing: -0.3,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 6),
-                                    Text(
-                                      offer.description,
-                                      style: TextStyle(
-                                        fontSize: 14,
-                                        color: AppColors.textSecondary,
-                                        height: 1.5,
-                                        fontWeight: FontWeight.w500,
-                                      ),
-                                      maxLines: 2,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
+                          Text(
+                            offer.instituteName,
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.textPrimary,
+                            ),
                           ),
-                          const SizedBox(height: 16),
-                          Row(
-                            children: [
-                              _buildModernInfoChip(
-                                '${offer.courseOffers.length}',
-                                'Courses',
-                                Icons.school_rounded,
-                                AppColors.info,
-                              ),
-                              const SizedBox(width: 12),
-                              _buildModernInfoChip(
-                                '${offer.tegaExamOffers.length}',
-                                'Exams',
-                                Icons.quiz_rounded,
-                                AppColors.warning,
-                              ),
-                              const SizedBox(width: 12),
-                              _buildModernInfoChip(
-                                '${offer.studentCount}',
-                                'Students',
-                                Icons.people_rounded,
-                                AppColors.success,
-                              ),
-                            ],
+                          const SizedBox(height: 6),
+                          Text(
+                            offer.description,
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: AppColors.textSecondary,
+                              height: 1.4,
+                            ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
                           ),
+                          const SizedBox(height: 8),
+                          _buildStatusBadge(isActive, isExpired),
                         ],
                       ),
-                    ),
-                    const SizedBox(width: 16),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 18,
-                            vertical: 10,
-                          ),
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              colors: [
-                                AppColors.warmOrange,
-                                AppColors.orangeShade3,
-                              ],
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                            ),
-                            borderRadius: BorderRadius.circular(14),
-                            boxShadow: [
-                              BoxShadow(
-                                color: AppColors.warmOrange.withOpacity(0.3),
-                                blurRadius: 8,
-                                offset: const Offset(0, 2),
-                              ),
-                            ],
-                          ),
-                          child: Text(
-                            '₹${offer.totalRevenue.toStringAsFixed(0)}',
-                            style: const TextStyle(
-                              fontSize: 17,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                              letterSpacing: -0.2,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 10),
-                        _buildStatusBadge(isActive, isExpired),
-                        const SizedBox(height: 10),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 10,
-                            vertical: 6,
-                          ),
-                          decoration: BoxDecoration(
-                            color: AppColors.whiteShade2,
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(
-                              color: AppColors.borderLight,
-                              width: 1,
-                            ),
-                          ),
-                          child: Text(
-                            'Until ${offer.validUntil.day}/${offer.validUntil.month}/${offer.validUntil.year}',
-                            style: TextStyle(
-                              fontSize: 11,
-                              color: AppColors.textSecondary,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
-                      ],
                     ),
                   ],
                 ),
                 const SizedBox(height: 20),
+                // Stats row
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      child: _buildStatItem(
+                        '${offer.courseOffers.length}',
+                        'Courses',
+                        Icons.school_rounded,
+                        AppColors.info,
+                      ),
+                    ),
+                    Expanded(
+                      child: _buildStatItem(
+                        '${offer.tegaExamOffers.length}',
+                        'Exams',
+                        Icons.quiz_rounded,
+                        AppColors.warning,
+                      ),
+                    ),
+                    Expanded(
+                      child: _buildStatItem(
+                        '${offer.studentCount}',
+                        'Students',
+                        Icons.people_rounded,
+                        AppColors.success,
+                      ),
+                    ),
+                    Expanded(
+                      child: _buildStatItem(
+                        '₹${_formatCurrency(offer.totalRevenue)}',
+                        'Revenue',
+                        Icons.currency_rupee_rounded,
+                        AppColors.warmOrange,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 20),
+                // Footer section
+                Row(
                   children: [
                     Row(
+                      mainAxisSize: MainAxisSize.min,
                       children: [
-                        _buildModernActionButton(
+                        Icon(
+                          Icons.calendar_today_rounded,
+                          size: 14,
+                          color: AppColors.textSecondary,
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          'Until ${offer.validUntil.day}/${offer.validUntil.month}/${offer.validUntil.year}',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: AppColors.textSecondary,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const Spacer(),
+                    Row(
+                      children: [
+                        _buildIconButton(
                           icon: Icons.edit_rounded,
-                          label: 'Edit',
                           color: AppColors.info,
                           onPressed: () => _editOffer(offer),
                         ),
-                        const SizedBox(width: 12),
-                        _buildModernActionButton(
-                          icon: offer.isActive
-                              ? Icons.pause_rounded
-                              : Icons.play_arrow_rounded,
-                          label: offer.isActive ? 'Deactivate' : 'Activate',
-                          color: offer.isActive
-                              ? AppColors.warning
-                              : AppColors.success,
-                          onPressed: () => _toggleOfferStatus(offer),
-                        ),
-                        const SizedBox(width: 12),
-                        _buildModernActionButton(
+                        const SizedBox(width: 8),
+                        _buildIconButton(
                           icon: Icons.delete_rounded,
-                          label: 'Delete',
                           color: AppColors.error,
                           onPressed: () => _deleteOffer(offer),
                         ),
                       ],
                     ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPackageOfferListItem(Map<String, dynamic> packageOffer) {
+    final bool isActive = packageOffer['isActive'] == true;
+    final validUntil = packageOffer['validUntil'] != null
+        ? DateTime.parse(packageOffer['validUntil'])
+        : DateTime.now().add(const Duration(days: 30));
+    final bool isExpired = validUntil.isBefore(DateTime.now());
+    final bool isActiveAndValid = isActive && !isExpired;
+
+    final includedCourses = packageOffer['includedCourses'] as List<dynamic>? ?? [];
+    final includedExam = packageOffer['includedExam'];
+    final hasExam = includedExam != null && includedExam != '';
+
+    return Container(
+      margin: const EdgeInsets.fromLTRB(20, 0, 20, 16),
+      child: Material(
+        elevation: 0,
+        borderRadius: BorderRadius.circular(16),
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(16),
+          splashColor: AppColors.info.withOpacity(0.1),
+          highlightColor: AppColors.info.withOpacity(0.05),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            curve: Curves.easeInOut,
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: isActiveAndValid
+                    ? AppColors.success.withOpacity(0.2)
+                    : isExpired
+                        ? AppColors.error.withOpacity(0.2)
+                        : AppColors.borderLight,
+                width: 1,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 10,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Header section
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
                     Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 14,
-                        vertical: 8,
-                      ),
+                      padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: AppColors.whiteShade2,
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(
-                          color: AppColors.borderLight,
-                          width: 1,
-                        ),
+                        color: AppColors.info.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(12),
                       ),
-                      child: Text(
-                        '${offer.totalOffers} Offers',
-                        style: TextStyle(
-                          fontSize: 12,
+                      child: Icon(
+                        Icons.inventory_2_rounded,
+                        color: AppColors.info,
+                        size: 24,
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            packageOffer['packageName'] ?? 'Package Offer',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.textPrimary,
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            packageOffer['description'] ?? '',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: AppColors.textSecondary,
+                              height: 1.4,
+                            ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            packageOffer['instituteName'] ?? '',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: AppColors.textSecondary,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          _buildStatusBadge(isActiveAndValid, isExpired),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 20),
+                // Stats row
+                Row(
+                  children: [
+                    Expanded(
+                      child: _buildStatItem(
+                        '${includedCourses.length}',
+                        'Courses',
+                        Icons.school_rounded,
+                        AppColors.info,
+                      ),
+                    ),
+                    Expanded(
+                      child: _buildStatItem(
+                        hasExam ? '1' : '0',
+                        'Exams',
+                        Icons.quiz_rounded,
+                        AppColors.warning,
+                      ),
+                    ),
+                    Expanded(
+                      child: _buildStatItem(
+                        '₹${_formatCurrency((packageOffer['price'] ?? 0).toDouble())}',
+                        'Price',
+                        Icons.currency_rupee_rounded,
+                        AppColors.warmOrange,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 20),
+                // Footer section
+                Row(
+                  children: [
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.calendar_today_rounded,
+                          size: 14,
                           color: AppColors.textSecondary,
-                          fontWeight: FontWeight.w600,
                         ),
-                      ),
+                        const SizedBox(width: 6),
+                        Text(
+                          'Until ${validUntil.day}/${validUntil.month}/${validUntil.year}',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: AppColors.textSecondary,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const Spacer(),
+                    Row(
+                      children: [
+                        _buildIconButton(
+                          icon: Icons.edit_rounded,
+                          color: AppColors.info,
+                          onPressed: () => _editPackageOffer(packageOffer),
+                        ),
+                        const SizedBox(width: 8),
+                        _buildIconButton(
+                          icon: Icons.delete_rounded,
+                          color: AppColors.error,
+                          onPressed: () => _deletePackageOffer(packageOffer),
+                        ),
+                      ],
                     ),
                   ],
                 ),
               ],
             ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  String _formatCurrency(double amount) {
+    if (amount >= 100000) {
+      return '${(amount / 100000).toStringAsFixed(1)}L';
+    } else if (amount >= 1000) {
+      return '${(amount / 1000).toStringAsFixed(1)}K';
+    }
+    return amount.toStringAsFixed(0);
+  }
+
+  Widget _buildStatItem(
+    String value,
+    String label,
+    IconData icon,
+    Color color,
+  ) {
+    return Column(
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, size: 14, color: color),
+            const SizedBox(width: 4),
+            Text(
+              value,
+              style: TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.bold,
+                color: color,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 4),
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 11,
+            color: AppColors.textSecondary,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildIconButton({
+    required IconData icon,
+    required Color color,
+    required VoidCallback onPressed,
+  }) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onPressed,
+        borderRadius: BorderRadius.circular(10),
+        splashColor: color.withOpacity(0.2),
+        highlightColor: color.withOpacity(0.1),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          curve: Curves.easeInOut,
+          padding: const EdgeInsets.all(10),
+          decoration: BoxDecoration(
+            color: color.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(
+              color: color.withOpacity(0.3),
+              width: 1,
+            ),
+          ),
+          child: Icon(
+            icon,
+            size: 18,
+            color: color,
           ),
         ),
       ),
@@ -1569,83 +1978,6 @@ class _OfferManagementPageState extends State<OfferManagementPage> {
     );
   }
 
-  Widget _buildModernInfoChip(
-    String value,
-    String label,
-    IconData icon,
-    Color color,
-  ) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: color.withOpacity(0.2)),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 16, color: color),
-          const SizedBox(width: 6),
-          Text(
-            value,
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.bold,
-              color: color,
-            ),
-          ),
-          const SizedBox(width: 4),
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 12,
-              color: color.withOpacity(0.8),
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildModernActionButton({
-    required IconData icon,
-    required String label,
-    required Color color,
-    required VoidCallback onPressed,
-  }) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onPressed,
-        borderRadius: BorderRadius.circular(10),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-          decoration: BoxDecoration(
-            color: color.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(color: color.withOpacity(0.3)),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(icon, size: 16, color: color),
-              const SizedBox(width: 6),
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: color,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
 
   void _showOfferDetails(Offer offer) {
     showDialog(
