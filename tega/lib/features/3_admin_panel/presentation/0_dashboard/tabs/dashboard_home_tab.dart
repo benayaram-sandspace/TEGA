@@ -60,7 +60,6 @@ class _DashboardHomeTabState extends State<DashboardHomeTab> {
           }
         } catch (e) {
           // Silently fail for payment stats - dashboard should still load
-          print('Failed to load payment stats: $e');
         }
 
         setState(() {

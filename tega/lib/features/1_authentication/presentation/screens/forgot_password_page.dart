@@ -84,7 +84,12 @@ class _ForgetPasswordPageState extends State<ForgetPasswordPage> {
         final msg =
             (result['message'] ?? 'Failed to send reset email.') as String;
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(msg), backgroundColor: Colors.red),
+          SnackBar(
+            content: Text(msg),
+            backgroundColor: AppColors.error,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          ),
         );
       }
     } catch (e) {
@@ -93,7 +98,9 @@ class _ForgetPasswordPageState extends State<ForgetPasswordPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Error sending reset email: $e'),
-          backgroundColor: Colors.red,
+          backgroundColor: AppColors.error,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         ),
       );
     }
@@ -105,12 +112,8 @@ class _ForgetPasswordPageState extends State<ForgetPasswordPage> {
       body: Container(
         width: double.infinity,
         height: double.infinity,
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [AppColors.background, AppColors.primary.withOpacity(0.05)],
-          ),
+        decoration: const BoxDecoration(
+          color: AppColors.background,
         ),
         child: SafeArea(
           child: SingleChildScrollView(
@@ -154,27 +157,32 @@ class _ForgetPasswordPageState extends State<ForgetPasswordPage> {
 
   Widget _buildLogoSection() {
     return Container(
-      width: 200,
-      height: 200,
+      width: 140,
+      height: 140,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
+        color: AppColors.pureWhite,
         boxShadow: [
           BoxShadow(
-            color: AppColors.shadowLight.withOpacity(0.7),
-            blurRadius: 15,
-            offset: const Offset(0, 5),
+            color: AppColors.shadowLight,
+            blurRadius: 20,
+            offset: const Offset(0, 8),
           ),
         ],
+        border: Border.all(width: 2, color: AppColors.borderLight),
       ),
-      child: ClipOval(
-        child: Image.asset(
-          'assets/logo.png',
-          fit: BoxFit.contain,
-          errorBuilder: (_, __, ___) => const Center(
-            child: Icon(
-              Icons.flutter_dash,
-              size: 80,
-              color: AppColors.textSecondary,
+      child: Padding(
+        padding: const EdgeInsets.all(4),
+        child: ClipOval(
+          child: Image.asset(
+            'assets/logo.png',
+            fit: BoxFit.contain,
+            errorBuilder: (_, __, ___) => const Center(
+              child: Icon(
+                Icons.flutter_dash,
+                size: 60,
+                color: AppColors.primary,
+              ),
             ),
           ),
         ),
@@ -196,7 +204,7 @@ class _ForgetPasswordPageState extends State<ForgetPasswordPage> {
         const SizedBox(height: 8),
         Container(
           width: 60,
-          height: 4,
+          height: 3,
           decoration: BoxDecoration(
             color: AppColors.primary,
             borderRadius: BorderRadius.circular(2),
@@ -214,9 +222,13 @@ class _ForgetPasswordPageState extends State<ForgetPasswordPage> {
           TextFormField(
             controller: _emailController,
             keyboardType: TextInputType.emailAddress,
+            style: const TextStyle(
+              fontSize: 15,
+              color: AppColors.textPrimary,
+            ),
             decoration: _inputDecoration(
               _tr('email_hint'),
-              Icons.email_outlined,
+              Icons.email_rounded,
             ),
             validator: (value) {
               if (value == null || value.isEmpty) {
@@ -238,9 +250,10 @@ class _ForgetPasswordPageState extends State<ForgetPasswordPage> {
                 backgroundColor: AppColors.primary,
                 foregroundColor: AppColors.pureWhite,
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(16),
                 ),
-                elevation: 2,
+                elevation: 0,
+                shadowColor: AppColors.primary.withOpacity(0.3),
               ),
               child: _isLoading
                   ? const SizedBox(
@@ -273,13 +286,14 @@ class _ForgetPasswordPageState extends State<ForgetPasswordPage> {
       width: double.infinity,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: AppColors.pureWhite,
         borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.borderLight, width: 1),
         boxShadow: [
           BoxShadow(
             color: AppColors.shadowLight,
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
           ),
         ],
       ),
@@ -317,11 +331,11 @@ class _ForgetPasswordPageState extends State<ForgetPasswordPage> {
   Widget _buildBackToLoginButton() {
     return TextButton.icon(
       onPressed: () => Navigator.of(context).pop(),
-      icon: const Icon(Icons.arrow_back, color: AppColors.info),
+      icon: const Icon(Icons.arrow_back, color: AppColors.primary),
       label: Text(
         _tr('back_to_login'),
         style: const TextStyle(
-          color: AppColors.info,
+          color: AppColors.primary,
           fontSize: 14,
           fontWeight: FontWeight.w600,
         ),
@@ -335,23 +349,29 @@ class _ForgetPasswordPageState extends State<ForgetPasswordPage> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
         decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(20),
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(25),
+          border: Border.all(color: AppColors.borderLight, width: 1),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.1),
-              blurRadius: 4,
-              offset: const Offset(0, 2),
+              color: AppColors.shadowLight,
+              blurRadius: 10,
+              offset: const Offset(0, 4),
             ),
           ],
         ),
         child: DropdownButton<String>(
           value: _selectedLanguage,
           underline: const SizedBox(),
-          icon: const Icon(Icons.language, size: 16, color: Colors.grey),
+          icon: const Icon(Icons.language_rounded, size: 18, color: AppColors.textSecondary),
+          style: const TextStyle(
+            color: AppColors.textPrimary,
+            fontSize: 14,
+            fontWeight: FontWeight.w500,
+          ),
           items: const [
-            DropdownMenuItem(value: 'EN', child: Text('  English')),
-            DropdownMenuItem(value: 'TE', child: Text('  తెలుగు')),
+            DropdownMenuItem(value: 'EN', child: Text('English')),
+            DropdownMenuItem(value: 'TE', child: Text('తెలుగు')),
           ],
           onChanged: (value) {
             if (value != null) {
@@ -366,21 +386,35 @@ class _ForgetPasswordPageState extends State<ForgetPasswordPage> {
   InputDecoration _inputDecoration(String hint, IconData icon) {
     return InputDecoration(
       hintText: hint,
-      prefixIcon: Icon(icon, color: AppColors.textSecondary),
+      hintStyle: const TextStyle(color: AppColors.textDisabled, fontSize: 14),
+      prefixIcon: Container(
+        margin: const EdgeInsets.only(left: 12, right: 8),
+        child: Icon(icon, color: AppColors.primary, size: 22),
+      ),
       border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(14),
         borderSide: const BorderSide(color: AppColors.borderLight),
       ),
       enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(14),
         borderSide: const BorderSide(color: AppColors.borderLight),
       ),
       focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: AppColors.primary),
+        borderRadius: BorderRadius.circular(14),
+        borderSide: const BorderSide(color: AppColors.primary, width: 2),
+      ),
+      errorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14),
+        borderSide: const BorderSide(color: AppColors.error, width: 1),
+      ),
+      focusedErrorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14),
+        borderSide: const BorderSide(color: AppColors.error, width: 2),
       ),
       filled: true,
-      fillColor: AppColors.surfaceVariant,
+      fillColor: AppColors.surface,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+      errorStyle: const TextStyle(fontSize: 12, height: 0.8),
     );
   }
 }

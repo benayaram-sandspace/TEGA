@@ -165,7 +165,7 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
           content: const Text(
             'Account created successfully! Please login to continue 🎉',
           ),
-          backgroundColor: const Color(0xFF27AE60),
+          backgroundColor: AppColors.success,
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(10),
@@ -265,7 +265,7 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
-        backgroundColor: const Color(0xFFE74C3C),
+        backgroundColor: AppColors.error,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         duration: const Duration(seconds: 3),
@@ -278,7 +278,7 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
-        backgroundColor: const Color(0xFF27AE60),
+        backgroundColor: AppColors.success,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         duration: const Duration(seconds: 2),
@@ -300,15 +300,7 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
         width: double.infinity,
         height: double.infinity,
         decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              Color(0xFF9C88FF), // Light Purple
-              Color(0xFF8B7BFF), // Medium Light Purple
-              Color(0xFF7A6BFF), // Medium Purple
-            ],
-          ),
+          color: AppColors.background,
         ),
         child: SafeArea(
           child: SingleChildScrollView(
@@ -349,27 +341,32 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
 
   Widget _buildLogoSection() {
     return Container(
-      width: 180,
-      height: 180,
+      width: 140,
+      height: 140,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
+        color: AppColors.pureWhite,
         boxShadow: [
           BoxShadow(
-            color: AppColors.shadowLight.withOpacity(0.7),
-            blurRadius: 15,
-            offset: const Offset(0, 5),
+            color: AppColors.shadowLight,
+            blurRadius: 20,
+            offset: const Offset(0, 8),
           ),
         ],
+        border: Border.all(width: 2, color: AppColors.borderLight),
       ),
-      child: ClipOval(
-        child: Image.asset(
-          'assets/logo.png',
-          fit: BoxFit.contain,
-          errorBuilder: (_, __, ___) => Center(
-            child: Icon(
-              Icons.flutter_dash,
-              size: 80,
-              color: Colors.white.withOpacity(0.7),
+      child: Padding(
+        padding: const EdgeInsets.all(4),
+        child: ClipOval(
+          child: Image.asset(
+            'assets/logo.png',
+            fit: BoxFit.contain,
+            errorBuilder: (_, __, ___) => const Center(
+              child: Icon(
+                Icons.flutter_dash,
+                size: 60,
+                color: AppColors.primary,
+              ),
             ),
           ),
         ),
@@ -385,15 +382,15 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
           style: const TextStyle(
             fontSize: 28,
             fontWeight: FontWeight.bold,
-            color: Colors.white,
+            color: AppColors.textPrimary,
           ),
         ),
         const SizedBox(height: 8),
         Container(
           width: 60,
-          height: 4,
+          height: 3,
           decoration: BoxDecoration(
-            color: const Color(0xFF9C88FF), // Light Purple
+            color: AppColors.primary,
             borderRadius: BorderRadius.circular(2),
           ),
         ),
@@ -406,23 +403,26 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
       children: [
         Text(
           _tr('subtitle'),
-          style: const TextStyle(fontSize: 16, color: Colors.white),
+          style: const TextStyle(
+            fontSize: 16,
+            color: AppColors.textSecondary,
+          ),
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: 16),
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           decoration: BoxDecoration(
-            color: const Color(0xFF9C88FF).withOpacity(0.2),
+            color: AppColors.surface,
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: const Color(0xFF9C88FF).withOpacity(0.4)),
+            border: Border.all(color: AppColors.borderLight),
           ),
           child: Text(
             _maskEmail(widget.email),
             style: const TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w600,
-              color: Colors.white,
+              color: AppColors.textPrimary,
             ),
           ),
         ),
@@ -446,27 +446,27 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
             style: const TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.bold,
-              color: Color(0xFF2C3E50),
+              color: AppColors.textPrimary,
             ),
             decoration: InputDecoration(
               counterText: '',
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: const BorderSide(color: Colors.white),
+                borderSide: const BorderSide(color: AppColors.borderLight),
               ),
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: const BorderSide(color: Colors.white),
+                borderSide: const BorderSide(color: AppColors.borderLight),
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
                 borderSide: const BorderSide(
-                  color: Color(0xFF9C88FF), // Light Purple
+                  color: AppColors.primary,
                   width: 2,
                 ),
               ),
               filled: true,
-              fillColor: Colors.white,
+              fillColor: AppColors.pureWhite,
             ),
             inputFormatters: [FilteringTextInputFormatter.digitsOnly],
             onChanged: (value) => _onOTPChanged(index, value),
@@ -483,7 +483,7 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
           ? Text(
               _tr('resend_now'),
               style: const TextStyle(
-                color: Color(0xFF9C88FF), // Light Purple
+                color: AppColors.primary,
                 fontWeight: FontWeight.w600,
                 fontSize: 14,
               ),
@@ -491,13 +491,13 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
           : Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Icon(Icons.access_time, size: 16, color: Colors.white),
+                const Icon(Icons.access_time, size: 16, color: AppColors.textSecondary),
                 const SizedBox(width: 8),
                 Text(
                   '${_tr('resend_in')} ${_resendCountdown.toString().padLeft(2, '0')}',
                   style: const TextStyle(
                     fontSize: 14,
-                    color: Colors.white,
+                    color: AppColors.textSecondary,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
@@ -513,12 +513,13 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
       child: ElevatedButton(
         onPressed: _isVerifying ? null : _verifyOTP,
         style: ElevatedButton.styleFrom(
-          backgroundColor: const Color(0xFF9C88FF), // Light Purple
-          foregroundColor: Colors.white,
+          backgroundColor: AppColors.primary,
+          foregroundColor: AppColors.pureWhite,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(16),
           ),
-          elevation: 2,
+          elevation: 0,
+          shadowColor: AppColors.primary.withOpacity(0.3),
         ),
         child: _isVerifying
             ? const SizedBox(
@@ -526,7 +527,7 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
                 height: 20,
                 child: CircularProgressIndicator(
                   strokeWidth: 2,
-                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                  valueColor: AlwaysStoppedAnimation<Color>(AppColors.pureWhite),
                 ),
               )
             : Text(
@@ -543,11 +544,11 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
   Widget _buildBackToLoginButton() {
     return TextButton.icon(
       onPressed: () => Navigator.of(context).pop(),
-      icon: const Icon(Icons.arrow_back, color: Color(0xFF9C88FF)),
+      icon: const Icon(Icons.arrow_back, color: AppColors.primary),
       label: Text(
         _tr('back_to_login'),
         style: const TextStyle(
-          color: Color(0xFF9C88FF), // Light Purple
+          color: AppColors.primary,
           fontSize: 14,
           fontWeight: FontWeight.w600,
         ),
@@ -561,23 +562,29 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
         decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(20),
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(25),
+          border: Border.all(color: AppColors.borderLight, width: 1),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.1),
-              blurRadius: 4,
-              offset: const Offset(0, 2),
+              color: AppColors.shadowLight,
+              blurRadius: 10,
+              offset: const Offset(0, 4),
             ),
           ],
         ),
         child: DropdownButton<String>(
           value: _selectedLanguage,
           underline: const SizedBox(),
-          icon: const Icon(Icons.language, size: 16, color: Colors.grey),
+          icon: const Icon(Icons.language_rounded, size: 18, color: AppColors.textSecondary),
+          style: const TextStyle(
+            color: AppColors.textPrimary,
+            fontSize: 14,
+            fontWeight: FontWeight.w500,
+          ),
           items: const [
-            DropdownMenuItem(value: 'EN', child: Text('  English')),
-            DropdownMenuItem(value: 'TE', child: Text('  తెలుగు')),
+            DropdownMenuItem(value: 'EN', child: Text('English')),
+            DropdownMenuItem(value: 'TE', child: Text('తెలుగు')),
           ],
           onChanged: (value) {
             if (value != null) {

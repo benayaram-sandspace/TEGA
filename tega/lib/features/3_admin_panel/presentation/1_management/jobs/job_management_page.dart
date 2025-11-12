@@ -156,11 +156,6 @@ class _JobManagementPageState extends State<JobManagementPage>
         final data = json.decode(response.body);
         if (data['success'] == true) {
           final allJobs = List<Map<String, dynamic>>.from(data['data']);
-          // Debug: Print job statuses to see actual values
-          print('Job statuses in database:');
-          for (var job in allJobs) {
-            print('Job: ${job['title']} - Status: ${job['status']}');
-          }
           setState(() {
             _stats = {
               'total': allJobs.length,
@@ -183,8 +178,6 @@ class _JobManagementPageState extends State<JobManagementPage>
                   .where((job) => job['postingType'] == 'internship')
                   .length,
             };
-            // Debug: Print calculated stats
-            print('Calculated stats: $_stats');
           });
         }
       }

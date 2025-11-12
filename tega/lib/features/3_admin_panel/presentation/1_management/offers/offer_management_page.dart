@@ -70,7 +70,6 @@ class _OfferManagementPageState extends State<OfferManagementPage> {
       _filterOffers();
     } catch (e) {
       // Handle error silently for package offers
-      print('Failed to load package offers: $e');
     }
   }
 

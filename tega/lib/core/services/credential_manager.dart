@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:flutter/foundation.dart';
 
 /// Model representing a saved account credential
 class SavedAccount {
@@ -116,11 +115,8 @@ class CredentialManager {
         
         // Sort by last used date (most recent first)
         _savedAccounts.sort((a, b) => b.lastUsed.compareTo(a.lastUsed));
-        
-        debugPrint('✅ Loaded ${_savedAccounts.length} saved accounts');
       }
     } catch (e) {
-      debugPrint('⚠️ Error loading saved accounts: $e');
       _savedAccounts = [];
     }
   }
@@ -132,9 +128,8 @@ class CredentialManager {
         _savedAccounts.map((account) => account.toJson()).toList(),
       );
       await _prefs?.setString(_savedAccountsKey, accountsJson);
-      debugPrint('💾 Saved ${_savedAccounts.length} accounts to storage');
     } catch (e) {
-      debugPrint('⚠️ Error saving accounts: $e');
+      // Silently handle errors
     }
   }
 
@@ -185,18 +180,14 @@ class CredentialManager {
       if (existingIndex >= 0) {
         // Update existing account
         _savedAccounts[existingIndex] = savedAccount;
-        debugPrint('🔄 Updated existing account: ${savedAccount.displayName} (${savedAccount.email})');
       } else {
         // Add new account
         _savedAccounts.insert(0, savedAccount);
         
         // Remove oldest account if we exceed the limit
         if (_savedAccounts.length > _maxSavedAccounts) {
-          final removedAccount = _savedAccounts.removeLast();
-          debugPrint('🗑️ Removed oldest account: ${removedAccount.email}');
+          _savedAccounts.removeLast();
         }
-        
-        debugPrint('➕ Added new account: ${savedAccount.displayName} (${savedAccount.email})');
       }
 
       // Sort by last used date
@@ -205,7 +196,6 @@ class CredentialManager {
       await _saveAccounts();
       return true;
     } catch (e) {
-      debugPrint('⚠️ Error saving account: $e');
       return false;
     }
   }
@@ -225,11 +215,9 @@ class CredentialManager {
         // Sort by last used date
         _savedAccounts.sort((a, b) => b.lastUsed.compareTo(a.lastUsed));
         await _saveAccounts();
-        
-        debugPrint('🕒 Updated last used for: ${email}');
       }
     } catch (e) {
-      debugPrint('⚠️ Error updating last used: $e');
+      // Silently handle errors
     }
   }
 
@@ -243,12 +231,10 @@ class CredentialManager {
       
       if (_savedAccounts.length < initialLength) {
         await _saveAccounts();
-        debugPrint('🗑️ Deleted account: $email');
         return true;
       }
       return false;
     } catch (e) {
-      debugPrint('⚠️ Error deleting account: $e');
       return false;
     }
   }
@@ -269,13 +255,10 @@ class CredentialManager {
         // Sort by last used date
         _savedAccounts.sort((a, b) => b.lastUsed.compareTo(a.lastUsed));
         await _saveAccounts();
-        
-        debugPrint('🔑 Updated password for: $email');
         return true;
       }
       return false;
     } catch (e) {
-      debugPrint('⚠️ Error updating password: $e');
       return false;
     }
   }
@@ -293,12 +276,10 @@ class CredentialManager {
         );
         
         await _saveAccounts();
-        debugPrint('✏️ Updated account name for $email: $newName');
         return true;
       }
       return false;
     } catch (e) {
-      debugPrint('⚠️ Error updating account name: $e');
       return false;
     }
   }
@@ -308,9 +289,8 @@ class CredentialManager {
     try {
       _savedAccounts.clear();
       await _prefs?.remove(_savedAccountsKey);
-      debugPrint('🗑️ Cleared all saved accounts');
     } catch (e) {
-      debugPrint('⚠️ Error clearing accounts: $e');
+      // Silently handle errors
     }
   }
 
