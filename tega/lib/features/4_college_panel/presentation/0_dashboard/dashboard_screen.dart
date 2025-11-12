@@ -1,16 +1,17 @@
 import 'dart:ui'; // Required for ImageFilter.blur
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:http/http.dart' as http;
+import 'package:tega/core/constants/api_constants.dart';
 import 'package:tega/features/1_authentication/data/auth_repository.dart';
 import 'package:tega/features/1_authentication/presentation/screens/login_page.dart';
 import 'package:tega/features/4_college_panel/presentation/0_dashboard/dashboard_styles.dart';
-import 'package:tega/features/4_college_panel/presentation/2_more_features/learning_activity_page.dart';
-import 'package:tega/features/4_college_panel/presentation/2_more_features/resume_interview_page.dart';
-import 'package:tega/features/4_college_panel/presentation/2_more_features/settings_support_page.dart';
 import 'tabs/dashboard_tab.dart';
 import 'tabs/students_tab.dart';
-import 'tabs/progress_tab.dart';
-import 'tabs/reports_tab.dart';
+import 'tabs/analytics_tab.dart';
+import 'tabs/reports_insights_tab.dart';
+import 'tabs/communication_tab.dart';
 
 // Main Dashboard Screen Widget
 class DashboardScreen extends StatefulWidget {
@@ -26,25 +27,24 @@ class _DashboardScreenState extends State<DashboardScreen>
   bool _isSidebarOpen = false;
   final AuthService _authService = AuthService();
   late AnimationController _sidebarAnimationController;
+  
+  // Principal data from backend
+  Map<String, dynamic>? _principalData;
 
   final List<Widget> _pages = [
     const DashboardTab(),
-    const StudentsPage(),
-    const ProgressPage(),
-    const ReportsPage(),
-    const LearningActivityPage(),
-    const ResumeInterviewPage(),
-    const SettingsSupportPage(),
+    const StudentsPage(), // Student Management
+    const AnalyticsPage(), // Analytics
+    const ReportsInsightsPage(), // Reports & Insights
+    const CommunicationPage(), // Communication
   ];
 
   final List<String> _pageTitles = const [
     'Dashboard',
-    'Students',
-    'Progress',
-    'Reports',
-    'Learning Activity',
-    'Resume & Interview',
-    'Settings & Support',
+    'Student Management',
+    'Analytics',
+    'Reports & Insights',
+    'Communication',
   ];
 
   @override
@@ -54,6 +54,33 @@ class _DashboardScreenState extends State<DashboardScreen>
       vsync: this,
       duration: const Duration(milliseconds: 300),
     );
+    _loadPrincipalData();
+  }
+
+  Future<void> _loadPrincipalData() async {
+    try {
+      final headers = await _authService.getAuthHeaders();
+      final response = await http.get(
+        Uri.parse(ApiEndpoints.principalDashboard),
+        headers: headers,
+      ).timeout(
+        const Duration(seconds: 30),
+        onTimeout: () {
+          throw Exception('Request timeout');
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        if (data['success'] == true && data['principal'] != null) {
+          setState(() {
+            _principalData = data['principal'] as Map<String, dynamic>;
+          });
+        }
+      }
+    } catch (e) {
+      // Silently handle errors, fallback to AuthService data
+    }
   }
 
   @override
@@ -266,39 +293,30 @@ class _DashboardScreenState extends State<DashboardScreen>
                             title: '',
                             items: [
                               NavItem(
-                                icon: Icons.dashboard,
+                                icon: Icons.dashboard_rounded,
                                 title: 'Dashboard',
                                 index: 0,
                               ),
                               NavItem(
-                                icon: Icons.people,
-                                title: 'Students',
+                                icon: Icons.people_rounded,
+                                title: 'Student Management',
                                 index: 1,
                               ),
                               NavItem(
-                                icon: Icons.trending_up,
-                                title: 'Progress',
+                                icon: Icons.analytics_rounded,
+                                title: 'Analytics',
                                 index: 2,
                               ),
                               NavItem(
-                                icon: Icons.bar_chart,
-                                title: 'Reports',
+                                icon: Icons.insights_rounded,
+                                title: 'Reports & Insights',
                                 index: 3,
                               ),
                               NavItem(
-                                icon: Icons.local_activity,
-                                title: 'Learning Activity',
+                                icon: Icons.chat_bubble_outline_rounded,
+                                title: 'Communication',
                                 index: 4,
-                              ),
-                              NavItem(
-                                icon: Icons.article,
-                                title: 'Resume & Interview',
-                                index: 5,
-                              ),
-                              NavItem(
-                                icon: Icons.settings,
-                                title: 'Settings & Support',
-                                index: 6,
+                                badge: '3',
                               ),
                             ],
                           ),
@@ -318,25 +336,31 @@ class _DashboardScreenState extends State<DashboardScreen>
   }
 
   Widget _buildSidebarHeader() {
+    // Use backend data if available, otherwise fallback to AuthService
+    final principalName = _principalData?['principalName'] as String? ?? 
+                         _authService.currentUser?.name ?? 
+                         'Principal';
+    final collegeName = _principalData?['university'] as String? ?? 
+                       _authService.currentUser?.university ?? 
+                       'College';
+    
+    // Get first letter from principal name
+    final firstLetter = principalName.isNotEmpty 
+        ? principalName[0].toUpperCase() 
+        : 'P';
+    
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(16, 50, 16, 20),
+      padding: const EdgeInsets.fromLTRB(20, 40, 20, 24),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            DashboardStyles.primary.withOpacity(0.9),
             DashboardStyles.primary,
+            DashboardStyles.primary.withOpacity(0.8),
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        boxShadow: [
-          BoxShadow(
-            color: DashboardStyles.primary.withOpacity(0.3),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -350,35 +374,70 @@ class _DashboardScreenState extends State<DashboardScreen>
                 width: 2,
               ),
             ),
-            child: const CircleAvatar(
-              radius: 32,
+            child: CircleAvatar(
+              radius: 28,
               backgroundColor: Colors.white,
-              child: Icon(
-                Icons.person,
-                size: 35,
-                color: DashboardStyles.primary,
+              child: Text(
+                firstLetter,
+                style: TextStyle(
+                  color: DashboardStyles.primary,
+                  fontSize: 32,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
           ),
           const SizedBox(height: 12),
-          const Text(
-            'College Admin',
-            style: TextStyle(
+          Text(
+            principalName,
+            style: const TextStyle(
               color: Colors.white,
               fontWeight: FontWeight.bold,
-              fontSize: 18,
+              fontSize: 16,
             ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
           const SizedBox(height: 4),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.2),
-              borderRadius: BorderRadius.circular(12),
+          Text(
+            collegeName.length > 30 
+                ? '${collegeName.substring(0, 30)}...' 
+                : collegeName,
+            style: TextStyle(
+              color: Colors.white.withOpacity(0.8),
+              fontSize: 12,
             ),
-            child: const Text(
-              'Administrator',
-              style: TextStyle(color: Colors.white70, fontSize: 13),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          ),
+          const SizedBox(height: 12),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            decoration: BoxDecoration(
+              color: DashboardStyles.accentGreen,
+              borderRadius: BorderRadius.circular(6),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 6,
+                  height: 6,
+                  decoration: const BoxDecoration(
+                    color: Colors.white,
+                    shape: BoxShape.circle,
+                  ),
+                ),
+                const SizedBox(width: 6),
+                const Text(
+                  'Active',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
             ),
           ),
         ],
@@ -410,6 +469,7 @@ class _DashboardScreenState extends State<DashboardScreen>
             icon: item.icon,
             title: item.title,
             index: item.index,
+            badge: item.badge,
           ),
         ),
       ],
@@ -420,6 +480,7 @@ class _DashboardScreenState extends State<DashboardScreen>
     required IconData icon,
     required String title,
     int? index,
+    String? badge,
   }) {
     final isSelected = index != null && _selectedIndex == index;
 
@@ -467,16 +528,32 @@ class _DashboardScreenState extends State<DashboardScreen>
             fontSize: 14,
           ),
         ),
-        trailing: isSelected
+        trailing: badge != null
             ? Container(
-                width: 3,
-                height: 20,
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                 decoration: BoxDecoration(
                   color: DashboardStyles.primary,
-                  borderRadius: BorderRadius.circular(2),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  badge,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               )
-            : null,
+            : isSelected
+                ? Container(
+                    width: 3,
+                    height: 20,
+                    decoration: BoxDecoration(
+                      color: DashboardStyles.primary,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  )
+                : null,
         onTap: () {
           HapticFeedback.selectionClick();
           setState(() {
@@ -539,6 +616,7 @@ class NavItem {
   final IconData icon;
   final String title;
   final int? index;
+  final String? badge;
 
-  NavItem({required this.icon, required this.title, this.index});
+  NavItem({required this.icon, required this.title, this.index, this.badge});
 }

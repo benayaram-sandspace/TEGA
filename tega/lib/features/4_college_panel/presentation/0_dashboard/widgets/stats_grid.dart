@@ -11,7 +11,18 @@ class _StatInfo {
 }
 
 class StatsGrid extends StatefulWidget {
-  const StatsGrid({super.key});
+  final int totalStudents;
+  final int activeStudents;
+  final int recentRegistrations;
+  final int uniqueCourses;
+
+  const StatsGrid({
+    super.key,
+    this.totalStudents = 0,
+    this.activeStudents = 0,
+    this.recentRegistrations = 0,
+    this.uniqueCourses = 0,
+  });
 
   @override
   State<StatsGrid> createState() => _StatsGridState();
@@ -21,19 +32,30 @@ class _StatsGridState extends State<StatsGrid> with TickerProviderStateMixin {
   late List<AnimationController> _animationControllers;
   late List<Animation<double>> _scaleAnimations;
 
-  final List<_StatInfo> _stats = const [
+  List<_StatInfo> get _stats => [
     _StatInfo(
-      'Enrolled Students',
-      '3,125',
-      Icons.people_outline,
-      DashboardStyles.primary,
+      'Total Students',
+      widget.totalStudents.toString(),
+      Icons.people_rounded,
+      const Color(0xFF3B82F6),
     ),
-    _StatInfo('Engagement', '72%', Icons.timeline, DashboardStyles.accentGreen),
     _StatInfo(
-      'Top Course',
-      'AI & ML',
-      Icons.school_outlined,
-      DashboardStyles.accentOrange,
+      'Active Students',
+      widget.activeStudents.toString(),
+      Icons.person_outline,
+      const Color(0xFF10B981),
+    ),
+    _StatInfo(
+      'Recent Registrations',
+      widget.recentRegistrations.toString(),
+      Icons.access_time_rounded,
+      const Color(0xFF8B5CF6),
+    ),
+    _StatInfo(
+      'Unique Courses',
+      widget.uniqueCourses.toString(),
+      Icons.book_rounded,
+      const Color(0xFFF59E0B),
     ),
   ];
 
@@ -41,8 +63,9 @@ class _StatsGridState extends State<StatsGrid> with TickerProviderStateMixin {
   void initState() {
     super.initState();
 
+    // Initialize with 4 controllers for 4 stats
     _animationControllers = List.generate(
-      _stats.length,
+      4,
       (index) => AnimationController(
         duration: const Duration(milliseconds: 450),
         vsync: this,
@@ -73,12 +96,12 @@ class _StatsGridState extends State<StatsGrid> with TickerProviderStateMixin {
   @override
   Widget build(BuildContext context) {
     return GridView.count(
-      crossAxisCount: 3,
+      crossAxisCount: 4,
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
-      mainAxisSpacing: 16,
-      crossAxisSpacing: 16,
-      childAspectRatio: 0.9,
+      mainAxisSpacing: 20,
+      crossAxisSpacing: 20,
+      childAspectRatio: 0.85,
       children: List.generate(_stats.length, (index) {
         final stat = _stats[index];
         return ScaleTransition(

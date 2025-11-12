@@ -1,4 +1,8 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'package:tega/core/constants/api_constants.dart';
+import 'package:tega/features/1_authentication/data/auth_repository.dart';
 import 'package:tega/features/4_college_panel/presentation/0_dashboard/dashboard_styles.dart';
 import 'package:tega/features/4_college_panel/presentation/0_dashboard/tabs/student_details_tab.dart';
 
@@ -14,12 +18,15 @@ class _StudentsPageState extends State<StudentsPage>
   late AnimationController _listAnimationController;
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _searchFocusNode = FocusNode();
+  final AuthService _authService = AuthService();
 
-  late List<Student> _allStudents;
+  List<Student> _allStudents = [];
   List<Student> _filteredStudents = [];
   String _searchQuery = '';
   String _selectedStatus = 'All';
   bool _isSearching = false;
+  bool _isLoading = true;
+  String? _errorMessage;
 
   @override
   void initState() {
@@ -28,9 +35,6 @@ class _StudentsPageState extends State<StudentsPage>
       vsync: this,
       duration: const Duration(milliseconds: 1000),
     );
-
-    _allStudents = _generateDummyStudents();
-    _filteredStudents = _allStudents;
 
     _searchController.addListener(() {
       if (_searchQuery != _searchController.text) {
@@ -41,7 +45,7 @@ class _StudentsPageState extends State<StudentsPage>
       }
     });
 
-    _listAnimationController.forward();
+    _loadStudents();
   }
 
   @override
@@ -52,35 +56,180 @@ class _StudentsPageState extends State<StudentsPage>
     super.dispose();
   }
 
-  List<Student> _generateDummyStudents() {
-    final names = [
-      'Riya Sharma',
-      'Amit Kumar',
-      'Priya Singh',
-      'Vikram Rathod',
-      'Sneha Patil',
-      'Arjun Verma',
-      'Neha Gupta',
-      'Rahul Desai',
-      'Anjali Mehta',
-      'Karan Joshi',
-      'Sonia Reddy',
-      'Raj Patel',
-      'Pooja Chauhan',
-      'Vivek Menon',
-      'Deepika Nair',
-    ];
-    return List.generate(names.length, (index) {
-      final statusMap = _getStatus(index);
-      return Student(
-        name: names[index],
-        grade: 12 - (index % 5),
-        gpa: (4.0 - (index % 8) * 0.15).clamp(2.5, 4.0),
-        avatarUrl: 'https://i.pravatar.cc/150?img=${index + 1}',
-        status: statusMap['text'] as String,
-        statusColor: statusMap['color'] as Color,
-      );
+  DateTime _parseDateTime(dynamic dateValue) {
+    if (dateValue == null) {
+      return DateTime.now();
+    }
+    
+    // Handle MongoDB date objects that might come as Map
+    if (dateValue is Map) {
+      // MongoDB date might be in format: {"$date": "2024-01-01T00:00:00.000Z"}
+      if (dateValue.containsKey('\$date')) {
+        final dateStr = dateValue['\$date'];
+        if (dateStr is String) {
+          try {
+            return DateTime.parse(dateStr);
+          } catch (e) {
+            return DateTime.now();
+          }
+        } else if (dateStr is int) {
+          return DateTime.fromMillisecondsSinceEpoch(dateStr);
+        }
+      }
+      // Try to find any date-like field
+      for (var key in ['date', 'Date', 'timestamp', 'Timestamp']) {
+        if (dateValue.containsKey(key)) {
+          return _parseDateTime(dateValue[key]);
+        }
+      }
+    }
+    
+    if (dateValue is String) {
+      try {
+        return DateTime.parse(dateValue);
+      } catch (e) {
+        // Try parsing as ISO 8601 with timezone
+        try {
+          return DateTime.parse(dateValue.replaceAll('Z', '+00:00'));
+        } catch (e2) {
+          return DateTime.now();
+        }
+      }
+    }
+    
+    if (dateValue is int) {
+      // Handle Unix timestamp (milliseconds or seconds)
+      if (dateValue > 1000000000000) {
+        // Milliseconds
+        return DateTime.fromMillisecondsSinceEpoch(dateValue);
+      } else {
+        // Seconds
+        return DateTime.fromMillisecondsSinceEpoch(dateValue * 1000);
+      }
+    }
+    
+    return DateTime.now();
+  }
+
+  Future<void> _loadStudents() async {
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
     });
+
+    try {
+      final headers = await _authService.getAuthHeaders();
+      final response = await http.get(
+        Uri.parse(ApiEndpoints.principalStudents),
+        headers: headers,
+      ).timeout(
+        const Duration(seconds: 30),
+        onTimeout: () {
+          throw Exception('Request timeout');
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        if (data['success'] == true && data['students'] != null) {
+          final studentsList = data['students'] as List<dynamic>;
+          final students = studentsList.map((studentData) {
+            final student = studentData as Map<String, dynamic>;
+            final firstName = student['firstName'] as String? ?? '';
+            final lastName = student['lastName'] as String? ?? '';
+            final name = '$firstName $lastName'.trim();
+            final yearOfStudy = student['yearOfStudy'] as int? ?? 12;
+            final accountStatus = student['accountStatus'] as String? ?? 'pending';
+            
+            // Extract student ID from backend (custom studentId)
+            final studentIdValue = student['studentId'];
+            final studentId = studentIdValue != null ? studentIdValue.toString().trim() : '';
+            
+            // Extract MongoDB _id (ObjectId) - needed for API calls
+            final mongoIdValue = student['_id'] ?? student['id'];
+            final mongoId = mongoIdValue != null ? mongoIdValue.toString().trim() : '';
+            
+            // Extract email and phone from backend
+            final email = student['email'] as String?;
+            final phone = student['phone'] as String? ?? student['contactNumber'] as String?;
+            
+            // Parse registration date
+            DateTime? registeredAt;
+            try {
+              final createdAtValue = student['createdAt'];
+              if (createdAtValue != null) {
+                registeredAt = _parseDateTime(createdAtValue);
+              }
+            } catch (e) {
+              registeredAt = null;
+            }
+            
+            // Get status color based on accountStatus
+            final statusMap = _getStatusFromBackend(accountStatus);
+            
+            // Generate avatar URL from name
+            final avatarUrl = 'https://ui-avatars.com/api/?name=${Uri.encodeComponent(name)}&size=150&background=8B5CF6&color=fff';
+            
+            return Student(
+              name: name,
+              grade: yearOfStudy,
+              gpa: 3.5, // Default GPA, can be updated later if available from backend
+              avatarUrl: avatarUrl,
+              status: accountStatus.isEmpty ? 'pending' : accountStatus,
+              statusColor: statusMap['color'] as Color,
+              studentId: studentId,
+              id: mongoId, // MongoDB _id for API calls
+              registeredAt: registeredAt,
+              email: email,
+              phone: phone,
+            );
+          }).toList();
+
+          setState(() {
+            _allStudents = students;
+            _filteredStudents = students;
+            _isLoading = false;
+          });
+          
+          _listAnimationController.forward();
+        } else {
+          setState(() {
+            _errorMessage = 'Failed to load students';
+            _isLoading = false;
+          });
+        }
+      } else {
+        setState(() {
+          _errorMessage = 'Failed to load students: ${response.statusCode}';
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      setState(() {
+        _errorMessage = 'Error loading students: $e';
+        _isLoading = false;
+      });
+    }
+  }
+
+  String _getInitials(String firstName, String lastName) {
+    final first = firstName.isNotEmpty ? firstName[0].toUpperCase() : '';
+    final last = lastName.isNotEmpty ? lastName[0].toUpperCase() : '';
+    return first + last;
+  }
+
+  Map<String, dynamic> _getStatusFromBackend(String accountStatus) {
+    // Map backend accountStatus to color
+    switch (accountStatus.toLowerCase()) {
+      case 'approved':
+        return {'color': DashboardStyles.accentGreen};
+      case 'pending':
+        return {'color': DashboardStyles.accentOrange};
+      case 'rejected':
+        return {'color': Colors.red};
+      default:
+        return {'color': DashboardStyles.primary};
+    }
   }
 
   void _filterStudents() {
@@ -101,17 +250,6 @@ class _StudentsPageState extends State<StudentsPage>
     setState(() {
       _filteredStudents = results;
     });
-  }
-
-  Map<String, dynamic> _getStatus(int index) {
-    switch (index % 3) {
-      case 0:
-        return {'text': 'Excellent', 'color': DashboardStyles.accentGreen};
-      case 1:
-        return {'text': 'Good', 'color': DashboardStyles.accentOrange};
-      default:
-        return {'text': 'Average', 'color': DashboardStyles.primary};
-    }
   }
 
   void _startSearch() {
@@ -175,17 +313,39 @@ class _StudentsPageState extends State<StudentsPage>
     return Scaffold(
       backgroundColor: DashboardStyles.background,
       appBar: _buildAppBar(),
-      body: AnimatedSwitcher(
-        duration: const Duration(milliseconds: 300),
-        child: _filteredStudents.isEmpty
-            ? _buildEmptyState()
-            : _buildStudentList(),
-      ),
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : _errorMessage != null
+              ? Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(Icons.error_outline, size: 64, color: Colors.red),
+                      const SizedBox(height: 16),
+                      Text(
+                        _errorMessage!,
+                        style: const TextStyle(fontSize: 16, color: Colors.red),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 16),
+                      ElevatedButton(
+                        onPressed: _loadStudents,
+                        child: const Text('Retry'),
+                      ),
+                    ],
+                  ),
+                )
+              : AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 300),
+                  child: _filteredStudents.isEmpty
+                      ? _buildEmptyState()
+                      : _buildStudentList(),
+                ),
     );
   }
 
   Widget _buildFilterMenu() {
-    final filterOptions = ['All', 'Excellent', 'Good', 'Average'];
+    final filterOptions = ['All', 'approved', 'pending', 'rejected'];
     return Stack(
       alignment: Alignment.center,
       children: [
@@ -199,7 +359,12 @@ class _StudentsPageState extends State<StudentsPage>
           },
           itemBuilder: (BuildContext context) {
             return filterOptions.map((String choice) {
-              return PopupMenuItem<String>(value: choice, child: Text(choice));
+              return PopupMenuItem<String>(
+                value: choice,
+                child: Text(
+                  choice == 'All' ? 'All' : choice[0].toUpperCase() + choice.substring(1),
+                ),
+              );
             }).toList();
           },
         ),
@@ -330,6 +495,23 @@ class _StudentsPageState extends State<StudentsPage>
                             radius: 24,
                             backgroundColor: Colors.grey.shade200,
                             backgroundImage: NetworkImage(student.avatarUrl),
+                            onBackgroundImageError: (_, __) {},
+                            child: student.avatarUrl.isEmpty
+                                ? Text(
+                                    _getInitials(
+                                      student.name.split(' ').isNotEmpty
+                                          ? student.name.split(' ')[0]
+                                          : '',
+                                      student.name.split(' ').length > 1
+                                          ? student.name.split(' ')[1]
+                                          : '',
+                                    ),
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  )
+                                : null,
                           ),
                           const SizedBox(width: 12),
                           Expanded(
@@ -346,7 +528,7 @@ class _StudentsPageState extends State<StudentsPage>
                                 ),
                                 const SizedBox(height: 4),
                                 Text(
-                                  'Grade: ${student.grade} | GPA: ${student.gpa.toStringAsFixed(1)}',
+                                  student.studentId ?? '',
                                   style: TextStyle(
                                     fontSize: 13,
                                     color: Colors.grey.shade600,
