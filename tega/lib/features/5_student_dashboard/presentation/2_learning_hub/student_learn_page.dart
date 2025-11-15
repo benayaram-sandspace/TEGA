@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:tega/features/5_student_dashboard/presentation/1_home/student_home_page.dart';
 
 // A simple data model for an active course
@@ -298,7 +299,7 @@ class _MyCoursesScreenState extends State<MyCoursesScreen> {
                       const SizedBox(width: 8),
                       CircleAvatar(
                         radius: 24,
-                        backgroundImage: NetworkImage(course.imageUrl),
+                        backgroundImage: CachedNetworkImageProvider(course.imageUrl),
                       ),
                     ],
                   ),

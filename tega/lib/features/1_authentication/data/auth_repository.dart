@@ -93,40 +93,112 @@ class User {
 
     // Handle different name formats from backend
     if (fName.isEmpty && lName.isEmpty && json['name'] != null) {
-      final parts = (json['name'] as String).split(' ');
-      fName = parts.first;
-      lName = parts.length > 1 ? parts.sublist(1).join(' ') : '';
+      final nameValue = json['name'];
+      if (nameValue is String) {
+        final parts = nameValue.split(' ');
+        fName = parts.first;
+        lName = parts.length > 1 ? parts.sublist(1).join(' ') : '';
+      }
     }
 
     // Handle username field for admin (backend uses username instead of firstName)
     if (fName.isEmpty && json['username'] != null) {
-      fName = json['username'];
+      final usernameValue = json['username'];
+      if (usernameValue is String) {
+        fName = usernameValue;
+      }
+    }
+
+    // Handle profilePicture - can be a string or an object with 'url' property
+    String? profileImage;
+    if (json['profileImage'] != null) {
+      if (json['profileImage'] is String) {
+        profileImage = json['profileImage'] as String;
+      } else if (json['profileImage'] is Map) {
+        profileImage = json['profileImage']?['url'] as String?;
+      }
+    } else if (json['profilePicture'] != null) {
+      if (json['profilePicture'] is String) {
+        profileImage = json['profilePicture'] as String;
+      } else if (json['profilePicture'] is Map) {
+        profileImage = json['profilePicture']?['url'] as String?;
+      }
+    }
+
+    // Handle course - can be a string or an object
+    String? course;
+    if (json['course'] != null) {
+      if (json['course'] is String) {
+        course = json['course'] as String;
+      } else if (json['course'] is Map) {
+        course = json['course']?['name'] as String? ?? json['course']?['courseName'] as String?;
+      }
+    }
+
+    // Handle college/institute - can be a string or an object
+    String? college;
+    if (json['college'] != null) {
+      if (json['college'] is String) {
+        college = json['college'] as String;
+      } else if (json['college'] is Map) {
+        college = json['college']?['name'] as String? ?? json['college']?['collegeName'] as String?;
+      }
+    } else if (json['institute'] != null) {
+      if (json['institute'] is String) {
+        college = json['institute'] as String;
+      } else if (json['institute'] is Map) {
+        college = json['institute']?['name'] as String? ?? json['institute']?['instituteName'] as String?;
+      }
+    }
+
+    // Handle year - convert number to string if needed
+    String? year;
+    if (json['year'] != null) {
+      if (json['year'] is String) {
+        year = json['year'] as String;
+      } else if (json['year'] is num) {
+        year = json['year'].toString();
+      }
+    } else if (json['yearOfStudy'] != null) {
+      if (json['yearOfStudy'] is String) {
+        year = json['yearOfStudy'] as String;
+      } else if (json['yearOfStudy'] is num) {
+        year = json['yearOfStudy'].toString();
+      }
+    }
+
+    // Handle permissions - ensure it's a list of strings
+    List<String>? permissions;
+    if (json['permissions'] != null) {
+      if (json['permissions'] is List) {
+        permissions = (json['permissions'] as List)
+            .map((e) => e.toString())
+            .toList();
+      }
     }
 
     return User(
-      id: json['id'] ?? json['_id'] ?? '',
+      id: json['id']?.toString() ?? json['_id']?.toString() ?? '',
       firstName: fName,
       lastName: lName,
-      email: json['email'] ?? '',
-      role: _parseRole(json['role']),
-      profileImage: json['profileImage'] ?? json['profilePicture'],
+      email: json['email']?.toString() ?? '',
+      role: _parseRole(json['role']?.toString()),
+      profileImage: profileImage,
       createdAt: json['createdAt'] != null
-          ? DateTime.parse(json['createdAt'])
+          ? DateTime.parse(json['createdAt'].toString())
           : DateTime.now(),
       lastLogin: json['lastLogin'] != null
-          ? DateTime.parse(json['lastLogin'])
+          ? DateTime.parse(json['lastLogin'].toString())
           : null,
-      permissions: json['permissions'] != null
-          ? List<String>.from(json['permissions'])
-          : [],
-      status: json['status'],
-      studentId: json['studentId'],
-      course: json['course'],
-      year: json['year'] ?? json['yearOfStudy']?.toString(),
-      college: json['college'],
-      phone: json['phone'],
-      university: json['university'],
-      gender: json['gender'],
+      permissions: permissions,
+      status: json['status']?.toString(),
+      studentId: json['studentId']?.toString(),
+      course: course,
+      year: year,
+      college: college,
+      phone: json['phone']?.toString(),
+      university: json['university']?.toString(),
+      gender: json['gender']?.toString(),
     );
   }
 
@@ -410,40 +482,121 @@ class AuthService {
 
       final response = await _makePostRequest(ApiEndpoints.login, loginData);
 
-      _handleResponseErrors(response, 'Login');
-      final responseData = json.decode(response.body);
-
-      if (responseData['token'] != null && responseData['user'] != null) {
-        _authToken = responseData['token'];
-        _refreshToken = responseData['refreshToken'];
-
-        _currentUser = User.fromJson(responseData['user']);
-
-        _isLoggedIn = true;
-        _loginTime = DateTime.now();
-        _tokenExpiryTime = DateTime.now().add(const Duration(days: 7));
-        _userPermissions = _currentUser?.permissions ?? [];
-
-        await _saveSession();
-        _startTokenRefreshTimer();
-
+      // Try to parse response body first
+      Map<String, dynamic>? responseData;
+      try {
+        if (response.body.isNotEmpty) {
+          responseData = json.decode(response.body) as Map<String, dynamic>;
+        }
+      } catch (e) {
+        // If we can't parse JSON, check if it's a server error
+        if (response.statusCode >= 500) {
+          return {
+            'success': false,
+            'message': 'Server error. Please try again later.',
+          };
+        }
         return {
-          'success': true,
-          'message': responseData['message'] ?? 'Login successful',
-          'user': _currentUser,
+          'success': false,
+          'message': 'Invalid server response. Please try again.',
         };
       }
 
+      // Handle specific error status codes for login (don't throw, return error message)
+      if (response.statusCode == 400 || response.statusCode == 401 || response.statusCode == 404) {
+        final errorMessage = responseData?['message'] ?? 
+            (response.statusCode == 401 
+              ? 'Incorrect email or password. Please try again.' 
+              : response.statusCode == 404
+                ? 'No account found with this email address.'
+                : 'Invalid request. Please check your input.');
+        return {
+          'success': false,
+          'message': errorMessage,
+        };
+      }
+
+      // For other non-success status codes, use the standard error handler
+      if (response.statusCode != 200 && response.statusCode != 201) {
+        _handleResponseErrors(response, 'Login');
+      }
+      
+      // If responseData is null, something went wrong
+      if (responseData == null) {
+        return {
+          'success': false,
+          'message': 'Invalid server response. Please try again.',
+        };
+      }
+
+      // Check if login was successful - backend returns success: true and user object
+      // In production, tokens may be in cookies only, not in response body
+      final isSuccess = response.statusCode == 200 && 
+                        responseData['success'] == true && 
+                        responseData['user'] != null;
+      
+      if (isSuccess) {
+        // Extract token from response body (available in development mode)
+        String? token = responseData['token'];
+        String? refreshToken = responseData['refreshToken'];
+        
+        // Parse user data
+        if (responseData['user'] != null) {
+          try {
+            _currentUser = User.fromJson(responseData['user']);
+            
+            // Set tokens if available in response (development mode)
+            // In production, tokens are in httpOnly cookies which can't be accessed
+            // but subsequent requests will work if using a cookie-aware HTTP client
+            if (token != null) {
+              _authToken = token;
+            }
+            if (refreshToken != null) {
+              _refreshToken = refreshToken;
+            }
+
+            _isLoggedIn = true;
+            _loginTime = DateTime.now();
+            _tokenExpiryTime = DateTime.now().add(const Duration(days: 7));
+            _userPermissions = _currentUser?.permissions ?? [];
+
+            await _saveSession();
+            
+            // Only start token refresh timer if we have a token
+            if (_authToken != null) {
+              _startTokenRefreshTimer();
+            }
+
+            return {
+              'success': true,
+              'message': responseData['message'] ?? 'Login successful',
+              'user': _currentUser,
+            };
+          } catch (e) {
+            return {
+              'success': false,
+              'message': 'Failed to parse user data. Please try again.',
+            };
+          }
+        }
+      }
+
+      // If we reach here, login failed
+      final errorMessage = responseData['message'] ?? 
+                          (responseData['success'] == false 
+                            ? 'Login failed. Please check your credentials.' 
+                            : 'Login failed. Please try again.');
+      
       return {
         'success': false,
-        'message': responseData['message'] ?? 'Login failed',
+        'message': errorMessage,
       };
     } on AuthException catch (e) {
       return {'success': false, 'message': e.message};
     } catch (e) {
       return {
         'success': false,
-        'message': 'Could not connect to server. Please try again.',
+        'message': 'Could not connect to server. Please check your internet connection and try again.',
       };
     }
   }

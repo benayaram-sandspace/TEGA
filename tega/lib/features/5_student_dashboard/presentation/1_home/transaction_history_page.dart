@@ -1,9 +1,12 @@
 import 'dart:convert';
+import 'dart:io';
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import '../../data/transaction_history_service.dart';
 import '../../../1_authentication/data/auth_repository.dart';
 import '../../../../core/constants/api_constants.dart';
+import 'package:tega/core/services/transaction_history_cache_service.dart';
 
 class TransactionHistoryPage extends StatefulWidget {
   const TransactionHistoryPage({super.key});
@@ -15,19 +18,46 @@ class TransactionHistoryPage extends StatefulWidget {
 class _TransactionHistoryPageState extends State<TransactionHistoryPage> {
   final TransactionHistoryService _transactionService =
       TransactionHistoryService();
+  final TransactionHistoryCacheService _cacheService = TransactionHistoryCacheService();
 
   List<Transaction> _transactions = [];
   TransactionStats _stats = TransactionStats.empty();
   bool _isLoading = true;
   String? _error;
   String _selectedFilter = 'All';
-  String _searchQuery = '';
+
+  // Responsive breakpoints
+  double get mobileBreakpoint => 600;
+  double get tabletBreakpoint => 1024;
+  double get desktopBreakpoint => 1440;
+  bool get isMobile => MediaQuery.of(context).size.width < mobileBreakpoint;
+  bool get isTablet => MediaQuery.of(context).size.width >= mobileBreakpoint &&
+      MediaQuery.of(context).size.width < tabletBreakpoint;
+  bool get isDesktop => MediaQuery.of(context).size.width >= tabletBreakpoint &&
+      MediaQuery.of(context).size.width < desktopBreakpoint;
+  bool get isLargeDesktop => MediaQuery.of(context).size.width >= desktopBreakpoint;
+  bool get isSmallScreen => MediaQuery.of(context).size.width < 400;
 
   @override
   void initState() {
     super.initState();
-    _loadData();
+    _initializeCache();
     _transactionService.clearDummyData(); // Ensure only real data is shown
+  }
+
+  Future<void> _initializeCache() async {
+    await _cacheService.initialize();
+    _loadData();
+  }
+
+  bool _isNoInternetError(dynamic error) {
+    return error is SocketException ||
+        error is TimeoutException ||
+        (error.toString().toLowerCase().contains('network') ||
+            error.toString().toLowerCase().contains('connection') ||
+            error.toString().toLowerCase().contains('internet') ||
+            error.toString().toLowerCase().contains('failed host lookup') ||
+            error.toString().toLowerCase().contains('no address associated with hostname'));
   }
 
   Future<String> _getStudentName() async {
@@ -55,26 +85,117 @@ class _TransactionHistoryPageState extends State<TransactionHistoryPage> {
     }
   }
 
-  Future<void> _loadData() async {
-    try {
-      setState(() {
-        _isLoading = true;
-        _error = null;
-      });
+  Future<void> _loadData({bool forceRefresh = false}) async {
+    if (!mounted) return;
 
+    // Try to load from cache first (unless force refresh)
+    if (!forceRefresh) {
+      final cachedTransactions = await _cacheService.getTransactionsData();
+      final cachedStats = await _cacheService.getStatsData();
+      
+      if (cachedTransactions != null && cachedStats != null && mounted) {
+        setState(() {
+          _transactions = cachedTransactions
+              .map((json) => Transaction.fromJson(json))
+              .toList();
+          _stats = TransactionStats(
+            totalTransactions: cachedStats['totalTransactions'] ?? 0,
+            successRate: (cachedStats['successRate'] ?? 0).toDouble(),
+            pendingCount: cachedStats['pendingCount'] ?? 0,
+            totalSpent: (cachedStats['totalSpent'] ?? 0).toDouble(),
+          );
+          _isLoading = false;
+          _error = null;
+        });
+        // Still fetch in background to update cache
+        _fetchTransactionsInBackground();
+        return;
+      }
+    }
+
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+
+    // Fetch from API
+    await _fetchTransactionsInBackground();
+  }
+
+  Future<void> _fetchTransactionsInBackground() async {
+    try {
       final transactions = await _transactionService.getTransactionHistory();
       final stats = await _transactionService.getTransactionStats();
 
-      setState(() {
-        _transactions = transactions;
-        _stats = stats;
-        _isLoading = false;
+      // Cache transactions data
+      final transactionsJson = transactions.map((t) => {
+        'id': t.id,
+        'courseId': t.courseId,
+        'courseName': t.courseName,
+        'amount': t.amount,
+        'currency': t.currency,
+        'paymentMethod': t.paymentMethod,
+        'status': t.status,
+        'transactionId': t.transactionId,
+        'createdAt': t.createdAt.toIso8601String(),
+        'paymentDate': t.paymentDate?.toIso8601String(),
+        'description': t.description,
+        'source': t.source,
+      }).toList();
+      await _cacheService.setTransactionsData(transactionsJson);
+
+      // Cache stats data
+      await _cacheService.setStatsData({
+        'totalTransactions': stats.totalTransactions,
+        'successRate': stats.successRate,
+        'pendingCount': stats.pendingCount,
+        'totalSpent': stats.totalSpent,
       });
+
+      if (mounted) {
+        setState(() {
+          _transactions = transactions;
+          _stats = stats;
+          _isLoading = false;
+          _error = null;
+        });
+      }
     } catch (e) {
-      setState(() {
-        _error = e.toString();
-        _isLoading = false;
-      });
+      if (mounted) {
+        // Check if it's a network/internet error
+        if (_isNoInternetError(e)) {
+          // Try to load from cache if available
+          final cachedTransactions = await _cacheService.getTransactionsData();
+          final cachedStats = await _cacheService.getStatsData();
+          
+          if (cachedTransactions != null && cachedStats != null) {
+            setState(() {
+              _transactions = cachedTransactions
+                  .map((json) => Transaction.fromJson(json))
+                  .toList();
+              _stats = TransactionStats(
+                totalTransactions: cachedStats['totalTransactions'] ?? 0,
+                successRate: (cachedStats['successRate'] ?? 0).toDouble(),
+                pendingCount: cachedStats['pendingCount'] ?? 0,
+                totalSpent: (cachedStats['totalSpent'] ?? 0).toDouble(),
+              );
+              _error = null; // Clear error since we have cached data
+              _isLoading = false;
+            });
+            return;
+          }
+          // No cache available, show error
+          setState(() {
+            _error = 'No internet connection';
+            _isLoading = false;
+          });
+        } else {
+          setState(() {
+            _error = 'Unable to load transactions. Please try again.';
+            _isLoading = false;
+          });
+        }
+      }
     }
   }
 
@@ -100,22 +221,6 @@ class _TransactionHistoryPageState extends State<TransactionHistoryPage> {
       }).toList();
     }
 
-    // Apply search filter
-    if (_searchQuery.isNotEmpty) {
-      filtered = filtered.where((transaction) {
-        return transaction.courseName.toLowerCase().contains(
-              _searchQuery.toLowerCase(),
-            ) ||
-            (transaction.transactionId?.toLowerCase().contains(
-                  _searchQuery.toLowerCase(),
-                ) ??
-                false) ||
-            transaction.paymentMethod.toLowerCase().contains(
-              _searchQuery.toLowerCase(),
-            );
-      }).toList();
-    }
-
     return filtered;
   }
 
@@ -125,10 +230,23 @@ class _TransactionHistoryPageState extends State<TransactionHistoryPage> {
       backgroundColor: const Color(0xFFF5F5F5),
       body: SafeArea(
         child: RefreshIndicator(
-          onRefresh: _loadData,
+          onRefresh: () => _loadData(forceRefresh: true),
           color: const Color(0xFF9C88FF),
           child: _isLoading
-              ? const Center(child: CircularProgressIndicator())
+              ? Center(
+                  child: CircularProgressIndicator(
+                    valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF9C88FF)),
+                    strokeWidth: isLargeDesktop
+                        ? 4
+                        : isDesktop
+                        ? 3.5
+                        : isTablet
+                        ? 3
+                        : isSmallScreen
+                        ? 2.5
+                        : 3,
+                  ),
+                )
               : _error != null
               ? _buildErrorState()
               : _buildContent(),
@@ -144,13 +262,43 @@ class _TransactionHistoryPageState extends State<TransactionHistoryPage> {
         children: [
           // Combined Header and Stats Section
           _buildCombinedHeaderAndStats(),
-          const SizedBox(height: 16),
-          // Search and Filter Section
-          _buildSearchAndFilters(),
-          const SizedBox(height: 16),
+          SizedBox(
+            height: isLargeDesktop
+                ? 24
+                : isDesktop
+                ? 20
+                : isTablet
+                ? 18
+                : isSmallScreen
+                ? 12
+                : 16,
+          ),
+          // Filter Section
+          _buildFilters(),
+          SizedBox(
+            height: isLargeDesktop
+                ? 24
+                : isDesktop
+                ? 20
+                : isTablet
+                ? 18
+                : isSmallScreen
+                ? 12
+                : 16,
+          ),
           // Transaction List
           _buildTransactionList(),
-          const SizedBox(height: 20), // Bottom padding for better scrolling
+          SizedBox(
+            height: isLargeDesktop
+                ? 32
+                : isDesktop
+                ? 28
+                : isTablet
+                ? 24
+                : isSmallScreen
+                ? 16
+                : 20,
+          ), // Bottom padding for better scrolling
         ],
       ),
     );
@@ -224,7 +372,7 @@ class _TransactionHistoryPageState extends State<TransactionHistoryPage> {
                     _buildActionButton(
                       'Refresh',
                       Icons.refresh,
-                      () => _loadData(),
+                      () => _loadData(forceRefresh: true),
                     ),
                   ],
                 ),
@@ -526,104 +674,144 @@ class _TransactionHistoryPageState extends State<TransactionHistoryPage> {
     );
   }
 
-  Widget _buildSearchAndFilters() {
+  Widget _buildFilters() {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 20),
-      padding: const EdgeInsets.all(12),
+      margin: EdgeInsets.symmetric(
+        horizontal: isLargeDesktop
+            ? 32
+            : isDesktop
+            ? 24
+            : isTablet
+            ? 20
+            : isSmallScreen
+            ? 12
+            : 16,
+      ),
+      padding: EdgeInsets.all(
+        isLargeDesktop
+            ? 20
+            : isDesktop
+            ? 18
+            : isTablet
+            ? 16
+            : isSmallScreen
+            ? 12
+            : 14,
+      ),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(
+          isLargeDesktop
+              ? 20
+              : isDesktop
+              ? 18
+              : isTablet
+              ? 16
+              : isSmallScreen
+              ? 12
+              : 14,
+        ),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.05),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
+            blurRadius: isLargeDesktop
+                ? 16
+                : isDesktop
+                ? 12
+                : isTablet
+                ? 10
+                : isSmallScreen
+                ? 6
+                : 8,
+            offset: Offset(
+              0,
+              isLargeDesktop
+                  ? 4
+                  : isDesktop
+                  ? 3
+                  : isTablet
+                  ? 2
+                  : isSmallScreen
+                  ? 1
+                  : 2,
+            ),
           ),
         ],
       ),
-      child: Column(
-        children: [
-          // Search Bar
-          Container(
-            height: 40,
-            decoration: BoxDecoration(
-              color: const Color(0xFFF8F9FA),
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: const Color(0xFFE9ECEF)),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          children: [
+            _buildFilterTab(
+              'All',
+              Icons.all_inclusive,
+              _transactions.length,
             ),
-            child: TextField(
-              onChanged: (value) {
-                setState(() {
-                  _searchQuery = value;
-                });
-              },
-              decoration: InputDecoration(
-                hintText: 'Search transactions...',
-                hintStyle: const TextStyle(
-                  color: Color(0xFF6C757D),
-                  fontSize: 14,
-                ),
-                prefixIcon: const Icon(
-                  Icons.search,
-                  color: Color(0xFF9C88FF),
-                  size: 20,
-                ),
-                border: InputBorder.none,
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 8,
-                ),
-              ),
+            SizedBox(
+              width: isLargeDesktop
+                  ? 12
+                  : isDesktop
+                  ? 10
+                  : isTablet
+                  ? 8
+                  : isSmallScreen
+                  ? 6
+                  : 7,
             ),
-          ),
-          const SizedBox(height: 12),
-          // Filter Tabs
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(
-              children: [
-                _buildFilterTab(
-                  'All',
-                  Icons.all_inclusive,
-                  _transactions.length,
-                ),
-                const SizedBox(width: 6),
-                _buildFilterTab(
-                  'Completed',
-                  Icons.check_circle,
-                  _transactions
-                      .where(
-                        (t) =>
-                            t.status.toLowerCase() == 'completed' ||
-                            t.status.toLowerCase() == 'success' ||
-                            t.status.toLowerCase() == 'paid',
-                      )
-                      .length,
-                ),
-                const SizedBox(width: 6),
-                _buildFilterTab(
-                  'Failed',
-                  Icons.error,
-                  _transactions
-                      .where(
-                        (t) =>
-                            t.status.toLowerCase() == 'failed' ||
-                            t.status.toLowerCase() == 'error',
-                      )
-                      .length,
-                ),
-                const SizedBox(width: 6),
-                _buildFilterTab(
-                  'Pending',
-                  Icons.access_time,
-                  _transactions
-                      .where((t) => t.status.toLowerCase() == 'pending')
-                      .length,
-                ),
-              ],
+            _buildFilterTab(
+              'Completed',
+              Icons.check_circle,
+              _transactions
+                  .where(
+                    (t) =>
+                        t.status.toLowerCase() == 'completed' ||
+                        t.status.toLowerCase() == 'success' ||
+                        t.status.toLowerCase() == 'paid',
+                  )
+                  .length,
             ),
-          ),
-        ],
+            SizedBox(
+              width: isLargeDesktop
+                  ? 12
+                  : isDesktop
+                  ? 10
+                  : isTablet
+                  ? 8
+                  : isSmallScreen
+                  ? 6
+                  : 7,
+            ),
+            _buildFilterTab(
+              'Failed',
+              Icons.error,
+              _transactions
+                  .where(
+                    (t) =>
+                        t.status.toLowerCase() == 'failed' ||
+                        t.status.toLowerCase() == 'error',
+                  )
+                  .length,
+            ),
+            SizedBox(
+              width: isLargeDesktop
+                  ? 12
+                  : isDesktop
+                  ? 10
+                  : isTablet
+                  ? 8
+                  : isSmallScreen
+                  ? 6
+                  : 7,
+            ),
+            _buildFilterTab(
+              'Pending',
+              Icons.access_time,
+              _transactions
+                  .where((t) => t.status.toLowerCase() == 'pending')
+                  .length,
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -637,15 +825,50 @@ class _TransactionHistoryPageState extends State<TransactionHistoryPage> {
         });
       },
       child: Container(
-        height: 32,
-        padding: const EdgeInsets.symmetric(horizontal: 12),
+        height: isLargeDesktop
+            ? 44
+            : isDesktop
+            ? 40
+            : isTablet
+            ? 38
+            : isSmallScreen
+            ? 32
+            : 36,
+        padding: EdgeInsets.symmetric(
+          horizontal: isLargeDesktop
+              ? 18
+              : isDesktop
+              ? 16
+              : isTablet
+              ? 14
+              : isSmallScreen
+              ? 10
+              : 12,
+        ),
         decoration: BoxDecoration(
           color: isSelected ? const Color(0xFF9C88FF) : const Color(0xFFF8F9FA),
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(
+            isLargeDesktop
+                ? 22
+                : isDesktop
+                ? 20
+                : isTablet
+                ? 18
+                : isSmallScreen
+                ? 16
+                : 18,
+          ),
           border: Border.all(
             color: isSelected
                 ? const Color(0xFF9C88FF)
                 : const Color(0xFFE9ECEF),
+            width: isLargeDesktop || isDesktop
+                ? 1.5
+                : isTablet
+                ? 1.2
+                : isSmallScreen
+                ? 0.8
+                : 1,
           ),
         ),
         child: Row(
@@ -654,14 +877,40 @@ class _TransactionHistoryPageState extends State<TransactionHistoryPage> {
             Icon(
               icon,
               color: isSelected ? Colors.white : const Color(0xFF6C757D),
-              size: 14,
+              size: isLargeDesktop
+                  ? 20
+                  : isDesktop
+                  ? 18
+                  : isTablet
+                  ? 16
+                  : isSmallScreen
+                  ? 14
+                  : 15,
             ),
-            const SizedBox(width: 4),
+            SizedBox(
+              width: isLargeDesktop
+                  ? 8
+                  : isDesktop
+                  ? 7
+                  : isTablet
+                  ? 6
+                  : isSmallScreen
+                  ? 4
+                  : 5,
+            ),
             Text(
               '$label ($count)',
               style: TextStyle(
                 color: isSelected ? Colors.white : const Color(0xFF6C757D),
-                fontSize: 11,
+                fontSize: isLargeDesktop
+                    ? 15
+                    : isDesktop
+                    ? 14
+                    : isTablet
+                    ? 13
+                    : isSmallScreen
+                    ? 11
+                    : 12,
                 fontWeight: FontWeight.w500,
               ),
             ),
@@ -945,38 +1194,204 @@ class _TransactionHistoryPageState extends State<TransactionHistoryPage> {
   }
 
   Widget _buildErrorState() {
+    final isNoInternet = _error == 'No internet connection';
+    
     return Center(
-      child: Container(
-        padding: const EdgeInsets.all(32),
+      child: Padding(
+        padding: EdgeInsets.all(
+          isLargeDesktop
+              ? 48
+              : isDesktop
+              ? 40
+              : isTablet
+              ? 36
+              : isSmallScreen
+              ? 24
+              : 32,
+        ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.error_outline, size: 64, color: Color(0xFFE74C3C)),
-            const SizedBox(height: 16),
-            const Text(
-              'Failed to Load Transactions',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-                color: Color(0xFF2C3E50),
-              ),
+            Icon(
+              Icons.cloud_off,
+              size: isLargeDesktop
+                  ? 80
+                  : isDesktop
+                  ? 72
+                  : isTablet
+                  ? 64
+                  : isSmallScreen
+                  ? 48
+                  : 56,
+              color: Colors.grey[400],
             ),
-            const SizedBox(height: 8),
+            SizedBox(
+              height: isLargeDesktop
+                  ? 24
+                  : isDesktop
+                  ? 20
+                  : isTablet
+                  ? 18
+                  : isSmallScreen
+                  ? 12
+                  : 16,
+            ),
             Text(
-              _error ?? 'Unknown error occurred',
+              isNoInternet
+                  ? 'No internet connection'
+                  : 'Failed to Load Transactions',
+              style: TextStyle(
+                fontSize: isLargeDesktop
+                    ? 24
+                    : isDesktop
+                    ? 22
+                    : isTablet
+                    ? 20
+                    : isSmallScreen
+                    ? 16
+                    : 18,
+                fontWeight: FontWeight.bold,
+                color: Colors.grey[700],
+              ),
               textAlign: TextAlign.center,
-              style: const TextStyle(fontSize: 14, color: Color(0xFF6C757D)),
             ),
-            const SizedBox(height: 24),
-            ElevatedButton(
-              onPressed: _loadData,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF9C88FF),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
+            if (isNoInternet) ...[
+              SizedBox(
+                height: isLargeDesktop
+                    ? 12
+                    : isDesktop
+                    ? 10
+                    : isTablet
+                    ? 8
+                    : isSmallScreen
+                    ? 6
+                    : 8,
+              ),
+              Text(
+                'Please check your connection and try again',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: Colors.grey[600],
+                  fontSize: isLargeDesktop
+                      ? 18
+                      : isDesktop
+                      ? 16
+                      : isTablet
+                      ? 15
+                      : isSmallScreen
+                      ? 12
+                      : 14,
                 ),
               ),
-              child: const Text('Retry', style: TextStyle(color: Colors.white)),
+            ] else ...[
+              SizedBox(
+                height: isLargeDesktop
+                    ? 12
+                    : isDesktop
+                    ? 10
+                    : isTablet
+                    ? 8
+                    : isSmallScreen
+                    ? 6
+                    : 8,
+              ),
+              Text(
+                _error ?? 'Unknown error occurred',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: Colors.grey[600],
+                  fontSize: isLargeDesktop
+                      ? 18
+                      : isDesktop
+                      ? 16
+                      : isTablet
+                      ? 15
+                      : isSmallScreen
+                      ? 12
+                      : 14,
+                ),
+              ),
+            ],
+            SizedBox(
+              height: isLargeDesktop
+                  ? 32
+                  : isDesktop
+                  ? 28
+                  : isTablet
+                  ? 24
+                  : isSmallScreen
+                  ? 16
+                  : 24,
+            ),
+            ElevatedButton.icon(
+              onPressed: () => _loadData(forceRefresh: true),
+              icon: Icon(
+                Icons.refresh,
+                size: isLargeDesktop
+                    ? 24
+                    : isDesktop
+                    ? 22
+                    : isTablet
+                    ? 20
+                    : isSmallScreen
+                    ? 18
+                    : 20,
+                color: Colors.white,
+              ),
+              label: Text(
+                'Retry',
+                style: TextStyle(
+                  fontSize: isLargeDesktop
+                      ? 18
+                      : isDesktop
+                      ? 16
+                      : isTablet
+                      ? 15
+                      : isSmallScreen
+                      ? 13
+                      : 14,
+                  color: Colors.white,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF9C88FF),
+                foregroundColor: Colors.white,
+                padding: EdgeInsets.symmetric(
+                  horizontal: isLargeDesktop
+                      ? 32
+                      : isDesktop
+                      ? 28
+                      : isTablet
+                      ? 24
+                      : isSmallScreen
+                      ? 16
+                      : 20,
+                  vertical: isLargeDesktop
+                      ? 16
+                      : isDesktop
+                      ? 14
+                      : isTablet
+                      ? 12
+                      : isSmallScreen
+                      ? 8
+                      : 10,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(
+                    isLargeDesktop
+                        ? 12
+                        : isDesktop
+                        ? 11
+                        : isTablet
+                        ? 10
+                        : isSmallScreen
+                        ? 8
+                        : 9,
+                  ),
+                ),
+                elevation: 2,
+              ),
             ),
           ],
         ),

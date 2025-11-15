@@ -59,8 +59,98 @@ class StudentDashboardHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Responsive breakpoints
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isTablet = screenWidth >= 600;
+    final isDesktop = screenWidth >= 1024;
+    final isLargeDesktop = screenWidth >= 1440;
+    final isSmallScreen = screenWidth < 400;
+
+    // Responsive padding
+    final horizontalPadding = isLargeDesktop
+        ? 24.0
+        : isDesktop
+            ? 20.0
+            : isTablet
+                ? 18.0
+                : isSmallScreen
+                    ? 12.0
+                    : 16.0;
+    
+    final verticalPadding = isLargeDesktop
+        ? 16.0
+        : isDesktop
+            ? 14.0
+            : isTablet
+                ? 12.0
+                : isSmallScreen
+                    ? 10.0
+                    : 12.0;
+
+    // Responsive icon sizes
+    final menuIconSize = isLargeDesktop
+        ? 28.0
+        : isDesktop
+            ? 26.0
+            : isTablet
+                ? 24.0
+                : 22.0;
+    
+    final titleIconSize = isLargeDesktop
+        ? 26.0
+        : isDesktop
+            ? 24.0
+            : isTablet
+                ? 22.0
+                : 20.0;
+    
+    final notificationIconSize = isLargeDesktop
+        ? 26.0
+        : isDesktop
+            ? 24.0
+            : isTablet
+                ? 22.0
+                : 20.0;
+    
+    final titleFontSize = isLargeDesktop
+        ? 20.0
+        : isDesktop
+            ? 18.0
+            : isTablet
+                ? 17.0
+                : isSmallScreen
+                    ? 15.0
+                    : 16.0;
+    
+    final avatarRadius = isLargeDesktop
+        ? 20.0
+        : isDesktop
+            ? 18.0
+            : isTablet
+                ? 17.0
+                : 16.0;
+    
+    final buttonPadding = isLargeDesktop
+        ? 10.0
+        : isDesktop
+            ? 9.0
+            : isTablet
+                ? 8.0
+                : 7.0;
+    
+    final borderRadius = isLargeDesktop
+        ? 14.0
+        : isDesktop
+            ? 12.0
+            : isTablet
+                ? 11.0
+                : 10.0;
+
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      padding: EdgeInsets.symmetric(
+        horizontal: horizontalPadding,
+        vertical: verticalPadding,
+      ),
       decoration: BoxDecoration(
         color: Colors.white,
         boxShadow: [
@@ -84,7 +174,7 @@ class StudentDashboardHeader extends StatelessWidget {
                   const Color(0xFF6B5FFF).withOpacity(0.05),
                 ],
               ),
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(borderRadius),
             ),
             child: Material(
               color: Colors.transparent,
@@ -93,19 +183,20 @@ class StudentDashboardHeader extends StatelessWidget {
                   HapticFeedback.lightImpact();
                   onMenuTap();
                 },
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(borderRadius),
                 splashColor: const Color(0xFF6B5FFF).withOpacity(0.2),
                 child: Container(
-                  padding: const EdgeInsets.all(8),
-                  child: const Icon(
+                  padding: EdgeInsets.all(buttonPadding),
+                  child: Icon(
                     Icons.menu_rounded,
-                    size: 26,
-                    color: Color(0xFF6B5FFF),
+                    size: menuIconSize,
+                    color: const Color(0xFF6B5FFF),
                   ),
                 ),
               ),
             ),
           ),
+          SizedBox(width: isSmallScreen ? 8 : 12),
           // Page title (Center) with icon and black text
           Expanded(
             child: Center(
@@ -114,33 +205,35 @@ class StudentDashboardHeader extends StatelessWidget {
                 children: [
                   Icon(
                     _getIconForTitle(title),
-                    size: 24,
+                    size: titleIconSize,
                     color: const Color(0xFF6B5FFF),
                   ),
-                  const SizedBox(width: 10),
+                  SizedBox(width: isSmallScreen ? 8 : 10),
                   Flexible(
                     child: Text(
                       title,
-                      style: const TextStyle(
-                        fontSize: 18,
+                      style: TextStyle(
+                        fontSize: titleFontSize,
                         fontWeight: FontWeight.w700,
                         color: Colors.black,
                         letterSpacing: 0.5,
                       ),
                       overflow: TextOverflow.ellipsis,
+                      maxLines: 1,
                     ),
                   ),
                 ],
               ),
             ),
           ),
+          SizedBox(width: isSmallScreen ? 8 : 12),
           // Notification icon with animation
           Stack(
             children: [
               Container(
                 decoration: BoxDecoration(
                   color: Colors.grey.withOpacity(0.08),
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(borderRadius),
                 ),
                 child: Material(
                   color: Colors.transparent,
@@ -153,12 +246,12 @@ class StudentDashboardHeader extends StatelessWidget {
                         ),
                       );
                     },
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(borderRadius),
                     child: Container(
-                      padding: const EdgeInsets.all(8),
-                      child: const Icon(
+                      padding: EdgeInsets.all(buttonPadding),
+                      child: Icon(
                         Icons.notifications_outlined,
-                        size: 24,
+                        size: notificationIconSize,
                         color: Colors.black87,
                       ),
                     ),
@@ -167,12 +260,12 @@ class StudentDashboardHeader extends StatelessWidget {
               ),
               if (notificationCount > 0)
                 Positioned(
-                  right: 4,
-                  top: 4,
+                  right: isSmallScreen ? 3 : 4,
+                  top: isSmallScreen ? 3 : 4,
                   child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 5,
-                      vertical: 2,
+                    padding: EdgeInsets.symmetric(
+                      horizontal: isSmallScreen ? 4 : 5,
+                      vertical: isSmallScreen ? 1 : 2,
                     ),
                     decoration: BoxDecoration(
                       gradient: const LinearGradient(
@@ -188,16 +281,16 @@ class StudentDashboardHeader extends StatelessWidget {
                         ),
                       ],
                     ),
-                    constraints: const BoxConstraints(
-                      minWidth: 18,
-                      minHeight: 18,
+                    constraints: BoxConstraints(
+                      minWidth: isSmallScreen ? 16 : 18,
+                      minHeight: isSmallScreen ? 16 : 18,
                     ),
                     child: Center(
                       child: Text(
                         '$notificationCount',
-                        style: const TextStyle(
+                        style: TextStyle(
                           color: Colors.white,
-                          fontSize: 10,
+                          fontSize: isSmallScreen ? 9 : 10,
                           fontWeight: FontWeight.w700,
                         ),
                       ),
@@ -206,7 +299,7 @@ class StudentDashboardHeader extends StatelessWidget {
                 ),
             ],
           ),
-          const SizedBox(width: 12),
+          SizedBox(width: isSmallScreen ? 8 : 12),
           // Profile Avatar with elegant design
           Hero(
             tag: 'avatarHero',
@@ -215,7 +308,7 @@ class StudentDashboardHeader extends StatelessWidget {
               username: profileData?['username'] ?? profileData?['email'],
               firstName: profileData?['firstName'],
               lastName: profileData?['lastName'],
-              radius: 17,
+              radius: avatarRadius,
               onTap: () {
                 Navigator.push(
                   context,

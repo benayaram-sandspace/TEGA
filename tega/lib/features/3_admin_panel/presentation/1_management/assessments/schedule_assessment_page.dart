@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:tega/core/constants/app_colors.dart';
+import 'package:tega/features/3_admin_panel/presentation/0_dashboard/admin_dashboard_styles.dart';
 import 'package:tega/features/3_admin_panel/presentation/1_management/assessments/create_assessment_form_page.dart';
 import 'package:tega/features/3_admin_panel/presentation/1_management/assessments/question_papers_page.dart';
 import 'package:tega/features/3_admin_panel/presentation/1_management/assessments/manage_exams_page.dart';
@@ -46,11 +47,16 @@ class _ScheduleAssessmentPageState extends State<ScheduleAssessmentPage> {
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isMobile = screenWidth < 600;
+    final isTablet = screenWidth >= 600 && screenWidth < 1024;
+    final isDesktop = screenWidth >= 1024;
+
     return Scaffold(
       backgroundColor: AppColors.whiteShade2,
       body: Column(
         children: [
-          _buildNavigationMenu(),
+          _buildNavigationMenu(isMobile, isTablet, isDesktop),
           Expanded(
             child: _buildContent(),
           ),
@@ -59,13 +65,16 @@ class _ScheduleAssessmentPageState extends State<ScheduleAssessmentPage> {
     );
   }
 
-  Widget _buildNavigationMenu() {
+  Widget _buildNavigationMenu(bool isMobile, bool isTablet, bool isDesktop) {
     return Container(
-      margin: const EdgeInsets.all(20),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      margin: EdgeInsets.all(isMobile ? 12 : isTablet ? 16 : 20),
+      padding: EdgeInsets.symmetric(
+        horizontal: isMobile ? 12 : isTablet ? 14 : 16,
+        vertical: isMobile ? 10 : isTablet ? 11 : 12,
+      ),
       decoration: BoxDecoration(
         color: Colors.grey[100],
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(isMobile ? 10 : isTablet ? 11 : 12),
       ),
       child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,
@@ -76,8 +85,8 @@ class _ScheduleAssessmentPageState extends State<ScheduleAssessmentPage> {
             final isSelected = _selectedNavIndex == index;
             
             return Padding(
-              padding: const EdgeInsets.only(right: 8),
-              child: _buildNavButton(item, isSelected, index),
+              padding: EdgeInsets.only(right: isMobile ? 6 : isTablet ? 7 : 8),
+              child: _buildNavButton(item, isSelected, index, isMobile, isTablet, isDesktop),
             );
           }).toList(),
         ),
@@ -85,7 +94,14 @@ class _ScheduleAssessmentPageState extends State<ScheduleAssessmentPage> {
     );
   }
 
-  Widget _buildNavButton(NavItem item, bool isSelected, int index) {
+  Widget _buildNavButton(
+    NavItem item,
+    bool isSelected,
+    int index,
+    bool isMobile,
+    bool isTablet,
+    bool isDesktop,
+  ) {
     if (isSelected) {
       return ElevatedButton.icon(
         onPressed: () {
@@ -93,23 +109,26 @@ class _ScheduleAssessmentPageState extends State<ScheduleAssessmentPage> {
         },
         icon: Icon(
           item.icon,
-          size: 18,
+          size: isMobile ? 16 : isTablet ? 17 : 18,
           color: Colors.white,
         ),
         label: Text(
           item.label,
-          style: const TextStyle(
+          style: TextStyle(
             color: Colors.white,
             fontWeight: FontWeight.w600,
-            fontSize: 14,
+            fontSize: isMobile ? 12 : isTablet ? 13 : 14,
           ),
         ),
         style: ElevatedButton.styleFrom(
-          backgroundColor: const Color(0xFF2563EB), // Blue color
+          backgroundColor: AdminDashboardStyles.primary,
           foregroundColor: Colors.white,
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          padding: EdgeInsets.symmetric(
+            horizontal: isMobile ? 12 : isTablet ? 14 : 16,
+            vertical: isMobile ? 10 : isTablet ? 11 : 12,
+          ),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(isMobile ? 6 : isTablet ? 7 : 8),
           ),
           elevation: 0,
         ),
@@ -121,21 +140,24 @@ class _ScheduleAssessmentPageState extends State<ScheduleAssessmentPage> {
         },
         icon: Icon(
           item.icon,
-          size: 18,
-          color: Colors.grey[700],
+          size: isMobile ? 16 : isTablet ? 17 : 18,
+          color: AdminDashboardStyles.primary.withOpacity(0.6),
         ),
         label: Text(
           item.label,
           style: TextStyle(
-            color: Colors.grey[700],
+            color: AdminDashboardStyles.primary.withOpacity(0.7),
             fontWeight: FontWeight.w500,
-            fontSize: 14,
+            fontSize: isMobile ? 12 : isTablet ? 13 : 14,
           ),
         ),
         style: TextButton.styleFrom(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          padding: EdgeInsets.symmetric(
+            horizontal: isMobile ? 12 : isTablet ? 14 : 16,
+            vertical: isMobile ? 10 : isTablet ? 11 : 12,
+          ),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(isMobile ? 6 : isTablet ? 7 : 8),
           ),
         ),
       );

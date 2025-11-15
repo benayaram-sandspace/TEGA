@@ -1,4 +1,6 @@
 import 'dart:convert';
+import 'dart:io';
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:tega/core/constants/api_constants.dart';
@@ -21,6 +23,16 @@ class _CompanyQuizPageState extends State<CompanyQuizPage> {
   int? _selectedIndex;
   late List<int?> _selections; // per-question selection
   int _score = 0;
+
+  bool _isNoInternetError(dynamic error) {
+    return error is SocketException ||
+        error is TimeoutException ||
+        (error.toString().toLowerCase().contains('network') ||
+            error.toString().toLowerCase().contains('connection') ||
+            error.toString().toLowerCase().contains('internet') ||
+            error.toString().toLowerCase().contains('failed host lookup') ||
+            error.toString().toLowerCase().contains('no address associated with hostname'));
+  }
 
   @override
   void initState() {
@@ -51,7 +63,12 @@ class _CompanyQuizPageState extends State<CompanyQuizPage> {
         _error = 'Failed to load questions';
       }
     } catch (e) {
-      _error = e.toString();
+      // Check if it's a network/internet error
+      if (_isNoInternetError(e)) {
+        _error = 'No internet connection';
+      } else {
+        _error = e.toString();
+      }
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -100,12 +117,90 @@ class _CompanyQuizPageState extends State<CompanyQuizPage> {
       body: _loading
           ? const Center(child: CircularProgressIndicator(color: Color(0xFF6B5FFF)))
           : _error != null
-              ? Center(child: Text(_error!, style: const TextStyle(color: Colors.red)))
+              ? _buildErrorState()
               : _questions.isEmpty
                   ? const Center(child: Text('No questions available'))
                   : (_started
                       ? _buildQuiz()
                       : const Center(child: CircularProgressIndicator(color: Color(0xFF6B5FFF)))),
+    );
+  }
+
+  Widget _buildErrorState() {
+    final isNoInternet = _error == 'No internet connection';
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isMobile = screenWidth < 600;
+    final isTablet = screenWidth >= 600 && screenWidth < 1024;
+    
+    return Center(
+      child: Padding(
+        padding: EdgeInsets.all(isMobile ? 24 : isTablet ? 28 : 32),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.cloud_off,
+              size: isMobile ? 64 : isTablet ? 72 : 80,
+              color: Colors.grey[400],
+            ),
+            SizedBox(height: isMobile ? 20 : isTablet ? 24 : 28),
+            Text(
+              isNoInternet ? 'No internet connection' : 'Something went wrong',
+              style: TextStyle(
+                fontSize: isMobile ? 18 : isTablet ? 19 : 20,
+                fontWeight: FontWeight.bold,
+                color: Colors.grey[700],
+              ),
+              textAlign: TextAlign.center,
+            ),
+            if (isNoInternet) ...[
+              SizedBox(height: isMobile ? 8 : isTablet ? 9 : 10),
+              Text(
+                'Please check your connection and try again',
+                style: TextStyle(
+                  fontSize: isMobile ? 14 : isTablet ? 15 : 16,
+                  color: Colors.grey[600],
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ],
+            SizedBox(height: isMobile ? 24 : isTablet ? 28 : 32),
+            ElevatedButton.icon(
+              onPressed: () {
+                setState(() {
+                  _error = null;
+                });
+                _loadQuestions().then((_) {
+                  if (mounted && _questions.isNotEmpty) {
+                    _startQuiz();
+                  }
+                });
+              },
+              icon: Icon(Icons.refresh, size: isMobile ? 18 : isTablet ? 20 : 22, color: Colors.white),
+              label: Text(
+                'Retry',
+                style: TextStyle(
+                  fontSize: isMobile ? 14 : isTablet ? 15 : 16,
+                  color: Colors.white,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF6B5FFF),
+                foregroundColor: Colors.white,
+                padding: EdgeInsets.symmetric(
+                  horizontal: isMobile ? 20 : isTablet ? 24 : 28,
+                  vertical: isMobile ? 12 : isTablet ? 14 : 16,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(isMobile ? 8 : isTablet ? 9 : 10),
+                ),
+                elevation: 2,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 

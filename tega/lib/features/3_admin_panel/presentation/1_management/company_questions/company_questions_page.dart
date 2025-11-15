@@ -17,20 +17,25 @@ class _CompanyQuestionsPageState extends State<CompanyQuestionsPage> {
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isMobile = screenWidth < 600;
+    final isTablet = screenWidth >= 600 && screenWidth < 1024;
+    final isDesktop = screenWidth >= 1024;
+
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(20),
+      padding: EdgeInsets.all(isMobile ? 12 : isTablet ? 16 : 20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildTabNavigation(),
-          const SizedBox(height: 20),
+          _buildTabNavigation(isMobile, isTablet, isDesktop),
+          SizedBox(height: isMobile ? 16 : isTablet ? 18 : 20),
           _buildTabContent(),
         ],
       ),
     );
   }
 
-  Widget _buildTabNavigation() {
+  Widget _buildTabNavigation(bool isMobile, bool isTablet, bool isDesktop) {
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       child: Row(
@@ -39,24 +44,36 @@ class _CompanyQuestionsPageState extends State<CompanyQuestionsPage> {
             icon: Icons.upload_rounded,
             label: 'Upload PDF',
             index: 0,
+            isMobile: isMobile,
+            isTablet: isTablet,
+            isDesktop: isDesktop,
           ),
-          const SizedBox(width: 12),
+          SizedBox(width: isMobile ? 8 : isTablet ? 10 : 12),
           _buildTabButton(
             icon: Icons.description_rounded,
             label: 'Manage Questions',
             index: 1,
+            isMobile: isMobile,
+            isTablet: isTablet,
+            isDesktop: isDesktop,
           ),
-          const SizedBox(width: 12),
+          SizedBox(width: isMobile ? 8 : isTablet ? 10 : 12),
           _buildTabButton(
             icon: Icons.add_circle_outline_rounded,
             label: 'Add Question',
             index: 2,
+            isMobile: isMobile,
+            isTablet: isTablet,
+            isDesktop: isDesktop,
           ),
-          const SizedBox(width: 12),
+          SizedBox(width: isMobile ? 8 : isTablet ? 10 : 12),
           _buildTabButton(
             icon: Icons.business_rounded,
             label: 'Companies',
             index: 3,
+            isMobile: isMobile,
+            isTablet: isTablet,
+            isDesktop: isDesktop,
           ),
         ],
       ),
@@ -67,17 +84,23 @@ class _CompanyQuestionsPageState extends State<CompanyQuestionsPage> {
     required IconData icon,
     required String label,
     required int index,
+    required bool isMobile,
+    required bool isTablet,
+    required bool isDesktop,
   }) {
     final isActive = _selectedTabIndex == index;
     
     return InkWell(
       onTap: () => setState(() => _selectedTabIndex = index),
-      borderRadius: BorderRadius.circular(8),
+      borderRadius: BorderRadius.circular(isMobile ? 6 : isTablet ? 7 : 8),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        padding: EdgeInsets.symmetric(
+          horizontal: isMobile ? 12 : isTablet ? 14 : 16,
+          vertical: isMobile ? 10 : isTablet ? 11 : 12,
+        ),
         decoration: BoxDecoration(
           color: isActive ? AdminDashboardStyles.primary : Colors.white,
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(isMobile ? 6 : isTablet ? 7 : 8),
           border: Border.all(
             color: isActive ? AdminDashboardStyles.primary : AdminDashboardStyles.borderLight,
           ),
@@ -88,13 +111,13 @@ class _CompanyQuestionsPageState extends State<CompanyQuestionsPage> {
             Icon(
               icon,
               color: isActive ? Colors.white : AdminDashboardStyles.textDark,
-              size: 18,
+              size: isMobile ? 16 : isTablet ? 17 : 18,
             ),
-            const SizedBox(width: 8),
+            SizedBox(width: isMobile ? 6 : isTablet ? 7 : 8),
             Text(
               label,
               style: TextStyle(
-                fontSize: 14,
+                fontSize: isMobile ? 12 : isTablet ? 13 : 14,
                 fontWeight: FontWeight.w600,
                 color: isActive ? Colors.white : AdminDashboardStyles.textDark,
               ),

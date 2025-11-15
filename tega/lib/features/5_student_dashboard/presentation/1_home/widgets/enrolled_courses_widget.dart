@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:tega/features/5_student_dashboard/data/student_dashboard_service.dart';
 import 'package:tega/features/1_authentication/data/auth_repository.dart';
 import 'package:tega/features/5_student_dashboard/presentation/2_learning_hub/course_content_page.dart';
@@ -355,33 +356,24 @@ class _EnrolledCoursesWidgetState extends State<EnrolledCoursesWidget>
                     height: 60,
                     color: Colors.grey[300],
                     child: thumbnail != null && thumbnail.isNotEmpty
-                        ? Image.network(
-                            thumbnail,
+                        ? CachedNetworkImage(
+                            imageUrl: thumbnail,
                             fit: BoxFit.cover,
                             width: 60,
                             height: 60,
-                            errorBuilder: (context, error, stackTrace) {
-                              return Icon(
-                                Icons.school_rounded,
-                                color: Colors.grey[400],
-                                size: 30,
-                              );
-                            },
-                            loadingBuilder: (context, child, loadingProgress) {
-                              if (loadingProgress == null) return child;
-                              return Center(
-                                child: CircularProgressIndicator(
-                                  value: loadingProgress.expectedTotalBytes != null
-                                      ? loadingProgress.cumulativeBytesLoaded /
-                                          loadingProgress.expectedTotalBytes!
-                                      : null,
-                                  strokeWidth: 2,
-                                  valueColor: AlwaysStoppedAnimation<Color>(
-                                    const Color(0xFF6B5FFF),
-                                  ),
+                            placeholder: (context, url) => Center(
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                  const Color(0xFF6B5FFF),
                                 ),
-                              );
-                            },
+                              ),
+                            ),
+                            errorWidget: (context, url, error) => Icon(
+                              Icons.school_rounded,
+                              color: Colors.grey[400],
+                              size: 30,
+                            ),
                           )
                         : Icon(
                             Icons.school_rounded,

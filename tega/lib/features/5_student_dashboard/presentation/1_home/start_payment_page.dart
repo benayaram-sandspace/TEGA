@@ -3,6 +3,7 @@ import 'package:tega/features/5_student_dashboard/data/payment_service.dart';
 import 'package:tega/features/5_student_dashboard/data/student_dashboard_service.dart';
 import 'package:tega/features/1_authentication/data/auth_repository.dart';
 import 'package:tega/core/config/env_config.dart';
+import 'package:tega/core/services/payment_page_cache_service.dart';
 
 class StartPaymentPage extends StatefulWidget {
   const StartPaymentPage({super.key});
@@ -20,10 +21,25 @@ class _StartPaymentPageState extends State<StartPaymentPage> {
   final _courseIdController = TextEditingController();
   final _notesController = TextEditingController();
   final PaymentService _paymentService = PaymentService();
+  final PaymentPageCacheService _cacheService = PaymentPageCacheService();
   bool _loading = false; // used for manual payment fallback button
   bool _loadingCourses = true;
   List<Map<String, dynamic>> _courses = [];
+  List<Map<String, dynamic>> _exams = [];
+  List<Map<String, dynamic>> _allItems = []; // Combined courses and exams
   Set<String> _ownedCourseIds = {};
+
+  // Responsive breakpoints
+  double get mobileBreakpoint => 600;
+  double get tabletBreakpoint => 1024;
+  double get desktopBreakpoint => 1440;
+  bool get isMobile => MediaQuery.of(context).size.width < mobileBreakpoint;
+  bool get isTablet => MediaQuery.of(context).size.width >= mobileBreakpoint &&
+      MediaQuery.of(context).size.width < tabletBreakpoint;
+  bool get isDesktop => MediaQuery.of(context).size.width >= tabletBreakpoint &&
+      MediaQuery.of(context).size.width < desktopBreakpoint;
+  bool get isLargeDesktop => MediaQuery.of(context).size.width >= desktopBreakpoint;
+  bool get isSmallScreen => MediaQuery.of(context).size.width < 400;
 
   @override
   void initState() {
@@ -33,6 +49,11 @@ class _StartPaymentPageState extends State<StartPaymentPage> {
       onError: _onError,
       onExternalWallet: (_) {},
     );
+    _initializeCache();
+  }
+
+  Future<void> _initializeCache() async {
+    await _cacheService.initialize();
     _loadCourses();
   }
 
@@ -83,13 +104,50 @@ class _StartPaymentPageState extends State<StartPaymentPage> {
   String _norm(String s) =>
       s.trim().toLowerCase().replaceAll(RegExp(r'[^a-z0-9]'), '');
 
-  Future<void> _loadCourses() async {
+  Future<void> _loadCourses({bool forceRefresh = false}) async {
+    if (!mounted) return;
+
+    // Try to load from cache first (unless force refresh)
+    if (!forceRefresh) {
+      final cachedCourses = await _cacheService.getCoursesData();
+      final cachedExams = await _cacheService.getExamsData();
+      
+      if (cachedCourses != null && cachedExams != null && mounted) {
+        setState(() {
+          _courses = cachedCourses;
+          _exams = cachedExams;
+          _allItems = [..._courses, ..._exams];
+          _loadingCourses = false;
+        });
+        // Still fetch in background to update cache
+        _fetchCoursesAndExamsInBackground();
+        return;
+      }
+    }
+
     setState(() => _loadingCourses = true);
+    await _fetchCoursesAndExamsInBackground();
+  }
+
+  Future<void> _fetchCoursesAndExamsInBackground() async {
     try {
       final headers = await AuthService().getAuthHeaders();
       final service = StudentDashboardService();
       final all = await service.getAllCourses(headers);
       final enrolled = await service.getEnrolledCourses(headers);
+      
+      // Fetch exams
+      final auth = AuthService();
+      final studentId = auth.currentUser?.id;
+      List<Map<String, dynamic>> exams = [];
+      if (studentId != null) {
+        try {
+          final backendExams = await service.getAvailableExams(studentId, headers);
+          exams = _processExamsData(backendExams);
+        } catch (e) {
+          // If exam fetch fails, continue with courses only
+        }
+      }
       // Build sets for owned detection by id and by normalized title/slug
       final Set<String> ownedIds = {...OwnedMemory.ids};
       final Set<String> ownedKeys = {...OwnedMemory.keys};
@@ -264,12 +322,57 @@ class _StartPaymentPageState extends State<StartPaymentPage> {
           'owned': owned,
         };
       }).toList();
+
+      // Cache courses data
+      await _cacheService.setCoursesData(_courses);
+      await _cacheService.setExamsData(exams);
+      _exams = exams;
+
+      // Combine courses and exams
+      _allItems = [..._courses, ..._exams];
     } catch (_) {
       _courses = [];
+      _exams = [];
+      _allItems = [];
       _ownedCourseIds = {};
     } finally {
       if (mounted) setState(() => _loadingCourses = false);
     }
+  }
+
+  List<Map<String, dynamic>> _processExamsData(List<dynamic> backendExams) {
+    return backendExams.map<Map<String, dynamic>>((exam) {
+      final examData = exam as Map<String, dynamic>;
+      
+      final id = (examData['_id'] ?? examData['id'] ?? '').toString();
+      final title = (examData['title'] ?? 'Exam').toString();
+      final description = (examData['description'] ?? 'TEGA Exam').toString();
+      
+      // Get price - check if payment is required
+      final requiresPayment = examData['requiresPayment'] == true;
+      final price = requiresPayment ? (examData['price'] ?? 0) : 0;
+      
+      // Check if user has paid (from registration data)
+      final registration = examData['registration'];
+      final hasPaid = registration != null && 
+          (registration['paymentStatus'] == 'paid' || 
+           registration['paymentStatus'] == 'completed');
+      
+      // Get duration in minutes
+      final durationMinutes = examData['duration'] ?? 120;
+      
+      return {
+        'id': id,
+        'title': title,
+        'description': description,
+        'durationMinutes': durationMinutes,
+        'videoDurationSeconds': 0, // Exams don't have video duration
+        'price': price,
+        'owned': hasPaid || !requiresPayment,
+        'type': 'exam', // Mark as exam
+        'isTegaExam': examData['isTegaExam'] == true,
+      };
+    }).toList();
   }
 
   Future<void> _startPayment() async {
@@ -378,63 +481,219 @@ class _StartPaymentPageState extends State<StartPaymentPage> {
       backgroundColor: Colors.white,
       appBar: null,
       body: _loadingCourses
-          ? const Center(
-              child: CircularProgressIndicator(color: Color(0xFF9C88FF)),
-            )
-          : _courses.isEmpty
           ? Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Text(
-                    'No courses available',
-                    style: TextStyle(fontSize: 16, color: Color(0xFF2C3E50)),
-                  ),
-                  const SizedBox(height: 16),
-                  OutlinedButton(
-                    onPressed: _loadCourses,
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: const Color(0xFF9C88FF),
-                      side: const BorderSide(color: Color(0xFF9C88FF)),
-                    ),
-                    child: const Text('Reload'),
-                  ),
-                ],
+              child: CircularProgressIndicator(
+                color: const Color(0xFF9C88FF),
+                strokeWidth: isLargeDesktop
+                    ? 4
+                    : isDesktop
+                    ? 3.5
+                    : isTablet
+                    ? 3
+                    : isSmallScreen
+                    ? 2.5
+                    : 3,
               ),
             )
-          : ListView.builder(
-              padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
-              itemCount: _courses.length,
-              itemBuilder: (context, index) {
-                final c = _courses[index];
-                final owned = c['owned'] == true;
-                final price = c['price'] is num ? c['price'] as num : 0;
-                final durationMinutes = c['durationMinutes'] is num
-                    ? (c['durationMinutes'] as num).toInt()
-                    : 0;
-                final videoDurationSeconds = c['videoDurationSeconds'] is num
-                    ? (c['videoDurationSeconds'] as num).toInt()
-                    : 0;
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 10),
-                  child: _CourseCard(
-                    title: c['title'] ?? 'Course',
-                    description: c['description'] ?? '',
-                    durationMinutes: durationMinutes,
-                    videoDurationSeconds: videoDurationSeconds,
-                    priceText: '₹${price.toStringAsFixed(0)}',
-                    owned: owned,
-                    onPay: (_loading || owned)
-                        ? null
-                        : () {
-                            _courseIdController.text = c['id'] as String;
-                            _notesController.text =
-                                c['title'] ?? 'Course Enrollment';
-                            _startPayment();
-                          },
-                  ),
-                );
-              },
+          : _allItems.isEmpty
+          ? Center(
+              child: Padding(
+                padding: EdgeInsets.all(
+                  isLargeDesktop
+                      ? 48
+                      : isDesktop
+                      ? 40
+                      : isTablet
+                      ? 36
+                      : isSmallScreen
+                      ? 24
+                      : 32,
+                ),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.shopping_cart_outlined,
+                      size: isLargeDesktop
+                          ? 80
+                          : isDesktop
+                          ? 72
+                          : isTablet
+                          ? 64
+                          : isSmallScreen
+                          ? 48
+                          : 56,
+                      color: const Color(0xFF9C88FF),
+                    ),
+                    SizedBox(
+                      height: isLargeDesktop
+                          ? 24
+                          : isDesktop
+                          ? 20
+                          : isTablet
+                          ? 18
+                          : isSmallScreen
+                          ? 12
+                          : 16,
+                    ),
+                    Text(
+                      'No courses or exams available',
+                      style: TextStyle(
+                        fontSize: isLargeDesktop
+                            ? 24
+                            : isDesktop
+                            ? 22
+                            : isTablet
+                            ? 20
+                            : isSmallScreen
+                            ? 16
+                            : 18,
+                        color: const Color(0xFF2C3E50),
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    SizedBox(
+                      height: isLargeDesktop
+                          ? 24
+                          : isDesktop
+                          ? 20
+                          : isTablet
+                          ? 18
+                          : isSmallScreen
+                          ? 12
+                          : 16,
+                    ),
+                    OutlinedButton(
+                      onPressed: () => _loadCourses(forceRefresh: true),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: const Color(0xFF9C88FF),
+                        side: const BorderSide(color: Color(0xFF9C88FF)),
+                        padding: EdgeInsets.symmetric(
+                          horizontal: isLargeDesktop
+                              ? 32
+                              : isDesktop
+                              ? 28
+                              : isTablet
+                              ? 24
+                              : isSmallScreen
+                              ? 16
+                              : 20,
+                          vertical: isLargeDesktop
+                              ? 16
+                              : isDesktop
+                              ? 14
+                              : isTablet
+                              ? 12
+                              : isSmallScreen
+                              ? 8
+                              : 10,
+                        ),
+                      ),
+                      child: Text(
+                        'Reload',
+                        style: TextStyle(
+                          fontSize: isLargeDesktop
+                              ? 18
+                              : isDesktop
+                              ? 16
+                              : isTablet
+                              ? 15
+                              : isSmallScreen
+                              ? 13
+                              : 14,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            )
+          : RefreshIndicator(
+              onRefresh: () => _loadCourses(forceRefresh: true),
+              color: const Color(0xFF9C88FF),
+              child: ListView.builder(
+                padding: EdgeInsets.fromLTRB(
+                  isLargeDesktop
+                      ? 32
+                      : isDesktop
+                      ? 24
+                      : isTablet
+                      ? 20
+                      : isSmallScreen
+                      ? 12
+                      : 16,
+                  isLargeDesktop
+                      ? 24
+                      : isDesktop
+                      ? 20
+                      : isTablet
+                      ? 18
+                      : isSmallScreen
+                      ? 12
+                      : 16,
+                  isLargeDesktop
+                      ? 32
+                      : isDesktop
+                      ? 24
+                      : isTablet
+                      ? 20
+                      : isSmallScreen
+                      ? 12
+                      : 16,
+                  isLargeDesktop
+                      ? 32
+                      : isDesktop
+                      ? 28
+                      : isTablet
+                      ? 24
+                      : isSmallScreen
+                      ? 16
+                      : 20,
+                ),
+                itemCount: _allItems.length,
+                itemBuilder: (context, index) {
+                  final item = _allItems[index];
+                  final owned = item['owned'] == true;
+                  final price = item['price'] is num ? item['price'] as num : 0;
+                  final durationMinutes = item['durationMinutes'] is num
+                      ? (item['durationMinutes'] as num).toInt()
+                      : 0;
+                  final videoDurationSeconds = item['videoDurationSeconds'] is num
+                      ? (item['videoDurationSeconds'] as num).toInt()
+                      : 0;
+                  final isExam = item['type'] == 'exam';
+                  return Padding(
+                    padding: EdgeInsets.only(
+                      bottom: isLargeDesktop
+                          ? 16
+                          : isDesktop
+                          ? 14
+                          : isTablet
+                          ? 12
+                          : isSmallScreen
+                          ? 8
+                          : 10,
+                    ),
+                    child: _CourseCard(
+                      title: item['title'] ?? (isExam ? 'Exam' : 'Course'),
+                      description: item['description'] ?? '',
+                      durationMinutes: durationMinutes,
+                      videoDurationSeconds: videoDurationSeconds,
+                      priceText: '₹${price.toStringAsFixed(0)}',
+                      owned: owned,
+                      isExam: isExam,
+                      onPay: (_loading || owned)
+                          ? null
+                          : () {
+                              _courseIdController.text = item['id'] as String;
+                              _notesController.text =
+                                  item['title'] ?? (isExam ? 'Exam Payment' : 'Course Enrollment');
+                              _startPayment();
+                            },
+                    ),
+                  );
+                },
+              ),
             ),
     );
   }
@@ -447,6 +706,7 @@ class _CourseCard extends StatelessWidget {
   final int videoDurationSeconds; // in seconds
   final String priceText;
   final bool owned;
+  final bool isExam;
   final VoidCallback? onPay;
 
   const _CourseCard({
@@ -456,6 +716,7 @@ class _CourseCard extends StatelessWidget {
     required this.videoDurationSeconds,
     required this.priceText,
     required this.owned,
+    this.isExam = false,
     required this.onPay,
   });
 
@@ -474,30 +735,106 @@ class _CourseCard extends StatelessWidget {
     }
   }
 
+  // Responsive breakpoints helper
+  bool _isLargeDesktop(BuildContext context) => MediaQuery.of(context).size.width >= 1440;
+  bool _isDesktop(BuildContext context) => MediaQuery.of(context).size.width >= 1024 &&
+      MediaQuery.of(context).size.width < 1440;
+  bool _isTablet(BuildContext context) => MediaQuery.of(context).size.width >= 600 &&
+      MediaQuery.of(context).size.width < 1024;
+  bool _isSmallScreen(BuildContext context) => MediaQuery.of(context).size.width < 400;
+
   @override
   Widget build(BuildContext context) {
+    final isLargeDesktop = _isLargeDesktop(context);
+    final isDesktop = _isDesktop(context);
+    final isTablet = _isTablet(context);
+    final isSmallScreen = _isSmallScreen(context);
+    
     return InkWell(
       onTap: owned ? null : onPay,
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(
+        isLargeDesktop
+            ? 16
+            : isDesktop
+            ? 14
+            : isTablet
+            ? 12
+            : isSmallScreen
+            ? 10
+            : 12,
+      ),
       child: Container(
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(
+            isLargeDesktop
+                ? 16
+                : isDesktop
+                ? 14
+                : isTablet
+                ? 12
+                : isSmallScreen
+                ? 10
+                : 12,
+          ),
           border: Border.all(
             color: owned ? const Color(0xFF4CAF50) : const Color(0xFFE5E7EB),
-            width: owned ? 2 : 1,
+            width: owned
+                ? (isLargeDesktop || isDesktop
+                    ? 2.5
+                    : isTablet
+                    ? 2
+                    : isSmallScreen
+                    ? 1.5
+                    : 2)
+                : (isLargeDesktop || isDesktop
+                    ? 1.5
+                    : isTablet
+                    ? 1.2
+                    : isSmallScreen
+                    ? 0.8
+                    : 1),
           ),
           boxShadow: [
             BoxShadow(
               color: owned
                   ? const Color(0xFF4CAF50).withOpacity(0.08)
                   : Colors.black.withOpacity(0.03),
-              blurRadius: 6,
-              offset: const Offset(0, 2),
+              blurRadius: isLargeDesktop
+                  ? 12
+                  : isDesktop
+                  ? 10
+                  : isTablet
+                  ? 8
+                  : isSmallScreen
+                  ? 4
+                  : 6,
+              offset: Offset(
+                0,
+                isLargeDesktop
+                    ? 4
+                    : isDesktop
+                    ? 3
+                    : isTablet
+                    ? 2
+                    : isSmallScreen
+                    ? 1
+                    : 2,
+              ),
             ),
           ],
         ),
-        padding: const EdgeInsets.all(14),
+        padding: EdgeInsets.all(
+          isLargeDesktop
+              ? 20
+              : isDesktop
+              ? 18
+              : isTablet
+              ? 16
+              : isSmallScreen
+              ? 12
+              : 14,
+        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -506,44 +843,156 @@ class _CourseCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Expanded(
-                  child: Text(
-                    title.toUpperCase(),
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w700,
-                      fontSize: 14,
-                      color: Color(0xFF1F2937),
-                      letterSpacing: 0.3,
-                      height: 1.2,
-                    ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
+                  child: Row(
+                    children: [
+                      if (isExam)
+                        Container(
+                          margin: EdgeInsets.only(
+                            right: isLargeDesktop
+                                ? 10
+                                : isDesktop
+                                ? 8
+                                : isTablet
+                                ? 7
+                                : isSmallScreen
+                                ? 5
+                                : 6,
+                          ),
+                          padding: EdgeInsets.all(
+                            isLargeDesktop
+                                ? 6
+                                : isDesktop
+                                ? 5
+                                : isTablet
+                                ? 4.5
+                                : isSmallScreen
+                                ? 3.5
+                                : 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF9C88FF).withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(
+                              isLargeDesktop
+                                  ? 8
+                                  : isDesktop
+                                  ? 7
+                                  : isTablet
+                                  ? 6
+                                  : isSmallScreen
+                                  ? 5
+                                  : 6,
+                            ),
+                          ),
+                          child: Icon(
+                            Icons.quiz,
+                            color: const Color(0xFF9C88FF),
+                            size: isLargeDesktop
+                                ? 18
+                                : isDesktop
+                                ? 16
+                                : isTablet
+                                ? 15
+                                : isSmallScreen
+                                ? 12
+                                : 14,
+                          ),
+                        ),
+                      Expanded(
+                        child: Text(
+                          title.toUpperCase(),
+                          style: TextStyle(
+                            fontWeight: FontWeight.w700,
+                            fontSize: isLargeDesktop
+                                ? 18
+                                : isDesktop
+                                ? 16
+                                : isTablet
+                                ? 15
+                                : isSmallScreen
+                                ? 12
+                                : 14,
+                            color: const Color(0xFF1F2937),
+                            letterSpacing: 0.3,
+                            height: 1.2,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                const SizedBox(width: 12),
+                SizedBox(
+                  width: isLargeDesktop
+                      ? 16
+                      : isDesktop
+                      ? 14
+                      : isTablet
+                      ? 12
+                      : isSmallScreen
+                      ? 8
+                      : 10,
+                ),
                 // Price and Status Column
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
                     Text(
                       priceText,
-                      style: const TextStyle(
-                        color: Color(0xFF1F2937),
-                        fontSize: 15,
+                      style: TextStyle(
+                        color: const Color(0xFF1F2937),
+                        fontSize: isLargeDesktop
+                            ? 18
+                            : isDesktop
+                            ? 17
+                            : isTablet
+                            ? 16
+                            : isSmallScreen
+                            ? 13
+                            : 15,
                         fontWeight: FontWeight.bold,
                         letterSpacing: 0.1,
                       ),
                     ),
-                    const SizedBox(height: 3),
+                    SizedBox(
+                      height: isLargeDesktop
+                          ? 6
+                          : isDesktop
+                          ? 5
+                          : isTablet
+                          ? 4
+                          : isSmallScreen
+                          ? 3
+                          : 4,
+                    ),
                     Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         if (owned) ...[
-                          const Icon(
+                          Icon(
                             Icons.check_circle_rounded,
-                            color: Color(0xFF4CAF50),
-                            size: 14,
+                            color: const Color(0xFF4CAF50),
+                            size: isLargeDesktop
+                                ? 18
+                                : isDesktop
+                                ? 16
+                                : isTablet
+                                ? 15
+                                : isSmallScreen
+                                ? 12
+                                : 14,
                           ),
-                          const SizedBox(width: 3),
+                          SizedBox(
+                            width: isLargeDesktop
+                                ? 6
+                                : isDesktop
+                                ? 5
+                                : isTablet
+                                ? 4
+                                : isSmallScreen
+                                ? 3
+                                : 4,
+                          ),
                         ],
                         Text(
                           owned ? 'Purchased' : 'Available',
@@ -551,7 +1000,15 @@ class _CourseCard extends StatelessWidget {
                             color: owned
                                 ? const Color(0xFF4CAF50)
                                 : const Color(0xFF2196F3),
-                            fontSize: 11,
+                            fontSize: isLargeDesktop
+                                ? 13
+                                : isDesktop
+                                ? 12
+                                : isTablet
+                                ? 11
+                                : isSmallScreen
+                                ? 9
+                                : 10,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
@@ -563,12 +1020,30 @@ class _CourseCard extends StatelessWidget {
             ),
             // Description
             if (description.isNotEmpty) ...[
-              const SizedBox(height: 8),
+              SizedBox(
+                height: isLargeDesktop
+                    ? 12
+                    : isDesktop
+                    ? 10
+                    : isTablet
+                    ? 8
+                    : isSmallScreen
+                    ? 6
+                    : 8,
+              ),
               Text(
                 description,
-                style: const TextStyle(
-                  color: Color(0xFF6B7280),
-                  fontSize: 12,
+                style: TextStyle(
+                  color: const Color(0xFF6B7280),
+                  fontSize: isLargeDesktop
+                      ? 15
+                      : isDesktop
+                      ? 14
+                      : isTablet
+                      ? 13
+                      : isSmallScreen
+                      ? 11
+                      : 12,
                   height: 1.4,
                   letterSpacing: 0.1,
                 ),
@@ -576,28 +1051,86 @@ class _CourseCard extends StatelessWidget {
                 overflow: TextOverflow.ellipsis,
               ),
             ],
-            const SizedBox(height: 10),
+            SizedBox(
+              height: isLargeDesktop
+                  ? 14
+                  : isDesktop
+                  ? 12
+                  : isTablet
+                  ? 10
+                  : isSmallScreen
+                  ? 8
+                  : 10,
+            ),
             // Duration Row
             Row(
               children: [
                 Container(
-                  padding: const EdgeInsets.all(4),
+                  padding: EdgeInsets.all(
+                    isLargeDesktop
+                        ? 6
+                        : isDesktop
+                        ? 5
+                        : isTablet
+                        ? 4.5
+                        : isSmallScreen
+                        ? 3.5
+                        : 4,
+                  ),
                   decoration: BoxDecoration(
                     color: const Color(0xFFF3F4F6),
-                    borderRadius: BorderRadius.circular(5),
+                    borderRadius: BorderRadius.circular(
+                      isLargeDesktop
+                          ? 8
+                          : isDesktop
+                          ? 7
+                          : isTablet
+                          ? 6
+                          : isSmallScreen
+                          ? 5
+                          : 6,
+                    ),
                   ),
-                  child: const Icon(
-                    Icons.calendar_today_outlined,
-                    color: Color(0xFF6B7280),
-                    size: 12,
+                  child: Icon(
+                    isExam ? Icons.access_time : Icons.calendar_today_outlined,
+                    color: const Color(0xFF6B7280),
+                    size: isLargeDesktop
+                        ? 16
+                        : isDesktop
+                        ? 15
+                        : isTablet
+                        ? 14
+                        : isSmallScreen
+                        ? 11
+                        : 12,
                   ),
                 ),
-                const SizedBox(width: 6),
+                SizedBox(
+                  width: isLargeDesktop
+                      ? 10
+                      : isDesktop
+                      ? 8
+                      : isTablet
+                      ? 7
+                      : isSmallScreen
+                      ? 5
+                      : 6,
+                ),
                 Text(
-                  _formatDuration(durationMinutes),
-                  style: const TextStyle(
-                    color: Color(0xFF6B7280),
-                    fontSize: 12,
+                  isExam
+                      ? '${durationMinutes} min'
+                      : _formatDuration(durationMinutes),
+                  style: TextStyle(
+                    color: const Color(0xFF6B7280),
+                    fontSize: isLargeDesktop
+                        ? 14
+                        : isDesktop
+                        ? 13
+                        : isTablet
+                        ? 12
+                        : isSmallScreen
+                        ? 10
+                        : 11,
                     fontWeight: FontWeight.w600,
                   ),
                 ),

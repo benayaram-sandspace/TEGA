@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:tega/core/constants/app_colors.dart';
+import 'package:tega/core/services/admin_dashboard_cache_service.dart';
 import 'package:tega/features/3_admin_panel/data/repositories/offer_repository.dart';
 
 class PackageOfferFormPage extends StatefulWidget {
@@ -19,6 +20,7 @@ class PackageOfferFormPage extends StatefulWidget {
 class _PackageOfferFormPageState extends State<PackageOfferFormPage> {
   final _formKey = GlobalKey<FormState>();
   final _offerRepository = OfferRepository();
+  final _cacheService = AdminDashboardCacheService();
 
   // Form controllers
   final _packageNameController = TextEditingController();
@@ -29,6 +31,7 @@ class _PackageOfferFormPageState extends State<PackageOfferFormPage> {
   String? _selectedInstitute;
   DateTime _validUntil = DateTime.now().add(const Duration(days: 30));
   bool _isLoading = false;
+  bool _isLoadingFromCache = false;
 
   // Available options
   List<Map<String, dynamic>> _availableCourses = [];
@@ -45,7 +48,53 @@ class _PackageOfferFormPageState extends State<PackageOfferFormPage> {
     if (widget.isEdit && widget.packageOffer != null) {
       _populateFormFromPackageOffer();
     }
-    _loadAvailableOptions();
+    _initializeCacheAndLoadData();
+  }
+
+  Future<void> _initializeCacheAndLoadData() async {
+    // Initialize cache service
+    await _cacheService.initialize();
+    
+    // Try to load from cache first
+    await _loadFromCache();
+    
+    // Then load fresh data
+    await _loadAvailableOptions();
+  }
+
+  Future<void> _loadFromCache() async {
+    try {
+      setState(() => _isLoadingFromCache = true);
+      
+      final cachedCourses = await _cacheService.getAvailableCourses();
+      final cachedExams = await _cacheService.getAvailableTegaExams();
+      final cachedInstitutes = await _cacheService.getAvailableInstitutes();
+
+      if (cachedCourses != null && cachedExams != null && cachedInstitutes != null) {
+        // Deduplicate courses by ID
+        final coursesList = List<Map<String, dynamic>>.from(cachedCourses);
+        final seenCourseIds = <String>{};
+        final deduplicatedCourses = <Map<String, dynamic>>[];
+        for (final course in coursesList) {
+          final courseId = course['_id']?.toString() ?? course['id']?.toString();
+          if (courseId != null && !seenCourseIds.contains(courseId)) {
+            seenCourseIds.add(courseId);
+            deduplicatedCourses.add(course);
+          }
+        }
+
+        setState(() {
+          _availableCourses = deduplicatedCourses;
+          _availableTegaExams = List<Map<String, dynamic>>.from(cachedExams);
+          _availableInstitutes = List<String>.from(cachedInstitutes);
+          _isLoadingFromCache = false;
+        });
+      } else {
+        setState(() => _isLoadingFromCache = false);
+      }
+    } catch (e) {
+      setState(() => _isLoadingFromCache = false);
+    }
   }
 
   void _populateFormFromPackageOffer() {
@@ -71,7 +120,14 @@ class _PackageOfferFormPageState extends State<PackageOfferFormPage> {
     _selectedTegaExamId = package['includedExam'];
   }
 
-  Future<void> _loadAvailableOptions() async {
+  Future<void> _loadAvailableOptions({bool forceRefresh = false}) async {
+    // If we have cached data and not forcing refresh, load in background
+    if (!forceRefresh && _availableCourses.isNotEmpty && 
+        _availableTegaExams.isNotEmpty && _availableInstitutes.isNotEmpty) {
+      _loadAvailableOptionsInBackground();
+      return;
+    }
+
     setState(() => _isLoading = true);
 
     try {
@@ -99,6 +155,11 @@ class _PackageOfferFormPageState extends State<PackageOfferFormPage> {
         _availableInstitutes = List<String>.from(results[2]);
         _isLoading = false;
       });
+
+      // Cache the results
+      await _cacheService.setAvailableCourses(results[0]);
+      await _cacheService.setAvailableTegaExams(results[1]);
+      await _cacheService.setAvailableInstitutes(List<String>.from(results[2]));
     } catch (e) {
       setState(() => _isLoading = false);
       if (mounted) {
@@ -112,6 +173,43 @@ class _PackageOfferFormPageState extends State<PackageOfferFormPage> {
     }
   }
 
+  Future<void> _loadAvailableOptionsInBackground() async {
+    try {
+      final results = await Future.wait([
+        _offerRepository.getAvailableCourses(),
+        _offerRepository.getAvailableTegaExams(),
+        _offerRepository.getAvailableInstitutes(),
+      ]);
+
+      // Deduplicate courses by ID
+      final coursesList = List<Map<String, dynamic>>.from(results[0]);
+      final seenCourseIds = <String>{};
+      final deduplicatedCourses = <Map<String, dynamic>>[];
+      for (final course in coursesList) {
+        final courseId = course['_id']?.toString() ?? course['id']?.toString();
+        if (courseId != null && !seenCourseIds.contains(courseId)) {
+          seenCourseIds.add(courseId);
+          deduplicatedCourses.add(course);
+        }
+      }
+
+      if (mounted) {
+        setState(() {
+          _availableCourses = deduplicatedCourses;
+          _availableTegaExams = List<Map<String, dynamic>>.from(results[1]);
+          _availableInstitutes = List<String>.from(results[2]);
+        });
+      }
+
+      // Cache the results
+      await _cacheService.setAvailableCourses(results[0]);
+      await _cacheService.setAvailableTegaExams(results[1]);
+      await _cacheService.setAvailableInstitutes(List<String>.from(results[2]));
+    } catch (e) {
+      // Silently fail in background
+    }
+  }
+
   @override
   void dispose() {
     _packageNameController.dispose();
@@ -122,54 +220,75 @@ class _PackageOfferFormPageState extends State<PackageOfferFormPage> {
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isMobile = screenWidth < 600;
+    final isTablet = screenWidth >= 600 && screenWidth < 1024;
+    final isDesktop = screenWidth >= 1024;
+
+    if (_isLoading && !_isLoadingFromCache) {
+      return Scaffold(
+        backgroundColor: Colors.grey[50],
+        body: const Center(
+          child: CircularProgressIndicator(
+            valueColor: AlwaysStoppedAnimation<Color>(AppColors.warmOrange),
+          ),
+        ),
+      );
+    }
+
     return Scaffold(
       backgroundColor: Colors.grey[50],
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : GestureDetector(
-              onTap: () {
-                FocusScope.of(context).unfocus();
-              },
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  children: [
-                    _buildHeader(),
-                    Expanded(
-                      child: SingleChildScrollView(
-                        padding: const EdgeInsets.all(20.0),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            _buildPackageNameField(),
-                            const SizedBox(height: 16),
-                            _buildInstituteField(),
-                            const SizedBox(height: 16),
-                            _buildDescriptionField(),
-                            const SizedBox(height: 16),
-                            _buildCoursesSection(),
-                            const SizedBox(height: 16),
-                            _buildTegaExamField(),
-                            const SizedBox(height: 16),
-                            _buildPriceField(),
-                            const SizedBox(height: 16),
-                            _buildValidUntilField(),
-                            const SizedBox(height: 32),
-                            _buildActionButtons(),
-                          ],
-                        ),
-                      ),
+      body: SafeArea(
+        child: GestureDetector(
+          onTap: () {
+            FocusScope.of(context).unfocus();
+          },
+          child: Form(
+            key: _formKey,
+            child: Column(
+              children: [
+                _buildHeader(isMobile, isTablet, isDesktop),
+                Expanded(
+                  child: SingleChildScrollView(
+                    padding: EdgeInsets.all(isMobile ? 16 : isTablet ? 20 : 24),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _buildPackageNameField(isMobile, isTablet, isDesktop),
+                        SizedBox(height: isMobile ? 16 : 20),
+                        _buildInstituteField(isMobile, isTablet, isDesktop),
+                        SizedBox(height: isMobile ? 16 : 20),
+                        _buildDescriptionField(isMobile, isTablet, isDesktop),
+                        SizedBox(height: isMobile ? 16 : 20),
+                        _buildCoursesSection(isMobile, isTablet, isDesktop),
+                        SizedBox(height: isMobile ? 16 : 20),
+                        _buildTegaExamField(isMobile, isTablet, isDesktop),
+                        SizedBox(height: isMobile ? 16 : 20),
+                        _buildPriceField(isMobile, isTablet, isDesktop),
+                        SizedBox(height: isMobile ? 16 : 20),
+                        _buildValidUntilField(isMobile, isTablet, isDesktop),
+                        SizedBox(height: isMobile ? 24 : 32),
+                        _buildActionButtons(isMobile, isTablet, isDesktop),
+                      ],
                     ),
-                  ],
+                  ),
                 ),
-              ),
+              ],
             ),
+          ),
+        ),
+      ),
     );
   }
 
-  Widget _buildHeader() {
+  Widget _buildHeader(bool isMobile, bool isTablet, bool isDesktop) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+      padding: EdgeInsets.only(
+        left: isMobile ? 16 : isTablet ? 20 : 24,
+        right: isMobile ? 16 : isTablet ? 20 : 24,
+        top: isMobile ? 12 : 16,
+        bottom: isMobile ? 12 : 16,
+      ),
       decoration: BoxDecoration(
         color: Colors.white,
         border: Border(
@@ -181,21 +300,24 @@ class _PackageOfferFormPageState extends State<PackageOfferFormPage> {
           Text(
             widget.isEdit ? 'Edit Package Offer' : 'Create Package Offer',
             style: TextStyle(
-              fontSize: 20,
+              fontSize: isMobile ? 18 : isTablet ? 20 : 22,
               fontWeight: FontWeight.bold,
               color: AppColors.textPrimary,
             ),
           ),
           const Spacer(),
-          if (_isLoading)
-            const SizedBox(
-              width: 20,
-              height: 20,
-              child: CircularProgressIndicator(strokeWidth: 2),
+          if (_isLoading && !_isLoadingFromCache)
+            SizedBox(
+              width: isMobile ? 18 : 20,
+              height: isMobile ? 18 : 20,
+              child: const CircularProgressIndicator(
+                strokeWidth: 2,
+                valueColor: AlwaysStoppedAnimation<Color>(AppColors.warmOrange),
+              ),
             )
           else
             IconButton(
-              icon: const Icon(Icons.close),
+              icon: Icon(Icons.close, size: isMobile ? 20 : 24),
               onPressed: () => Navigator.of(context).pop(),
               color: AppColors.textSecondary,
             ),
@@ -204,27 +326,34 @@ class _PackageOfferFormPageState extends State<PackageOfferFormPage> {
     );
   }
 
-  Widget _buildPackageNameField() {
+  Widget _buildPackageNameField(bool isMobile, bool isTablet, bool isDesktop) {
     return TextFormField(
       controller: _packageNameController,
+      style: TextStyle(fontSize: isMobile ? 14 : 16),
       decoration: InputDecoration(
         labelText: 'Package Name *',
-        labelStyle: const TextStyle(color: AppColors.textSecondary),
+        labelStyle: TextStyle(
+          color: AppColors.textSecondary,
+          fontSize: isMobile ? 14 : 16,
+        ),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(isMobile ? 8 : 10),
           borderSide: BorderSide(color: Colors.grey[300]!),
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(isMobile ? 8 : 10),
           borderSide: BorderSide(color: Colors.grey[300]!),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(isMobile ? 8 : 10),
           borderSide: const BorderSide(color: AppColors.warmOrange, width: 2),
         ),
         filled: true,
         fillColor: Colors.grey[50],
-        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+        contentPadding: EdgeInsets.symmetric(
+          horizontal: isMobile ? 12 : 14,
+          vertical: isMobile ? 14 : 16,
+        ),
       ),
       validator: (value) {
         if (value == null || value.isEmpty) {
@@ -235,29 +364,37 @@ class _PackageOfferFormPageState extends State<PackageOfferFormPage> {
     );
   }
 
-  Widget _buildInstituteField() {
+  Widget _buildInstituteField(bool isMobile, bool isTablet, bool isDesktop) {
     return DropdownButtonFormField<String>(
       value: _selectedInstitute,
       isExpanded: true,
+      style: TextStyle(fontSize: isMobile ? 14 : 16),
       decoration: InputDecoration(
         labelText: 'Institute Name *',
         hintText: 'Select Institute',
-        labelStyle: const TextStyle(color: AppColors.textSecondary),
+        labelStyle: TextStyle(
+          color: AppColors.textSecondary,
+          fontSize: isMobile ? 14 : 16,
+        ),
+        hintStyle: TextStyle(fontSize: isMobile ? 14 : 16),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(isMobile ? 8 : 10),
           borderSide: BorderSide(color: Colors.grey[300]!),
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(isMobile ? 8 : 10),
           borderSide: BorderSide(color: Colors.grey[300]!),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(isMobile ? 8 : 10),
           borderSide: const BorderSide(color: AppColors.warmOrange, width: 2),
         ),
         filled: true,
         fillColor: Colors.grey[50],
-        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+        contentPadding: EdgeInsets.symmetric(
+          horizontal: isMobile ? 12 : 14,
+          vertical: isMobile ? 14 : 16,
+        ),
       ),
       items: _availableInstitutes.map((institute) {
         return DropdownMenuItem<String>(
@@ -265,6 +402,7 @@ class _PackageOfferFormPageState extends State<PackageOfferFormPage> {
           child: Text(
             institute,
             overflow: TextOverflow.ellipsis,
+            style: TextStyle(fontSize: isMobile ? 14 : 16),
           ),
         );
       }).toList(),
@@ -282,55 +420,62 @@ class _PackageOfferFormPageState extends State<PackageOfferFormPage> {
     );
   }
 
-  Widget _buildDescriptionField() {
+  Widget _buildDescriptionField(bool isMobile, bool isTablet, bool isDesktop) {
     return TextFormField(
       controller: _descriptionController,
       maxLines: 3,
+      style: TextStyle(fontSize: isMobile ? 14 : 16),
       decoration: InputDecoration(
         labelText: 'Description',
         hintText: 'Package description...',
-        labelStyle: const TextStyle(color: AppColors.textSecondary),
-        hintStyle: TextStyle(color: Colors.grey[400]),
+        labelStyle: TextStyle(
+          color: AppColors.textSecondary,
+          fontSize: isMobile ? 14 : 16,
+        ),
+        hintStyle: TextStyle(
+          color: Colors.grey[400],
+          fontSize: isMobile ? 14 : 16,
+        ),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(isMobile ? 8 : 10),
           borderSide: BorderSide(color: Colors.grey[300]!),
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(isMobile ? 8 : 10),
           borderSide: BorderSide(color: Colors.grey[300]!),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(isMobile ? 8 : 10),
           borderSide: const BorderSide(color: AppColors.warmOrange, width: 2),
         ),
         filled: true,
         fillColor: Colors.grey[50],
-        contentPadding: const EdgeInsets.all(12),
+        contentPadding: EdgeInsets.all(isMobile ? 12 : 14),
       ),
     );
   }
 
-  Widget _buildCoursesSection() {
+  Widget _buildCoursesSection(bool isMobile, bool isTablet, bool isDesktop) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
+        Text(
           'Select Courses *',
           style: TextStyle(
-            fontSize: 16,
+            fontSize: isMobile ? 15 : isTablet ? 16 : 18,
             fontWeight: FontWeight.w600,
             color: AppColors.textPrimary,
           ),
         ),
-        const SizedBox(height: 4),
+        SizedBox(height: isMobile ? 4 : 6),
         Text(
           '(Add courses one by one)',
           style: TextStyle(
-            fontSize: 12,
+            fontSize: isMobile ? 11 : 12,
             color: Colors.grey[600],
           ),
         ),
-        const SizedBox(height: 12),
+        SizedBox(height: isMobile ? 12 : 14),
         Builder(
           key: ValueKey('course_dropdown_${_selectedCourses.length}'),
           builder: (context) {
@@ -357,6 +502,7 @@ class _PackageOfferFormPageState extends State<PackageOfferFormPage> {
                     child: Text(
                       course['title'] ?? course['courseName'] ?? 'Unknown',
                       overflow: TextOverflow.ellipsis,
+                      style: TextStyle(fontSize: isMobile ? 14 : 16),
                     ),
                   ),
                 );
@@ -366,20 +512,32 @@ class _PackageOfferFormPageState extends State<PackageOfferFormPage> {
             return DropdownButtonFormField<String>(
               value: null,
               isExpanded: true,
+              style: TextStyle(fontSize: isMobile ? 14 : 16),
               decoration: InputDecoration(
                 hintText: 'Select a course to add...',
-                labelStyle: const TextStyle(color: AppColors.textSecondary),
+                hintStyle: TextStyle(fontSize: isMobile ? 14 : 16),
+                labelStyle: TextStyle(
+                  color: AppColors.textSecondary,
+                  fontSize: isMobile ? 14 : 16,
+                ),
                 border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(isMobile ? 8 : 10),
                   borderSide: BorderSide(color: Colors.grey[300]!),
                 ),
                 enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(isMobile ? 8 : 10),
                   borderSide: BorderSide(color: Colors.grey[300]!),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(isMobile ? 8 : 10),
+                  borderSide: const BorderSide(color: AppColors.warmOrange, width: 2),
                 ),
                 filled: true,
                 fillColor: Colors.grey[50],
-                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+                contentPadding: EdgeInsets.symmetric(
+                  horizontal: isMobile ? 12 : 14,
+                  vertical: isMobile ? 14 : 16,
+                ),
               ),
               items: items,
               onChanged: (value) {
@@ -405,19 +563,22 @@ class _PackageOfferFormPageState extends State<PackageOfferFormPage> {
             );
           },
         ),
-        const SizedBox(height: 12),
+        SizedBox(height: isMobile ? 12 : 14),
         Container(
-          padding: const EdgeInsets.all(16),
+          padding: EdgeInsets.all(isMobile ? 12 : 16),
           decoration: BoxDecoration(
             color: Colors.grey[100],
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(isMobile ? 8 : 10),
             border: Border.all(color: Colors.grey[300]!),
           ),
           child: _selectedCourses.isEmpty
               ? Center(
                   child: Text(
                     'No courses selected. Please select at least one course.',
-                    style: TextStyle(color: Colors.grey[600]),
+                    style: TextStyle(
+                      color: Colors.grey[600],
+                      fontSize: isMobile ? 13 : 14,
+                    ),
                   ),
                 )
               : Column(
@@ -427,11 +588,11 @@ class _PackageOfferFormPageState extends State<PackageOfferFormPage> {
                       final index = entry.key;
                       final course = entry.value;
                       return Container(
-                        margin: const EdgeInsets.only(bottom: 8),
-                        padding: const EdgeInsets.all(12),
+                        margin: EdgeInsets.only(bottom: isMobile ? 6 : 8),
+                        padding: EdgeInsets.all(isMobile ? 10 : 12),
                         decoration: BoxDecoration(
                           color: Colors.white,
-                          borderRadius: BorderRadius.circular(8),
+                          borderRadius: BorderRadius.circular(isMobile ? 8 : 10),
                           border: Border.all(color: Colors.grey[300]!),
                         ),
                         child: Row(
@@ -439,14 +600,23 @@ class _PackageOfferFormPageState extends State<PackageOfferFormPage> {
                             Expanded(
                               child: Text(
                                 course['courseName'] ?? 'Unknown',
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontWeight: FontWeight.w500,
+                                  fontSize: isMobile ? 14 : 16,
                                 ),
                               ),
                             ),
                             IconButton(
-                              icon: const Icon(Icons.close, size: 20),
+                              icon: Icon(
+                                Icons.close,
+                                size: isMobile ? 18 : 20,
+                              ),
                               color: AppColors.error,
+                              padding: EdgeInsets.all(isMobile ? 4 : 8),
+                              constraints: BoxConstraints(
+                                minWidth: isMobile ? 32 : 40,
+                                minHeight: isMobile ? 32 : 40,
+                              ),
                               onPressed: () {
                                 setState(() {
                                   _selectedCourses.removeAt(index);
@@ -462,12 +632,12 @@ class _PackageOfferFormPageState extends State<PackageOfferFormPage> {
         ),
         if (_selectedCourses.isEmpty)
           Padding(
-            padding: const EdgeInsets.only(top: 8),
+            padding: EdgeInsets.only(top: isMobile ? 6 : 8),
             child: Text(
               'Please select at least one course',
               style: TextStyle(
                 color: AppColors.error,
-                fontSize: 12,
+                fontSize: isMobile ? 11 : 12,
               ),
             ),
           ),
@@ -475,53 +645,68 @@ class _PackageOfferFormPageState extends State<PackageOfferFormPage> {
     );
   }
 
-  Widget _buildTegaExamField() {
+  Widget _buildTegaExamField(bool isMobile, bool isTablet, bool isDesktop) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
           children: [
-            const Text(
+            Text(
               'TEGA Exam',
               style: TextStyle(
-                fontSize: 16,
+                fontSize: isMobile ? 15 : isTablet ? 16 : 18,
                 fontWeight: FontWeight.w600,
                 color: AppColors.textPrimary,
               ),
             ),
-            const SizedBox(width: 4),
+            SizedBox(width: isMobile ? 4 : 6),
             Text(
               '(Optional)',
               style: TextStyle(
-                fontSize: 14,
+                fontSize: isMobile ? 13 : 14,
                 color: Colors.grey[600],
               ),
             ),
           ],
         ),
-        const SizedBox(height: 12),
+        SizedBox(height: isMobile ? 12 : 14),
         DropdownButtonFormField<String>(
           value: _selectedTegaExamId,
           isExpanded: true,
+          style: TextStyle(fontSize: isMobile ? 14 : 16),
           decoration: InputDecoration(
             hintText: 'No Exam',
-            labelStyle: const TextStyle(color: AppColors.textSecondary),
+            hintStyle: TextStyle(fontSize: isMobile ? 14 : 16),
+            labelStyle: TextStyle(
+              color: AppColors.textSecondary,
+              fontSize: isMobile ? 14 : 16,
+            ),
             border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(isMobile ? 8 : 10),
               borderSide: BorderSide(color: Colors.grey[300]!),
             ),
             enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(isMobile ? 8 : 10),
               borderSide: BorderSide(color: Colors.grey[300]!),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(isMobile ? 8 : 10),
+              borderSide: const BorderSide(color: AppColors.warmOrange, width: 2),
             ),
             filled: true,
             fillColor: Colors.grey[50],
-            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+            contentPadding: EdgeInsets.symmetric(
+              horizontal: isMobile ? 12 : 14,
+              vertical: isMobile ? 14 : 16,
+            ),
           ),
           items: [
-            const DropdownMenuItem<String>(
+            DropdownMenuItem<String>(
               value: null,
-              child: Text('No Exam'),
+              child: Text(
+                'No Exam',
+                style: TextStyle(fontSize: isMobile ? 14 : 16),
+              ),
             ),
             ..._availableTegaExams.map((exam) {
               return DropdownMenuItem<String>(
@@ -529,6 +714,7 @@ class _PackageOfferFormPageState extends State<PackageOfferFormPage> {
                 child: Text(
                   exam['title'] ?? exam['examTitle'] ?? 'Unknown',
                   overflow: TextOverflow.ellipsis,
+                  style: TextStyle(fontSize: isMobile ? 14 : 16),
                 ),
               );
             }),
@@ -543,28 +729,35 @@ class _PackageOfferFormPageState extends State<PackageOfferFormPage> {
     );
   }
 
-  Widget _buildPriceField() {
+  Widget _buildPriceField(bool isMobile, bool isTablet, bool isDesktop) {
     return TextFormField(
       controller: _priceController,
       keyboardType: TextInputType.number,
+      style: TextStyle(fontSize: isMobile ? 14 : 16),
       decoration: InputDecoration(
         labelText: 'Package Price (₹) *',
-        labelStyle: const TextStyle(color: AppColors.textSecondary),
+        labelStyle: TextStyle(
+          color: AppColors.textSecondary,
+          fontSize: isMobile ? 14 : 16,
+        ),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(isMobile ? 8 : 10),
           borderSide: BorderSide(color: Colors.grey[300]!),
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(isMobile ? 8 : 10),
           borderSide: BorderSide(color: Colors.grey[300]!),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(isMobile ? 8 : 10),
           borderSide: const BorderSide(color: AppColors.warmOrange, width: 2),
         ),
         filled: true,
         fillColor: Colors.grey[50],
-        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+        contentPadding: EdgeInsets.symmetric(
+          horizontal: isMobile ? 12 : 14,
+          vertical: isMobile ? 14 : 16,
+        ),
         prefixText: '₹ ',
       ),
       validator: (value) {
@@ -580,53 +773,66 @@ class _PackageOfferFormPageState extends State<PackageOfferFormPage> {
     );
   }
 
-  Widget _buildValidUntilField() {
+  Widget _buildValidUntilField(bool isMobile, bool isTablet, bool isDesktop) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
+        Text(
           'Valid Until Date *',
           style: TextStyle(
-            fontSize: 16,
+            fontSize: isMobile ? 15 : isTablet ? 16 : 18,
             fontWeight: FontWeight.w600,
             color: AppColors.textPrimary,
           ),
         ),
-        const SizedBox(height: 12),
+        SizedBox(height: isMobile ? 12 : 14),
         InkWell(
           onTap: () => _selectDate(context),
           child: InputDecorator(
             decoration: InputDecoration(
               hintText: 'dd-mm-yyyy',
-              hintStyle: TextStyle(color: Colors.grey[400]),
+              hintStyle: TextStyle(
+                color: Colors.grey[400],
+                fontSize: isMobile ? 14 : 16,
+              ),
               border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(isMobile ? 8 : 10),
                 borderSide: BorderSide(color: Colors.grey[300]!),
               ),
               enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(isMobile ? 8 : 10),
                 borderSide: BorderSide(color: Colors.grey[300]!),
               ),
               focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(isMobile ? 8 : 10),
                 borderSide: const BorderSide(color: AppColors.warmOrange, width: 2),
               ),
               filled: true,
               fillColor: Colors.grey[50],
-              prefixIcon: const Icon(Icons.calendar_today, color: AppColors.textSecondary),
-              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+              prefixIcon: Icon(
+                Icons.calendar_today,
+                color: AppColors.textSecondary,
+                size: isMobile ? 20 : 24,
+              ),
+              contentPadding: EdgeInsets.symmetric(
+                horizontal: isMobile ? 12 : 14,
+                vertical: isMobile ? 14 : 16,
+              ),
             ),
             child: Text(
               '${_validUntil.day.toString().padLeft(2, '0')}-${_validUntil.month.toString().padLeft(2, '0')}-${_validUntil.year}',
-              style: const TextStyle(color: AppColors.textPrimary, fontSize: 16),
+              style: TextStyle(
+                color: AppColors.textPrimary,
+                fontSize: isMobile ? 14 : 16,
+              ),
             ),
           ),
         ),
-        const SizedBox(height: 4),
+        SizedBox(height: isMobile ? 4 : 6),
         Text(
           'Select the expiry date for this package',
           style: TextStyle(
-            fontSize: 12,
+            fontSize: isMobile ? 11 : 12,
             color: Colors.grey[600],
           ),
         ),
@@ -650,42 +856,108 @@ class _PackageOfferFormPageState extends State<PackageOfferFormPage> {
     }
   }
 
-  Widget _buildActionButtons() {
+  Widget _buildActionButtons(bool isMobile, bool isTablet, bool isDesktop) {
+    if (isMobile) {
+      return Column(
+        children: [
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: _isLoading ? null : _createPackageOffer,
+              icon: Icon(
+                widget.isEdit ? Icons.save_outlined : Icons.inventory_2_outlined,
+                size: isMobile ? 18 : 20,
+              ),
+              label: Text(
+                widget.isEdit ? 'Update Package' : 'Create Package',
+                style: TextStyle(fontSize: isMobile ? 14 : 16),
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.warmOrange,
+                foregroundColor: Colors.white,
+                padding: EdgeInsets.symmetric(
+                  horizontal: isMobile ? 20 : 24,
+                  vertical: isMobile ? 14 : 16,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(isMobile ? 8 : 10),
+                ),
+              ),
+            ),
+          ),
+          SizedBox(height: isMobile ? 12 : 16),
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton(
+              onPressed: () => Navigator.of(context).pop(),
+              style: OutlinedButton.styleFrom(
+                padding: EdgeInsets.symmetric(
+                  horizontal: isMobile ? 20 : 24,
+                  vertical: isMobile ? 14 : 16,
+                ),
+                side: BorderSide(color: Colors.grey[300]!),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(isMobile ? 8 : 10),
+                ),
+              ),
+              child: Text(
+                'Cancel',
+                style: TextStyle(
+                  color: AppColors.textSecondary,
+                  fontWeight: FontWeight.w600,
+                  fontSize: isMobile ? 14 : 16,
+                ),
+              ),
+            ),
+          ),
+        ],
+      );
+    }
+
     return Row(
       mainAxisAlignment: MainAxisAlignment.end,
       children: [
         OutlinedButton(
           onPressed: () => Navigator.of(context).pop(),
           style: OutlinedButton.styleFrom(
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+            padding: EdgeInsets.symmetric(
+              horizontal: isTablet ? 20 : 24,
+              vertical: isTablet ? 14 : 16,
+            ),
             side: BorderSide(color: Colors.grey[300]!),
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(isTablet ? 8 : 10),
             ),
           ),
-          child: const Text(
+          child: Text(
             'Cancel',
             style: TextStyle(
               color: AppColors.textSecondary,
               fontWeight: FontWeight.w600,
-              fontSize: 16,
+              fontSize: isTablet ? 15 : 16,
             ),
           ),
         ),
-        const SizedBox(width: 12),
+        SizedBox(width: isTablet ? 12 : 16),
         ElevatedButton.icon(
           onPressed: _isLoading ? null : _createPackageOffer,
           icon: Icon(
             widget.isEdit ? Icons.save_outlined : Icons.inventory_2_outlined,
-            size: 20,
+            size: isTablet ? 18 : 20,
           ),
-          label: Text(widget.isEdit ? 'Update Package' : 'Create Package'),
+          label: Text(
+            widget.isEdit ? 'Update Package' : 'Create Package',
+            style: TextStyle(fontSize: isTablet ? 15 : 16),
+          ),
           style: ElevatedButton.styleFrom(
             backgroundColor: AppColors.warmOrange,
             foregroundColor: Colors.white,
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+            padding: EdgeInsets.symmetric(
+              horizontal: isTablet ? 20 : 24,
+              vertical: isTablet ? 14 : 16,
+            ),
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(isTablet ? 8 : 10),
             ),
           ),
         ),

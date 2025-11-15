@@ -37,6 +37,10 @@ class _VideoPlayerPageState extends State<VideoPlayerPage>
   double _currentVolume = 1.0;
   double _currentBrightness = 1.0;
   double _seekPosition = 0;
+  
+  // Progress bar dragging
+  bool _isDraggingProgress = false;
+  double? _dragProgressPosition;
 
   // Animation controllers
   late AnimationController _controlsAnimationController;
@@ -325,6 +329,119 @@ class _VideoPlayerPageState extends State<VideoPlayerPage>
     }
   }
 
+  Widget _buildDraggableProgressBar() {
+    final duration = _controller.value.duration;
+    final position = _isDraggingProgress && _dragProgressPosition != null
+        ? Duration(milliseconds: _dragProgressPosition!.round())
+        : _controller.value.position;
+    final buffered = _controller.value.buffered;
+    
+    final progress = duration.inMilliseconds > 0
+        ? position.inMilliseconds / duration.inMilliseconds
+        : 0.0;
+
+    final progressBarWidth = MediaQuery.of(context).size.width - 32;
+
+    return GestureDetector(
+      onHorizontalDragStart: (details) {
+        setState(() {
+          _isDraggingProgress = true;
+        });
+        _startHideControlsTimer(); // Keep controls visible while dragging
+      },
+      onHorizontalDragUpdate: (details) {
+        final RenderBox? renderBox = context.findRenderObject() as RenderBox?;
+        if (renderBox != null) {
+          final localPosition = renderBox.globalToLocal(details.globalPosition);
+          final newProgress = (localPosition.dx / renderBox.size.width).clamp(0.0, 1.0);
+          
+          setState(() {
+            _dragProgressPosition = duration.inMilliseconds * newProgress;
+          });
+        }
+      },
+      onHorizontalDragEnd: (details) {
+        if (_dragProgressPosition != null) {
+          _controller.seekTo(Duration(milliseconds: _dragProgressPosition!.round()));
+        }
+        setState(() {
+          _isDraggingProgress = false;
+          _dragProgressPosition = null;
+        });
+        _startHideControlsTimer();
+      },
+      onTapDown: (details) {
+        final RenderBox? renderBox = context.findRenderObject() as RenderBox?;
+        if (renderBox != null) {
+          final localPosition = renderBox.globalToLocal(details.globalPosition);
+          final newProgress = (localPosition.dx / renderBox.size.width).clamp(0.0, 1.0);
+          final newPosition = Duration(
+            milliseconds: (duration.inMilliseconds * newProgress).round(),
+          );
+          _controller.seekTo(newPosition);
+          _startHideControlsTimer();
+        }
+      },
+      child: Container(
+        height: 4,
+        margin: const EdgeInsets.symmetric(horizontal: 0),
+        child: Stack(
+          children: [
+            // Background
+            Container(
+              height: 4,
+              decoration: BoxDecoration(
+                color: Colors.white12,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            // Buffered progress
+            if (buffered.isNotEmpty)
+              ...buffered.map((range) {
+                final bufferedStart = range.start.inMilliseconds / duration.inMilliseconds;
+                final bufferedEnd = range.end.inMilliseconds / duration.inMilliseconds;
+                return Positioned(
+                  left: progressBarWidth * bufferedStart,
+                  child: Container(
+                    height: 4,
+                    width: progressBarWidth * (bufferedEnd - bufferedStart),
+                    decoration: BoxDecoration(
+                      color: Colors.white24,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                );
+              }),
+            // Played progress
+            Container(
+              height: 4,
+              width: progressBarWidth * progress,
+              decoration: BoxDecoration(
+                color: const Color(0xFF6B5FFF),
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            // Thumb (visible when dragging or on hover)
+            if (_isDraggingProgress || _showControls)
+              Positioned(
+                left: progressBarWidth * progress - 6,
+                top: -4,
+                child: Container(
+                  width: 12,
+                  height: 12,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF6B5FFF),
+                    shape: BoxShape.circle,
+                    border: Border.all(color: Colors.white, width: 2),
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -579,23 +696,19 @@ class _VideoPlayerPageState extends State<VideoPlayerPage>
               padding: const EdgeInsets.all(16.0),
               child: Column(
                 children: [
-                  // Progress Bar
-                  VideoProgressIndicator(
-                    _controller,
-                    allowScrubbing: true,
-                    colors: const VideoProgressColors(
-                      playedColor: Color(0xFF6B5FFF),
-                      bufferedColor: Colors.white24,
-                      backgroundColor: Colors.white12,
-                    ),
-                  ),
+                  // Progress Bar with drag support
+                  _buildDraggableProgressBar(),
                   const SizedBox(height: 12),
 
                   // Time and Controls
                   Row(
                     children: [
                       Text(
-                        _formatDuration(_controller.value.position),
+                        _formatDuration(
+                          _isDraggingProgress && _dragProgressPosition != null
+                              ? Duration(milliseconds: _dragProgressPosition!.round())
+                              : _controller.value.position,
+                        ),
                         style: const TextStyle(
                           color: Colors.white,
                           fontSize: 12,

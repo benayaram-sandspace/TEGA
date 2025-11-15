@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:tega/features/3_admin_panel/presentation/0_dashboard/admin_dashboard_styles.dart';
 import 'edit_job_page.dart';
 
 class JobDetailsPage extends StatelessWidget {
@@ -24,10 +25,18 @@ class JobDetailsPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isMobile = screenWidth < 600;
+    final isTablet = screenWidth >= 600 && screenWidth < 1024;
+    final isDesktop = screenWidth >= 1024;
+
     return Scaffold(
       backgroundColor: const Color(0xFFF7F8FC),
       appBar: AppBar(
-        title: const Text('Job Details'),
+        title: Text(
+          'Job Details',
+          style: TextStyle(fontSize: isMobile ? 18 : isTablet ? 19 : 20),
+        ),
         backgroundColor: Colors.white,
         foregroundColor: const Color(0xFF2D3748),
         elevation: 0,
@@ -49,67 +58,86 @@ class JobDetailsPage extends StatelessWidget {
               }
             },
             itemBuilder: (context) => [
-              const PopupMenuItem(
+              PopupMenuItem(
                 value: 'edit',
                 child: Row(
                   children: [
-                    Icon(Icons.edit, size: 16),
-                    SizedBox(width: 8),
-                    Text('Edit Job'),
+                    Icon(
+                      Icons.edit,
+                      size: isMobile ? 16 : isTablet ? 17 : 18,
+                    ),
+                    SizedBox(width: isMobile ? 6 : isTablet ? 7 : 8),
+                    Text(
+                      'Edit Job',
+                      style: TextStyle(
+                        fontSize: isMobile ? 13 : isTablet ? 13.5 : 14,
+                      ),
+                    ),
                   ],
                 ),
               ),
-              const PopupMenuItem(
+              PopupMenuItem(
                 value: 'share',
                 child: Row(
                   children: [
-                    Icon(Icons.share, size: 16),
-                    SizedBox(width: 8),
-                    Text('Share Job'),
+                    Icon(
+                      Icons.share,
+                      size: isMobile ? 16 : isTablet ? 17 : 18,
+                    ),
+                    SizedBox(width: isMobile ? 6 : isTablet ? 7 : 8),
+                    Text(
+                      'Share Job',
+                      style: TextStyle(
+                        fontSize: isMobile ? 13 : isTablet ? 13.5 : 14,
+                      ),
+                    ),
                   ],
                 ),
               ),
             ],
+            iconSize: isMobile ? 20 : isTablet ? 22 : 24,
           ),
         ],
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildHeaderCard(),
-            const SizedBox(height: 16),
-            _buildJobInfoCard(),
-            const SizedBox(height: 16),
-            if (job['description'] != null) ...[
-              _buildDescriptionCard(),
-              const SizedBox(height: 16),
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: EdgeInsets.all(isMobile ? 12 : isTablet ? 14 : 16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildHeaderCard(isMobile, isTablet, isDesktop),
+              SizedBox(height: isMobile ? 12 : isTablet ? 14 : 16),
+              _buildJobInfoCard(isMobile, isTablet, isDesktop),
+              SizedBox(height: isMobile ? 12 : isTablet ? 14 : 16),
+              if (job['description'] != null) ...[
+                _buildDescriptionCard(isMobile, isTablet, isDesktop),
+                SizedBox(height: isMobile ? 12 : isTablet ? 14 : 16),
+              ],
+              if (job['requirements'] != null &&
+                  (job['requirements'] as List).isNotEmpty) ...[
+                _buildRequirementsCard(isMobile, isTablet, isDesktop),
+                SizedBox(height: isMobile ? 12 : isTablet ? 14 : 16),
+              ],
+              if (job['benefits'] != null &&
+                  (job['benefits'] as List).isNotEmpty) ...[
+                _buildBenefitsCard(isMobile, isTablet, isDesktop),
+                SizedBox(height: isMobile ? 12 : isTablet ? 14 : 16),
+              ],
+              _buildApplicationCard(context, isMobile, isTablet, isDesktop),
+              SizedBox(height: isMobile ? 24 : isTablet ? 28 : 32),
             ],
-            if (job['requirements'] != null &&
-                (job['requirements'] as List).isNotEmpty) ...[
-              _buildRequirementsCard(),
-              const SizedBox(height: 16),
-            ],
-            if (job['benefits'] != null &&
-                (job['benefits'] as List).isNotEmpty) ...[
-              _buildBenefitsCard(),
-              const SizedBox(height: 16),
-            ],
-            _buildApplicationCard(context),
-            const SizedBox(height: 32),
-          ],
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildHeaderCard() {
+  Widget _buildHeaderCard(bool isMobile, bool isTablet, bool isDesktop) {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: EdgeInsets.all(isMobile ? 16 : isTablet ? 18 : 20),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(isMobile ? 10 : isTablet ? 11 : 12),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.05),
@@ -130,38 +158,42 @@ class JobDetailsPage extends StatelessWidget {
                   children: [
                     Text(
                       job['title'] ?? 'Untitled Job',
-                      style: const TextStyle(
-                        fontSize: 24,
+                      style: TextStyle(
+                        fontSize: isMobile ? 20 : isTablet ? 22 : 24,
                         fontWeight: FontWeight.bold,
-                        color: Color(0xFF2D3748),
+                        color: const Color(0xFF2D3748),
                       ),
                     ),
-                    const SizedBox(height: 8),
+                    SizedBox(height: isMobile ? 6 : isTablet ? 7 : 8),
                     Text(
                       job['company'] ?? 'Unknown Company',
-                      style: const TextStyle(
-                        fontSize: 18,
-                        color: Color(0xFF718096),
+                      style: TextStyle(
+                        fontSize: isMobile ? 16 : isTablet ? 17 : 18,
+                        color: const Color(0xFF718096),
                       ),
                     ),
                   ],
                 ),
               ),
-              _buildStatusChip(),
+              _buildStatusChip(isMobile, isTablet, isDesktop),
             ],
           ),
           if (job['salary'] != null) ...[
-            const SizedBox(height: 16),
+            SizedBox(height: isMobile ? 12 : isTablet ? 14 : 16),
             Row(
               children: [
-                Icon(Icons.attach_money, size: 20, color: Colors.grey[600]),
-                const SizedBox(width: 8),
+                Icon(
+                  Icons.attach_money,
+                  size: isMobile ? 18 : isTablet ? 19 : 20,
+                  color: Colors.grey[600],
+                ),
+                SizedBox(width: isMobile ? 6 : isTablet ? 7 : 8),
                 Text(
                   '₹${NumberFormat('#,##,###').format(job['salary'])}',
-                  style: const TextStyle(
-                    fontSize: 18,
+                  style: TextStyle(
+                    fontSize: isMobile ? 16 : isTablet ? 17 : 18,
                     fontWeight: FontWeight.bold,
-                    color: Color(0xFF2D3748),
+                    color: const Color(0xFF2D3748),
                   ),
                 ),
               ],
@@ -172,12 +204,12 @@ class JobDetailsPage extends StatelessWidget {
     );
   }
 
-  Widget _buildJobInfoCard() {
+  Widget _buildJobInfoCard(bool isMobile, bool isTablet, bool isDesktop) {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: EdgeInsets.all(isMobile ? 16 : isTablet ? 18 : 20),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(isMobile ? 10 : isTablet ? 11 : 12),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.05),
@@ -189,52 +221,67 @@ class JobDetailsPage extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             'Job Information',
             style: TextStyle(
-              fontSize: 18,
+              fontSize: isMobile ? 16 : isTablet ? 17 : 18,
               fontWeight: FontWeight.bold,
-              color: Color(0xFF2D3748),
+              color: const Color(0xFF2D3748),
             ),
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: isMobile ? 12 : isTablet ? 14 : 16),
           Wrap(
-            spacing: 8.0,
-            runSpacing: 8.0,
+            spacing: isMobile ? 6.0 : isTablet ? 7.0 : 8.0,
+            runSpacing: isMobile ? 6.0 : isTablet ? 7.0 : 8.0,
             children: [
               if (job['location'] != null)
                 _buildInfoChip(
                   Icons.location_on,
                   job['location'],
                   const Color(0xFF4299E1),
+                  isMobile,
+                  isTablet,
+                  isDesktop,
                 ),
               _buildInfoChip(
                 Icons.work,
                 job['jobType'] ?? 'full-time',
                 const Color(0xFF48BB78),
+                isMobile,
+                isTablet,
+                isDesktop,
               ),
               _buildInfoChip(
                 Icons.category,
                 job['postingType'] ?? 'job',
                 const Color(0xFFED8936),
+                isMobile,
+                isTablet,
+                isDesktop,
               ),
             ],
           ),
-          const Divider(height: 32),
-          _buildInfoRow('Status', job['status'] ?? 'Not specified'),
-          _buildInfoRow('Active', job['isActive'] == true ? 'Yes' : 'No'),
+          Divider(height: isMobile ? 24 : isTablet ? 28 : 32),
+          _buildInfoRow('Status', job['status'] ?? 'Not specified', isMobile, isTablet, isDesktop),
+          _buildInfoRow('Active', job['isActive'] == true ? 'Yes' : 'No', isMobile, isTablet, isDesktop),
           if (job['experience'] != null)
-            _buildInfoRow('Experience Required', job['experience']),
+            _buildInfoRow('Experience Required', job['experience'], isMobile, isTablet, isDesktop),
           if (job['deadline'] != null)
             _buildInfoRow(
               'Application Deadline',
               DateFormat(
                 'MMM dd, yyyy',
               ).format(DateTime.parse(job['deadline'])),
+              isMobile,
+              isTablet,
+              isDesktop,
             ),
           _buildInfoRow(
             'Created',
             DateFormat('MMM dd, yyyy').format(DateTime.parse(job['createdAt'])),
+            isMobile,
+            isTablet,
+            isDesktop,
           ),
           if (job['updatedAt'] != null)
             _buildInfoRow(
@@ -242,19 +289,22 @@ class JobDetailsPage extends StatelessWidget {
               DateFormat(
                 'MMM dd, yyyy',
               ).format(DateTime.parse(job['updatedAt'])),
+              isMobile,
+              isTablet,
+              isDesktop,
             ),
         ],
       ),
     );
   }
 
-  Widget _buildDescriptionCard() {
+  Widget _buildDescriptionCard(bool isMobile, bool isTablet, bool isDesktop) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(20),
+      padding: EdgeInsets.all(isMobile ? 16 : isTablet ? 18 : 20),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(isMobile ? 10 : isTablet ? 11 : 12),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.05),
@@ -266,20 +316,20 @@ class JobDetailsPage extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             'Job Description',
             style: TextStyle(
-              fontSize: 18,
+              fontSize: isMobile ? 16 : isTablet ? 17 : 18,
               fontWeight: FontWeight.bold,
-              color: Color(0xFF2D3748),
+              color: const Color(0xFF2D3748),
             ),
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: isMobile ? 12 : isTablet ? 14 : 16),
           Text(
             job['description'],
-            style: const TextStyle(
-              fontSize: 14,
-              color: Color(0xFF4A5568),
+            style: TextStyle(
+              fontSize: isMobile ? 13 : isTablet ? 13.5 : 14,
+              color: const Color(0xFF4A5568),
               height: 1.6,
             ),
           ),
@@ -288,14 +338,14 @@ class JobDetailsPage extends StatelessWidget {
     );
   }
 
-  Widget _buildRequirementsCard() {
+  Widget _buildRequirementsCard(bool isMobile, bool isTablet, bool isDesktop) {
     final requirements = job['requirements'] as List;
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(20),
+      padding: EdgeInsets.all(isMobile ? 16 : isTablet ? 18 : 20),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(isMobile ? 10 : isTablet ? 11 : 12),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.05),
@@ -307,33 +357,33 @@ class JobDetailsPage extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             'Requirements',
             style: TextStyle(
-              fontSize: 18,
+              fontSize: isMobile ? 16 : isTablet ? 17 : 18,
               fontWeight: FontWeight.bold,
-              color: Color(0xFF2D3748),
+              color: const Color(0xFF2D3748),
             ),
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: isMobile ? 12 : isTablet ? 14 : 16),
           ...requirements.map(
             (req) => Padding(
-              padding: const EdgeInsets.only(bottom: 8),
+              padding: EdgeInsets.only(bottom: isMobile ? 6 : isTablet ? 7 : 8),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Icon(
+                  Icon(
                     Icons.check_circle_outline,
-                    size: 16,
-                    color: Color(0xFF48BB78),
+                    size: isMobile ? 14 : isTablet ? 15 : 16,
+                    color: const Color(0xFF48BB78),
                   ),
-                  const SizedBox(width: 8),
+                  SizedBox(width: isMobile ? 6 : isTablet ? 7 : 8),
                   Expanded(
                     child: Text(
                       req,
-                      style: const TextStyle(
-                        fontSize: 14,
-                        color: Color(0xFF4A5568),
+                      style: TextStyle(
+                        fontSize: isMobile ? 13 : isTablet ? 13.5 : 14,
+                        color: const Color(0xFF4A5568),
                       ),
                     ),
                   ),
@@ -346,14 +396,14 @@ class JobDetailsPage extends StatelessWidget {
     );
   }
 
-  Widget _buildBenefitsCard() {
+  Widget _buildBenefitsCard(bool isMobile, bool isTablet, bool isDesktop) {
     final benefits = job['benefits'] as List;
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(20),
+      padding: EdgeInsets.all(isMobile ? 16 : isTablet ? 18 : 20),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(isMobile ? 10 : isTablet ? 11 : 12),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.05),
@@ -365,33 +415,33 @@ class JobDetailsPage extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             'Benefits',
             style: TextStyle(
-              fontSize: 18,
+              fontSize: isMobile ? 16 : isTablet ? 17 : 18,
               fontWeight: FontWeight.bold,
-              color: Color(0xFF2D3748),
+              color: const Color(0xFF2D3748),
             ),
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: isMobile ? 12 : isTablet ? 14 : 16),
           ...benefits.map(
             (benefit) => Padding(
-              padding: const EdgeInsets.only(bottom: 8),
+              padding: EdgeInsets.only(bottom: isMobile ? 6 : isTablet ? 7 : 8),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Icon(
+                  Icon(
                     Icons.star_outline,
-                    size: 16,
-                    color: Color(0xFFED8936),
+                    size: isMobile ? 14 : isTablet ? 15 : 16,
+                    color: const Color(0xFFED8936),
                   ),
-                  const SizedBox(width: 8),
+                  SizedBox(width: isMobile ? 6 : isTablet ? 7 : 8),
                   Expanded(
                     child: Text(
                       benefit,
-                      style: const TextStyle(
-                        fontSize: 14,
-                        color: Color(0xFF4A5568),
+                      style: TextStyle(
+                        fontSize: isMobile ? 13 : isTablet ? 13.5 : 14,
+                        color: const Color(0xFF4A5568),
                       ),
                     ),
                   ),
@@ -404,13 +454,13 @@ class JobDetailsPage extends StatelessWidget {
     );
   }
 
-  Widget _buildApplicationCard(BuildContext context) {
+  Widget _buildApplicationCard(BuildContext context, bool isMobile, bool isTablet, bool isDesktop) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(20),
+      padding: EdgeInsets.all(isMobile ? 16 : isTablet ? 18 : 20),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(isMobile ? 10 : isTablet ? 11 : 12),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.05),
@@ -422,39 +472,49 @@ class JobDetailsPage extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             'Application Information',
             style: TextStyle(
-              fontSize: 18,
+              fontSize: isMobile ? 16 : isTablet ? 17 : 18,
               fontWeight: FontWeight.bold,
-              color: Color(0xFF2D3748),
+              color: const Color(0xFF2D3748),
             ),
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: isMobile ? 12 : isTablet ? 14 : 16),
           if (job['applicationLink'] != null) ...[
-            _buildInfoRow('Application Link', job['applicationLink']),
-            const SizedBox(height: 16),
+            _buildInfoRow('Application Link', job['applicationLink'], isMobile, isTablet, isDesktop),
+            SizedBox(height: isMobile ? 12 : isTablet ? 14 : 16),
             SizedBox(
               width: double.infinity,
               child: OutlinedButton.icon(
                 onPressed: () {
                   _launchURL(context, job['applicationLink']);
                 },
-                icon: const Icon(Icons.open_in_new),
-                label: const Text('Open Application Link'),
+                icon: Icon(
+                  Icons.open_in_new,
+                  size: isMobile ? 18 : isTablet ? 19 : 20,
+                ),
+                label: Text(
+                  'Open Application Link',
+                  style: TextStyle(
+                    fontSize: isMobile ? 13 : isTablet ? 13.5 : 14,
+                  ),
+                ),
                 style: OutlinedButton.styleFrom(
-                  foregroundColor: const Color(0xFF6B5FFF),
-                  side: const BorderSide(color: Color(0xFF6B5FFF)),
-                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  foregroundColor: AdminDashboardStyles.primary,
+                  side: BorderSide(color: AdminDashboardStyles.primary),
+                  padding: EdgeInsets.symmetric(
+                    vertical: isMobile ? 10 : isTablet ? 11 : 12,
+                  ),
                 ),
               ),
             ),
           ] else ...[
-            const Text(
+            Text(
               'No application link provided',
               style: TextStyle(
-                fontSize: 14,
-                color: Color(0xFF718096),
+                fontSize: isMobile ? 13 : isTablet ? 13.5 : 14,
+                color: const Color(0xFF718096),
                 fontStyle: FontStyle.italic,
               ),
             ),
@@ -464,21 +524,24 @@ class JobDetailsPage extends StatelessWidget {
     );
   }
 
-  Widget _buildStatusChip() {
+  Widget _buildStatusChip(bool isMobile, bool isTablet, bool isDesktop) {
     final status = job['status'] ?? 'open';
     final color = _getStatusColor();
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      padding: EdgeInsets.symmetric(
+        horizontal: isMobile ? 10 : isTablet ? 11 : 12,
+        vertical: isMobile ? 5 : isTablet ? 5.5 : 6,
+      ),
       decoration: BoxDecoration(
         color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(isMobile ? 14 : isTablet ? 15 : 16),
         border: Border.all(color: color.withOpacity(0.5)),
       ),
       child: Text(
         status.toUpperCase(),
         style: TextStyle(
-          fontSize: 12,
+          fontSize: isMobile ? 10 : isTablet ? 11 : 12,
           fontWeight: FontWeight.bold,
           color: color,
         ),
@@ -486,22 +549,29 @@ class JobDetailsPage extends StatelessWidget {
     );
   }
 
-  Widget _buildInfoChip(IconData icon, String text, Color color) {
+  Widget _buildInfoChip(IconData icon, String text, Color color, bool isMobile, bool isTablet, bool isDesktop) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      padding: EdgeInsets.symmetric(
+        horizontal: isMobile ? 10 : isTablet ? 11 : 12,
+        vertical: isMobile ? 5 : isTablet ? 5.5 : 6,
+      ),
       decoration: BoxDecoration(
         color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(isMobile ? 10 : isTablet ? 11 : 12),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 14, color: color),
-          const SizedBox(width: 6),
+          Icon(
+            icon,
+            size: isMobile ? 12 : isTablet ? 13 : 14,
+            color: color,
+          ),
+          SizedBox(width: isMobile ? 5 : isTablet ? 5.5 : 6),
           Text(
             text,
             style: TextStyle(
-              fontSize: 12,
+              fontSize: isMobile ? 11 : isTablet ? 11.5 : 12,
               color: color,
               fontWeight: FontWeight.w600,
             ),
@@ -511,9 +581,9 @@ class JobDetailsPage extends StatelessWidget {
     );
   }
 
-  Widget _buildInfoRow(String label, String value) {
+  Widget _buildInfoRow(String label, String value, bool isMobile, bool isTablet, bool isDesktop) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
+      padding: EdgeInsets.only(bottom: isMobile ? 10 : isTablet ? 11 : 12),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -521,22 +591,22 @@ class JobDetailsPage extends StatelessWidget {
             flex: 2,
             child: Text(
               label,
-              style: const TextStyle(
-                fontSize: 14,
+              style: TextStyle(
+                fontSize: isMobile ? 13 : isTablet ? 13.5 : 14,
                 fontWeight: FontWeight.w500,
-                color: Color(0xFF718096),
+                color: const Color(0xFF718096),
               ),
             ),
           ),
-          const SizedBox(width: 16),
+          SizedBox(width: isMobile ? 12 : isTablet ? 14 : 16),
           Flexible(
             flex: 3,
             child: Text(
               value,
-              style: const TextStyle(
-                fontSize: 14,
+              style: TextStyle(
+                fontSize: isMobile ? 13 : isTablet ? 13.5 : 14,
                 fontWeight: FontWeight.w500,
-                color: Color(0xFF2D3748),
+                color: const Color(0xFF2D3748),
               ),
             ),
           ),

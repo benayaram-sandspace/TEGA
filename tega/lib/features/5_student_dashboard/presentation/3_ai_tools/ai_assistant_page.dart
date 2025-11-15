@@ -1,5 +1,8 @@
+import 'dart:io';
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:tega/features/5_student_dashboard/data/ai_assistant_service.dart';
+import 'package:tega/core/services/ai_assistant_cache_service.dart';
 
 class AIAssistantPage extends StatefulWidget {
   const AIAssistantPage({super.key});
@@ -10,6 +13,7 @@ class AIAssistantPage extends StatefulWidget {
 
 class _AIAssistantPageState extends State<AIAssistantPage> {
   final AIAssistantService _service = AIAssistantService();
+  final AIAssistantCacheService _cacheService = AIAssistantCacheService();
   final TextEditingController _inputController = TextEditingController();
   final ScrollController _chatScroll = ScrollController();
   final TextEditingController _titleController = TextEditingController();
@@ -24,9 +28,108 @@ class _AIAssistantPageState extends State<AIAssistantPage> {
 
   List<AIMessage> get _messages => _active?.messages ?? [];
 
+  // Responsive breakpoints
+  double get mobileBreakpoint => 600;
+  double get tabletBreakpoint => 1024;
+  double get desktopBreakpoint => 1440;
+  bool get isMobile => MediaQuery.of(context).size.width < mobileBreakpoint;
+  bool get isTablet => MediaQuery.of(context).size.width >= mobileBreakpoint &&
+      MediaQuery.of(context).size.width < tabletBreakpoint;
+  bool get isDesktop => MediaQuery.of(context).size.width >= tabletBreakpoint &&
+      MediaQuery.of(context).size.width < desktopBreakpoint;
+  bool get isLargeDesktop => MediaQuery.of(context).size.width >= desktopBreakpoint;
+  bool get isSmallScreen => MediaQuery.of(context).size.width < 400;
+  bool get isWide => MediaQuery.of(context).size.width >= 900;
+
   @override
   void initState() {
     super.initState();
+    _initializeCache();
+  }
+
+  Future<void> _initializeCache() async {
+    await _cacheService.initialize();
+    await _loadConversationsFromCache();
+  }
+
+  bool _isNoInternetError(dynamic error) {
+    return error is SocketException ||
+        error is TimeoutException ||
+        (error.toString().toLowerCase().contains('network') ||
+            error.toString().toLowerCase().contains('connection') ||
+            error.toString().toLowerCase().contains('internet') ||
+            error.toString().toLowerCase().contains('failed host lookup') ||
+            error.toString().toLowerCase().contains('no address associated with hostname'));
+  }
+
+  Future<void> _loadConversationsFromCache() async {
+    try {
+      final cachedConversations = await _cacheService.getConversations();
+      if (cachedConversations != null && cachedConversations.isNotEmpty) {
+        setState(() {
+          _conversations.clear();
+          for (var convData in cachedConversations) {
+            final messages = (convData['messages'] as List?)
+                ?.map((m) => AIMessage(
+                      role: m['role'] as String,
+                      content: m['content'] as String,
+                      timestamp: DateTime.tryParse(m['timestamp'] as String? ?? '') ?? DateTime.now(),
+                      sessionId: m['sessionId'] as String?,
+                    ))
+                .toList() ?? [];
+            _conversations.add(_Conversation(
+              id: convData['id'] as String,
+              title: convData['title'] as String? ?? '',
+              messages: messages,
+            ));
+          }
+        });
+
+        // Restore active conversation
+        final activeId = await _cacheService.getActiveConversationId();
+        if (activeId != null) {
+          final active = _conversations.firstWhere(
+            (c) => c.id == activeId,
+            orElse: () => _conversations.isNotEmpty ? _conversations.first : _Conversation(id: '', title: '', messages: []),
+          );
+          setState(() {
+            _active = active;
+          });
+        } else if (_conversations.isNotEmpty) {
+          setState(() {
+            _active = _conversations.first;
+          });
+        }
+
+        // Restore session ID
+        final cachedSessionId = await _cacheService.getSessionId();
+        if (cachedSessionId != null) {
+          _sessionId = cachedSessionId;
+        }
+      }
+    } catch (e) {
+      // If cache loading fails, start fresh
+    }
+  }
+
+  Future<void> _saveConversationsToCache() async {
+    try {
+      final conversationsData = _conversations.map((conv) => {
+        'id': conv.id,
+        'title': conv.title,
+        'messages': conv.messages.map((msg) => {
+          'role': msg.role,
+          'content': msg.content,
+          'timestamp': msg.timestamp.toIso8601String(),
+          'sessionId': msg.sessionId,
+        }).toList(),
+      }).toList();
+      await _cacheService.setConversations(conversationsData);
+      await _cacheService.setActiveConversationId(_active?.id);
+      await _cacheService.setSessionId(_sessionId);
+    } catch (e) {
+      // If cache saving fails, continue without caching
+    }
   }
 
   @override
@@ -67,6 +170,9 @@ class _AIAssistantPageState extends State<AIAssistantPage> {
       }
     });
 
+    // Save to cache after adding user message
+    _saveConversationsToCache();
+
     await Future.delayed(const Duration(milliseconds: 50));
     _scrollToBottom();
 
@@ -76,16 +182,25 @@ class _AIAssistantPageState extends State<AIAssistantPage> {
         _sessionId = reply.sessionId ?? _sessionId;
         _active!.messages.add(reply);
       });
+      // Save to cache after receiving reply
+      _saveConversationsToCache();
     } catch (e) {
+      // Check if it's a network/internet error
+      final errorMessage = _isNoInternetError(e)
+          ? 'No internet connection. Please check your connection and try again.'
+          : 'Sorry, I could not process that. Please try again.';
+      
       setState(() {
         _active!.messages.add(
           AIMessage(
             role: 'assistant',
-            content: 'Sorry, I could not process that. Please try again.',
+            content: errorMessage,
             timestamp: DateTime.now(),
           ),
         );
       });
+      // Save to cache even on error
+      _saveConversationsToCache();
     } finally {
       setState(() {
         _isSending = false;
@@ -105,7 +220,6 @@ class _AIAssistantPageState extends State<AIAssistantPage> {
 
   @override
   Widget build(BuildContext context) {
-    final isWide = MediaQuery.of(context).size.width >= 900;
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
@@ -117,8 +231,18 @@ class _AIAssistantPageState extends State<AIAssistantPage> {
             Expanded(
               child: Column(
                 children: [
-                  _buildTopBar(context, isWide),
-                  const SizedBox(height: 8),
+                  _buildTopBar(),
+                  SizedBox(
+                    height: isLargeDesktop
+                        ? 12
+                        : isDesktop
+                        ? 10
+                        : isTablet
+                        ? 9
+                        : isSmallScreen
+                        ? 6
+                        : 8,
+                  ),
                   Expanded(child: _buildChatArea()),
                   _buildComposer(),
                 ],
@@ -134,27 +258,108 @@ class _AIAssistantPageState extends State<AIAssistantPage> {
   // Sidebar
   Widget _buildSidebar() {
     return Container(
-      width: 300,
+      width: isLargeDesktop
+          ? 360
+          : isDesktop
+          ? 320
+          : isTablet
+          ? 280
+          : 300,
       color: Colors.white,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+            padding: EdgeInsets.fromLTRB(
+              isLargeDesktop
+                  ? 24
+                  : isDesktop
+                  ? 20
+                  : isTablet
+                  ? 18
+                  : isSmallScreen
+                  ? 12
+                  : 16,
+              isLargeDesktop
+                  ? 24
+                  : isDesktop
+                  ? 20
+                  : isTablet
+                  ? 18
+                  : isSmallScreen
+                  ? 12
+                  : 16,
+              isLargeDesktop
+                  ? 24
+                  : isDesktop
+                  ? 20
+                  : isTablet
+                  ? 18
+                  : isSmallScreen
+                  ? 12
+                  : 16,
+              isLargeDesktop
+                  ? 12
+                  : isDesktop
+                  ? 10
+                  : isTablet
+                  ? 9
+                  : isSmallScreen
+                  ? 6
+                  : 8,
+            ),
             child: Row(
               children: [
-                const CircleAvatar(
-                  radius: 16,
-                  backgroundColor: Color(0xFF22C55E),
-                  child: Icon(Icons.bolt, color: Colors.white, size: 16),
+                CircleAvatar(
+                  radius: isLargeDesktop
+                      ? 20
+                      : isDesktop
+                      ? 18
+                      : isTablet
+                      ? 17
+                      : isSmallScreen
+                      ? 14
+                      : 16,
+                  backgroundColor: const Color(0xFF22C55E),
+                  child: Icon(
+                    Icons.bolt,
+                    color: Colors.white,
+                    size: isLargeDesktop
+                        ? 20
+                        : isDesktop
+                        ? 18
+                        : isTablet
+                        ? 17
+                        : isSmallScreen
+                        ? 14
+                        : 16,
+                  ),
                 ),
-                const SizedBox(width: 10),
-                const Text(
+                SizedBox(
+                  width: isLargeDesktop
+                      ? 14
+                      : isDesktop
+                      ? 12
+                      : isTablet
+                      ? 11
+                      : isSmallScreen
+                      ? 6
+                      : 10,
+                ),
+                Text(
                   'TEGA AI',
                   style: TextStyle(
-                    color: Color(0xFF111827),
+                    color: const Color(0xFF111827),
                     fontWeight: FontWeight.w700,
-                    fontSize: 16,
+                    fontSize: isLargeDesktop
+                        ? 20
+                        : isDesktop
+                        ? 18
+                        : isTablet
+                        ? 17
+                        : isSmallScreen
+                        ? 14
+                        : 16,
                   ),
                 ),
                 const Spacer(),
@@ -162,17 +367,68 @@ class _AIAssistantPageState extends State<AIAssistantPage> {
               ],
             ),
           ),
-          const Divider(color: Color(0xFFE5E7EB), height: 1),
+          Divider(
+            color: const Color(0xFFE5E7EB),
+            height: isLargeDesktop || isDesktop
+                ? 1.5
+                : isTablet
+                ? 1.2
+                : isSmallScreen
+                ? 0.8
+                : 1,
+            thickness: isLargeDesktop || isDesktop
+                ? 1.5
+                : isTablet
+                ? 1.2
+                : isSmallScreen
+                ? 0.8
+                : 1,
+          ),
           Expanded(
             child: _conversations.isEmpty
                 ? Center(
-                    child: Text(
-                      'No conversations yet',
-                      style: TextStyle(color: Colors.black54, fontSize: 13),
+                    child: Padding(
+                      padding: EdgeInsets.all(
+                        isLargeDesktop
+                            ? 32
+                            : isDesktop
+                            ? 24
+                            : isTablet
+                            ? 20
+                            : isSmallScreen
+                            ? 16
+                            : 20,
+                      ),
+                      child: Text(
+                        'No conversations yet',
+                        style: TextStyle(
+                          color: Colors.black54,
+                          fontSize: isLargeDesktop
+                              ? 16
+                              : isDesktop
+                              ? 15
+                              : isTablet
+                              ? 14
+                              : isSmallScreen
+                              ? 11
+                              : 13,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
                     ),
                   )
                 : ListView.builder(
-                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    padding: EdgeInsets.symmetric(
+                      vertical: isLargeDesktop
+                          ? 12
+                          : isDesktop
+                          ? 10
+                          : isTablet
+                          ? 9
+                          : isSmallScreen
+                          ? 6
+                          : 8,
+                    ),
                     itemCount: _conversations.length,
                     itemBuilder: (context, i) {
                       final c = _conversations[i];
@@ -181,26 +437,80 @@ class _AIAssistantPageState extends State<AIAssistantPage> {
                         dense: true,
                         selected: selected,
                         selectedTileColor: const Color(0xFFEEF2FF),
-                        leading: const Icon(
+                        contentPadding: EdgeInsets.symmetric(
+                          horizontal: isLargeDesktop
+                              ? 20
+                              : isDesktop
+                              ? 16
+                              : isTablet
+                              ? 14
+                              : isSmallScreen
+                              ? 8
+                              : 12,
+                          vertical: isLargeDesktop
+                              ? 8
+                              : isDesktop
+                              ? 6
+                              : isTablet
+                              ? 5
+                              : isSmallScreen
+                              ? 2
+                              : 4,
+                        ),
+                        leading: Icon(
                           Icons.chat_bubble_outline,
-                          color: Color(0xFF6B7280),
-                          size: 18,
+                          color: const Color(0xFF6B7280),
+                          size: isLargeDesktop
+                              ? 22
+                              : isDesktop
+                              ? 20
+                              : isTablet
+                              ? 19
+                              : isSmallScreen
+                              ? 16
+                              : 18,
                         ),
                         title: Text(
                           c.title,
                           overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            color: Color(0xFF111827),
-                            fontSize: 13,
+                          maxLines: isLargeDesktop || isDesktop
+                              ? 2
+                              : isTablet
+                              ? 2
+                              : 1,
+                          style: TextStyle(
+                            color: const Color(0xFF111827),
+                            fontSize: isLargeDesktop
+                                ? 16
+                                : isDesktop
+                                ? 15
+                                : isTablet
+                                ? 14
+                                : isSmallScreen
+                                ? 11
+                                : 13,
                           ),
                         ),
-                        onTap: () => setState(() => _active = c),
+                        onTap: () {
+                          setState(() {
+                            _active = c;
+                          });
+                          _saveConversationsToCache();
+                        },
                         trailing: IconButton(
                           tooltip: 'Delete',
-                          icon: const Icon(
+                          icon: Icon(
                             Icons.delete_outline,
-                            color: Color(0xFF9CA3AF),
-                            size: 18,
+                            color: const Color(0xFF9CA3AF),
+                            size: isLargeDesktop
+                                ? 22
+                                : isDesktop
+                                ? 20
+                                : isTablet
+                                ? 19
+                                : isSmallScreen
+                                ? 16
+                                : 18,
                           ),
                           onPressed: () {
                             setState(() {
@@ -211,7 +521,19 @@ class _AIAssistantPageState extends State<AIAssistantPage> {
                                     : null;
                               }
                             });
+                            _saveConversationsToCache();
                           },
+                          padding: EdgeInsets.all(
+                            isLargeDesktop
+                                ? 12
+                                : isDesktop
+                                ? 10
+                                : isTablet
+                                ? 9
+                                : isSmallScreen
+                                ? 6
+                                : 8,
+                          ),
                         ),
                       );
                     },
@@ -223,40 +545,157 @@ class _AIAssistantPageState extends State<AIAssistantPage> {
   }
 
   // Top action bar
-  Widget _buildTopBar(BuildContext context, bool isWide) {
+  Widget _buildTopBar() {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-      decoration: const BoxDecoration(
+      padding: EdgeInsets.symmetric(
+        horizontal: isLargeDesktop
+            ? 20
+            : isDesktop
+            ? 16
+            : isTablet
+            ? 14
+            : isSmallScreen
+            ? 10
+            : 12,
+        vertical: isLargeDesktop
+            ? 14
+            : isDesktop
+            ? 12
+            : isTablet
+            ? 11
+            : isSmallScreen
+            ? 8
+            : 10,
+      ),
+      decoration: BoxDecoration(
         color: Colors.white,
-        border: Border(bottom: BorderSide(color: Color(0xFFE5E7EB), width: 1)),
+        border: Border(
+          bottom: BorderSide(
+            color: const Color(0xFFE5E7EB),
+            width: isLargeDesktop || isDesktop
+                ? 1.5
+                : isTablet
+                ? 1.2
+                : isSmallScreen
+                ? 0.8
+                : 1,
+          ),
+        ),
       ),
       child: Row(
         children: [
           // Model selector (visual only)
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+            padding: EdgeInsets.symmetric(
+              horizontal: isLargeDesktop
+                  ? 14
+                  : isDesktop
+                  ? 12
+                  : isTablet
+                  ? 11
+                  : isSmallScreen
+                  ? 8
+                  : 10,
+              vertical: isLargeDesktop
+                  ? 12
+                  : isDesktop
+                  ? 10
+                  : isTablet
+                  ? 9
+                  : isSmallScreen
+                  ? 6
+                  : 8,
+            ),
             decoration: BoxDecoration(
               color: const Color(0xFFF3F4F6),
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(
+                isLargeDesktop
+                    ? 12
+                    : isDesktop
+                    ? 10
+                    : isTablet
+                    ? 9
+                    : isSmallScreen
+                    ? 6
+                    : 8,
+              ),
               border: Border.all(color: const Color(0xFFE5E7EB)),
             ),
             child: Row(
               children: [
-                const Icon(Icons.flash_on, size: 16, color: Color(0xFF6B7280)),
-                const SizedBox(width: 6),
+                Icon(
+                  Icons.flash_on,
+                  size: isLargeDesktop
+                      ? 20
+                      : isDesktop
+                      ? 18
+                      : isTablet
+                      ? 17
+                      : isSmallScreen
+                      ? 14
+                      : 16,
+                  color: const Color(0xFF6B7280),
+                ),
+                SizedBox(
+                  width: isLargeDesktop || isDesktop
+                      ? 8
+                      : isTablet
+                      ? 7
+                      : isSmallScreen
+                      ? 4
+                      : 6,
+                ),
                 Text(
                   _model,
-                  style: const TextStyle(
-                    color: Color(0xFF111827),
-                    fontSize: 12,
+                  style: TextStyle(
+                    color: const Color(0xFF111827),
+                    fontSize: isLargeDesktop
+                        ? 15
+                        : isDesktop
+                        ? 14
+                        : isTablet
+                        ? 13
+                        : isSmallScreen
+                        ? 10
+                        : 12,
                   ),
                 ),
-                const SizedBox(width: 6),
-                const Icon(Icons.keyboard_arrow_down, color: Color(0xFF6B7280)),
+                SizedBox(
+                  width: isLargeDesktop || isDesktop
+                      ? 8
+                      : isTablet
+                      ? 7
+                      : isSmallScreen
+                      ? 4
+                      : 6,
+                ),
+                Icon(
+                  Icons.keyboard_arrow_down,
+                  color: const Color(0xFF6B7280),
+                  size: isLargeDesktop
+                      ? 20
+                      : isDesktop
+                      ? 18
+                      : isTablet
+                      ? 17
+                      : isSmallScreen
+                      ? 14
+                      : 16,
+                ),
               ],
             ),
           ),
-          const SizedBox(width: 8),
+          SizedBox(
+            width: isLargeDesktop
+                ? 12
+                : isDesktop
+                ? 10
+                : isTablet
+                ? 9
+                : isSmallScreen
+                ? 6
+                : 8,
+          ),
         ],
       ),
     );
@@ -266,15 +705,107 @@ class _AIAssistantPageState extends State<AIAssistantPage> {
   Widget _buildChatArea() {
     if (_active == null) {
       return Center(
-        child: Text(
-          'Start a new chat to begin',
-          style: TextStyle(color: Colors.black.withOpacity(0.6)),
+        child: Padding(
+          padding: EdgeInsets.all(
+            isLargeDesktop
+                ? 48
+                : isDesktop
+                ? 32
+                : isTablet
+                ? 28
+                : isSmallScreen
+                ? 20
+                : 24,
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.chat_bubble_outline_rounded,
+                size: isLargeDesktop
+                    ? 80
+                    : isDesktop
+                    ? 64
+                    : isTablet
+                    ? 56
+                    : isSmallScreen
+                    ? 48
+                    : 56,
+                color: Colors.black.withOpacity(0.3),
+              ),
+              SizedBox(
+                height: isLargeDesktop
+                    ? 24
+                    : isDesktop
+                    ? 20
+                    : isTablet
+                    ? 18
+                    : isSmallScreen
+                    ? 12
+                    : 16,
+              ),
+              Text(
+                'Start a new chat to begin',
+                style: TextStyle(
+                  color: Colors.black.withOpacity(0.6),
+                  fontSize: isLargeDesktop
+                      ? 22
+                      : isDesktop
+                      ? 20
+                      : isTablet
+                      ? 18
+                      : isSmallScreen
+                      ? 14
+                      : 16,
+                  fontWeight: FontWeight.w500,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
         ),
       );
     }
     return ListView.builder(
       controller: _chatScroll,
-      padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
+      padding: EdgeInsets.fromLTRB(
+        isLargeDesktop
+            ? 32
+            : isDesktop
+            ? 28
+            : isTablet
+            ? 24
+            : isSmallScreen
+            ? 16
+            : 24,
+        isLargeDesktop
+            ? 12
+            : isDesktop
+            ? 10
+            : isTablet
+            ? 9
+            : isSmallScreen
+            ? 6
+            : 8,
+        isLargeDesktop
+            ? 32
+            : isDesktop
+            ? 28
+            : isTablet
+            ? 24
+            : isSmallScreen
+            ? 16
+            : 24,
+        isLargeDesktop
+            ? 32
+            : isDesktop
+            ? 28
+            : isTablet
+            ? 24
+            : isSmallScreen
+            ? 16
+            : 24,
+      ),
       itemCount: _messages.length,
       itemBuilder: (context, index) {
         final msg = _messages[index];
@@ -282,28 +813,151 @@ class _AIAssistantPageState extends State<AIAssistantPage> {
         return Align(
           alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
           child: Container(
-            margin: const EdgeInsets.symmetric(vertical: 8),
-            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 14),
+            margin: EdgeInsets.symmetric(
+              vertical: isLargeDesktop
+                  ? 12
+                  : isDesktop
+                  ? 10
+                  : isTablet
+                  ? 9
+                  : isSmallScreen
+                  ? 6
+                  : 8,
+            ),
+            padding: EdgeInsets.symmetric(
+              vertical: isLargeDesktop
+                  ? 16
+                  : isDesktop
+                  ? 14
+                  : isTablet
+                  ? 13
+                  : isSmallScreen
+                  ? 10
+                  : 12,
+              horizontal: isLargeDesktop
+                  ? 20
+                  : isDesktop
+                  ? 18
+                  : isTablet
+                  ? 17
+                  : isSmallScreen
+                  ? 12
+                  : 14,
+            ),
             constraints: BoxConstraints(
-              maxWidth: MediaQuery.of(context).size.width * 0.72,
+              maxWidth: MediaQuery.of(context).size.width *
+                  (isLargeDesktop
+                      ? 0.68
+                      : isDesktop
+                      ? 0.70
+                      : isTablet
+                      ? 0.72
+                      : isSmallScreen
+                      ? 0.85
+                      : 0.75),
             ),
             decoration: BoxDecoration(
               color: isUser ? const Color(0xFF6B5FFF) : const Color(0xFFF7F8FC),
-              borderRadius: BorderRadius.circular(14),
+              borderRadius: BorderRadius.circular(
+                isLargeDesktop
+                    ? 18
+                    : isDesktop
+                    ? 16
+                    : isTablet
+                    ? 15
+                    : isSmallScreen
+                    ? 10
+                    : 14,
+              ),
               border: Border.all(
                 color: isUser
                     ? const Color(0xFF6B5FFF)
                     : const Color(0xFFE5E7EB),
+                width: isLargeDesktop || isDesktop
+                    ? 1.5
+                    : isTablet
+                    ? 1.2
+                    : isSmallScreen
+                    ? 0.8
+                    : 1,
               ),
             ),
-            child: Text(
-              msg.content,
-              style: TextStyle(
-                color: isUser ? Colors.white : const Color(0xFF111827),
-                fontSize: 14,
-                height: 1.4,
-              ),
-            ),
+            child: msg.content.startsWith('No internet connection')
+                ? Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Icon(
+                        Icons.cloud_off,
+                        color: Colors.grey[600],
+                        size: isLargeDesktop
+                            ? 20
+                            : isDesktop
+                            ? 18
+                            : isTablet
+                            ? 17
+                            : isSmallScreen
+                            ? 14
+                            : 16,
+                      ),
+                      SizedBox(
+                        width: isLargeDesktop
+                            ? 8
+                            : isDesktop
+                            ? 6
+                            : isTablet
+                            ? 5
+                            : isSmallScreen
+                            ? 4
+                            : 6,
+                      ),
+                      Expanded(
+                        child: Text(
+                          msg.content,
+                          style: TextStyle(
+                            color: const Color(0xFF111827),
+                            fontSize: isLargeDesktop
+                                ? 17
+                                : isDesktop
+                                ? 16
+                                : isTablet
+                                ? 15
+                                : isSmallScreen
+                                ? 12
+                                : 14,
+                            height: isLargeDesktop || isDesktop
+                                ? 1.5
+                                : isTablet
+                                ? 1.4
+                                : isSmallScreen
+                                ? 1.3
+                                : 1.4,
+                          ),
+                        ),
+                      ),
+                    ],
+                  )
+                : Text(
+                    msg.content,
+                    style: TextStyle(
+                      color: isUser ? Colors.white : const Color(0xFF111827),
+                      fontSize: isLargeDesktop
+                          ? 17
+                          : isDesktop
+                          ? 16
+                          : isTablet
+                          ? 15
+                          : isSmallScreen
+                          ? 12
+                          : 14,
+                      height: isLargeDesktop || isDesktop
+                          ? 1.5
+                          : isTablet
+                          ? 1.4
+                          : isSmallScreen
+                          ? 1.3
+                          : 1.4,
+                    ),
+                  ),
           ),
         );
       },
@@ -313,10 +967,58 @@ class _AIAssistantPageState extends State<AIAssistantPage> {
   // Composer
   Widget _buildComposer() {
     return Container(
-      padding: const EdgeInsets.fromLTRB(16, 10, 16, 16),
-      decoration: const BoxDecoration(
+      padding: EdgeInsets.fromLTRB(
+        isLargeDesktop
+            ? 24
+            : isDesktop
+            ? 20
+            : isTablet
+            ? 18
+            : isSmallScreen
+            ? 12
+            : 16,
+        isLargeDesktop
+            ? 14
+            : isDesktop
+            ? 12
+            : isTablet
+            ? 11
+            : isSmallScreen
+            ? 8
+            : 10,
+        isLargeDesktop
+            ? 24
+            : isDesktop
+            ? 20
+            : isTablet
+            ? 18
+            : isSmallScreen
+            ? 12
+            : 16,
+        isLargeDesktop
+            ? 20
+            : isDesktop
+            ? 18
+            : isTablet
+            ? 16
+            : isSmallScreen
+            ? 12
+            : 16,
+      ),
+      decoration: BoxDecoration(
         color: Colors.white,
-        border: Border(top: BorderSide(color: Color(0xFFE5E7EB), width: 1)),
+        border: Border(
+          top: BorderSide(
+            color: const Color(0xFFE5E7EB),
+            width: isLargeDesktop || isDesktop
+                ? 1.5
+                : isTablet
+                ? 1.2
+                : isSmallScreen
+                ? 0.8
+                : 1,
+          ),
+        ),
       ),
       child: Row(
         children: [
@@ -324,45 +1026,173 @@ class _AIAssistantPageState extends State<AIAssistantPage> {
             child: TextField(
               controller: _inputController,
               minLines: 1,
-              maxLines: 6,
-              style: const TextStyle(color: Color(0xFF111827)),
+              maxLines: isLargeDesktop || isDesktop
+                  ? 6
+                  : isTablet
+                  ? 5
+                  : isSmallScreen
+                  ? 4
+                  : 5,
+              style: TextStyle(
+                color: const Color(0xFF111827),
+                fontSize: isLargeDesktop
+                    ? 17
+                    : isDesktop
+                    ? 16
+                    : isTablet
+                    ? 15
+                    : isSmallScreen
+                    ? 12
+                    : 14,
+              ),
               decoration: InputDecoration(
                 hintText: 'Message TEGA AI...',
-                hintStyle: const TextStyle(color: Color(0xFF9CA3AF)),
+                hintStyle: TextStyle(
+                  color: const Color(0xFF9CA3AF),
+                  fontSize: isLargeDesktop
+                      ? 17
+                      : isDesktop
+                      ? 16
+                      : isTablet
+                      ? 15
+                      : isSmallScreen
+                      ? 12
+                      : 14,
+                ),
                 filled: true,
                 fillColor: const Color(0xFFF7F8FC),
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 14,
-                  vertical: 12,
+                contentPadding: EdgeInsets.symmetric(
+                  horizontal: isLargeDesktop
+                      ? 20
+                      : isDesktop
+                      ? 18
+                      : isTablet
+                      ? 17
+                      : isSmallScreen
+                      ? 12
+                      : 14,
+                  vertical: isLargeDesktop
+                      ? 16
+                      : isDesktop
+                      ? 14
+                      : isTablet
+                      ? 13
+                      : isSmallScreen
+                      ? 10
+                      : 12,
                 ),
                 border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(
+                    isLargeDesktop
+                        ? 16
+                        : isDesktop
+                        ? 14
+                        : isTablet
+                        ? 13
+                        : isSmallScreen
+                        ? 10
+                        : 12,
+                  ),
                   borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
                 ),
                 enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(
+                    isLargeDesktop
+                        ? 16
+                        : isDesktop
+                        ? 14
+                        : isTablet
+                        ? 13
+                        : isSmallScreen
+                        ? 10
+                        : 12,
+                  ),
                   borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
                 ),
                 focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: Color(0xFF6B5FFF)),
+                  borderRadius: BorderRadius.circular(
+                    isLargeDesktop
+                        ? 16
+                        : isDesktop
+                        ? 14
+                        : isTablet
+                        ? 13
+                        : isSmallScreen
+                        ? 10
+                        : 12,
+                  ),
+                  borderSide: const BorderSide(
+                    color: Color(0xFF6B5FFF),
+                    width: 2,
+                  ),
                 ),
               ),
               onSubmitted: (_) => _send(),
             ),
           ),
-          const SizedBox(width: 10),
+          SizedBox(
+            width: isLargeDesktop
+                ? 14
+                : isDesktop
+                ? 12
+                : isTablet
+                ? 11
+                : isSmallScreen
+                ? 6
+                : 10,
+          ),
           ElevatedButton(
             onPressed: _isSending ? null : _send,
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFF6B5FFF),
               foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
+              padding: EdgeInsets.symmetric(
+                horizontal: isLargeDesktop
+                    ? 20
+                    : isDesktop
+                    ? 18
+                    : isTablet
+                    ? 17
+                    : isSmallScreen
+                    ? 12
+                    : 16,
+                vertical: isLargeDesktop
+                    ? 16
+                    : isDesktop
+                    ? 14
+                    : isTablet
+                    ? 13
+                    : isSmallScreen
+                    ? 10
+                    : 12,
               ),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(
+                  isLargeDesktop
+                      ? 16
+                      : isDesktop
+                      ? 14
+                      : isTablet
+                      ? 13
+                      : isSmallScreen
+                      ? 10
+                      : 12,
+                ),
+              ),
+              elevation: 0,
             ),
-            child: const Icon(Icons.send_rounded, size: 18),
+            child: Icon(
+              Icons.send_rounded,
+              size: isLargeDesktop
+                  ? 22
+                  : isDesktop
+                  ? 20
+                  : isTablet
+                  ? 19
+                  : isSmallScreen
+                  ? 16
+                  : 18,
+            ),
           ),
         ],
       ),

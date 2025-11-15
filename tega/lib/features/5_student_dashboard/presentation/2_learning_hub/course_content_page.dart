@@ -32,6 +32,10 @@ class _CourseContentPageState extends State<CourseContentPage> {
   bool _isFullscreen = false;
   Duration _currentPosition = Duration.zero;
   Duration _totalDuration = Duration.zero;
+  
+  // Progress bar dragging
+  bool _isDraggingProgress = false;
+  double? _dragProgressPosition;
 
   // Module expansion state
   Map<String, bool> _expandedModules = {};
@@ -1039,16 +1043,58 @@ class _CourseContentPageState extends State<CourseContentPage> {
     );
   }
 
-  Widget _buildHeader() {
-    final screenWidth = MediaQuery.of(context).size.width;
-    final isTablet = screenWidth > 600;
+  // Responsive breakpoints
+  double get mobileBreakpoint => 600;
+  double get tabletBreakpoint => 1024;
+  double get desktopBreakpoint => 1440;
+  bool get isMobile => MediaQuery.of(context).size.width < mobileBreakpoint;
+  bool get isTablet => MediaQuery.of(context).size.width >= mobileBreakpoint &&
+      MediaQuery.of(context).size.width < tabletBreakpoint;
+  bool get isDesktop => MediaQuery.of(context).size.width >= tabletBreakpoint &&
+      MediaQuery.of(context).size.width < desktopBreakpoint;
+  bool get isLargeDesktop => MediaQuery.of(context).size.width >= desktopBreakpoint;
+  bool get isSmallScreen => MediaQuery.of(context).size.width < 400;
 
+  Widget _buildHeader() {
     return Container(
       padding: EdgeInsets.only(
-        left: isTablet ? 24 : 16,
-        right: isTablet ? 24 : 16,
-        top: MediaQuery.of(context).padding.top + (isTablet ? 16 : 12),
-        bottom: isTablet ? 16 : 12,
+        left: isLargeDesktop
+            ? 32
+            : isDesktop
+            ? 24
+            : isTablet
+            ? 20
+            : isSmallScreen
+            ? 12
+            : 16,
+        right: isLargeDesktop
+            ? 32
+            : isDesktop
+            ? 24
+            : isTablet
+            ? 20
+            : isSmallScreen
+            ? 12
+            : 16,
+        top: MediaQuery.of(context).padding.top +
+            (isLargeDesktop
+                ? 20
+                : isDesktop
+                ? 16
+                : isTablet
+                ? 14
+                : isSmallScreen
+                ? 8
+                : 12),
+        bottom: isLargeDesktop
+            ? 20
+            : isDesktop
+            ? 16
+            : isTablet
+            ? 14
+            : isSmallScreen
+            ? 8
+            : 12,
       ),
       decoration: const BoxDecoration(
         color: Colors.white,
@@ -1060,8 +1106,29 @@ class _CourseContentPageState extends State<CourseContentPage> {
         children: [
           IconButton(
             onPressed: () => Navigator.pop(context),
-            icon: Icon(Icons.arrow_back, size: isTablet ? 28 : 24),
-            padding: EdgeInsets.all(isTablet ? 8 : 4),
+            icon: Icon(
+              Icons.arrow_back,
+              size: isLargeDesktop
+                  ? 32
+                  : isDesktop
+                  ? 28
+                  : isTablet
+                  ? 26
+                  : isSmallScreen
+                  ? 20
+                  : 24,
+            ),
+            padding: EdgeInsets.all(
+              isLargeDesktop
+                  ? 12
+                  : isDesktop
+                  ? 10
+                  : isTablet
+                  ? 8
+                  : isSmallScreen
+                  ? 4
+                  : 6,
+            ),
           ),
           Expanded(
             child: Column(
@@ -1070,40 +1137,106 @@ class _CourseContentPageState extends State<CourseContentPage> {
                 Text(
                   widget.course['title'] ?? 'Course',
                   style: TextStyle(
-                    fontSize: isTablet ? 20 : 16,
+                    fontSize: isLargeDesktop
+                        ? 24
+                        : isDesktop
+                        ? 22
+                        : isTablet
+                        ? 20
+                        : isSmallScreen
+                        ? 14
+                        : 16,
                     fontWeight: FontWeight.bold,
                   ),
-                  maxLines: isTablet ? 2 : 1,
+                  maxLines: isLargeDesktop || isDesktop
+                      ? 3
+                      : isTablet
+                      ? 2
+                      : 1,
                   overflow: TextOverflow.ellipsis,
                 ),
-                if (_lectures.isNotEmpty)
+                if (_lectures.isNotEmpty) ...[
+                  SizedBox(
+                    height: isLargeDesktop || isDesktop
+                        ? 6
+                        : isTablet
+                        ? 4
+                        : 2,
+                  ),
                   Text(
                     _lectures[_currentLectureIndex]['title'],
                     style: TextStyle(
-                      fontSize: isTablet ? 14 : 12,
+                      fontSize: isLargeDesktop
+                          ? 16
+                          : isDesktop
+                          ? 15
+                          : isTablet
+                          ? 14
+                          : isSmallScreen
+                          ? 10
+                          : 12,
                       color: Colors.grey,
                     ),
-                    maxLines: isTablet ? 2 : 1,
+                    maxLines: isLargeDesktop || isDesktop
+                        ? 3
+                        : isTablet
+                        ? 2
+                        : 1,
                     overflow: TextOverflow.ellipsis,
                   ),
+                ],
               ],
             ),
           ),
           if (!_isEnrolled)
             Container(
               padding: EdgeInsets.symmetric(
-                horizontal: isTablet ? 12 : 8,
-                vertical: isTablet ? 6 : 4,
+                horizontal: isLargeDesktop
+                    ? 16
+                    : isDesktop
+                    ? 14
+                    : isTablet
+                    ? 12
+                    : isSmallScreen
+                    ? 6
+                    : 8,
+                vertical: isLargeDesktop
+                    ? 8
+                    : isDesktop
+                    ? 7
+                    : isTablet
+                    ? 6
+                    : isSmallScreen
+                    ? 3
+                    : 4,
               ),
               decoration: BoxDecoration(
                 color: Colors.orange,
-                borderRadius: BorderRadius.circular(isTablet ? 12 : 8),
+                borderRadius: BorderRadius.circular(
+                  isLargeDesktop
+                      ? 14
+                      : isDesktop
+                      ? 12
+                      : isTablet
+                      ? 10
+                      : isSmallScreen
+                      ? 6
+                      : 8,
+                ),
               ),
               child: Text(
                 'Preview',
                 style: TextStyle(
                   color: Colors.white,
-                  fontSize: isTablet ? 12 : 10,
+                  fontSize: isLargeDesktop
+                      ? 14
+                      : isDesktop
+                      ? 13
+                      : isTablet
+                      ? 12
+                      : isSmallScreen
+                      ? 9
+                      : 10,
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -1148,9 +1281,15 @@ class _CourseContentPageState extends State<CourseContentPage> {
             ? Container(
                 height: _isFullscreen
                     ? double.infinity
+                    : isLargeDesktop
+                    ? 500
+                    : isDesktop
+                    ? 450
                     : isTablet
-                    ? 300
-                    : 200,
+                    ? 350
+                    : isSmallScreen
+                    ? 180
+                    : 220,
                 color: Colors.black,
                 child: Center(
                   child: Column(
@@ -1335,9 +1474,6 @@ class _CourseContentPageState extends State<CourseContentPage> {
   }
 
   Widget _buildAdvancedVideoPlayer() {
-    final screenWidth = MediaQuery.of(context).size.width;
-    final isTablet = screenWidth > 600;
-
     return GestureDetector(
       onTap: () {
         _showControlsTemporarily();
@@ -1479,7 +1615,11 @@ class _CourseContentPageState extends State<CourseContentPage> {
                 const SizedBox(width: 8),
                 // Time Display
                 Text(
-                  '${_formatTime(_currentPosition)} / ${_formatTime(_totalDuration)}',
+                  '${_formatTime(
+                    _isDraggingProgress && _dragProgressPosition != null
+                        ? Duration(milliseconds: _dragProgressPosition!.round())
+                        : _currentPosition,
+                  )} / ${_formatTime(_totalDuration)}',
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 12,
@@ -1526,15 +1666,57 @@ class _CourseContentPageState extends State<CourseContentPage> {
   }
 
   Widget _buildYouTubeProgressBar() {
+    final position = _isDraggingProgress && _dragProgressPosition != null
+        ? Duration(milliseconds: _dragProgressPosition!.round())
+        : _currentPosition;
+    
+    final progress = _totalDuration.inMilliseconds > 0
+        ? position.inMilliseconds / _totalDuration.inMilliseconds
+        : 0.0;
+    
+    final progressBarWidth = MediaQuery.of(context).size.width - 24;
+
     return GestureDetector(
+      onHorizontalDragStart: (details) {
+        setState(() {
+          _isDraggingProgress = true;
+          _showControls = true; // Keep controls visible while dragging
+        });
+      },
+      onHorizontalDragUpdate: (details) {
+        final RenderBox? renderBox = context.findRenderObject() as RenderBox?;
+        if (renderBox != null) {
+          final localPosition = renderBox.globalToLocal(details.globalPosition);
+          final newProgress = (localPosition.dx / renderBox.size.width).clamp(0.0, 1.0);
+          
+          setState(() {
+            _dragProgressPosition = _totalDuration.inMilliseconds * newProgress;
+          });
+        }
+      },
+      onHorizontalDragEnd: (details) {
+        if (_dragProgressPosition != null) {
+          _seekTo(Duration(milliseconds: _dragProgressPosition!.round()));
+        }
+        setState(() {
+          _isDraggingProgress = false;
+          _dragProgressPosition = null;
+        });
+        // Restart auto-hide timer if video is playing
+        if (_videoController != null && _videoController!.value.isPlaying) {
+          _showControlsTemporarily();
+        }
+      },
       onTapDown: (details) {
-        final RenderBox renderBox = context.findRenderObject() as RenderBox;
-        final localPosition = renderBox.globalToLocal(details.globalPosition);
-        final progress = localPosition.dx / renderBox.size.width;
-        final newPosition = Duration(
-          milliseconds: (_totalDuration.inMilliseconds * progress).round(),
-        );
-        _seekTo(newPosition);
+        final RenderBox? renderBox = context.findRenderObject() as RenderBox?;
+        if (renderBox != null) {
+          final localPosition = renderBox.globalToLocal(details.globalPosition);
+          final newProgress = (localPosition.dx / renderBox.size.width).clamp(0.0, 1.0);
+          final newPosition = Duration(
+            milliseconds: (_totalDuration.inMilliseconds * newProgress).round(),
+          );
+          _seekTo(newPosition);
+        }
       },
       child: Container(
         height: 4,
@@ -1552,34 +1734,27 @@ class _CourseContentPageState extends State<CourseContentPage> {
             // Progress
             Container(
               height: 4,
-              width: _totalDuration.inMilliseconds > 0
-                  ? (MediaQuery.of(context).size.width - 24) *
-                        (_currentPosition.inMilliseconds /
-                            _totalDuration.inMilliseconds)
-                  : 0,
+              width: progressBarWidth * progress,
               decoration: BoxDecoration(
                 color: Colors.red, // YouTube red color
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
-            // Thumb (only visible on hover/touch)
-            Positioned(
-              left: _totalDuration.inMilliseconds > 0
-                  ? (MediaQuery.of(context).size.width - 24) *
-                            (_currentPosition.inMilliseconds /
-                                _totalDuration.inMilliseconds) -
-                        6
-                  : -6,
-              top: -2,
-              child: Container(
-                width: 12,
-                height: 12,
-                decoration: const BoxDecoration(
-                  color: Colors.red,
-                  shape: BoxShape.circle,
+            // Thumb (visible when dragging or controls are shown)
+            if (_isDraggingProgress || _showControls)
+              Positioned(
+                left: progressBarWidth * progress - 6,
+                top: -2,
+                child: Container(
+                  width: 12,
+                  height: 12,
+                  decoration: BoxDecoration(
+                    color: Colors.red,
+                    shape: BoxShape.circle,
+                    border: Border.all(color: Colors.white, width: 2),
+                  ),
                 ),
               ),
-            ),
           ],
         ),
       ),
@@ -1600,20 +1775,54 @@ class _CourseContentPageState extends State<CourseContentPage> {
   }
 
   Widget _buildScrollableContent() {
-    final screenWidth = MediaQuery.of(context).size.width;
-    final isTablet = screenWidth > 600;
-    final isDesktop = screenWidth > 1200;
-
     return SingleChildScrollView(
       padding: EdgeInsets.fromLTRB(
-        isTablet ? 24 : 16,
-        16,
-        isTablet ? 24 : 16,
-        32,
+        isLargeDesktop
+            ? 32
+            : isDesktop
+            ? 24
+            : isTablet
+            ? 20
+            : isSmallScreen
+            ? 12
+            : 16,
+        isLargeDesktop
+            ? 20
+            : isDesktop
+            ? 18
+            : isTablet
+            ? 16
+            : isSmallScreen
+            ? 10
+            : 12,
+        isLargeDesktop
+            ? 32
+            : isDesktop
+            ? 24
+            : isTablet
+            ? 20
+            : isSmallScreen
+            ? 12
+            : 16,
+        isLargeDesktop
+            ? 40
+            : isDesktop
+            ? 36
+            : isTablet
+            ? 32
+            : isSmallScreen
+            ? 20
+            : 24,
       ),
       child: ConstrainedBox(
         constraints: BoxConstraints(
-          maxWidth: isDesktop ? 800 : double.infinity,
+          maxWidth: isLargeDesktop
+              ? 1200
+              : isDesktop
+              ? 1000
+              : isTablet
+              ? 800
+              : double.infinity,
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -1656,18 +1865,44 @@ class _CourseContentPageState extends State<CourseContentPage> {
     List<Map<String, dynamic>> lectures,
   ) {
     final isExpanded = _expandedModules[moduleTitle] ?? true;
-    final screenWidth = MediaQuery.of(context).size.width;
-    final isTablet = screenWidth > 600;
 
     return Container(
-      margin: EdgeInsets.only(bottom: isTablet ? 20 : 16),
+      margin: EdgeInsets.only(
+        bottom: isLargeDesktop
+            ? 24
+            : isDesktop
+            ? 22
+            : isTablet
+            ? 20
+            : isSmallScreen
+            ? 12
+            : 16,
+      ),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(isTablet ? 16 : 12),
+        borderRadius: BorderRadius.circular(
+          isLargeDesktop
+              ? 20
+              : isDesktop
+              ? 18
+              : isTablet
+              ? 16
+              : isSmallScreen
+              ? 8
+              : 12,
+        ),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.05),
-            blurRadius: isTablet ? 12 : 8,
+            blurRadius: isLargeDesktop
+                ? 16
+                : isDesktop
+                ? 14
+                : isTablet
+                ? 12
+                : isSmallScreen
+                ? 6
+                : 8,
             offset: const Offset(0, 2),
           ),
         ],
@@ -1678,7 +1913,17 @@ class _CourseContentPageState extends State<CourseContentPage> {
           GestureDetector(
             onTap: () => _toggleModuleExpansion(moduleTitle),
             child: Container(
-              padding: EdgeInsets.all(isTablet ? 20 : 16),
+              padding: EdgeInsets.all(
+                isLargeDesktop
+                    ? 24
+                    : isDesktop
+                    ? 22
+                    : isTablet
+                    ? 20
+                    : isSmallScreen
+                    ? 12
+                    : 16,
+              ),
               decoration: BoxDecoration(
                 border: Border(bottom: BorderSide(color: Colors.grey[200]!)),
               ),
@@ -1687,14 +1932,40 @@ class _CourseContentPageState extends State<CourseContentPage> {
                   Icon(
                     Icons.playlist_play,
                     color: const Color(0xFF6B5FFF),
-                    size: isTablet ? 24 : 20,
+                    size: isLargeDesktop
+                        ? 32
+                        : isDesktop
+                        ? 28
+                        : isTablet
+                        ? 24
+                        : isSmallScreen
+                        ? 18
+                        : 20,
                   ),
-                  SizedBox(width: isTablet ? 12 : 8),
+                  SizedBox(
+                    width: isLargeDesktop
+                        ? 16
+                        : isDesktop
+                        ? 14
+                        : isTablet
+                        ? 12
+                        : isSmallScreen
+                        ? 6
+                        : 8,
+                  ),
                   Expanded(
                     child: Text(
                       moduleTitle,
                       style: TextStyle(
-                        fontSize: isTablet ? 18 : 16,
+                        fontSize: isLargeDesktop
+                            ? 22
+                            : isDesktop
+                            ? 20
+                            : isTablet
+                            ? 18
+                            : isSmallScreen
+                            ? 14
+                            : 16,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -1702,18 +1973,44 @@ class _CourseContentPageState extends State<CourseContentPage> {
                   Text(
                     '${lectures.length} lectures',
                     style: TextStyle(
-                      fontSize: isTablet ? 14 : 12,
+                      fontSize: isLargeDesktop
+                          ? 16
+                          : isDesktop
+                          ? 15
+                          : isTablet
+                          ? 14
+                          : isSmallScreen
+                          ? 10
+                          : 12,
                       color: Colors.grey,
                     ),
                   ),
-                  SizedBox(width: isTablet ? 12 : 8),
+                  SizedBox(
+                    width: isLargeDesktop
+                        ? 16
+                        : isDesktop
+                        ? 14
+                        : isTablet
+                        ? 12
+                        : isSmallScreen
+                        ? 6
+                        : 8,
+                  ),
                   AnimatedRotation(
                     turns: isExpanded ? 0.5 : 0,
                     duration: const Duration(milliseconds: 200),
                     child: Icon(
                       Icons.expand_more,
                       color: Colors.grey,
-                      size: isTablet ? 24 : 20,
+                      size: isLargeDesktop
+                          ? 32
+                          : isDesktop
+                          ? 28
+                          : isTablet
+                          ? 24
+                          : isSmallScreen
+                          ? 18
+                          : 20,
                     ),
                   ),
                 ],
@@ -1741,19 +2038,61 @@ class _CourseContentPageState extends State<CourseContentPage> {
                 ),
                 child: ListTile(
                   contentPadding: EdgeInsets.symmetric(
-                    horizontal: isTablet ? 20 : 16,
-                    vertical: isTablet ? 12 : 8,
+                    horizontal: isLargeDesktop
+                        ? 24
+                        : isDesktop
+                        ? 22
+                        : isTablet
+                        ? 20
+                        : isSmallScreen
+                        ? 12
+                        : 16,
+                    vertical: isLargeDesktop
+                        ? 16
+                        : isDesktop
+                        ? 14
+                        : isTablet
+                        ? 12
+                        : isSmallScreen
+                        ? 6
+                        : 8,
                   ),
                   leading: Container(
-                    width: isTablet ? 40 : 32,
-                    height: isTablet ? 40 : 32,
+                    width: isLargeDesktop
+                        ? 56
+                        : isDesktop
+                        ? 48
+                        : isTablet
+                        ? 40
+                        : isSmallScreen
+                        ? 28
+                        : 32,
+                    height: isLargeDesktop
+                        ? 56
+                        : isDesktop
+                        ? 48
+                        : isTablet
+                        ? 40
+                        : isSmallScreen
+                        ? 28
+                        : 32,
                     decoration: BoxDecoration(
                       color: isLocked
                           ? Colors.grey[300]
                           : isSelected
                           ? const Color(0xFF6B5FFF)
                           : Colors.grey[200],
-                      borderRadius: BorderRadius.circular(isTablet ? 8 : 6),
+                      borderRadius: BorderRadius.circular(
+                        isLargeDesktop
+                            ? 12
+                            : isDesktop
+                            ? 10
+                            : isTablet
+                            ? 8
+                            : isSmallScreen
+                            ? 5
+                            : 6,
+                      ),
                     ),
                     child: Icon(
                       isLocked
@@ -1766,7 +2105,15 @@ class _CourseContentPageState extends State<CourseContentPage> {
                           : isSelected
                           ? Colors.white
                           : Colors.grey[600],
-                      size: isTablet ? 20 : 16,
+                      size: isLargeDesktop
+                          ? 28
+                          : isDesktop
+                          ? 24
+                          : isTablet
+                          ? 20
+                          : isSmallScreen
+                          ? 14
+                          : 16,
                     ),
                   ),
                   title: Text(
@@ -1780,67 +2127,189 @@ class _CourseContentPageState extends State<CourseContentPage> {
                           : isSelected
                           ? const Color(0xFF6B5FFF)
                           : Colors.black87,
-                      fontSize: isTablet ? 16 : 14,
+                      fontSize: isLargeDesktop
+                          ? 20
+                          : isDesktop
+                          ? 18
+                          : isTablet
+                          ? 16
+                          : isSmallScreen
+                          ? 12
+                          : 14,
                     ),
-                    maxLines: isTablet ? 3 : 2,
+                    maxLines: isLargeDesktop || isDesktop
+                        ? 4
+                        : isTablet
+                        ? 3
+                        : 2,
                     overflow: TextOverflow.ellipsis,
                   ),
                   subtitle: Row(
                     children: [
                       Icon(
                         Icons.access_time,
-                        size: isTablet ? 14 : 12,
+                        size: isLargeDesktop
+                            ? 18
+                            : isDesktop
+                            ? 16
+                            : isTablet
+                            ? 14
+                            : isSmallScreen
+                            ? 10
+                            : 12,
                         color: Colors.grey[500],
                       ),
-                      SizedBox(width: isTablet ? 6 : 4),
+                      SizedBox(
+                        width: isLargeDesktop
+                            ? 8
+                            : isDesktop
+                            ? 7
+                            : isTablet
+                            ? 6
+                            : isSmallScreen
+                            ? 3
+                            : 4,
+                      ),
                       Text(
                         _formatDuration(lecture['duration']),
                         style: TextStyle(
-                          fontSize: isTablet ? 14 : 12,
+                          fontSize: isLargeDesktop
+                              ? 16
+                              : isDesktop
+                              ? 15
+                              : isTablet
+                              ? 14
+                              : isSmallScreen
+                              ? 10
+                              : 12,
                           color: Colors.grey[500],
                         ),
                       ),
                       if (isPreview) ...[
-                        SizedBox(width: isTablet ? 10 : 8),
+                        SizedBox(
+                          width: isLargeDesktop
+                              ? 12
+                              : isDesktop
+                              ? 11
+                              : isTablet
+                              ? 10
+                              : isSmallScreen
+                              ? 6
+                              : 8,
+                        ),
                         Container(
                           padding: EdgeInsets.symmetric(
-                            horizontal: isTablet ? 8 : 6,
-                            vertical: isTablet ? 3 : 2,
+                            horizontal: isLargeDesktop
+                                ? 10
+                                : isDesktop
+                                ? 9
+                                : isTablet
+                                ? 8
+                                : isSmallScreen
+                                ? 5
+                                : 6,
+                            vertical: isLargeDesktop
+                                ? 4
+                                : isDesktop
+                                ? 3.5
+                                : isTablet
+                                ? 3
+                                : isSmallScreen
+                                ? 1.5
+                                : 2,
                           ),
                           decoration: BoxDecoration(
                             color: Colors.orange,
                             borderRadius: BorderRadius.circular(
-                              isTablet ? 8 : 6,
+                              isLargeDesktop
+                                  ? 10
+                                  : isDesktop
+                                  ? 9
+                                  : isTablet
+                                  ? 8
+                                  : isSmallScreen
+                                  ? 5
+                                  : 6,
                             ),
                           ),
                           child: Text(
                             'Preview',
                             style: TextStyle(
                               color: Colors.white,
-                              fontSize: isTablet ? 12 : 10,
+                              fontSize: isLargeDesktop
+                                  ? 14
+                                  : isDesktop
+                                  ? 13
+                                  : isTablet
+                                  ? 12
+                                  : isSmallScreen
+                                  ? 8
+                                  : 10,
                               fontWeight: FontWeight.w600,
                             ),
                           ),
                         ),
                       ],
                       if (isLocked) ...[
-                        SizedBox(width: isTablet ? 10 : 8),
+                        SizedBox(
+                          width: isLargeDesktop
+                              ? 12
+                              : isDesktop
+                              ? 11
+                              : isTablet
+                              ? 10
+                              : isSmallScreen
+                              ? 6
+                              : 8,
+                        ),
                         Container(
                           padding: EdgeInsets.symmetric(
-                            horizontal: isTablet ? 8 : 6,
-                            vertical: isTablet ? 3 : 2,
+                            horizontal: isLargeDesktop
+                                ? 10
+                                : isDesktop
+                                ? 9
+                                : isTablet
+                                ? 8
+                                : isSmallScreen
+                                ? 5
+                                : 6,
+                            vertical: isLargeDesktop
+                                ? 4
+                                : isDesktop
+                                ? 3.5
+                                : isTablet
+                                ? 3
+                                : isSmallScreen
+                                ? 1.5
+                                : 2,
                           ),
                           decoration: BoxDecoration(
                             color: Colors.grey[600],
                             borderRadius: BorderRadius.circular(
-                              isTablet ? 8 : 6,
+                              isLargeDesktop
+                                  ? 10
+                                  : isDesktop
+                                  ? 9
+                                  : isTablet
+                                  ? 8
+                                  : isSmallScreen
+                                  ? 5
+                                  : 6,
                             ),
                           ),
                           child: Text(
                             'Locked',
                             style: TextStyle(
                               color: Colors.white,
-                              fontSize: isTablet ? 12 : 10,
+                              fontSize: isLargeDesktop
+                                  ? 14
+                                  : isDesktop
+                                  ? 13
+                                  : isTablet
+                                  ? 12
+                                  : isSmallScreen
+                                  ? 8
+                                  : 10,
                               fontWeight: FontWeight.w600,
                             ),
                           ),

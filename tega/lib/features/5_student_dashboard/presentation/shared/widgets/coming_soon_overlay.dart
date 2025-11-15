@@ -189,27 +189,99 @@ class LockedNavItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Responsive breakpoints
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isTablet = screenWidth >= 600;
+    final isDesktop = screenWidth >= 1024;
+    final isLargeDesktop = screenWidth >= 1440;
+    final isSmallScreen = screenWidth < 400;
+
+    // Responsive sizing
+    final borderRadius = isLargeDesktop
+        ? 14.0
+        : isDesktop
+            ? 12.0
+            : isTablet
+                ? 11.0
+                : 10.0;
+    
+    final padding = isLargeDesktop
+        ? const EdgeInsets.symmetric(horizontal: 18, vertical: 14)
+        : isDesktop
+            ? const EdgeInsets.symmetric(horizontal: 16, vertical: 12)
+            : isTablet
+                ? const EdgeInsets.symmetric(horizontal: 14, vertical: 11)
+                : const EdgeInsets.symmetric(horizontal: 12, vertical: 10);
+    
+    final iconPadding = isLargeDesktop
+        ? 9.0
+        : isDesktop
+            ? 8.0
+            : isTablet
+                ? 7.5
+                : 7.0;
+    
+    final iconSize = isLargeDesktop
+        ? 22.0
+        : isDesktop
+            ? 20.0
+            : isTablet
+                ? 19.0
+                : 18.0;
+    
+    final lockIconSize = isLargeDesktop
+        ? 12.0
+        : isDesktop
+            ? 10.0
+            : isTablet
+                ? 9.5
+                : 9.0;
+    
+    final titleFontSize = isLargeDesktop
+        ? 15.0
+        : isDesktop
+            ? 14.0
+            : isTablet
+                ? 13.5
+                : 13.0;
+    
+    final descriptionFontSize = isLargeDesktop
+        ? 13.0
+        : isDesktop
+            ? 12.0
+            : isTablet
+                ? 11.5
+                : 11.0;
+    
+    final soonBadgeFontSize = isLargeDesktop
+        ? 11.0
+        : isDesktop
+            ? 10.0
+            : isTablet
+                ? 9.5
+                : 9.0;
+
     return Material(
       color: Colors.transparent,
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(borderRadius),
       child: InkWell(
         onTap:
             onTap ??
             () {
               _showComingSoonDialog(context);
             },
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(borderRadius),
         splashColor: primaryColor.withOpacity(0.2),
         highlightColor: primaryColor.withOpacity(0.2),
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          padding: padding,
           child: Row(
             children: [
               // Icon with lock overlay
               Stack(
                 children: [
                   Container(
-                    padding: const EdgeInsets.all(8),
+                    padding: EdgeInsets.all(iconPadding),
                     decoration: BoxDecoration(
                       color: primaryColor.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(8),
@@ -217,29 +289,29 @@ class LockedNavItem extends StatelessWidget {
                     child: Icon(
                       icon,
                       color: primaryColor.withOpacity(0.6),
-                      size: 20,
+                      size: iconSize,
                     ),
                   ),
                   Positioned(
                     top: 0,
                     right: 0,
                     child: Container(
-                      padding: const EdgeInsets.all(2),
+                      padding: EdgeInsets.all(isSmallScreen ? 1.5 : 2),
                       decoration: BoxDecoration(
                         color: Colors.grey[600],
                         shape: BoxShape.circle,
                       ),
-                      child: const Icon(
+                      child: Icon(
                         Icons.lock,
                         color: Colors.white,
-                        size: 10,
+                        size: lockIconSize,
                       ),
                     ),
                   ),
                 ],
               ),
 
-              const SizedBox(width: 12),
+              SizedBox(width: isSmallScreen ? 10 : 12),
 
               // Title and description
               Expanded(
@@ -248,19 +320,23 @@ class LockedNavItem extends StatelessWidget {
                   children: [
                     Row(
                       children: [
-                        Text(
-                          title,
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.grey[700],
+                        Flexible(
+                          child: Text(
+                            title,
+                            style: TextStyle(
+                              fontSize: titleFontSize,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.grey[700],
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ),
-                        const SizedBox(width: 8),
+                        SizedBox(width: isSmallScreen ? 6 : 8),
                         Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 6,
-                            vertical: 2,
+                          padding: EdgeInsets.symmetric(
+                            horizontal: isSmallScreen ? 5 : 6,
+                            vertical: isSmallScreen ? 1.5 : 2,
                           ),
                           decoration: BoxDecoration(
                             color: primaryColor.withOpacity(0.1),
@@ -269,7 +345,7 @@ class LockedNavItem extends StatelessWidget {
                           child: Text(
                             'Soon',
                             style: TextStyle(
-                              fontSize: 10,
+                              fontSize: soonBadgeFontSize,
                               fontWeight: FontWeight.w600,
                               color: primaryColor,
                             ),
@@ -277,10 +353,18 @@ class LockedNavItem extends StatelessWidget {
                         ),
                       ],
                     ),
-                    Text(
-                      description,
-                      style: TextStyle(fontSize: 12, color: Colors.grey[500]),
-                    ),
+                    if (!isSmallScreen) ...[
+                      SizedBox(height: isLargeDesktop ? 4 : 3),
+                      Text(
+                        description,
+                        style: TextStyle(
+                          fontSize: descriptionFontSize,
+                          color: Colors.grey[500],
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
                   ],
                 ),
               ),

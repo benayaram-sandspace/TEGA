@@ -171,7 +171,7 @@ class _QuickActionsState extends State<QuickActions>
                       ),
                       // Content
                       Padding(
-                        padding: const EdgeInsets.all(16),
+                        padding: const EdgeInsets.all(12),
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -183,11 +183,11 @@ class _QuickActionsState extends State<QuickActions>
                               children: [
                                 AnimatedContainer(
                                   duration: const Duration(milliseconds: 300),
-                                  width: isHovered ? 44 : 40,
-                                  height: isHovered ? 44 : 40,
+                                  width: isHovered ? 40 : 36,
+                                  height: isHovered ? 40 : 36,
                                   decoration: BoxDecoration(
                                     color: Colors.white,
-                                    borderRadius: BorderRadius.circular(12),
+                                    borderRadius: BorderRadius.circular(10),
                                     boxShadow: [
                                       BoxShadow(
                                         color: Colors.black.withOpacity(0.1),
@@ -203,33 +203,33 @@ class _QuickActionsState extends State<QuickActions>
                                         icon,
                                         key: ValueKey(isHovered),
                                         color: color,
-                                        size: isHovered ? 22 : 20,
+                                        size: isHovered ? 20 : 18,
                                       ),
                                     ),
                                   ),
                                 ),
                                 Container(
                                   padding: const EdgeInsets.symmetric(
-                                    horizontal: 6,
-                                    vertical: 3,
+                                    horizontal: 5,
+                                    vertical: 2,
                                   ),
                                   decoration: BoxDecoration(
                                     color: Colors.white,
-                                    borderRadius: BorderRadius.circular(12),
+                                    borderRadius: BorderRadius.circular(10),
                                   ),
                                   child: Row(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
                                       Icon(
                                         Icons.arrow_upward_rounded,
-                                        size: 10,
+                                        size: 9,
                                         color: color,
                                       ),
                                       const SizedBox(width: 2),
                                       Text(
                                         _getTrendPercentage(index),
                                         style: TextStyle(
-                                          fontSize: 11,
+                                          fontSize: 10,
                                           fontWeight: FontWeight.w600,
                                           color: color,
                                         ),
@@ -239,13 +239,13 @@ class _QuickActionsState extends State<QuickActions>
                                 ),
                               ],
                             ),
-                            const SizedBox(height: 12),
+                            const SizedBox(height: 8),
                             Flexible(
                               child: Text(
                                 value.toString(),
                                 style: TextStyle(
                                   color: Colors.white,
-                                  fontSize: isHovered ? 28 : 26,
+                                  fontSize: isHovered ? 24 : 22,
                                   fontWeight: FontWeight.bold,
                                   height: 1.1,
                                   shadows: [
@@ -266,7 +266,7 @@ class _QuickActionsState extends State<QuickActions>
                                 title,
                                 style: TextStyle(
                                   color: Colors.white.withOpacity(0.9),
-                                  fontSize: isHovered ? 12 : 11,
+                                  fontSize: isHovered ? 11 : 10,
                                   fontWeight: FontWeight.w500,
                                   shadows: [
                                     Shadow(
@@ -280,12 +280,12 @@ class _QuickActionsState extends State<QuickActions>
                                 overflow: TextOverflow.ellipsis,
                               ),
                             ),
-                            const SizedBox(height: 8),
+                            const SizedBox(height: 6),
                             ClipRRect(
                               borderRadius: BorderRadius.circular(4),
                               child: LinearProgressIndicator(
                                 value: _calculateProgress(value, title),
-                                minHeight: 4,
+                                minHeight: 3,
                                 backgroundColor: Colors.white.withOpacity(0.2),
                                 valueColor: AlwaysStoppedAnimation<Color>(
                                   Colors.white.withOpacity(0.6),
@@ -384,11 +384,12 @@ class _QuickActionsState extends State<QuickActions>
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
-    final horizontalPadding = 24.0;
-    final spacing = 14.0;
+    final isMobile = screenWidth < 600;
+    final horizontalPadding = isMobile ? 16.0 : 24.0;
+    final spacing = isMobile ? 12.0 : 14.0;
     final availableWidth = screenWidth - (horizontalPadding * 2);
     final cardWidth = (availableWidth - spacing) / 2;
-    final cardHeight = cardWidth * 1.0; // Increased height to accommodate content
+    final cardHeight = cardWidth * 0.75; // Reduced height for more compact cards
 
     final stats = [
       {
@@ -417,10 +418,10 @@ class _QuickActionsState extends State<QuickActions>
       },
     ];
 
+    // 2x2 Grid for all screen sizes
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // 2x2 Grid with refined layout
         SizedBox(
           height: cardHeight * 2 + spacing,
           child: Column(

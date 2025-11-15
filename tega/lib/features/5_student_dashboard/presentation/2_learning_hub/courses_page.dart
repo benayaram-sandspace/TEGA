@@ -1,7 +1,11 @@
+import 'dart:io';
+import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:tega/features/1_authentication/data/auth_repository.dart';
 import 'package:tega/features/5_student_dashboard/data/student_dashboard_service.dart';
 import 'package:tega/features/5_student_dashboard/presentation/2_learning_hub/course_content_page.dart';
+import 'package:tega/core/services/courses_cache_service.dart';
 
 class CoursesPage extends StatefulWidget {
   const CoursesPage({super.key});
@@ -13,25 +17,12 @@ class CoursesPage extends StatefulWidget {
 class _CoursesPageState extends State<CoursesPage>
     with AutomaticKeepAliveClientMixin {
   final TextEditingController _searchController = TextEditingController();
-  String _selectedFilter = 'All Courses';
   List<Map<String, dynamic>> _courses = [];
   List<Map<String, dynamic>> _filteredCourses = [];
   bool _isLoading = true;
   String? _errorMessage;
   bool _hasEnrolledCourses = false;
-
-  final List<String> _filterOptions = [
-    'All Courses',
-    'Ongoing Courses',
-    'Programming Language',
-    'Web Technologies',
-    'Microsoft Office',
-    'Full Stack Development',
-    'Artificial Intelligence',
-    'Cloud Computing',
-    'Cyber Security',
-    'Personality Development',
-  ];
+  final CoursesCacheService _cacheService = CoursesCacheService();
 
   @override
   bool get wantKeepAlive => true;
@@ -39,7 +30,22 @@ class _CoursesPageState extends State<CoursesPage>
   @override
   void initState() {
     super.initState();
+    _initializeCache();
     _loadCourses();
+  }
+
+  Future<void> _initializeCache() async {
+    await _cacheService.initialize();
+  }
+
+  bool _isNoInternetError(dynamic error) {
+    return error is SocketException ||
+        error is TimeoutException ||
+        (error.toString().toLowerCase().contains('network') ||
+            error.toString().toLowerCase().contains('connection') ||
+            error.toString().toLowerCase().contains('internet') ||
+            error.toString().toLowerCase().contains('failed host lookup') ||
+            error.toString().toLowerCase().contains('no address associated with hostname'));
   }
 
   @override
@@ -48,14 +54,43 @@ class _CoursesPageState extends State<CoursesPage>
     super.dispose();
   }
 
-  Future<void> _loadCourses() async {
-    if (!mounted) return;
+  Future<void> _loadCourses({bool forceRefresh = false}) async {
+    // If force refresh, clear cache first
+    if (forceRefresh) {
+      await _cacheService.clearCache();
+    }
 
-    setState(() {
-      _isLoading = true;
-      _errorMessage = null;
-    });
+    // First, try to load from cache
+    final cachedData = await _cacheService.getAllCachedData();
 
+    if (cachedData != null && !forceRefresh) {
+      // Cache is valid, use cached data immediately
+      if (!mounted) return;
+      _processCoursesData(
+        cachedData['allCourses'] as List<dynamic>,
+        cachedData['enrolledCourses'] as List<dynamic>,
+      );
+      setState(() {
+        _isLoading = false;
+        _errorMessage = null;
+      });
+    } else if (forceRefresh) {
+      // Force refresh: show loading state
+      if (!mounted) return;
+      setState(() {
+        _isLoading = true;
+        _errorMessage = null;
+      });
+    } else {
+      // No cache, show loading
+      if (!mounted) return;
+      setState(() {
+        _isLoading = true;
+        _errorMessage = null;
+      });
+    }
+
+    // Fetch fresh data from API (in background if cache exists)
     try {
       final authService = AuthService();
       final headers = authService.getAuthHeaders();
@@ -70,22 +105,61 @@ class _CoursesPageState extends State<CoursesPage>
         headers,
       );
 
-      // Create a set of enrolled course IDs for quick lookup
-      final enrolledCourseIds = <String>{};
-      for (var enrolledCourse in enrolledCourses) {
-        final courseId = enrolledCourse['id']?.toString() ?? 
-                        enrolledCourse['courseId']?.toString() ?? 
-                        enrolledCourse['_id']?.toString() ?? '';
-        if (courseId.isNotEmpty) {
-          enrolledCourseIds.add(courseId);
+      // Update cache with fresh data
+      await _cacheService.setAllData(
+        allCourses: allCourses,
+        enrolledCourses: enrolledCourses,
+      );
+
+      if (!mounted) return;
+      _processCoursesData(allCourses, enrolledCourses);
+      setState(() {
+        _isLoading = false;
+        _errorMessage = null;
+      });
+    } catch (e) {
+      // If API call fails and we have no cache, show error state
+      if (!mounted) return;
+      if (cachedData == null || forceRefresh) {
+        // Check if it's a network/internet error
+        if (_isNoInternetError(e)) {
+          setState(() {
+            _errorMessage = 'No internet connection';
+            _courses = [];
+            _filteredCourses = [];
+            _isLoading = false;
+          });
+        } else {
+          setState(() {
+            _errorMessage = 'Unable to load courses. Please try again.';
+            _courses = [];
+            _filteredCourses = [];
+            _isLoading = false;
+          });
         }
       }
+      // If we have cached data, keep showing it even if API fails
+    }
+  }
 
-      _hasEnrolledCourses = enrolledCourseIds.isNotEmpty;
+  void _processCoursesData(List<dynamic> allCourses, List<dynamic> enrolledCourses) {
 
-      // Transform all courses and mark which ones are enrolled
-      // Backend provides: Real-time course structure with modules and lectures
-      _courses = allCourses.map<Map<String, dynamic>>((course) {
+    // Create a set of enrolled course IDs for quick lookup
+    final enrolledCourseIds = <String>{};
+    for (var enrolledCourse in enrolledCourses) {
+      final courseId = enrolledCourse['id']?.toString() ?? 
+                      enrolledCourse['courseId']?.toString() ?? 
+                      enrolledCourse['_id']?.toString() ?? '';
+      if (courseId.isNotEmpty) {
+        enrolledCourseIds.add(courseId);
+      }
+    }
+
+    _hasEnrolledCourses = enrolledCourseIds.isNotEmpty;
+
+    // Transform all courses and mark which ones are enrolled
+    // Backend provides: Real-time course structure with modules and lectures
+    _courses = allCourses.map<Map<String, dynamic>>((course) {
         final courseId = course['_id']?.toString() ?? course['id']?.toString() ?? '';
         final isEnrolled = enrolledCourseIds.contains(courseId);
 
@@ -133,243 +207,356 @@ class _CoursesPageState extends State<CoursesPage>
           'modules':
               course['modules'] ??
               [], // Store full modules for video navigation
-          'isEnrolled': isEnrolled, // Add enrollment status
-        };
-      }).toList();
+      'isEnrolled': isEnrolled, // Add enrollment status
+    };
+    }).toList();
 
-      if (mounted) {
-        setState(() {
-          _filteredCourses = List.from(_courses);
-          _errorMessage = null;
-        });
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          _errorMessage = 'Unable to load courses. Please try again.';
-          _courses = [];
-          _filteredCourses = [];
-        });
-      }
-    } finally {
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
+    if (mounted) {
+      setState(() {
+        _filteredCourses = List.from(_courses);
+        _errorMessage = null;
+      });
     }
+  }
+
+  /// Refresh courses data (force fetch from API)
+  Future<void> refreshCourses() async {
+    await _loadCourses(forceRefresh: true);
   }
 
   void _filterCourses() {
     setState(() {
       String searchQuery = _searchController.text.toLowerCase();
-      _filteredCourses = _courses.where((course) {
-        bool matchesSearch =
-            (course['title']?.toString() ?? '').toLowerCase().contains(
-              searchQuery,
-            ) ||
-            (course['createdBy']?.toString() ?? '').toLowerCase().contains(
-              searchQuery,
-            );
-
-        bool matchesFilter =
-            _selectedFilter == 'All Courses' ||
-            (_selectedFilter == 'Ongoing Courses' &&
-                (course['progress'] ?? 0) > 0) ||
-            (course['category']?.toString() ?? '') == _selectedFilter;
-
-        return matchesSearch && matchesFilter;
-      }).toList();
+      if (searchQuery.isEmpty) {
+        _filteredCourses = List.from(_courses);
+      } else {
+        _filteredCourses = _courses.where((course) {
+          return (course['title']?.toString() ?? '').toLowerCase().contains(
+                searchQuery,
+              ) ||
+              (course['createdBy']?.toString() ?? '').toLowerCase().contains(
+                searchQuery,
+              ) ||
+              (course['category']?.toString() ?? '').toLowerCase().contains(
+                searchQuery,
+              ) ||
+              (course['description']?.toString() ?? '').toLowerCase().contains(
+                searchQuery,
+              );
+        }).toList();
+      }
     });
   }
+
+  // Responsive breakpoints
+  static const double mobileBreakpoint = 600;
+  static const double tabletBreakpoint = 1024;
+  static const double desktopBreakpoint = 1440;
+
+  // Responsive getters
+  bool get isMobile => MediaQuery.of(context).size.width < mobileBreakpoint;
+  bool get isTablet =>
+      MediaQuery.of(context).size.width >= mobileBreakpoint &&
+      MediaQuery.of(context).size.width < tabletBreakpoint;
+  bool get isDesktop =>
+      MediaQuery.of(context).size.width >= tabletBreakpoint &&
+      MediaQuery.of(context).size.width < desktopBreakpoint;
+  bool get isLargeDesktop =>
+      MediaQuery.of(context).size.width >= desktopBreakpoint;
+  bool get isSmallScreen => MediaQuery.of(context).size.width < 400;
+  bool get isLandscape =>
+      MediaQuery.of(context).size.width > MediaQuery.of(context).size.height;
 
   @override
   Widget build(BuildContext context) {
     super.build(context);
-    final screenWidth = MediaQuery.of(context).size.width;
-    final isTablet = screenWidth >= 600;
-    final isDesktop = screenWidth >= 1024;
 
-    return Stack(
-      children: [
-        Column(
-          children: [
-            Padding(
-              padding: EdgeInsets.all(
-                isDesktop
-                    ? 24.0
-                    : isTablet
-                    ? 20.0
-                    : 16.0,
-              ),
-              child: Column(children: [_buildSearchAndFilters(screenWidth)]),
-            ),
-            Expanded(
-              child: _isLoading
-                  ? _buildLoadingState()
-                  : _errorMessage != null
-                  ? _buildErrorState()
-                  : _filteredCourses.isEmpty
-                  ? _buildEmptyState()
-                  : _buildCoursesList(screenWidth),
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-
-  Widget _buildSearchAndFilters(double screenWidth) {
-    final isTablet = screenWidth >= 600;
-    final isDesktop = screenWidth >= 1024;
-
-    return Column(
-      children: [
-        // Search Bar
-        TextField(
-          controller: _searchController,
-          onChanged: (_) => _filterCourses(),
-          style: TextStyle(fontSize: isDesktop ? 16 : 14),
-          decoration: InputDecoration(
-            hintText: 'Search courses...',
-            hintStyle: TextStyle(
-              color: Colors.grey[400],
-              fontSize: isDesktop ? 16 : 14,
-            ),
-            prefixIcon: Icon(
-              Icons.search,
-              color: const Color(0xFF6B5FFF),
-              size: isDesktop ? 24 : 20,
-            ),
-            filled: true,
-            fillColor: Colors.white,
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(isDesktop ? 14 : 12),
-              borderSide: BorderSide.none,
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(isDesktop ? 14 : 12),
-              borderSide: BorderSide(color: Colors.grey[200]!),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(isDesktop ? 14 : 12),
-              borderSide: const BorderSide(color: Color(0xFF6B5FFF), width: 2),
-            ),
-            contentPadding: EdgeInsets.symmetric(
-              horizontal: isDesktop ? 20 : 16,
-              vertical: isDesktop ? 16 : 14,
-            ),
-          ),
-        ),
-        SizedBox(height: isDesktop ? 16 : 14),
-        // Filter Chips
-        SizedBox(
-          height: isDesktop
-              ? 44
-              : isTablet
-              ? 42
-              : 40,
-          child: ListView.builder(
-            scrollDirection: Axis.horizontal,
-            itemCount: _filterOptions.length,
-            itemBuilder: (context, index) {
-              final filter = _filterOptions[index];
-              final isSelected = _selectedFilter == filter;
-              return Padding(
-                padding: EdgeInsets.only(right: isDesktop ? 10 : 8),
-                child: FilterChip(
-                  label: Text(filter),
-                  selected: isSelected,
-                  onSelected: (selected) {
-                    setState(() {
-                      _selectedFilter = filter;
-                      _filterCourses();
-                    });
-                  },
-                  backgroundColor: Colors.white,
-                  selectedColor: const Color(0xFF6B5FFF),
-                  labelStyle: TextStyle(
-                    fontSize: isDesktop ? 14 : 13,
-                    color: isSelected ? Colors.white : Colors.grey[700],
-                    fontWeight: isSelected
-                        ? FontWeight.w600
-                        : FontWeight.normal,
-                  ),
-                  side: BorderSide(
-                    color: isSelected
-                        ? const Color(0xFF6B5FFF)
-                        : Colors.grey[300]!,
-                    width: 1.5,
-                  ),
-                  padding: EdgeInsets.symmetric(
-                    horizontal: isDesktop ? 16 : 12,
-                    vertical: isDesktop ? 10 : 8,
-                  ),
+    return RepaintBoundary(
+      child: Stack(
+        children: [
+          Column(
+            children: [
+              Padding(
+                padding: EdgeInsets.all(
+                  isLargeDesktop
+                      ? 32.0
+                      : isDesktop
+                      ? 24.0
+                      : isTablet
+                      ? 20.0
+                      : isSmallScreen
+                      ? 12.0
+                      : 16.0,
                 ),
-              );
-            },
+                child: _buildSearchBar(),
+              ),
+              Expanded(
+                child: _isLoading
+                    ? _buildLoadingState()
+                    : _errorMessage != null
+                    ? _buildErrorState()
+                    : _filteredCourses.isEmpty
+                    ? _buildEmptyState()
+                    : _buildCoursesList(),
+              ),
+            ],
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
-  Widget _buildCoursesList(double screenWidth) {
-    final isTablet = screenWidth >= 600;
-    final isDesktop = screenWidth >= 1024;
-
-    return ListView.builder(
-      padding: EdgeInsets.symmetric(
-        horizontal: isDesktop
-            ? 24
+  Widget _buildSearchBar() {
+    return TextField(
+      controller: _searchController,
+      onChanged: (_) => _filterCourses(),
+      style: TextStyle(
+        fontSize: isLargeDesktop
+            ? 18
+            : isDesktop
+            ? 16
             : isTablet
-            ? 20
-            : 16,
-        vertical: isDesktop ? 12 : 8,
+            ? 15
+            : isSmallScreen
+            ? 13
+            : 14,
       ),
-      itemCount: _filteredCourses.length,
-      itemBuilder: (context, index) {
-        final course = _filteredCourses[index];
-        return _buildCourseCard(course, index, screenWidth);
-      },
+      decoration: InputDecoration(
+        hintText: 'Search courses...',
+        hintStyle: TextStyle(
+          color: Colors.grey[400],
+          fontSize: isLargeDesktop
+              ? 18
+              : isDesktop
+              ? 16
+              : isTablet
+              ? 15
+              : isSmallScreen
+              ? 13
+              : 14,
+        ),
+        prefixIcon: Icon(
+          Icons.search,
+          color: const Color(0xFF6B5FFF),
+          size: isLargeDesktop
+              ? 28
+              : isDesktop
+              ? 24
+              : isTablet
+              ? 22
+              : 20,
+        ),
+        filled: true,
+        fillColor: Colors.white,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(
+            isLargeDesktop
+                ? 16
+                : isDesktop
+                ? 14
+                : isTablet
+                ? 13
+                : 12,
+          ),
+          borderSide: BorderSide.none,
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(
+            isLargeDesktop
+                ? 16
+                : isDesktop
+                ? 14
+                : isTablet
+                ? 13
+                : 12,
+          ),
+          borderSide: BorderSide(color: Colors.grey[200]!),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(
+            isLargeDesktop
+                ? 16
+                : isDesktop
+                ? 14
+                : isTablet
+                ? 13
+                : 12,
+          ),
+          borderSide: const BorderSide(color: Color(0xFF6B5FFF), width: 2),
+        ),
+        contentPadding: EdgeInsets.symmetric(
+          horizontal: isLargeDesktop
+              ? 24
+              : isDesktop
+              ? 20
+              : isTablet
+              ? 18
+              : isSmallScreen
+              ? 12
+              : 16,
+          vertical: isLargeDesktop
+              ? 20
+              : isDesktop
+              ? 16
+              : isTablet
+              ? 15
+              : isSmallScreen
+              ? 12
+              : 14,
+        ),
+      ),
     );
+  }
+
+  Widget _buildCoursesList() {
+    // Use grid layout for desktop/large desktop, list for mobile/tablet
+    if (isLargeDesktop || (isDesktop && isLandscape)) {
+      return RepaintBoundary(
+        child: GridView.builder(
+          padding: EdgeInsets.symmetric(
+            horizontal: isLargeDesktop ? 32 : 24,
+            vertical: isLargeDesktop ? 16 : 12,
+          ),
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 3,
+            crossAxisSpacing: isLargeDesktop ? 24 : 20,
+            mainAxisSpacing: isLargeDesktop ? 24 : 20,
+            childAspectRatio: 0.75,
+          ),
+          itemCount: _filteredCourses.length,
+          cacheExtent: 500, // Cache more items for smooth scrolling
+          physics: const AlwaysScrollableScrollPhysics(
+            parent: BouncingScrollPhysics(),
+          ),
+          itemBuilder: (context, index) {
+            final course = _filteredCourses[index];
+            return _buildCourseCard(course, index);
+          },
+        ),
+      );
+    } else if (isDesktop || (isTablet && isLandscape)) {
+      return RepaintBoundary(
+        child: GridView.builder(
+          padding: EdgeInsets.symmetric(
+            horizontal: 24,
+            vertical: 12,
+          ),
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 2,
+            crossAxisSpacing: 20,
+            mainAxisSpacing: 20,
+            childAspectRatio: 0.8,
+          ),
+          itemCount: _filteredCourses.length,
+          cacheExtent: 500, // Cache more items for smooth scrolling
+          physics: const AlwaysScrollableScrollPhysics(
+            parent: BouncingScrollPhysics(),
+          ),
+          itemBuilder: (context, index) {
+            final course = _filteredCourses[index];
+            return _buildCourseCard(course, index);
+          },
+        ),
+      );
+    } else {
+      return RepaintBoundary(
+        child: ListView.builder(
+          padding: EdgeInsets.symmetric(
+            horizontal: isTablet ? 20 : isSmallScreen ? 12 : 16,
+            vertical: isTablet ? 12 : 8,
+          ),
+          itemCount: _filteredCourses.length,
+          cacheExtent: 500, // Cache more items for smooth scrolling
+          physics: const AlwaysScrollableScrollPhysics(
+            parent: BouncingScrollPhysics(),
+          ),
+          itemBuilder: (context, index) {
+            final course = _filteredCourses[index];
+            return _buildCourseCard(course, index);
+          },
+        ),
+      );
+    }
   }
 
   Widget _buildCourseCard(
     Map<String, dynamic> course,
     int index,
-    double screenWidth,
   ) {
-    final isTablet = screenWidth >= 600;
-    final isDesktop = screenWidth >= 1024;
-
-    return TweenAnimationBuilder<double>(
-      tween: Tween(begin: 0.0, end: 1.0),
-      duration: Duration(milliseconds: 300 + (index * 100)),
-      curve: Curves.easeOutCubic,
-      builder: (context, value, child) {
-        return Transform.translate(
-          offset: Offset(0, 20 * (1 - value)),
-          child: Opacity(
-            opacity: value,
-            child: Container(
+    return RepaintBoundary(
+      child: TweenAnimationBuilder<double>(
+        tween: Tween(begin: 0.0, end: 1.0),
+        duration: Duration(milliseconds: 300 + (index * 100)),
+        curve: Curves.easeOutCubic,
+        builder: (context, value, child) {
+          return Transform.translate(
+            offset: Offset(0, 20 * (1 - value)),
+            child: Opacity(
+              opacity: value,
+              child: Container(
               margin: EdgeInsets.only(
-                bottom: isDesktop ? 20 : 16,
-                left: isDesktop ? 4 : 0,
-                right: isDesktop ? 4 : 0,
+                bottom: isLargeDesktop
+                    ? 24
+                    : isDesktop
+                    ? 20
+                    : isTablet
+                    ? 18
+                    : 16,
+                left: (isLargeDesktop || isDesktop) ? 4 : 0,
+                right: (isLargeDesktop || isDesktop) ? 4 : 0,
               ),
               decoration: BoxDecoration(
                 color: Colors.white,
-                borderRadius: BorderRadius.circular(isDesktop ? 20 : 16),
+                borderRadius: BorderRadius.circular(
+                  isLargeDesktop
+                      ? 24
+                      : isDesktop
+                      ? 20
+                      : isTablet
+                      ? 18
+                      : 16,
+                ),
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black.withOpacity(0.08),
-                    blurRadius: isDesktop ? 20 : 15,
-                    offset: Offset(0, isDesktop ? 8 : 6),
+                    blurRadius: isLargeDesktop
+                        ? 24
+                        : isDesktop
+                        ? 20
+                        : isTablet
+                        ? 18
+                        : 15,
+                    offset: Offset(
+                      0,
+                      isLargeDesktop
+                          ? 10
+                          : isDesktop
+                          ? 8
+                          : isTablet
+                          ? 7
+                          : 6,
+                    ),
                     spreadRadius: 0,
                   ),
                   BoxShadow(
                     color: Colors.black.withOpacity(0.04),
-                    blurRadius: isDesktop ? 40 : 30,
-                    offset: Offset(0, isDesktop ? 16 : 12),
+                    blurRadius: isLargeDesktop
+                        ? 48
+                        : isDesktop
+                        ? 40
+                        : isTablet
+                        ? 35
+                        : 30,
+                    offset: Offset(
+                      0,
+                      isLargeDesktop
+                          ? 20
+                          : isDesktop
+                          ? 16
+                          : isTablet
+                          ? 14
+                          : 12,
+                    ),
                     spreadRadius: 0,
                   ),
                 ],
@@ -383,21 +570,49 @@ class _CoursesPageState extends State<CoursesPage>
                       builder: (context) => CourseContentPage(course: course),
                     ),
                   ),
-                  borderRadius: BorderRadius.circular(isDesktop ? 20 : 16),
+                  borderRadius: BorderRadius.circular(
+                    isLargeDesktop
+                        ? 24
+                        : isDesktop
+                        ? 20
+                        : isTablet
+                        ? 18
+                        : 16,
+                  ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       // Course Thumbnail
                       ClipRRect(
                         borderRadius: BorderRadius.only(
-                          topLeft: Radius.circular(isDesktop ? 20 : 16),
-                          topRight: Radius.circular(isDesktop ? 20 : 16),
+                          topLeft: Radius.circular(
+                            isLargeDesktop
+                                ? 24
+                                : isDesktop
+                                ? 20
+                                : isTablet
+                                ? 18
+                                : 16,
+                          ),
+                          topRight: Radius.circular(
+                            isLargeDesktop
+                                ? 24
+                                : isDesktop
+                                ? 20
+                                : isTablet
+                                ? 18
+                                : 16,
+                          ),
                         ),
                         child: Container(
-                          height: isDesktop
+                          height: isLargeDesktop
+                              ? 240
+                              : isDesktop
                               ? 200
                               : isTablet
                               ? 180
+                              : isSmallScreen
+                              ? 140
                               : 160,
                           width: double.infinity,
                           decoration: BoxDecoration(
@@ -415,12 +630,13 @@ class _CoursesPageState extends State<CoursesPage>
                               // Course Image
                               if (course['thumbnail'] != null &&
                                   course['thumbnail'].toString().isNotEmpty)
-                                Image.network(
-                                  course['thumbnail'].toString(),
+                                CachedNetworkImage(
+                                  imageUrl: course['thumbnail'].toString(),
                                   fit: BoxFit.cover,
                                   width: double.infinity,
                                   height: double.infinity,
-                                  errorBuilder: (context, error, stackTrace) =>
+                                  placeholder: (context, url) => _buildThumbnailPlaceholder(),
+                                  errorWidget: (context, url, error) =>
                                       _buildThumbnailPlaceholder(),
                                 )
                               else
@@ -435,7 +651,13 @@ class _CoursesPageState extends State<CoursesPage>
                                   child: Center(
                                     child: Container(
                                       padding: EdgeInsets.all(
-                                        isDesktop ? 16 : 14,
+                                        isLargeDesktop
+                                            ? 20
+                                            : isDesktop
+                                            ? 16
+                                            : isTablet
+                                            ? 15
+                                            : 14,
                                       ),
                                       decoration: BoxDecoration(
                                         color: Colors.white.withOpacity(0.9),
@@ -445,15 +667,32 @@ class _CoursesPageState extends State<CoursesPage>
                                             color: Colors.black.withOpacity(
                                               0.2,
                                             ),
-                                            blurRadius: 12,
-                                            offset: const Offset(0, 4),
+                                            blurRadius: isLargeDesktop
+                                                ? 16
+                                                : isDesktop
+                                                ? 12
+                                                : 10,
+                                            offset: Offset(
+                                              0,
+                                              isLargeDesktop
+                                                  ? 6
+                                                  : isDesktop
+                                                  ? 4
+                                                  : 3,
+                                            ),
                                           ),
                                         ],
                                       ),
                                       child: Icon(
                                         Icons.play_arrow_rounded,
                                         color: const Color(0xFF6B5FFF),
-                                        size: isDesktop ? 32 : 28,
+                                        size: isLargeDesktop
+                                            ? 40
+                                            : isDesktop
+                                            ? 32
+                                            : isTablet
+                                            ? 30
+                                            : 28,
                                       ),
                                     ),
                                   ),
@@ -466,7 +705,17 @@ class _CoursesPageState extends State<CoursesPage>
 
                       // Course Details
                       Padding(
-                        padding: EdgeInsets.all(isDesktop ? 20 : 16),
+                        padding: EdgeInsets.all(
+                          isLargeDesktop
+                              ? 24
+                              : isDesktop
+                              ? 20
+                              : isTablet
+                              ? 18
+                              : isSmallScreen
+                              ? 12
+                              : 16,
+                        ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -474,10 +723,14 @@ class _CoursesPageState extends State<CoursesPage>
                             Text(
                               course['title']?.toString() ?? 'Untitled Course',
                               style: TextStyle(
-                                fontSize: isDesktop
+                                fontSize: isLargeDesktop
+                                    ? 24
+                                    : isDesktop
                                     ? 22
                                     : isTablet
                                     ? 20
+                                    : isSmallScreen
+                                    ? 16
                                     : 18,
                                 fontWeight: FontWeight.w700,
                                 color: const Color(0xFF1A1A1A),
@@ -486,7 +739,15 @@ class _CoursesPageState extends State<CoursesPage>
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,
                             ),
-                            SizedBox(height: isDesktop ? 12 : 10),
+                            SizedBox(
+                              height: isLargeDesktop
+                                  ? 14
+                                  : isDesktop
+                                  ? 12
+                                  : isTablet
+                                  ? 11
+                                  : 10,
+                            ),
 
                             // Lecturer Name
                             Row(
@@ -510,7 +771,15 @@ class _CoursesPageState extends State<CoursesPage>
                                   child: Text(
                                     _getInstructorName(course),
                                     style: TextStyle(
-                                      fontSize: isDesktop ? 15 : 14,
+                                      fontSize: isLargeDesktop
+                                          ? 16
+                                          : isDesktop
+                                          ? 15
+                                          : isTablet
+                                          ? 14.5
+                                          : isSmallScreen
+                                          ? 12
+                                          : 14,
                                       color: Colors.grey[600],
                                       fontWeight: FontWeight.w500,
                                     ),
@@ -520,7 +789,15 @@ class _CoursesPageState extends State<CoursesPage>
                                 ),
                               ],
                             ),
-                            SizedBox(height: isDesktop ? 16 : 14),
+                            SizedBox(
+                              height: isLargeDesktop
+                                  ? 18
+                                  : isDesktop
+                                  ? 16
+                                  : isTablet
+                                  ? 15
+                                  : 14,
+                            ),
 
                             // Course Info Row
                             Row(
@@ -554,10 +831,18 @@ class _CoursesPageState extends State<CoursesPage>
                                 ),
                               ],
                             ),
-                            SizedBox(height: isDesktop ? 20 : 18),
+                            SizedBox(
+                              height: isLargeDesktop
+                                  ? 24
+                                  : isDesktop
+                                  ? 20
+                                  : isTablet
+                                  ? 18
+                                  : 16,
+                            ),
 
                             // Enroll Button
-                            _buildModernEnrollButton(course, isDesktop),
+                            _buildModernEnrollButton(course),
                           ],
                         ),
                       ),
@@ -569,6 +854,7 @@ class _CoursesPageState extends State<CoursesPage>
           ),
         );
       },
+      ),
     );
   }
 
@@ -596,20 +882,79 @@ class _CoursesPageState extends State<CoursesPage>
 
   Widget _buildModernInfoChip(IconData icon, String label, Color color) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      padding: EdgeInsets.symmetric(
+        horizontal: isLargeDesktop
+            ? 14
+            : isDesktop
+            ? 12
+            : isTablet
+            ? 11
+            : isSmallScreen
+            ? 8
+            : 10,
+        vertical: isLargeDesktop
+            ? 10
+            : isDesktop
+            ? 8
+            : isTablet
+            ? 7
+            : isSmallScreen
+            ? 6
+            : 7,
+      ),
       decoration: BoxDecoration(
         color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: color.withOpacity(0.2), width: 1),
+        borderRadius: BorderRadius.circular(
+          isLargeDesktop
+              ? 12
+              : isDesktop
+              ? 10
+              : isTablet
+              ? 9
+              : 8,
+        ),
+        border: Border.all(
+          color: color.withOpacity(0.2),
+          width: isLargeDesktop ? 1.5 : 1,
+        ),
       ),
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 16, color: color),
-          const SizedBox(height: 4),
+          Icon(
+            icon,
+            size: isLargeDesktop
+                ? 18
+                : isDesktop
+                ? 16
+                : isTablet
+                ? 15
+                : isSmallScreen
+                ? 12
+                : 14,
+            color: color,
+          ),
+          SizedBox(
+            height: isLargeDesktop
+                ? 6
+                : isDesktop
+                ? 4
+                : isTablet
+                ? 3
+                : 2,
+          ),
           Text(
             label,
             style: TextStyle(
-              fontSize: 11,
+              fontSize: isLargeDesktop
+                  ? 12
+                  : isDesktop
+                  ? 11
+                  : isTablet
+                  ? 10.5
+                  : isSmallScreen
+                  ? 9
+                  : 10,
               color: color,
               fontWeight: FontWeight.w600,
             ),
@@ -622,7 +967,7 @@ class _CoursesPageState extends State<CoursesPage>
     );
   }
 
-  Widget _buildModernEnrollButton(Map<String, dynamic> course, bool isDesktop) {
+  Widget _buildModernEnrollButton(Map<String, dynamic> course) {
     final hasPrice = course['price'] != null && course['price'] > 0;
     final isEnrolled = course['isEnrolled'] == true || course['isStarted'] == true;
 
@@ -646,7 +991,15 @@ class _CoursesPageState extends State<CoursesPage>
 
     return Container(
       width: double.infinity,
-      height: isDesktop ? 50 : 46,
+      height: isLargeDesktop
+          ? 56
+          : isDesktop
+          ? 50
+          : isTablet
+          ? 48
+          : isSmallScreen
+          ? 42
+          : 46,
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [buttonColor, buttonColor.withOpacity(0.8)],
@@ -676,7 +1029,15 @@ class _CoursesPageState extends State<CoursesPage>
                 Text(
                   buttonText,
                   style: TextStyle(
-                    fontSize: isDesktop ? 16 : 15,
+                    fontSize: isLargeDesktop
+                        ? 18
+                        : isDesktop
+                        ? 16
+                        : isTablet
+                        ? 15.5
+                        : isSmallScreen
+                        ? 13
+                        : 15,
                     fontWeight: FontWeight.w600,
                     color: Colors.white,
                   ),
@@ -781,14 +1142,31 @@ class _CoursesPageState extends State<CoursesPage>
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const CircularProgressIndicator(
+          CircularProgressIndicator(
             valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF6B5FFF)),
+            strokeWidth: isLargeDesktop ? 4 : isDesktop ? 3.5 : 3,
           ),
-          const SizedBox(height: 16),
+          SizedBox(
+            height: isLargeDesktop
+                ? 20
+                : isDesktop
+                ? 18
+                : isTablet
+                ? 16
+                : 14,
+          ),
           Text(
             'Loading courses...',
             style: TextStyle(
-              fontSize: 16,
+              fontSize: isLargeDesktop
+                  ? 18
+                  : isDesktop
+                  ? 16
+                  : isTablet
+                  ? 15
+                  : isSmallScreen
+                  ? 13
+                  : 14,
               color: Colors.grey[600],
               fontWeight: FontWeight.w500,
             ),
@@ -799,57 +1177,158 @@ class _CoursesPageState extends State<CoursesPage>
   }
 
   Widget _buildErrorState() {
+    final isNoInternet = _errorMessage == 'No internet connection';
+    
     return Center(
       child: SingleChildScrollView(
-        padding: const EdgeInsets.all(32.0),
+        padding: EdgeInsets.all(
+          isLargeDesktop
+              ? 40.0
+              : isDesktop
+              ? 32.0
+              : isTablet
+              ? 28.0
+              : isSmallScreen
+              ? 20.0
+              : 24.0,
+        ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           mainAxisSize: MainAxisSize.min,
           children: [
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: Colors.red.withOpacity(0.1),
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(
-                Icons.error_outline_rounded,
-                size: 56,
-                color: Colors.red,
-              ),
+            Icon(
+              Icons.cloud_off,
+              size: isLargeDesktop
+                  ? 64
+                  : isDesktop
+                  ? 56
+                  : isTablet
+                  ? 50
+                  : 44,
+              color: Colors.grey[400],
             ),
-            const SizedBox(height: 20),
-            const Text(
-              'Oops! Something went wrong',
+            SizedBox(
+              height: isLargeDesktop
+                  ? 24
+                  : isDesktop
+                  ? 20
+                  : isTablet
+                  ? 18
+                  : 16,
+            ),
+            Text(
+              isNoInternet ? 'No internet connection' : 'Oops! Something went wrong',
               style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w700,
-                color: Color(0xFF333333),
+                fontSize: isLargeDesktop
+                    ? 22
+                    : isDesktop
+                    ? 18
+                    : isTablet
+                    ? 17
+                    : isSmallScreen
+                    ? 15
+                    : 16,
+                fontWeight: FontWeight.bold,
+                color: Colors.grey[700],
               ),
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 10),
+            SizedBox(
+              height: isLargeDesktop
+                  ? 12
+                  : isDesktop
+                  ? 10
+                  : isTablet
+                  ? 9
+                  : 8,
+            ),
             Text(
-              _errorMessage ?? 'Unable to load courses',
-              style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+              isNoInternet 
+                  ? 'Please check your connection and try again'
+                  : (_errorMessage ?? 'Unable to load courses'),
+              style: TextStyle(
+                fontSize: isLargeDesktop
+                    ? 15
+                    : isDesktop
+                    ? 13
+                    : isTablet
+                    ? 12.5
+                    : isSmallScreen
+                    ? 11
+                    : 12,
+                color: Colors.grey[600],
+              ),
               textAlign: TextAlign.center,
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
             ),
-            const SizedBox(height: 24),
+            SizedBox(
+              height: isLargeDesktop
+                  ? 28
+                  : isDesktop
+                  ? 24
+                  : isTablet
+                  ? 22
+                  : 20,
+            ),
             ElevatedButton.icon(
-              onPressed: _loadCourses,
-              icon: const Icon(Icons.refresh_rounded, size: 20),
-              label: const Text('Retry'),
+              onPressed: () => refreshCourses(),
+              icon: Icon(
+                Icons.refresh_rounded,
+                size: isLargeDesktop
+                    ? 22
+                    : isDesktop
+                    ? 20
+                    : isTablet
+                    ? 19
+                    : 18,
+              ),
+              label: Text('Retry'),
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF6B5FFF),
                 foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 24,
-                  vertical: 14,
+                padding: EdgeInsets.symmetric(
+                  horizontal: isLargeDesktop
+                      ? 28
+                      : isDesktop
+                      ? 24
+                      : isTablet
+                      ? 22
+                      : isSmallScreen
+                      ? 18
+                      : 20,
+                  vertical: isLargeDesktop
+                      ? 16
+                      : isDesktop
+                      ? 14
+                      : isTablet
+                      ? 13
+                      : isSmallScreen
+                      ? 11
+                      : 12,
                 ),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(
+                    isLargeDesktop
+                        ? 14
+                        : isDesktop
+                        ? 12
+                        : isTablet
+                        ? 11
+                        : 10,
+                  ),
+                ),
+                textStyle: TextStyle(
+                  fontSize: isLargeDesktop
+                      ? 16
+                      : isDesktop
+                      ? 15
+                      : isTablet
+                      ? 14.5
+                      : isSmallScreen
+                      ? 12
+                      : 13,
+                  fontWeight: FontWeight.w600,
                 ),
               ),
             ),
@@ -860,63 +1339,165 @@ class _CoursesPageState extends State<CoursesPage>
   }
 
   Widget _buildEmptyState() {
-    // Different empty states based on filters and search
+    // Different empty states based on search
     final hasActiveSearch = _searchController.text.isNotEmpty;
-    final hasActiveFilter = _selectedFilter != 'All Courses';
 
-    if (hasActiveSearch || hasActiveFilter) {
+    if (hasActiveSearch) {
       // No results for current search/filter
       return Center(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(32.0),
+          padding: EdgeInsets.all(
+            isLargeDesktop
+                ? 40.0
+                : isDesktop
+                ? 32.0
+                : isTablet
+                ? 28.0
+                : isSmallScreen
+                ? 20.0
+                : 24.0,
+          ),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             mainAxisSize: MainAxisSize.min,
             children: [
               Container(
-                padding: const EdgeInsets.all(20),
+                padding: EdgeInsets.all(
+                  isLargeDesktop
+                      ? 24
+                      : isDesktop
+                      ? 20
+                      : isTablet
+                      ? 18
+                      : 16,
+                ),
                 decoration: BoxDecoration(
                   color: const Color(0xFF6B5FFF).withOpacity(0.1),
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(
+                child: Icon(
                   Icons.search_off_rounded,
-                  size: 56,
-                  color: Color(0xFF6B5FFF),
+                  size: isLargeDesktop
+                      ? 64
+                      : isDesktop
+                      ? 56
+                      : isTablet
+                      ? 50
+                      : 44,
+                  color: const Color(0xFF6B5FFF),
                 ),
               ),
-              const SizedBox(height: 20),
-              const Text(
+              SizedBox(
+                height: isLargeDesktop
+                    ? 24
+                    : isDesktop
+                    ? 20
+                    : isTablet
+                    ? 18
+                    : 16,
+              ),
+              Text(
                 'No courses found',
                 style: TextStyle(
-                  fontSize: 18,
+                  fontSize: isLargeDesktop
+                      ? 22
+                      : isDesktop
+                      ? 18
+                      : isTablet
+                      ? 17
+                      : isSmallScreen
+                      ? 15
+                      : 16,
                   fontWeight: FontWeight.w700,
-                  color: Color(0xFF333333),
+                  color: const Color(0xFF333333),
                 ),
                 textAlign: TextAlign.center,
               ),
-              const SizedBox(height: 10),
+              SizedBox(
+                height: isLargeDesktop
+                    ? 12
+                    : isDesktop
+                    ? 10
+                    : isTablet
+                    ? 9
+                    : 8,
+              ),
               Text(
-                'Try adjusting your search or filter criteria',
-                style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+                'Try adjusting your search criteria',
+                style: TextStyle(
+                  fontSize: isLargeDesktop
+                      ? 15
+                      : isDesktop
+                      ? 13
+                      : isTablet
+                      ? 12.5
+                      : isSmallScreen
+                      ? 11
+                      : 12,
+                  color: Colors.grey[600],
+                ),
                 textAlign: TextAlign.center,
               ),
-              const SizedBox(height: 20),
+              SizedBox(
+                height: isLargeDesktop
+                    ? 24
+                    : isDesktop
+                    ? 20
+                    : isTablet
+                    ? 18
+                    : 16,
+              ),
               TextButton.icon(
                 onPressed: () {
                   setState(() {
                     _searchController.clear();
-                    _selectedFilter = 'All Courses';
                     _filterCourses();
                   });
                 },
-                icon: const Icon(Icons.clear_all_rounded, size: 18),
-                label: const Text('Clear Filters'),
+                icon: Icon(
+                  Icons.clear_rounded,
+                  size: isLargeDesktop
+                      ? 20
+                      : isDesktop
+                      ? 18
+                      : isTablet
+                      ? 17
+                      : 16,
+                ),
+                label: Text('Clear Search'),
                 style: TextButton.styleFrom(
                   foregroundColor: const Color(0xFF6B5FFF),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 10,
+                  padding: EdgeInsets.symmetric(
+                    horizontal: isLargeDesktop
+                        ? 20
+                        : isDesktop
+                        ? 16
+                        : isTablet
+                        ? 14
+                        : isSmallScreen
+                        ? 12
+                        : 14,
+                    vertical: isLargeDesktop
+                        ? 12
+                        : isDesktop
+                        ? 10
+                        : isTablet
+                        ? 9
+                        : isSmallScreen
+                        ? 8
+                        : 9,
+                  ),
+                  textStyle: TextStyle(
+                    fontSize: isLargeDesktop
+                        ? 15
+                        : isDesktop
+                        ? 14
+                        : isTablet
+                        ? 13.5
+                        : isSmallScreen
+                        ? 11
+                        : 12,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
               ),
@@ -929,13 +1510,31 @@ class _CoursesPageState extends State<CoursesPage>
     // No courses in database
     return Center(
       child: SingleChildScrollView(
-        padding: const EdgeInsets.all(32.0),
+        padding: EdgeInsets.all(
+          isLargeDesktop
+              ? 40.0
+              : isDesktop
+              ? 32.0
+              : isTablet
+              ? 28.0
+              : isSmallScreen
+              ? 20.0
+              : 24.0,
+        ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           mainAxisSize: MainAxisSize.min,
           children: [
             Container(
-              padding: const EdgeInsets.all(20),
+              padding: EdgeInsets.all(
+                isLargeDesktop
+                    ? 24
+                    : isDesktop
+                    ? 20
+                    : isTablet
+                    ? 18
+                    : 16,
+              ),
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: [
@@ -945,31 +1544,69 @@ class _CoursesPageState extends State<CoursesPage>
                 ),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.school_outlined,
-                size: 64,
-                color: Color(0xFF6B5FFF),
+                size: isLargeDesktop
+                    ? 72
+                    : isDesktop
+                    ? 64
+                    : isTablet
+                    ? 58
+                    : 52,
+                color: const Color(0xFF6B5FFF),
               ),
             ),
-            const SizedBox(height: 20),
+            SizedBox(
+              height: isLargeDesktop
+                  ? 24
+                  : isDesktop
+                  ? 20
+                  : isTablet
+                  ? 18
+                  : 16,
+            ),
             Text(
               _hasEnrolledCourses
                   ? 'No courses available yet'
                   : 'Start Your Learning Journey',
-              style: const TextStyle(
-                fontSize: 20,
+              style: TextStyle(
+                fontSize: isLargeDesktop
+                    ? 24
+                    : isDesktop
+                    ? 20
+                    : isTablet
+                    ? 19
+                    : isSmallScreen
+                    ? 16
+                    : 18,
                 fontWeight: FontWeight.w700,
-                color: Color(0xFF333333),
+                color: const Color(0xFF333333),
               ),
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 12),
+            SizedBox(
+              height: isLargeDesktop
+                  ? 16
+                  : isDesktop
+                  ? 12
+                  : isTablet
+                  ? 11
+                  : 10,
+            ),
             Text(
               _hasEnrolledCourses
                   ? 'New courses will appear here once they are added to the platform.'
                   : 'You haven\'t enrolled in any courses yet. Check back soon for available courses!',
               style: TextStyle(
-                fontSize: 13,
+                fontSize: isLargeDesktop
+                    ? 15
+                    : isDesktop
+                    ? 13
+                    : isTablet
+                    ? 12.5
+                    : isSmallScreen
+                    ? 11
+                    : 12,
                 color: Colors.grey[600],
                 height: 1.4,
               ),
@@ -983,3 +1620,5 @@ class _CoursesPageState extends State<CoursesPage>
     );
   }
 }
+
+

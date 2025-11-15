@@ -1,9 +1,19 @@
 import 'package:flutter/material.dart';
+import 'package:tega/features/3_admin_panel/presentation/0_dashboard/admin_dashboard_styles.dart';
 
 class JobStatsWidget extends StatelessWidget {
   final Map<String, int> stats;
+  final bool isMobile;
+  final bool isTablet;
+  final bool isDesktop;
 
-  const JobStatsWidget({super.key, required this.stats});
+  const JobStatsWidget({
+    super.key,
+    required this.stats,
+    required this.isMobile,
+    required this.isTablet,
+    required this.isDesktop,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -17,11 +27,16 @@ class JobStatsWidget extends StatelessWidget {
           child: Opacity(
             opacity: value.clamp(0.0, 1.0),
             child: Container(
-              margin: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-              padding: const EdgeInsets.all(20),
+              margin: EdgeInsets.fromLTRB(
+                isMobile ? 12 : isTablet ? 14 : 16,
+                isMobile ? 12 : isTablet ? 14 : 16,
+                isMobile ? 12 : isTablet ? 14 : 16,
+                isMobile ? 6 : isTablet ? 7 : 8,
+              ),
+              padding: EdgeInsets.all(isMobile ? 16 : isTablet ? 18 : 20),
               decoration: BoxDecoration(
                 color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(isMobile ? 10 : isTablet ? 11 : 12),
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black.withValues(alpha: 0.05),
@@ -34,15 +49,15 @@ class JobStatsWidget extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // 1. Primary Stat (Total)
-                  const Text(
+                  Text(
                     'Total Jobs',
                     style: TextStyle(
-                      fontSize: 16,
+                      fontSize: isMobile ? 14 : isTablet ? 15 : 16,
                       fontWeight: FontWeight.w600,
-                      color: Color(0xFF718096),
+                      color: const Color(0xFF718096),
                     ),
                   ),
-                  const SizedBox(height: 4),
+                  SizedBox(height: isMobile ? 3 : 4),
                   TweenAnimationBuilder<int>(
                     tween: IntTween(begin: 0, end: stats['total'] ?? 0),
                     duration: const Duration(milliseconds: 1000),
@@ -50,17 +65,17 @@ class JobStatsWidget extends StatelessWidget {
                     builder: (context, animatedValue, child) {
                       return Text(
                         animatedValue.toString(),
-                        style: const TextStyle(
-                          fontSize: 32,
+                        style: TextStyle(
+                          fontSize: isMobile ? 26 : isTablet ? 29 : 32,
                           fontWeight: FontWeight.bold,
-                          color: Color(0xFF6B5FFF),
+                          color: AdminDashboardStyles.primary,
                         ),
                       );
                     },
                   ),
-                  const SizedBox(height: 16),
+                  SizedBox(height: isMobile ? 12 : isTablet ? 14 : 16),
                   const Divider(color: Color(0xFFE2E8F0)),
-                  const SizedBox(height: 16),
+                  SizedBox(height: isMobile ? 12 : isTablet ? 14 : 16),
 
                   // 2. Secondary Stats with staggered animation
                   _buildAnimatedStatRow(
@@ -70,7 +85,7 @@ class JobStatsWidget extends StatelessWidget {
                     Icons.check_circle,
                     0,
                   ),
-                  const SizedBox(height: 12),
+                  SizedBox(height: isMobile ? 10 : isTablet ? 11 : 12),
                   _buildAnimatedStatRow(
                     'Expired',
                     stats['expired'] ?? 0,
@@ -78,7 +93,7 @@ class JobStatsWidget extends StatelessWidget {
                     Icons.cancel,
                     100,
                   ),
-                  const SizedBox(height: 12),
+                  SizedBox(height: isMobile ? 10 : isTablet ? 11 : 12),
                   _buildAnimatedStatRow(
                     'Jobs',
                     stats['jobs'] ?? 0,
@@ -86,7 +101,7 @@ class JobStatsWidget extends StatelessWidget {
                     Icons.business,
                     200,
                   ),
-                  const SizedBox(height: 12),
+                  SizedBox(height: isMobile ? 10 : isTablet ? 11 : 12),
                   _buildAnimatedStatRow(
                     'Internships',
                     stats['internships'] ?? 0,
@@ -128,17 +143,21 @@ class JobStatsWidget extends StatelessWidget {
                   builder: (context, scaleValue, child) {
                     return Transform.scale(
                       scale: scaleValue,
-                      child: Icon(icon, color: color, size: 20),
+                      child: Icon(
+                        icon,
+                        color: color,
+                        size: isMobile ? 18 : isTablet ? 19 : 20,
+                      ),
                     );
                   },
                 ),
-                const SizedBox(width: 12),
+                SizedBox(width: isMobile ? 10 : isTablet ? 11 : 12),
                 Text(
                   label,
-                  style: const TextStyle(
-                    fontSize: 14,
+                  style: TextStyle(
+                    fontSize: isMobile ? 13 : isTablet ? 13.5 : 14,
                     fontWeight: FontWeight.w500,
-                    color: Color(0xFF4A5568),
+                    color: const Color(0xFF4A5568),
                   ),
                 ),
                 const Spacer(),
@@ -149,10 +168,10 @@ class JobStatsWidget extends StatelessWidget {
                   builder: (context, animatedValue, child) {
                     return Text(
                       animatedValue.toString(),
-                      style: const TextStyle(
-                        fontSize: 16,
+                      style: TextStyle(
+                        fontSize: isMobile ? 14 : isTablet ? 15 : 16,
                         fontWeight: FontWeight.bold,
-                        color: Color(0xFF1A202C),
+                        color: const Color(0xFF1A202C),
                       ),
                     );
                   },

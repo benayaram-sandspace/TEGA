@@ -3,6 +3,7 @@ import 'package:tega/features/1_authentication/data/auth_repository.dart';
 import 'package:tega/features/5_student_dashboard/data/student_dashboard_service.dart';
 import 'package:tega/features/5_student_dashboard/presentation/5_placement_prep/company_specific_questions_page.dart';
 import 'package:tega/features/5_student_dashboard/presentation/5_placement_prep/skill_assessment_modules_page.dart';
+import 'package:tega/core/services/placement_prep_cache_service.dart';
 // import removed: mock interview is locked for now
 
 class PlacementPrepPage extends StatefulWidget {
@@ -14,21 +15,57 @@ class PlacementPrepPage extends StatefulWidget {
 
 class _PlacementPrepPageState extends State<PlacementPrepPage> {
   bool _isLoading = true;
+  final PlacementPrepCacheService _cacheService = PlacementPrepCacheService();
 
   @override
   void initState() {
     super.initState();
+    _initializeCache();
+  }
+
+  Future<void> _initializeCache() async {
+    await _cacheService.initialize();
     _loadPlacementData();
   }
 
-  Future<void> _loadPlacementData() async {
+  Future<void> _loadPlacementData({bool forceRefresh = false}) async {
+    try {
+      // Try to load from cache first (unless force refresh)
+      if (!forceRefresh) {
+        final cachedData = await _cacheService.getPlacementPrepData();
+        if (cachedData != null && mounted) {
+          setState(() {
+            _isLoading = false;
+          });
+          // Still fetch in background to update cache
+          _fetchPlacementDataInBackground();
+          return;
+        }
+      }
+
+      // Fetch from API
+      await _fetchPlacementDataInBackground();
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _fetchPlacementDataInBackground() async {
     try {
       final auth = AuthService();
-      final headers = auth.getAuthHeaders();
+      final headers = await auth.getAuthHeaders();
       final api = StudentDashboardService();
 
       // Fetch placement-specific data
-      await api.getDashboard(headers);
+      final data = await api.getDashboard(headers);
+      
+      // Cache the data
+      await _cacheService.setPlacementPrepData(data ?? {});
+
       if (mounted) {
         setState(() {
           _isLoading = false;
@@ -66,6 +103,18 @@ class _PlacementPrepPageState extends State<PlacementPrepPage> {
 
   // Removed: Solve Coding Problems action is no longer shown
 
+  // Responsive breakpoints
+  double get mobileBreakpoint => 600;
+  double get tabletBreakpoint => 1024;
+  double get desktopBreakpoint => 1440;
+  bool get isMobile => MediaQuery.of(context).size.width < mobileBreakpoint;
+  bool get isTablet => MediaQuery.of(context).size.width >= mobileBreakpoint &&
+      MediaQuery.of(context).size.width < tabletBreakpoint;
+  bool get isDesktop => MediaQuery.of(context).size.width >= tabletBreakpoint &&
+      MediaQuery.of(context).size.width < desktopBreakpoint;
+  bool get isLargeDesktop => MediaQuery.of(context).size.width >= desktopBreakpoint;
+  bool get isSmallScreen => MediaQuery.of(context).size.width < 400;
+
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
@@ -74,40 +123,68 @@ class _PlacementPrepPageState extends State<PlacementPrepPage> {
       );
     }
 
-    final screenWidth = MediaQuery.of(context).size.width;
-    final isTablet = screenWidth >= 600;
-    final isDesktop = screenWidth >= 1024;
-
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       body: CustomScrollView(
         slivers: [
           // Modern Header with Hero Section
-          _buildModernHeader(isDesktop, isTablet),
+          _buildModernHeader(),
 
           // Main Actions Section
-          _buildMainActionsSection(isDesktop, isTablet),
+          _buildMainActionsSection(),
 
           // Bottom Spacing
-          SliverToBoxAdapter(child: SizedBox(height: isDesktop ? 40 : 32)),
+          SliverToBoxAdapter(
+            child: SizedBox(
+              height: isLargeDesktop
+                  ? 48
+                  : isDesktop
+                  ? 40
+                  : isTablet
+                  ? 32
+                  : isSmallScreen
+                  ? 20
+                  : 24,
+            ),
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildModernHeader(bool isDesktop, bool isTablet) {
+  Widget _buildModernHeader() {
     return SliverToBoxAdapter(
       child: Container(
         margin: EdgeInsets.all(
-          isDesktop
+          isLargeDesktop
+              ? 32
+              : isDesktop
               ? 24
               : isTablet
               ? 20
+              : isSmallScreen
+              ? 12
               : 16,
         ),
         padding: EdgeInsets.symmetric(
-          horizontal: isDesktop ? 24 : isTablet ? 20 : 16,
-          vertical: isDesktop ? 20 : isTablet ? 18 : 16,
+          horizontal: isLargeDesktop
+              ? 32
+              : isDesktop
+              ? 24
+              : isTablet
+              ? 20
+              : isSmallScreen
+              ? 12
+              : 16,
+          vertical: isLargeDesktop
+              ? 24
+              : isDesktop
+              ? 20
+              : isTablet
+              ? 18
+              : isSmallScreen
+              ? 12
+              : 16,
         ),
         decoration: BoxDecoration(
           gradient: const LinearGradient(
@@ -115,39 +192,118 @@ class _PlacementPrepPageState extends State<PlacementPrepPage> {
             end: Alignment.bottomRight,
             colors: [Color(0xFF6B5FFF), Color(0xFF9C88FF), Color(0xFFB19CD9)],
           ),
-          borderRadius: BorderRadius.circular(isDesktop ? 24 : 20),
+          borderRadius: BorderRadius.circular(
+            isLargeDesktop
+                ? 28
+                : isDesktop
+                ? 24
+                : isTablet
+                ? 20
+                : isSmallScreen
+                ? 12
+                : 16,
+          ),
           boxShadow: [
             BoxShadow(
               color: const Color(0xFF6B5FFF).withOpacity(0.3),
-              blurRadius: isDesktop ? 20 : 16,
-              offset: Offset(0, isDesktop ? 8 : 6),
+              blurRadius: isLargeDesktop
+                  ? 24
+                  : isDesktop
+                  ? 20
+                  : isTablet
+                  ? 16
+                  : isSmallScreen
+                  ? 8
+                  : 12,
+              offset: Offset(
+                0,
+                isLargeDesktop
+                    ? 10
+                    : isDesktop
+                    ? 8
+                    : isTablet
+                    ? 6
+                    : isSmallScreen
+                    ? 3
+                    : 4,
+              ),
             ),
           ],
         ),
         child: Row(
           children: [
             Container(
-              padding: EdgeInsets.all(isDesktop ? 14 : isTablet ? 12 : 10),
+              padding: EdgeInsets.all(
+                isLargeDesktop
+                    ? 18
+                    : isDesktop
+                    ? 14
+                    : isTablet
+                    ? 12
+                    : isSmallScreen
+                    ? 8
+                    : 10,
+              ),
               decoration: BoxDecoration(
                 color: Colors.white.withOpacity(0.2),
-                borderRadius: BorderRadius.circular(isDesktop ? 14 : 12),
+                borderRadius: BorderRadius.circular(
+                  isLargeDesktop
+                      ? 18
+                      : isDesktop
+                      ? 14
+                      : isTablet
+                      ? 12
+                      : isSmallScreen
+                      ? 8
+                      : 10,
+                ),
               ),
               child: Icon(
                 Icons.rocket_launch_rounded,
                 color: Colors.white,
-                size: isDesktop ? 28 : isTablet ? 26 : 24,
+                size: isLargeDesktop
+                    ? 36
+                    : isDesktop
+                    ? 28
+                    : isTablet
+                    ? 26
+                    : isSmallScreen
+                    ? 20
+                    : 24,
               ),
             ),
-            SizedBox(width: isDesktop ? 16 : isTablet ? 14 : 12),
+            SizedBox(
+              width: isLargeDesktop
+                  ? 20
+                  : isDesktop
+                  ? 16
+                  : isTablet
+                  ? 14
+                  : isSmallScreen
+                  ? 8
+                  : 12,
+            ),
             Expanded(
               child: Text(
                 'Ready to land your dream job?',
                 style: TextStyle(
-                  fontSize: isDesktop ? 18 : isTablet ? 17 : 16,
+                  fontSize: isLargeDesktop
+                      ? 24
+                      : isDesktop
+                      ? 20
+                      : isTablet
+                      ? 18
+                      : isSmallScreen
+                      ? 14
+                      : 16,
                   fontWeight: FontWeight.w600,
                   color: Colors.white,
                 ),
-                maxLines: 2,
+                maxLines: isLargeDesktop || isDesktop
+                    ? 3
+                    : isTablet
+                    ? 2
+                    : 2,
                 overflow: TextOverflow.ellipsis,
               ),
             ),
@@ -159,14 +315,18 @@ class _PlacementPrepPageState extends State<PlacementPrepPage> {
 
   // Removed progress stats section
 
-  Widget _buildMainActionsSection(bool isDesktop, bool isTablet) {
+  Widget _buildMainActionsSection() {
     return SliverToBoxAdapter(
       child: Container(
         margin: EdgeInsets.all(
-          isDesktop
+          isLargeDesktop
+              ? 32
+              : isDesktop
               ? 24
               : isTablet
               ? 20
+              : isSmallScreen
+              ? 12
               : 16,
         ),
         child: Column(
@@ -175,20 +335,38 @@ class _PlacementPrepPageState extends State<PlacementPrepPage> {
             Text(
               'Practice & Improve',
               style: TextStyle(
-                fontSize: isDesktop ? 22 : 20,
+                fontSize: isLargeDesktop
+                    ? 28
+                    : isDesktop
+                    ? 24
+                    : isTablet
+                    ? 22
+                    : isSmallScreen
+                    ? 18
+                    : 20,
                 fontWeight: FontWeight.bold,
                 color: const Color(0xFF1A1A1A),
               ),
             ),
-            SizedBox(height: isDesktop ? 16 : 12),
-            _buildModernActionCards(isDesktop, isTablet),
+            SizedBox(
+              height: isLargeDesktop
+                  ? 20
+                  : isDesktop
+                  ? 16
+                  : isTablet
+                  ? 14
+                  : isSmallScreen
+                  ? 10
+                  : 12,
+            ),
+            _buildModernActionCards(),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildModernActionCards(bool isDesktop, bool isTablet) {
+  Widget _buildModernActionCards() {
     final actions = [
       {
         'title': 'Take Skill Assessment',
@@ -224,7 +402,17 @@ class _PlacementPrepPageState extends State<PlacementPrepPage> {
       children: actions.map((action) {
         return Container(
           margin: EdgeInsets.only(
-            bottom: action == actions.last ? 0 : (isDesktop ? 16 : 12),
+            bottom: action == actions.last
+                ? 0
+                : (isLargeDesktop
+                    ? 20
+                    : isDesktop
+                    ? 16
+                    : isTablet
+                    ? 14
+                    : isSmallScreen
+                    ? 10
+                    : 12),
           ),
           child: _buildModernActionCard(
             title: action['title'] as String,
@@ -234,8 +422,6 @@ class _PlacementPrepPageState extends State<PlacementPrepPage> {
             onTap: action['onTap'] as VoidCallback,
             status: action['status'] as String,
             isAvailable: action['isAvailable'] as bool,
-            isDesktop: isDesktop,
-            isTablet: isTablet,
           ),
         );
       }).toList(),
@@ -250,39 +436,128 @@ class _PlacementPrepPageState extends State<PlacementPrepPage> {
     required VoidCallback onTap,
     required String status,
     required bool isAvailable,
-    required bool isDesktop,
-    required bool isTablet,
   }) {
     return Material(
       color: Colors.transparent,
       child: InkWell(
         onTap: isAvailable ? onTap : null,
-        borderRadius: BorderRadius.circular(isDesktop ? 16 : 14),
+        borderRadius: BorderRadius.circular(
+          isLargeDesktop
+              ? 20
+              : isDesktop
+              ? 16
+              : isTablet
+              ? 14
+              : isSmallScreen
+              ? 10
+              : 12,
+        ),
         child: Container(
-          padding: EdgeInsets.all(isDesktop ? 20 : 16),
+          padding: EdgeInsets.all(
+            isLargeDesktop
+                ? 24
+                : isDesktop
+                ? 20
+                : isTablet
+                ? 18
+                : isSmallScreen
+                ? 12
+                : 16,
+          ),
           decoration: BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.circular(isDesktop ? 16 : 14),
+            borderRadius: BorderRadius.circular(
+              isLargeDesktop
+                  ? 20
+                  : isDesktop
+                  ? 16
+                  : isTablet
+                  ? 14
+                  : isSmallScreen
+                  ? 10
+                  : 12,
+            ),
             border: Border.all(color: color.withOpacity(0.2), width: 1),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withOpacity(0.05),
-                blurRadius: isDesktop ? 12 : 8,
-                offset: Offset(0, isDesktop ? 4 : 2),
+                blurRadius: isLargeDesktop
+                    ? 16
+                    : isDesktop
+                    ? 12
+                    : isTablet
+                    ? 10
+                    : isSmallScreen
+                    ? 6
+                    : 8,
+                offset: Offset(
+                  0,
+                  isLargeDesktop
+                      ? 6
+                      : isDesktop
+                      ? 4
+                      : isTablet
+                      ? 3
+                      : isSmallScreen
+                      ? 2
+                      : 2,
+                ),
               ),
             ],
           ),
           child: Row(
             children: [
               Container(
-                padding: EdgeInsets.all(isDesktop ? 16 : 12),
+                padding: EdgeInsets.all(
+                  isLargeDesktop
+                      ? 20
+                      : isDesktop
+                      ? 16
+                      : isTablet
+                      ? 14
+                      : isSmallScreen
+                      ? 10
+                      : 12,
+                ),
                 decoration: BoxDecoration(
                   color: color.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(isDesktop ? 12 : 10),
+                  borderRadius: BorderRadius.circular(
+                    isLargeDesktop
+                        ? 16
+                        : isDesktop
+                        ? 12
+                        : isTablet
+                        ? 10
+                        : isSmallScreen
+                        ? 8
+                        : 9,
+                  ),
                 ),
-                child: Icon(icon, color: color, size: isDesktop ? 28 : 24),
+                child: Icon(
+                  icon,
+                  color: color,
+                  size: isLargeDesktop
+                      ? 36
+                      : isDesktop
+                      ? 28
+                      : isTablet
+                      ? 26
+                      : isSmallScreen
+                      ? 20
+                      : 24,
+                ),
               ),
-              SizedBox(width: isDesktop ? 16 : 12),
+              SizedBox(
+                width: isLargeDesktop
+                    ? 20
+                    : isDesktop
+                    ? 16
+                    : isTablet
+                    ? 14
+                    : isSmallScreen
+                    ? 8
+                    : 12,
+              ),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -293,31 +568,75 @@ class _PlacementPrepPageState extends State<PlacementPrepPage> {
                           child: Text(
                             title,
                             style: TextStyle(
-                              fontSize: isDesktop ? 18 : 16,
+                              fontSize: isLargeDesktop
+                                  ? 22
+                                  : isDesktop
+                                  ? 20
+                                  : isTablet
+                                  ? 18
+                                  : isSmallScreen
+                                  ? 14
+                                  : 16,
                               fontWeight: FontWeight.bold,
                               color: const Color(0xFF1A1A1A),
                             ),
-                            maxLines: 2,
+                            maxLines: isLargeDesktop || isDesktop
+                                ? 3
+                                : isTablet
+                                ? 2
+                                : 2,
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
                         Container(
                           padding: EdgeInsets.symmetric(
-                            horizontal: isDesktop ? 8 : 6,
-                            vertical: isDesktop ? 4 : 2,
+                            horizontal: isLargeDesktop
+                                ? 10
+                                : isDesktop
+                                ? 8
+                                : isTablet
+                                ? 7
+                                : isSmallScreen
+                                ? 5
+                                : 6,
+                            vertical: isLargeDesktop
+                                ? 6
+                                : isDesktop
+                                ? 4
+                                : isTablet
+                                ? 3.5
+                                : isSmallScreen
+                                ? 2
+                                : 2,
                           ),
                           decoration: BoxDecoration(
                             color: isAvailable
                                 ? Colors.green.withOpacity(0.1)
                                 : Colors.orange.withOpacity(0.1),
                             borderRadius: BorderRadius.circular(
-                              isDesktop ? 8 : 6,
+                              isLargeDesktop
+                                  ? 10
+                                  : isDesktop
+                                  ? 8
+                                  : isTablet
+                                  ? 7
+                                  : isSmallScreen
+                                  ? 5
+                                  : 6,
                             ),
                           ),
                           child: Text(
                             status,
                             style: TextStyle(
-                              fontSize: isDesktop ? 10 : 9,
+                              fontSize: isLargeDesktop
+                                  ? 12
+                                  : isDesktop
+                                  ? 11
+                                  : isTablet
+                                  ? 10
+                                  : isSmallScreen
+                                  ? 8
+                                  : 9,
                               fontWeight: FontWeight.w600,
                               color: isAvailable
                                   ? Colors.green[700]
@@ -327,27 +646,67 @@ class _PlacementPrepPageState extends State<PlacementPrepPage> {
                         ),
                       ],
                     ),
-                    SizedBox(height: isDesktop ? 6 : 4),
+                    SizedBox(
+                      height: isLargeDesktop
+                          ? 8
+                          : isDesktop
+                          ? 6
+                          : isTablet
+                          ? 5
+                          : isSmallScreen
+                          ? 3
+                          : 4,
+                    ),
                     Text(
                       description,
                       style: TextStyle(
-                        fontSize: isDesktop ? 14 : 12,
+                        fontSize: isLargeDesktop
+                            ? 16
+                            : isDesktop
+                            ? 15
+                            : isTablet
+                            ? 14
+                            : isSmallScreen
+                            ? 11
+                            : 12,
                         color: Colors.grey[600],
                         height: 1.4,
                       ),
-                      maxLines: 3,
+                      maxLines: isLargeDesktop || isDesktop
+                          ? 4
+                          : isTablet
+                          ? 3
+                          : 2,
                       overflow: TextOverflow.ellipsis,
                     ),
                   ],
                 ),
               ),
-              SizedBox(width: isDesktop ? 12 : 8),
+              SizedBox(
+                width: isLargeDesktop
+                    ? 16
+                    : isDesktop
+                    ? 12
+                    : isTablet
+                    ? 10
+                    : isSmallScreen
+                    ? 6
+                    : 8,
+              ),
               Icon(
                 isAvailable
                     ? Icons.arrow_forward_ios_rounded
                     : Icons.lock_rounded,
                 color: isAvailable ? color : Colors.grey[400],
-                size: isDesktop ? 18 : 16,
+                size: isLargeDesktop
+                    ? 24
+                    : isDesktop
+                    ? 20
+                    : isTablet
+                    ? 18
+                    : isSmallScreen
+                    ? 14
+                    : 16,
               ),
             ],
           ),

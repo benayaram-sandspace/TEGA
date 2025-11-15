@@ -1,22 +1,83 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:tega/core/services/help_support_cache_service.dart';
 
-class HelpSupportPage extends StatelessWidget {
+class HelpSupportPage extends StatefulWidget {
   const HelpSupportPage({super.key});
+
+  @override
+  State<HelpSupportPage> createState() => _HelpSupportPageState();
+}
+
+class _HelpSupportPageState extends State<HelpSupportPage> {
+  final HelpSupportCacheService _cacheService = HelpSupportCacheService();
+
+  // Responsive breakpoints
+  double get mobileBreakpoint => 600;
+  double get tabletBreakpoint => 1024;
+  double get desktopBreakpoint => 1440;
+  bool get isMobile => MediaQuery.of(context).size.width < mobileBreakpoint;
+  bool get isTablet => MediaQuery.of(context).size.width >= mobileBreakpoint &&
+      MediaQuery.of(context).size.width < tabletBreakpoint;
+  bool get isDesktop => MediaQuery.of(context).size.width >= tabletBreakpoint &&
+      MediaQuery.of(context).size.width < desktopBreakpoint;
+  bool get isLargeDesktop => MediaQuery.of(context).size.width >= desktopBreakpoint;
+  bool get isSmallScreen => MediaQuery.of(context).size.width < 400;
+
+  @override
+  void initState() {
+    super.initState();
+    _initializeCache();
+  }
+
+  Future<void> _initializeCache() async {
+    await _cacheService.initialize();
+    // Future: Load categories and articles from API if needed
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF7F8FC),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
+        padding: EdgeInsets.all(
+          isLargeDesktop
+              ? 24
+              : isDesktop
+              ? 20
+              : isTablet
+              ? 18
+              : isSmallScreen
+              ? 12
+              : 16,
+        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _buildBrowseByCategory(),
-            const SizedBox(height: 24),
+            SizedBox(
+              height: isLargeDesktop
+                  ? 32
+                  : isDesktop
+                  ? 28
+                  : isTablet
+                  ? 24
+                  : isSmallScreen
+                  ? 16
+                  : 24,
+            ),
             _buildPopularArticles(),
-            const SizedBox(height: 24),
+            SizedBox(
+              height: isLargeDesktop
+                  ? 32
+                  : isDesktop
+                  ? 28
+                  : isTablet
+                  ? 24
+                  : isSmallScreen
+                  ? 16
+                  : 24,
+            ),
             _buildContactSupport(),
           ],
         ),
@@ -28,22 +89,72 @@ class HelpSupportPage extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
+        Text(
           'Browse by Category',
           style: TextStyle(
-            color: Color(0xFF111827),
-            fontSize: 20,
+            color: const Color(0xFF111827),
+            fontSize: isLargeDesktop
+                ? 24
+                : isDesktop
+                ? 22
+                : isTablet
+                ? 20
+                : isSmallScreen
+                ? 18
+                : 20,
             fontWeight: FontWeight.w700,
           ),
         ),
-        const SizedBox(height: 16),
+        SizedBox(
+          height: isLargeDesktop
+              ? 20
+              : isDesktop
+              ? 18
+              : isTablet
+              ? 16
+              : isSmallScreen
+              ? 12
+              : 16,
+        ),
         GridView.count(
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
-          crossAxisCount: 2,
-          mainAxisSpacing: 12,
-          crossAxisSpacing: 12,
-          childAspectRatio: 1.2,
+          crossAxisCount: isSmallScreen
+              ? 1
+              : isTablet
+              ? 2
+              : isDesktop
+              ? 3
+              : isLargeDesktop
+              ? 3
+              : 2,
+          mainAxisSpacing: isLargeDesktop
+              ? 16
+              : isDesktop
+              ? 14
+              : isTablet
+              ? 12
+              : isSmallScreen
+              ? 10
+              : 12,
+          crossAxisSpacing: isLargeDesktop
+              ? 16
+              : isDesktop
+              ? 14
+              : isTablet
+              ? 12
+              : isSmallScreen
+              ? 10
+              : 12,
+          childAspectRatio: isSmallScreen
+              ? 2.5
+              : isTablet
+              ? 1.3
+              : isDesktop
+              ? 1.2
+              : isLargeDesktop
+              ? 1.15
+              : 1.2,
           children: [
             _buildCategoryCard(
               icon: Icons.play_circle_outline,
@@ -100,15 +211,54 @@ class HelpSupportPage extends StatelessWidget {
     required String description,
   }) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(
+        isLargeDesktop
+            ? 20
+            : isDesktop
+            ? 18
+            : isTablet
+            ? 16
+            : isSmallScreen
+            ? 14
+            : 16,
+      ),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(
+          isLargeDesktop
+              ? 16
+              : isDesktop
+              ? 14
+              : isTablet
+              ? 12
+              : isSmallScreen
+              ? 10
+              : 12,
+        ),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
+            blurRadius: isLargeDesktop
+                ? 12
+                : isDesktop
+                ? 10
+                : isTablet
+                ? 8
+                : isSmallScreen
+                ? 6
+                : 10,
+            offset: Offset(
+              0,
+              isLargeDesktop
+                  ? 3
+                  : isDesktop
+                  ? 2.5
+                  : isTablet
+                  ? 2
+                  : isSmallScreen
+                  ? 1.5
+                  : 2,
+            ),
           ),
         ],
       ),
@@ -116,28 +266,99 @@ class HelpSupportPage extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
-            padding: const EdgeInsets.all(8),
+            padding: EdgeInsets.all(
+              isLargeDesktop
+                  ? 10
+                  : isDesktop
+                  ? 9
+                  : isTablet
+                  ? 8
+                  : isSmallScreen
+                  ? 7
+                  : 8,
+            ),
             decoration: BoxDecoration(
               color: iconColor.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(
+                isLargeDesktop
+                    ? 10
+                    : isDesktop
+                    ? 9
+                    : isTablet
+                    ? 8
+                    : isSmallScreen
+                    ? 7
+                    : 8,
+              ),
             ),
-            child: Icon(icon, color: iconColor, size: 24),
+            child: Icon(
+              icon,
+              color: iconColor,
+              size: isLargeDesktop
+                  ? 28
+                  : isDesktop
+                  ? 26
+                  : isTablet
+                  ? 24
+                  : isSmallScreen
+                  ? 22
+                  : 24,
+            ),
           ),
-          const SizedBox(height: 12),
+          SizedBox(
+            height: isLargeDesktop
+                ? 14
+                : isDesktop
+                ? 12
+                : isTablet
+                ? 12
+                : isSmallScreen
+                ? 10
+                : 12,
+          ),
           Text(
             title,
-            style: const TextStyle(
-              color: Color(0xFF111827),
-              fontSize: 16,
+            style: TextStyle(
+              color: const Color(0xFF111827),
+              fontSize: isLargeDesktop
+                  ? 18
+                  : isDesktop
+                  ? 17
+                  : isTablet
+                  ? 16
+                  : isSmallScreen
+                  ? 15
+                  : 16,
               fontWeight: FontWeight.w600,
             ),
           ),
-          const SizedBox(height: 4),
+          SizedBox(
+            height: isLargeDesktop
+                ? 6
+                : isDesktop
+                ? 5
+                : isTablet
+                ? 4
+                : isSmallScreen
+                ? 3
+                : 4,
+          ),
           Expanded(
             child: Text(
               description,
-              style: const TextStyle(color: Color(0xFF6B7280), fontSize: 12),
-              maxLines: 3,
+              style: TextStyle(
+                color: const Color(0xFF6B7280),
+                fontSize: isLargeDesktop
+                    ? 14
+                    : isDesktop
+                    ? 13
+                    : isTablet
+                    ? 12
+                    : isSmallScreen
+                    ? 11
+                    : 12,
+              ),
+              maxLines: isSmallScreen ? 4 : 3,
               overflow: TextOverflow.ellipsis,
             ),
           ),
@@ -150,24 +371,71 @@ class HelpSupportPage extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
+        Text(
           'Popular Articles',
           style: TextStyle(
-            color: Color(0xFF111827),
-            fontSize: 20,
+            color: const Color(0xFF111827),
+            fontSize: isLargeDesktop
+                ? 24
+                : isDesktop
+                ? 22
+                : isTablet
+                ? 20
+                : isSmallScreen
+                ? 18
+                : 20,
             fontWeight: FontWeight.w700,
           ),
         ),
-        const SizedBox(height: 16),
+        SizedBox(
+          height: isLargeDesktop
+              ? 20
+              : isDesktop
+              ? 18
+              : isTablet
+              ? 16
+              : isSmallScreen
+              ? 12
+              : 16,
+        ),
         Container(
           decoration: BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(
+              isLargeDesktop
+                  ? 16
+                  : isDesktop
+                  ? 14
+                  : isTablet
+                  ? 12
+                  : isSmallScreen
+                  ? 10
+                  : 12,
+            ),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withOpacity(0.05),
-                blurRadius: 10,
-                offset: const Offset(0, 2),
+                blurRadius: isLargeDesktop
+                    ? 12
+                    : isDesktop
+                    ? 10
+                    : isTablet
+                    ? 8
+                    : isSmallScreen
+                    ? 6
+                    : 10,
+                offset: Offset(
+                  0,
+                  isLargeDesktop
+                      ? 3
+                      : isDesktop
+                      ? 2.5
+                      : isTablet
+                      ? 2
+                      : isSmallScreen
+                      ? 1.5
+                      : 2,
+                ),
               ),
             ],
           ),
@@ -193,26 +461,83 @@ class HelpSupportPage extends StatelessWidget {
 
   Widget _buildArticleItem(String title) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      padding: EdgeInsets.symmetric(
+        horizontal: isLargeDesktop
+            ? 20
+            : isDesktop
+            ? 18
+            : isTablet
+            ? 16
+            : isSmallScreen
+            ? 14
+            : 16,
+        vertical: isLargeDesktop
+            ? 16
+            : isDesktop
+            ? 14
+            : isTablet
+            ? 12
+            : isSmallScreen
+            ? 10
+            : 12,
+      ),
       child: Row(
         children: [
-          Icon(Icons.description_outlined, color: Colors.grey[400], size: 20),
-          const SizedBox(width: 12),
+          Icon(
+            Icons.description_outlined,
+            color: Colors.grey[400],
+            size: isLargeDesktop
+                ? 24
+                : isDesktop
+                ? 22
+                : isTablet
+                ? 20
+                : isSmallScreen
+                ? 18
+                : 20,
+          ),
+          SizedBox(
+            width: isLargeDesktop
+                ? 16
+                : isDesktop
+                ? 14
+                : isTablet
+                ? 12
+                : isSmallScreen
+                ? 10
+                : 12,
+          ),
           Expanded(
             child: Text(
               title,
-              style: const TextStyle(
-                color: Color(0xFF111827),
-                fontSize: 14,
+              style: TextStyle(
+                color: const Color(0xFF111827),
+                fontSize: isLargeDesktop
+                    ? 16
+                    : isDesktop
+                    ? 15
+                    : isTablet
+                    ? 14
+                    : isSmallScreen
+                    ? 13
+                    : 14,
                 fontWeight: FontWeight.w500,
               ),
             ),
           ),
-          const Text(
+          Text(
             'Read →',
             style: TextStyle(
-              color: Color(0xFF3B82F6),
-              fontSize: 14,
+              color: const Color(0xFF3B82F6),
+              fontSize: isLargeDesktop
+                  ? 16
+                  : isDesktop
+                  ? 15
+                  : isTablet
+                  ? 14
+                  : isSmallScreen
+                  ? 13
+                  : 14,
               fontWeight: FontWeight.w500,
             ),
           ),
@@ -223,7 +548,17 @@ class HelpSupportPage extends StatelessWidget {
 
   Widget _buildDivider() {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16),
+      margin: EdgeInsets.symmetric(
+        horizontal: isLargeDesktop
+            ? 20
+            : isDesktop
+            ? 18
+            : isTablet
+            ? 16
+            : isSmallScreen
+            ? 14
+            : 16,
+      ),
       height: 1,
       color: Colors.grey[200],
     );
@@ -231,62 +566,201 @@ class HelpSupportPage extends StatelessWidget {
 
   Widget _buildContactSupport() {
     return Container(
-      padding: const EdgeInsets.all(24),
+      padding: EdgeInsets.all(
+        isLargeDesktop
+            ? 32
+            : isDesktop
+            ? 28
+            : isTablet
+            ? 24
+            : isSmallScreen
+            ? 18
+            : 24,
+      ),
       decoration: BoxDecoration(
         color: const Color(0xFFF7F8FC),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFE5E7EB)),
+        borderRadius: BorderRadius.circular(
+          isLargeDesktop
+              ? 16
+              : isDesktop
+              ? 14
+              : isTablet
+              ? 12
+              : isSmallScreen
+              ? 10
+              : 12,
+        ),
+        border: Border.all(
+          color: const Color(0xFFE5E7EB),
+          width: isLargeDesktop || isDesktop
+              ? 1.5
+              : isTablet
+              ? 1.2
+              : isSmallScreen
+              ? 0.8
+              : 1,
+        ),
       ),
       child: Column(
         children: [
-          const Text(
+          Text(
             'Still need help?',
             style: TextStyle(
-              color: Color(0xFF111827),
-              fontSize: 18,
+              color: const Color(0xFF111827),
+              fontSize: isLargeDesktop
+                  ? 22
+                  : isDesktop
+                  ? 20
+                  : isTablet
+                  ? 19
+                  : isSmallScreen
+                  ? 17
+                  : 18,
               fontWeight: FontWeight.w700,
             ),
           ),
-          const SizedBox(height: 8),
-          const Text(
+          SizedBox(
+            height: isLargeDesktop
+                ? 12
+                : isDesktop
+                ? 10
+                : isTablet
+                ? 8
+                : isSmallScreen
+                ? 6
+                : 8,
+          ),
+          Text(
             'Our support team is available to help you with any questions or issues you might have.',
-            style: TextStyle(color: Color(0xFF6B7280), fontSize: 14),
+            style: TextStyle(
+              color: const Color(0xFF6B7280),
+              fontSize: isLargeDesktop
+                  ? 16
+                  : isDesktop
+                  ? 15
+                  : isTablet
+                  ? 14
+                  : isSmallScreen
+                  ? 12
+                  : 14,
+            ),
             textAlign: TextAlign.center,
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
           ),
-          const SizedBox(height: 20),
-          Row(
-            children: [
-              Expanded(
-                child: _buildSupportButton(
-                  icon: Icons.email_outlined,
-                  title: 'Email Support',
-                  isPrimary: false,
-                  onTap: () => _launchEmail(),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _buildSupportButton(
-                  icon: Icons.phone_outlined,
-                  title: 'Call Support',
-                  isPrimary: true,
-                  onTap: () => _launchPhone(),
-                ),
-              ),
-            ],
+          SizedBox(
+            height: isLargeDesktop
+                ? 24
+                : isDesktop
+                ? 22
+                : isTablet
+                ? 20
+                : isSmallScreen
+                ? 16
+                : 20,
           ),
-          const SizedBox(height: 16),
+          isSmallScreen
+              ? Column(
+                  children: [
+                    _buildSupportButton(
+                      icon: Icons.email_outlined,
+                      title: 'Email Support',
+                      isPrimary: false,
+                      onTap: () => _launchEmail(),
+                    ),
+                    SizedBox(
+                      height: isSmallScreen ? 12 : 16,
+                    ),
+                    _buildSupportButton(
+                      icon: Icons.phone_outlined,
+                      title: 'Call Support',
+                      isPrimary: true,
+                      onTap: () => _launchPhone(),
+                    ),
+                  ],
+                )
+              : Row(
+                  children: [
+                    Expanded(
+                      child: _buildSupportButton(
+                        icon: Icons.email_outlined,
+                        title: 'Email Support',
+                        isPrimary: false,
+                        onTap: () => _launchEmail(),
+                      ),
+                    ),
+                    SizedBox(
+                      width: isLargeDesktop
+                          ? 16
+                          : isDesktop
+                          ? 14
+                          : isTablet
+                          ? 12
+                          : 12,
+                    ),
+                    Expanded(
+                      child: _buildSupportButton(
+                        icon: Icons.phone_outlined,
+                        title: 'Call Support',
+                        isPrimary: true,
+                        onTap: () => _launchPhone(),
+                      ),
+                    ),
+                  ],
+                ),
+          SizedBox(
+            height: isLargeDesktop
+                ? 20
+                : isDesktop
+                ? 18
+                : isTablet
+                ? 16
+                : isSmallScreen
+                ? 12
+                : 16,
+          ),
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(Icons.access_time, color: Colors.grey[500], size: 16),
-              const SizedBox(width: 8),
+              Icon(
+                Icons.access_time,
+                color: Colors.grey[500],
+                size: isLargeDesktop
+                    ? 18
+                    : isDesktop
+                    ? 17
+                    : isTablet
+                    ? 16
+                    : isSmallScreen
+                    ? 14
+                    : 16,
+              ),
+              SizedBox(
+                width: isLargeDesktop
+                    ? 10
+                    : isDesktop
+                    ? 9
+                    : isTablet
+                    ? 8
+                    : isSmallScreen
+                    ? 6
+                    : 8,
+              ),
               Flexible(
                 child: Text(
                   'Available Monday to Friday, 9:00 AM to 6:00 PM IST',
-                  style: TextStyle(color: Colors.grey[500], fontSize: 12),
+                  style: TextStyle(
+                    color: Colors.grey[500],
+                    fontSize: isLargeDesktop
+                        ? 14
+                        : isDesktop
+                        ? 13
+                        : isTablet
+                        ? 12
+                        : isSmallScreen
+                        ? 11
+                        : 12,
+                  ),
                   textAlign: TextAlign.center,
                 ),
               ),
@@ -310,17 +784,79 @@ class HelpSupportPage extends StatelessWidget {
         style: ElevatedButton.styleFrom(
           backgroundColor: isPrimary ? const Color(0xFF3B82F6) : Colors.white,
           foregroundColor: isPrimary ? Colors.white : const Color(0xFF3B82F6),
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          padding: EdgeInsets.symmetric(
+            horizontal: isLargeDesktop
+                ? 24
+                : isDesktop
+                ? 20
+                : isTablet
+                ? 16
+                : isSmallScreen
+                ? 14
+                : 16,
+            vertical: isLargeDesktop
+                ? 16
+                : isDesktop
+                ? 14
+                : isTablet
+                ? 12
+                : isSmallScreen
+                ? 10
+                : 12,
+          ),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(
+              isLargeDesktop
+                  ? 10
+                  : isDesktop
+                  ? 9
+                  : isTablet
+                  ? 8
+                  : isSmallScreen
+                  ? 6
+                  : 8,
+            ),
             side: isPrimary
                 ? BorderSide.none
-                : const BorderSide(color: Color(0xFF3B82F6), width: 1),
+                : BorderSide(
+                    color: const Color(0xFF3B82F6),
+                    width: isLargeDesktop || isDesktop
+                        ? 1.5
+                        : isTablet
+                        ? 1.2
+                        : isSmallScreen
+                        ? 0.8
+                        : 1,
+                  ),
           ),
           elevation: 0,
         ),
-        icon: Icon(icon, size: 18),
-        label: Text(title),
+        icon: Icon(
+          icon,
+          size: isLargeDesktop
+              ? 20
+              : isDesktop
+              ? 19
+              : isTablet
+              ? 18
+              : isSmallScreen
+              ? 16
+              : 18,
+        ),
+        label: Text(
+          title,
+          style: TextStyle(
+            fontSize: isLargeDesktop
+                ? 17
+                : isDesktop
+                ? 16
+                : isTablet
+                ? 15
+                : isSmallScreen
+                ? 13
+                : 14,
+          ),
+        ),
       ),
     );
   }

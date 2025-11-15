@@ -293,4 +293,69 @@ class StudentDashboardService {
       };
     }
   }
+
+  Future<List<dynamic>> getAvailableExams(
+    String studentId,
+    Map<String, String> headers,
+  ) async {
+    try {
+      final uri = Uri.parse(ApiEndpoints.studentAvailableExams(studentId));
+      final res = await http.get(uri, headers: headers);
+
+      if (res.statusCode == 200) {
+        final body = json.decode(res.body);
+        if (body['success'] == true && body['exams'] != null) {
+          return body['exams'] as List<dynamic>;
+        }
+      }
+      return [];
+    } catch (_) {
+      return [];
+    }
+  }
+
+  Future<Map<String, dynamic>> registerForExam(
+    String examId,
+    String slotId,
+    Map<String, String> headers,
+  ) async {
+    try {
+      final uri = Uri.parse(ApiEndpoints.studentRegisterExam(examId));
+      final requestHeaders = {
+        ...headers,
+        'Content-Type': 'application/json',
+      };
+      final res = await http.post(
+        uri,
+        headers: requestHeaders,
+        body: json.encode({'slotId': slotId}),
+      );
+
+      final body = json.decode(res.body);
+      if (res.statusCode == 200 || res.statusCode == 201) {
+        return body as Map<String, dynamic>;
+      }
+      return body as Map<String, dynamic>;
+    } catch (e) {
+      return {'success': false, 'message': 'Error registering for exam'};
+    }
+  }
+
+  Future<Map<String, dynamic>> startExam(
+    String examId,
+    Map<String, String> headers,
+  ) async {
+    try {
+      final uri = Uri.parse(ApiEndpoints.studentStartExam(examId));
+      final res = await http.get(uri, headers: headers);
+
+      final body = json.decode(res.body);
+      if (res.statusCode == 200) {
+        return body as Map<String, dynamic>;
+      }
+      return body as Map<String, dynamic>;
+    } catch (e) {
+      return {'success': false, 'message': 'Error starting exam'};
+    }
+  }
 }

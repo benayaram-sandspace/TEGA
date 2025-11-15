@@ -1,5 +1,8 @@
+import 'dart:async';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:tega/core/services/admin_dashboard_cache_service.dart';
 import 'package:tega/core/constants/app_colors.dart';
 import 'package:tega/features/3_admin_panel/data/repositories/exam_repository.dart';
 import 'package:tega/features/3_admin_panel/presentation/0_dashboard/admin_dashboard_styles.dart';
@@ -15,6 +18,7 @@ class CreateAssessmentFormPage extends StatefulWidget {
 class _CreateAssessmentFormPageState extends State<CreateAssessmentFormPage> {
   final _formKey = GlobalKey<FormState>();
   final _examRepository = ExamRepository();
+  final AdminDashboardCacheService _cacheService = AdminDashboardCacheService();
 
   // Form controllers
   final _titleController = TextEditingController();
@@ -38,7 +42,32 @@ class _CreateAssessmentFormPageState extends State<CreateAssessmentFormPage> {
   @override
   void initState() {
     super.initState();
-    _loadCourses();
+    _initializeCacheAndLoadData();
+  }
+
+  Future<void> _initializeCacheAndLoadData() async {
+    // Initialize cache service
+    await _cacheService.initialize();
+    
+    // Try to load from cache first
+    await _loadFromCache();
+    
+    // Then load fresh data
+    await _loadCourses();
+  }
+
+  Future<void> _loadFromCache() async {
+    try {
+      final cachedCourses = await _cacheService.getAvailableCourses();
+
+      if (cachedCourses != null && cachedCourses.isNotEmpty) {
+        setState(() {
+          _availableCourses = List<Map<String, dynamic>>.from(cachedCourses);
+        });
+      }
+    } catch (e) {
+      // Silently handle cache errors
+    }
   }
 
   @override
@@ -53,7 +82,23 @@ class _CreateAssessmentFormPageState extends State<CreateAssessmentFormPage> {
     super.dispose();
   }
 
-  Future<void> _loadCourses() async {
+  bool _isNoInternetError(dynamic error) {
+    return error is SocketException ||
+        error is TimeoutException ||
+        (error.toString().toLowerCase().contains('network') ||
+            error.toString().toLowerCase().contains('connection') ||
+            error.toString().toLowerCase().contains('internet') ||
+            error.toString().toLowerCase().contains('failed host lookup') ||
+            error.toString().toLowerCase().contains('no address associated with hostname'));
+  }
+
+  Future<void> _loadCourses({bool forceRefresh = false}) async {
+    // If we have cached data and not forcing refresh, load in background
+    if (!forceRefresh && _availableCourses.isNotEmpty) {
+      _loadCoursesInBackground();
+      return;
+    }
+
     setState(() => _isLoadingCourses = true);
     try {
       final courses = await _examRepository.getAvailableCourses();
@@ -61,16 +106,58 @@ class _CreateAssessmentFormPageState extends State<CreateAssessmentFormPage> {
         _availableCourses = courses;
         _isLoadingCourses = false;
       });
+      
+      // Cache the data
+      await _cacheService.setAvailableCourses(courses);
+      // Reset toast flag on successful load (internet is back)
+      _cacheService.resetNoInternetToastFlag();
     } catch (e) {
-      setState(() => _isLoadingCourses = false);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to load courses: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
+      // Check if it's a network/internet error
+      if (_isNoInternetError(e)) {
+        // Try to load from cache if available
+        final cachedCourses = await _cacheService.getAvailableCourses();
+        if (cachedCourses != null && cachedCourses.isNotEmpty) {
+          // Load from cache
+          setState(() {
+            _availableCourses = List<Map<String, dynamic>>.from(cachedCourses);
+            _isLoadingCourses = false;
+          });
+          return;
+        }
+        
+        // No cache available
+        setState(() => _isLoadingCourses = false);
+      } else {
+        // Other errors
+        setState(() => _isLoadingCourses = false);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Failed to load courses: $e'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
       }
+    }
+  }
+
+  Future<void> _loadCoursesInBackground() async {
+    try {
+      final courses = await _examRepository.getAvailableCourses();
+      if (mounted) {
+        setState(() {
+          _availableCourses = courses;
+        });
+        
+        // Cache the data
+        await _cacheService.setAvailableCourses(courses);
+        // Reset toast flag on successful load (internet is back)
+        _cacheService.resetNoInternetToastFlag();
+      }
+    } catch (e) {
+      // Silently fail in background refresh - don't show toast here
+      // Toast is only shown once in the main load method
     }
   }
 

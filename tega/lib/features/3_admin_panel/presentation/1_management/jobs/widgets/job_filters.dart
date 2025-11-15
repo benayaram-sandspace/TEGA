@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:tega/features/3_admin_panel/presentation/0_dashboard/admin_dashboard_styles.dart';
 
 class JobFilters extends StatefulWidget {
   final Function(String) onSearchChanged;
   final Function(String, String) onFilterChanged;
   final String selectedStatus;
   final String selectedType;
+  final bool isMobile;
+  final bool isTablet;
+  final bool isDesktop;
 
   const JobFilters({
     super.key,
@@ -12,6 +16,9 @@ class JobFilters extends StatefulWidget {
     required this.onFilterChanged,
     required this.selectedStatus,
     required this.selectedType,
+    required this.isMobile,
+    required this.isTablet,
+    required this.isDesktop,
   });
 
   @override
@@ -53,11 +60,16 @@ class _JobFiltersState extends State<JobFilters> {
           child: Opacity(
             opacity: value.clamp(0.0, 1.0),
             child: Container(
-              margin: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-              padding: const EdgeInsets.all(16),
+              margin: EdgeInsets.fromLTRB(
+                widget.isMobile ? 12 : widget.isTablet ? 14 : 16,
+                widget.isMobile ? 6 : widget.isTablet ? 7 : 8,
+                widget.isMobile ? 12 : widget.isTablet ? 14 : 16,
+                widget.isMobile ? 6 : widget.isTablet ? 7 : 8,
+              ),
+              padding: EdgeInsets.all(widget.isMobile ? 12 : widget.isTablet ? 14 : 16),
               decoration: BoxDecoration(
                 color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(widget.isMobile ? 10 : widget.isTablet ? 11 : 12),
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black.withValues(alpha: 0.05),
@@ -72,12 +84,24 @@ class _JobFiltersState extends State<JobFilters> {
                   // Search Bar
                   TextField(
                     controller: _searchController,
+                    style: TextStyle(
+                      fontSize: widget.isMobile ? 13 : widget.isTablet ? 14 : 15,
+                    ),
                     decoration: InputDecoration(
                       hintText: 'Search jobs, companies, or location...',
-                      prefixIcon: const Icon(Icons.search, size: 20),
+                      hintStyle: TextStyle(
+                        fontSize: widget.isMobile ? 13 : widget.isTablet ? 14 : 15,
+                      ),
+                      prefixIcon: Icon(
+                        Icons.search,
+                        size: widget.isMobile ? 18 : widget.isTablet ? 19 : 20,
+                      ),
                       suffixIcon: _searchController.text.isNotEmpty
                           ? IconButton(
-                              icon: const Icon(Icons.clear, size: 20),
+                              icon: Icon(
+                                Icons.clear,
+                                size: widget.isMobile ? 18 : widget.isTablet ? 19 : 20,
+                              ),
                               onPressed: () {
                                 _searchController.clear();
                                 widget.onSearchChanged('');
@@ -90,13 +114,13 @@ class _JobFiltersState extends State<JobFilters> {
                         const Color(0xFFE2E8F0),
                       ),
                       focusedBorder: _buildOutlineBorder(
-                        const Color(0xFF6B5FFF),
+                        AdminDashboardStyles.primary,
                       ),
                       filled: true,
                       fillColor: const Color(0xFFF7F8FC),
-                      contentPadding: const EdgeInsets.symmetric(
-                        vertical: 14,
-                        horizontal: 16,
+                      contentPadding: EdgeInsets.symmetric(
+                        vertical: widget.isMobile ? 12 : widget.isTablet ? 13 : 14,
+                        horizontal: widget.isMobile ? 14 : widget.isTablet ? 15 : 16,
                       ),
                     ),
                     onChanged: (value) {
@@ -104,7 +128,7 @@ class _JobFiltersState extends State<JobFilters> {
                       widget.onSearchChanged(value);
                     },
                   ),
-                  const SizedBox(height: 16),
+                  SizedBox(height: widget.isMobile ? 12 : widget.isTablet ? 14 : 16),
 
                   // Filter Dropdowns in a Row
                   Row(
@@ -124,7 +148,7 @@ class _JobFiltersState extends State<JobFilters> {
                           },
                         ),
                       ),
-                      const SizedBox(width: 12),
+                      SizedBox(width: widget.isMobile ? 10 : widget.isTablet ? 11 : 12),
                       Expanded(
                         child: _buildDropdownFilter(
                           "Type",
@@ -162,19 +186,19 @@ class _JobFiltersState extends State<JobFilters> {
       onChanged: onChanged,
       decoration: InputDecoration(
         labelText: label,
-        labelStyle: const TextStyle(
-          color: Color(0xFF4A5568),
+        labelStyle: TextStyle(
+          color: const Color(0xFF4A5568),
           fontWeight: FontWeight.w500,
-          fontSize: 14,
+          fontSize: widget.isMobile ? 13 : widget.isTablet ? 13.5 : 14,
         ),
         border: _buildOutlineBorder(const Color(0xFFE2E8F0)),
         enabledBorder: _buildOutlineBorder(const Color(0xFFE2E8F0)),
-        focusedBorder: _buildOutlineBorder(const Color(0xFF6B5FFF)),
+        focusedBorder: _buildOutlineBorder(AdminDashboardStyles.primary),
         filled: true,
         fillColor: const Color(0xFFF7F8FC),
-        contentPadding: const EdgeInsets.symmetric(
-          vertical: 16,
-          horizontal: 16,
+        contentPadding: EdgeInsets.symmetric(
+          vertical: widget.isMobile ? 14 : widget.isTablet ? 15 : 16,
+          horizontal: widget.isMobile ? 14 : widget.isTablet ? 15 : 16,
         ),
         isDense: true,
       ),
@@ -183,22 +207,22 @@ class _JobFiltersState extends State<JobFilters> {
           value: option.value,
           child: Text(
             option.key,
-            style: const TextStyle(
-              fontSize: 14,
-              color: Color(0xFF2D3748),
+            style: TextStyle(
+              fontSize: widget.isMobile ? 13 : widget.isTablet ? 13.5 : 14,
+              color: Colors.black,
               fontWeight: FontWeight.w500,
             ),
           ),
         );
       }).toList(),
-      icon: const Icon(
+      icon: Icon(
         Icons.keyboard_arrow_down,
-        color: Color(0xFF718096),
-        size: 20,
+        color: const Color(0xFF718096),
+        size: widget.isMobile ? 18 : widget.isTablet ? 19 : 20,
       ),
-      style: const TextStyle(
-        fontSize: 14,
-        color: Color(0xFF2D3748),
+      style: TextStyle(
+        fontSize: widget.isMobile ? 13 : widget.isTablet ? 13.5 : 14,
+        color: Colors.black,
         fontWeight: FontWeight.w500,
       ),
     );
@@ -206,7 +230,7 @@ class _JobFiltersState extends State<JobFilters> {
 
   OutlineInputBorder _buildOutlineBorder(Color color) {
     return OutlineInputBorder(
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(widget.isMobile ? 10 : widget.isTablet ? 11 : 12),
       borderSide: BorderSide(color: color, width: 1),
     );
   }

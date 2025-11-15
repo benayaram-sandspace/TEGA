@@ -3,17 +3,55 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:tega/features/1_authentication/data/auth_repository.dart';
 import 'package:tega/core/constants/api_constants.dart';
+import 'package:tega/core/services/settings_cache_service.dart';
 
 class SettingsPage extends StatelessWidget {
   const SettingsPage({super.key});
 
+  // Responsive breakpoints
+  static double get mobileBreakpoint => 600;
+  static double get tabletBreakpoint => 1024;
+  static double get desktopBreakpoint => 1440;
+  
+  static bool isMobile(BuildContext context) => MediaQuery.of(context).size.width < mobileBreakpoint;
+  static bool isTablet(BuildContext context) => MediaQuery.of(context).size.width >= mobileBreakpoint &&
+      MediaQuery.of(context).size.width < tabletBreakpoint;
+  static bool isDesktop(BuildContext context) => MediaQuery.of(context).size.width >= tabletBreakpoint &&
+      MediaQuery.of(context).size.width < desktopBreakpoint;
+  static bool isLargeDesktop(BuildContext context) => MediaQuery.of(context).size.width >= desktopBreakpoint;
+  static bool isSmallScreen(BuildContext context) => MediaQuery.of(context).size.width < 400;
+
   @override
   Widget build(BuildContext context) {
+    final isLargeDesktop = SettingsPage.isLargeDesktop(context);
+    final isDesktop = SettingsPage.isDesktop(context);
+    final isTablet = SettingsPage.isTablet(context);
+    final isSmallScreen = SettingsPage.isSmallScreen(context);
+    
     return Scaffold(
       backgroundColor: const Color(0xFFF7F8FC),
       body: SafeArea(
         child: ListView(
-          padding: const EdgeInsets.symmetric(vertical: 8),
+          padding: EdgeInsets.symmetric(
+            vertical: isLargeDesktop
+                ? 16
+                : isDesktop
+                ? 14
+                : isTablet
+                ? 12
+                : isSmallScreen
+                ? 6
+                : 8,
+            horizontal: isLargeDesktop
+                ? 24
+                : isDesktop
+                ? 20
+                : isTablet
+                ? 16
+                : isSmallScreen
+                ? 8
+                : 12,
+          ),
           children: [
             _buildItem(
               context,
@@ -106,29 +144,122 @@ class SettingsPage extends StatelessWidget {
     VoidCallback? onTap,
     bool selected = false,
   }) {
+    final isLargeDesktop = SettingsPage.isLargeDesktop(context);
+    final isDesktop = SettingsPage.isDesktop(context);
+    final isTablet = SettingsPage.isTablet(context);
+    final isSmallScreen = SettingsPage.isSmallScreen(context);
+    
     final Color primary = const Color(0xFF6B5FFF);
     final Color text = const Color(0xFF111827);
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      margin: EdgeInsets.symmetric(
+        horizontal: isLargeDesktop
+            ? 16
+            : isDesktop
+            ? 14
+            : isTablet
+            ? 12
+            : isSmallScreen
+            ? 6
+            : 8,
+        vertical: isLargeDesktop
+            ? 8
+            : isDesktop
+            ? 7
+            : isTablet
+            ? 6
+            : isSmallScreen
+            ? 4
+            : 5,
+      ),
       decoration: BoxDecoration(
         color: selected ? primary.withOpacity(0.08) : Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFE5E7EB)),
+        borderRadius: BorderRadius.circular(
+          isLargeDesktop
+              ? 16
+              : isDesktop
+              ? 14
+              : isTablet
+              ? 12
+              : isSmallScreen
+              ? 10
+              : 12,
+        ),
+        border: Border.all(
+          color: const Color(0xFFE5E7EB),
+          width: isLargeDesktop || isDesktop
+              ? 1.5
+              : isTablet
+              ? 1.2
+              : isSmallScreen
+              ? 0.8
+              : 1,
+        ),
       ),
       child: ListTile(
         onTap: onTap,
+        contentPadding: EdgeInsets.symmetric(
+          horizontal: isLargeDesktop
+              ? 24
+              : isDesktop
+              ? 20
+              : isTablet
+              ? 16
+              : isSmallScreen
+              ? 12
+              : 16,
+          vertical: isLargeDesktop
+              ? 16
+              : isDesktop
+              ? 14
+              : isTablet
+              ? 12
+              : isSmallScreen
+              ? 8
+              : 10,
+        ),
         leading: Icon(
           icon,
           color: selected ? primary : const Color(0xFF6B7280),
+          size: isLargeDesktop
+              ? 28
+              : isDesktop
+              ? 26
+              : isTablet
+              ? 24
+              : isSmallScreen
+              ? 20
+              : 22,
         ),
         title: Text(
           label,
           style: TextStyle(
             color: selected ? primary : text,
             fontWeight: FontWeight.w600,
+            fontSize: isLargeDesktop
+                ? 18
+                : isDesktop
+                ? 17
+                : isTablet
+                ? 16
+                : isSmallScreen
+                ? 14
+                : 15,
           ),
         ),
-        trailing: const Icon(Icons.chevron_right, color: Color(0xFF9CA3AF)),
+        trailing: Icon(
+          Icons.chevron_right,
+          color: const Color(0xFF9CA3AF),
+          size: isLargeDesktop
+              ? 28
+              : isDesktop
+              ? 26
+              : isTablet
+              ? 24
+              : isSmallScreen
+              ? 20
+              : 22,
+        ),
       ),
     );
   }
@@ -157,6 +288,18 @@ class _SecuritySettingsPageState extends State<SecuritySettingsPage> {
     'Never',
   ];
 
+  // Responsive breakpoints
+  double get mobileBreakpoint => 600;
+  double get tabletBreakpoint => 1024;
+  double get desktopBreakpoint => 1440;
+  bool get isMobile => MediaQuery.of(context).size.width < mobileBreakpoint;
+  bool get isTablet => MediaQuery.of(context).size.width >= mobileBreakpoint &&
+      MediaQuery.of(context).size.width < tabletBreakpoint;
+  bool get isDesktop => MediaQuery.of(context).size.width >= tabletBreakpoint &&
+      MediaQuery.of(context).size.width < desktopBreakpoint;
+  bool get isLargeDesktop => MediaQuery.of(context).size.width >= desktopBreakpoint;
+  bool get isSmallScreen => MediaQuery.of(context).size.width < 400;
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -164,20 +307,51 @@ class _SecuritySettingsPageState extends State<SecuritySettingsPage> {
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
-        title: const Text(
+        title: Text(
           'Security & Authentication',
           style: TextStyle(
-            color: Color(0xFF111827),
+            color: const Color(0xFF111827),
             fontWeight: FontWeight.w700,
+            fontSize: isLargeDesktop
+                ? 22
+                : isDesktop
+                ? 20
+                : isTablet
+                ? 19
+                : isSmallScreen
+                ? 16
+                : 18,
           ),
         ),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Color(0xFF111827)),
+          icon: Icon(
+            Icons.arrow_back,
+            color: const Color(0xFF111827),
+            size: isLargeDesktop
+                ? 28
+                : isDesktop
+                ? 26
+                : isTablet
+                ? 24
+                : isSmallScreen
+                ? 20
+                : 22,
+          ),
           onPressed: () => Navigator.of(context).pop(),
         ),
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
+        padding: EdgeInsets.all(
+          isLargeDesktop
+              ? 24
+              : isDesktop
+              ? 20
+              : isTablet
+              ? 18
+              : isSmallScreen
+              ? 12
+              : 16,
+        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -187,7 +361,17 @@ class _SecuritySettingsPageState extends State<SecuritySettingsPage> {
               value: _twoFactorEnabled,
               onChanged: (value) => setState(() => _twoFactorEnabled = value),
             ),
-            const SizedBox(height: 12),
+            SizedBox(
+              height: isLargeDesktop
+                  ? 16
+                  : isDesktop
+                  ? 14
+                  : isTablet
+                  ? 12
+                  : isSmallScreen
+                  ? 8
+                  : 12,
+            ),
             _buildSecurityCard(
               title: 'Login Notifications',
               description:
@@ -195,9 +379,29 @@ class _SecuritySettingsPageState extends State<SecuritySettingsPage> {
               value: _loginNotifications,
               onChanged: (value) => setState(() => _loginNotifications = value),
             ),
-            const SizedBox(height: 12),
+            SizedBox(
+              height: isLargeDesktop
+                  ? 16
+                  : isDesktop
+                  ? 14
+                  : isTablet
+                  ? 12
+                  : isSmallScreen
+                  ? 8
+                  : 12,
+            ),
             _buildSessionTimeoutCard(),
-            const SizedBox(height: 24),
+            SizedBox(
+              height: isLargeDesktop
+                  ? 32
+                  : isDesktop
+                  ? 28
+                  : isTablet
+                  ? 24
+                  : isSmallScreen
+                  ? 16
+                  : 20,
+            ),
             _buildPasswordManagementCard(),
           ],
         ),
@@ -212,32 +416,87 @@ class _SecuritySettingsPageState extends State<SecuritySettingsPage> {
     required ValueChanged<bool> onChanged,
   }) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(
+        isLargeDesktop
+            ? 20
+            : isDesktop
+            ? 18
+            : isTablet
+            ? 16
+            : isSmallScreen
+            ? 12
+            : 14,
+      ),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFE5E7EB)),
+        borderRadius: BorderRadius.circular(
+          isLargeDesktop
+              ? 16
+              : isDesktop
+              ? 14
+              : isTablet
+              ? 12
+              : isSmallScreen
+              ? 10
+              : 12,
+        ),
+        border: Border.all(
+          color: const Color(0xFFE5E7EB),
+          width: isLargeDesktop || isDesktop
+              ? 1.5
+              : isTablet
+              ? 1.2
+              : isSmallScreen
+              ? 0.8
+              : 1,
+        ),
       ),
       child: Row(
-            children: [
+        children: [
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   title,
-                  style: const TextStyle(
-                    color: Color(0xFF111827),
+                  style: TextStyle(
+                    color: const Color(0xFF111827),
                     fontWeight: FontWeight.w600,
-                    fontSize: 16,
+                    fontSize: isLargeDesktop
+                        ? 18
+                        : isDesktop
+                        ? 17
+                        : isTablet
+                        ? 16
+                        : isSmallScreen
+                        ? 14
+                        : 15,
                   ),
                 ),
-                const SizedBox(height: 4),
+                SizedBox(
+                  height: isLargeDesktop
+                      ? 6
+                      : isDesktop
+                      ? 5
+                      : isTablet
+                      ? 4
+                      : isSmallScreen
+                      ? 3
+                      : 4,
+                ),
                 Text(
                   description,
-                  style: const TextStyle(
-                    color: Color(0xFF6B7280),
-                    fontSize: 14,
+                  style: TextStyle(
+                    color: const Color(0xFF6B7280),
+                    fontSize: isLargeDesktop
+                        ? 15
+                        : isDesktop
+                        ? 14
+                        : isTablet
+                        ? 13
+                        : isSmallScreen
+                        ? 11
+                        : 12,
                   ),
                 ),
               ],
@@ -255,46 +514,155 @@ class _SecuritySettingsPageState extends State<SecuritySettingsPage> {
 
   Widget _buildSessionTimeoutCard() {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(
+        isLargeDesktop
+            ? 20
+            : isDesktop
+            ? 18
+            : isTablet
+            ? 16
+            : isSmallScreen
+            ? 12
+            : 14,
+      ),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFE5E7EB)),
+        borderRadius: BorderRadius.circular(
+          isLargeDesktop
+              ? 16
+              : isDesktop
+              ? 14
+              : isTablet
+              ? 12
+              : isSmallScreen
+              ? 10
+              : 12,
+        ),
+        border: Border.all(
+          color: const Color(0xFFE5E7EB),
+          width: isLargeDesktop || isDesktop
+              ? 1.5
+              : isTablet
+              ? 1.2
+              : isSmallScreen
+              ? 0.8
+              : 1,
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             'Session Timeout',
             style: TextStyle(
-              color: Color(0xFF111827),
+              color: const Color(0xFF111827),
               fontWeight: FontWeight.w600,
-              fontSize: 16,
+              fontSize: isLargeDesktop
+                  ? 18
+                  : isDesktop
+                  ? 17
+                  : isTablet
+                  ? 16
+                  : isSmallScreen
+                  ? 14
+                  : 15,
             ),
           ),
-          const SizedBox(height: 8),
+          SizedBox(
+            height: isLargeDesktop
+                ? 12
+                : isDesktop
+                ? 10
+                : isTablet
+                ? 8
+                : isSmallScreen
+                ? 6
+                : 8,
+          ),
           DropdownButtonFormField<String>(
             value: _sessionTimeout,
             decoration: InputDecoration(
-              contentPadding: const EdgeInsets.symmetric(
-                horizontal: 12,
-                vertical: 8,
+              contentPadding: EdgeInsets.symmetric(
+                horizontal: isLargeDesktop
+                    ? 16
+                    : isDesktop
+                    ? 14
+                    : isTablet
+                    ? 12
+                    : isSmallScreen
+                    ? 10
+                    : 12,
+                vertical: isLargeDesktop
+                    ? 12
+                    : isDesktop
+                    ? 10
+                    : isTablet
+                    ? 8
+                    : isSmallScreen
+                    ? 6
+                    : 8,
               ),
               border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(
+                  isLargeDesktop
+                      ? 10
+                      : isDesktop
+                      ? 9
+                      : isTablet
+                      ? 8
+                      : isSmallScreen
+                      ? 6
+                      : 8,
+                ),
                 borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
               ),
               enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(
+                  isLargeDesktop
+                      ? 10
+                      : isDesktop
+                      ? 9
+                      : isTablet
+                      ? 8
+                      : isSmallScreen
+                      ? 6
+                      : 8,
+                ),
                 borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
               ),
               focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(
+                  isLargeDesktop
+                      ? 10
+                      : isDesktop
+                      ? 9
+                      : isTablet
+                      ? 8
+                      : isSmallScreen
+                      ? 6
+                      : 8,
+                ),
                 borderSide: const BorderSide(color: Color(0xFF6B5FFF)),
               ),
             ),
             items: _timeoutOptions.map((String value) {
-              return DropdownMenuItem<String>(value: value, child: Text(value));
+              return DropdownMenuItem<String>(
+                value: value,
+                child: Text(
+                  value,
+                  style: TextStyle(
+                    fontSize: isLargeDesktop
+                        ? 16
+                        : isDesktop
+                        ? 15
+                        : isTablet
+                        ? 14
+                        : isSmallScreen
+                        ? 12
+                        : 13,
+                  ),
+                ),
+              );
             }).toList(),
             onChanged: (String? newValue) {
               if (newValue != null) {
@@ -304,10 +672,31 @@ class _SecuritySettingsPageState extends State<SecuritySettingsPage> {
               }
             },
           ),
-          const SizedBox(height: 8),
-          const Text(
+          SizedBox(
+            height: isLargeDesktop
+                ? 12
+                : isDesktop
+                ? 10
+                : isTablet
+                ? 8
+                : isSmallScreen
+                ? 6
+                : 8,
+          ),
+          Text(
             'Automatically log out after inactivity.',
-            style: TextStyle(color: Color(0xFF6B7280), fontSize: 14),
+            style: TextStyle(
+              color: const Color(0xFF6B7280),
+              fontSize: isLargeDesktop
+                  ? 15
+                  : isDesktop
+                  ? 14
+                  : isTablet
+                  ? 13
+                  : isSmallScreen
+                  ? 11
+                  : 12,
+            ),
           ),
         ],
       ),
@@ -316,30 +705,99 @@ class _SecuritySettingsPageState extends State<SecuritySettingsPage> {
 
   Widget _buildPasswordManagementCard() {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(
+        isLargeDesktop
+            ? 20
+            : isDesktop
+            ? 18
+            : isTablet
+            ? 16
+            : isSmallScreen
+            ? 12
+            : 14,
+      ),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFE5E7EB)),
+        borderRadius: BorderRadius.circular(
+          isLargeDesktop
+              ? 16
+              : isDesktop
+              ? 14
+              : isTablet
+              ? 12
+              : isSmallScreen
+              ? 10
+              : 12,
+        ),
+        border: Border.all(
+          color: const Color(0xFFE5E7EB),
+          width: isLargeDesktop || isDesktop
+              ? 1.5
+              : isTablet
+              ? 1.2
+              : isSmallScreen
+              ? 0.8
+              : 1,
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
+        children: [
           Row(
             children: [
-              const Icon(Icons.key, color: Color(0xFF6B5FFF)),
-              const SizedBox(width: 8),
-              const Text(
+              Icon(
+                Icons.key,
+                color: const Color(0xFF6B5FFF),
+                size: isLargeDesktop
+                    ? 26
+                    : isDesktop
+                    ? 24
+                    : isTablet
+                    ? 22
+                    : isSmallScreen
+                    ? 18
+                    : 20,
+              ),
+              SizedBox(
+                width: isLargeDesktop
+                    ? 12
+                    : isDesktop
+                    ? 10
+                    : isTablet
+                    ? 8
+                    : isSmallScreen
+                    ? 6
+                    : 8,
+              ),
+              Text(
                 'Password Management',
                 style: TextStyle(
-                  color: Color(0xFF111827),
-                  fontSize: 18,
+                  color: const Color(0xFF111827),
+                  fontSize: isLargeDesktop
+                      ? 22
+                      : isDesktop
+                      ? 20
+                      : isTablet
+                      ? 19
+                      : isSmallScreen
+                      ? 16
+                      : 18,
                   fontWeight: FontWeight.w700,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 16),
+          SizedBox(
+            height: isLargeDesktop
+                ? 20
+                : isDesktop
+                ? 18
+                : isTablet
+                ? 16
+                : isSmallScreen
+                ? 12
+                : 16,
+          ),
           _buildPasswordForm(),
         ],
       ),
@@ -358,19 +816,49 @@ class _SecuritySettingsPageState extends State<SecuritySettingsPage> {
           controller: currentPasswordController,
           hintText: 'Enter current password',
         ),
-        const SizedBox(height: 16),
+        SizedBox(
+          height: isLargeDesktop
+              ? 20
+              : isDesktop
+              ? 18
+              : isTablet
+              ? 16
+              : isSmallScreen
+              ? 12
+              : 16,
+        ),
         _buildPasswordField(
           label: 'New Password',
           controller: newPasswordController,
           hintText: 'Enter new password',
         ),
-        const SizedBox(height: 16),
+        SizedBox(
+          height: isLargeDesktop
+              ? 20
+              : isDesktop
+              ? 18
+              : isTablet
+              ? 16
+              : isSmallScreen
+              ? 12
+              : 16,
+        ),
         _buildPasswordField(
           label: 'Confirm New Password',
           controller: confirmPasswordController,
           hintText: 'Confirm new password',
         ),
-        const SizedBox(height: 20),
+        SizedBox(
+          height: isLargeDesktop
+              ? 24
+              : isDesktop
+              ? 22
+              : isTablet
+              ? 20
+              : isSmallScreen
+              ? 16
+              : 20,
+        ),
         Align(
           alignment: Alignment.centerRight,
           child: ElevatedButton.icon(
@@ -382,13 +870,66 @@ class _SecuritySettingsPageState extends State<SecuritySettingsPage> {
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFF6B5FFF),
               foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              padding: EdgeInsets.symmetric(
+                horizontal: isLargeDesktop
+                    ? 28
+                    : isDesktop
+                    ? 24
+                    : isTablet
+                    ? 20
+                    : isSmallScreen
+                    ? 16
+                    : 20,
+                vertical: isLargeDesktop
+                    ? 16
+                    : isDesktop
+                    ? 14
+                    : isTablet
+                    ? 12
+                    : isSmallScreen
+                    ? 10
+                    : 12,
+              ),
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(
+                  isLargeDesktop
+                      ? 10
+                      : isDesktop
+                      ? 9
+                      : isTablet
+                      ? 8
+                      : isSmallScreen
+                      ? 6
+                      : 8,
+                ),
               ),
             ),
-            icon: const Icon(Icons.lock, size: 18),
-            label: const Text('Change Password'),
+            icon: Icon(
+              Icons.lock,
+              size: isLargeDesktop
+                  ? 20
+                  : isDesktop
+                  ? 19
+                  : isTablet
+                  ? 18
+                  : isSmallScreen
+                  ? 16
+                  : 18,
+            ),
+            label: Text(
+              'Change Password',
+              style: TextStyle(
+                fontSize: isLargeDesktop
+                    ? 17
+                    : isDesktop
+                    ? 16
+                    : isTablet
+                    ? 15
+                    : isSmallScreen
+                    ? 13
+                    : 14,
+              ),
+            ),
           ),
         ),
       ],
@@ -405,35 +946,121 @@ class _SecuritySettingsPageState extends State<SecuritySettingsPage> {
       children: [
         Text(
           label,
-          style: const TextStyle(
-            color: Color(0xFF111827),
+          style: TextStyle(
+            color: const Color(0xFF111827),
             fontWeight: FontWeight.w600,
-            fontSize: 14,
+            fontSize: isLargeDesktop
+                ? 16
+                : isDesktop
+                ? 15
+                : isTablet
+                ? 14
+                : isSmallScreen
+                ? 12
+                : 13,
           ),
         ),
-        const SizedBox(height: 8),
+        SizedBox(
+          height: isLargeDesktop
+              ? 10
+              : isDesktop
+              ? 9
+              : isTablet
+              ? 8
+              : isSmallScreen
+              ? 6
+              : 8,
+        ),
         TextField(
           controller: controller,
           obscureText: true,
+          style: TextStyle(
+            fontSize: isLargeDesktop
+                ? 16
+                : isDesktop
+                ? 15
+                : isTablet
+                ? 14
+                : isSmallScreen
+                ? 12
+                : 13,
+          ),
           decoration: InputDecoration(
             hintText: hintText,
-            hintStyle: const TextStyle(color: Color(0xFF9CA3AF)),
+            hintStyle: TextStyle(
+              color: const Color(0xFF9CA3AF),
+              fontSize: isLargeDesktop
+                  ? 16
+                  : isDesktop
+                  ? 15
+                  : isTablet
+                  ? 14
+                  : isSmallScreen
+                  ? 12
+                  : 13,
+            ),
             filled: true,
             fillColor: const Color(0xFFF7F8FC),
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: 12,
-              vertical: 12,
+            contentPadding: EdgeInsets.symmetric(
+              horizontal: isLargeDesktop
+                  ? 16
+                  : isDesktop
+                  ? 14
+                  : isTablet
+                  ? 12
+                  : isSmallScreen
+                  ? 10
+                  : 12,
+              vertical: isLargeDesktop
+                  ? 16
+                  : isDesktop
+                  ? 14
+                  : isTablet
+                  ? 12
+                  : isSmallScreen
+                  ? 10
+                  : 12,
             ),
             border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(
+                isLargeDesktop
+                    ? 10
+                    : isDesktop
+                    ? 9
+                    : isTablet
+                    ? 8
+                    : isSmallScreen
+                    ? 6
+                    : 8,
+              ),
               borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
             ),
             enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(
+                isLargeDesktop
+                    ? 10
+                    : isDesktop
+                    ? 9
+                    : isTablet
+                    ? 8
+                    : isSmallScreen
+                    ? 6
+                    : 8,
+              ),
               borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
             ),
             focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(
+                isLargeDesktop
+                    ? 10
+                    : isDesktop
+                    ? 9
+                    : isTablet
+                    ? 8
+                    : isSmallScreen
+                    ? 6
+                    : 8,
+              ),
               borderSide: const BorderSide(color: Color(0xFF6B5FFF)),
             ),
           ),
@@ -530,6 +1157,18 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
   bool _smsPaymentAlerts = false;
   bool _smsSystemUpdates = false;
 
+  // Responsive breakpoints
+  double get mobileBreakpoint => 600;
+  double get tabletBreakpoint => 1024;
+  double get desktopBreakpoint => 1440;
+  bool get isMobile => MediaQuery.of(context).size.width < mobileBreakpoint;
+  bool get isTablet => MediaQuery.of(context).size.width >= mobileBreakpoint &&
+      MediaQuery.of(context).size.width < tabletBreakpoint;
+  bool get isDesktop => MediaQuery.of(context).size.width >= tabletBreakpoint &&
+      MediaQuery.of(context).size.width < desktopBreakpoint;
+  bool get isLargeDesktop => MediaQuery.of(context).size.width >= desktopBreakpoint;
+  bool get isSmallScreen => MediaQuery.of(context).size.width < 400;
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -537,20 +1176,51 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
-        title: const Text(
+        title: Text(
           'Notification Preferences',
           style: TextStyle(
-            color: Color(0xFF111827),
+            color: const Color(0xFF111827),
             fontWeight: FontWeight.w700,
+            fontSize: isLargeDesktop
+                ? 22
+                : isDesktop
+                ? 20
+                : isTablet
+                ? 19
+                : isSmallScreen
+                ? 16
+                : 18,
           ),
         ),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Color(0xFF111827)),
+          icon: Icon(
+            Icons.arrow_back,
+            color: const Color(0xFF111827),
+            size: isLargeDesktop
+                ? 28
+                : isDesktop
+                ? 26
+                : isTablet
+                ? 24
+                : isSmallScreen
+                ? 20
+                : 22,
+          ),
           onPressed: () => Navigator.of(context).pop(),
         ),
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
+        padding: EdgeInsets.all(
+          isLargeDesktop
+              ? 24
+              : isDesktop
+              ? 20
+              : isTablet
+              ? 18
+              : isSmallScreen
+              ? 12
+              : 16,
+        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -585,7 +1255,17 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
                 ),
               ],
             ),
-            const SizedBox(height: 16),
+            SizedBox(
+              height: isLargeDesktop
+                  ? 20
+                  : isDesktop
+                  ? 18
+                  : isTablet
+                  ? 16
+                  : isSmallScreen
+                  ? 12
+                  : 16,
+            ),
             _buildNotificationSection(
               title: 'Push Notifications',
               icon: Icons.phone_android_outlined,
@@ -617,7 +1297,17 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
                 ),
               ],
             ),
-            const SizedBox(height: 16),
+            SizedBox(
+              height: isLargeDesktop
+                  ? 20
+                  : isDesktop
+                  ? 18
+                  : isTablet
+                  ? 16
+                  : isSmallScreen
+                  ? 12
+                  : 16,
+            ),
             _buildNotificationSection(
               title: 'SMS Notifications',
               icon: Icons.sms_outlined,
@@ -661,30 +1351,99 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
     required List<_NotificationItem> notifications,
   }) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(
+        isLargeDesktop
+            ? 20
+            : isDesktop
+            ? 18
+            : isTablet
+            ? 16
+            : isSmallScreen
+            ? 12
+            : 14,
+      ),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFE5E7EB)),
+        borderRadius: BorderRadius.circular(
+          isLargeDesktop
+              ? 16
+              : isDesktop
+              ? 14
+              : isTablet
+              ? 12
+              : isSmallScreen
+              ? 10
+              : 12,
+        ),
+        border: Border.all(
+          color: const Color(0xFFE5E7EB),
+          width: isLargeDesktop || isDesktop
+              ? 1.5
+              : isTablet
+              ? 1.2
+              : isSmallScreen
+              ? 0.8
+              : 1,
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Icon(icon, color: const Color(0xFF6B5FFF)),
-              const SizedBox(width: 8),
+              Icon(
+                icon,
+                color: const Color(0xFF6B5FFF),
+                size: isLargeDesktop
+                    ? 24
+                    : isDesktop
+                    ? 22
+                    : isTablet
+                    ? 20
+                    : isSmallScreen
+                    ? 18
+                    : 20,
+              ),
+              SizedBox(
+                width: isLargeDesktop
+                    ? 12
+                    : isDesktop
+                    ? 10
+                    : isTablet
+                    ? 8
+                    : isSmallScreen
+                    ? 6
+                    : 8,
+              ),
               Text(
                 title,
-                style: const TextStyle(
-                  color: Color(0xFF111827),
-                  fontSize: 16,
+                style: TextStyle(
+                  color: const Color(0xFF111827),
+                  fontSize: isLargeDesktop
+                      ? 18
+                      : isDesktop
+                      ? 17
+                      : isTablet
+                      ? 16
+                      : isSmallScreen
+                      ? 14
+                      : 15,
                   fontWeight: FontWeight.w600,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 16),
+          SizedBox(
+            height: isLargeDesktop
+                ? 20
+                : isDesktop
+                ? 18
+                : isTablet
+                ? 16
+                : isSmallScreen
+                ? 12
+                : 16,
+          ),
           ...notifications.map(
             (notification) => _buildNotificationItem(notification),
           ),
@@ -695,15 +1454,33 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
 
   Widget _buildNotificationItem(_NotificationItem notification) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
+      padding: EdgeInsets.only(
+        bottom: isLargeDesktop
+            ? 16
+            : isDesktop
+            ? 14
+            : isTablet
+            ? 12
+            : isSmallScreen
+            ? 8
+            : 12,
+      ),
       child: Row(
         children: [
           Expanded(
-          child: Text(
+            child: Text(
               notification.label,
-              style: const TextStyle(
-                color: Color(0xFF111827),
-                fontSize: 14,
+              style: TextStyle(
+                color: const Color(0xFF111827),
+                fontSize: isLargeDesktop
+                    ? 16
+                    : isDesktop
+                    ? 15
+                    : isTablet
+                    ? 14
+                    : isSmallScreen
+                    ? 12
+                    : 13,
                 fontWeight: FontWeight.w500,
               ),
             ),
@@ -755,6 +1532,18 @@ class _PrivacySettingsPageState extends State<PrivacySettingsPage> {
     'No messages',
   ];
 
+  // Responsive breakpoints
+  double get mobileBreakpoint => 600;
+  double get tabletBreakpoint => 1024;
+  double get desktopBreakpoint => 1440;
+  bool get isMobile => MediaQuery.of(context).size.width < mobileBreakpoint;
+  bool get isTablet => MediaQuery.of(context).size.width >= mobileBreakpoint &&
+      MediaQuery.of(context).size.width < tabletBreakpoint;
+  bool get isDesktop => MediaQuery.of(context).size.width >= tabletBreakpoint &&
+      MediaQuery.of(context).size.width < desktopBreakpoint;
+  bool get isLargeDesktop => MediaQuery.of(context).size.width >= desktopBreakpoint;
+  bool get isSmallScreen => MediaQuery.of(context).size.width < 400;
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -762,20 +1551,51 @@ class _PrivacySettingsPageState extends State<PrivacySettingsPage> {
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
-        title: const Text(
+        title: Text(
           'Privacy Settings',
-            style: TextStyle(
-            color: Color(0xFF111827),
+          style: TextStyle(
+            color: const Color(0xFF111827),
             fontWeight: FontWeight.w700,
+            fontSize: isLargeDesktop
+                ? 22
+                : isDesktop
+                ? 20
+                : isTablet
+                ? 19
+                : isSmallScreen
+                ? 16
+                : 18,
           ),
         ),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Color(0xFF111827)),
+          icon: Icon(
+            Icons.arrow_back,
+            color: const Color(0xFF111827),
+            size: isLargeDesktop
+                ? 28
+                : isDesktop
+                ? 26
+                : isTablet
+                ? 24
+                : isSmallScreen
+                ? 20
+                : 22,
+          ),
           onPressed: () => Navigator.of(context).pop(),
         ),
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
+        padding: EdgeInsets.all(
+          isLargeDesktop
+              ? 24
+              : isDesktop
+              ? 20
+              : isTablet
+              ? 18
+              : isSmallScreen
+              ? 12
+              : 16,
+        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -786,7 +1606,17 @@ class _PrivacySettingsPageState extends State<PrivacySettingsPage> {
               options: _profileOptions,
               onChanged: (value) => setState(() => _profileVisibility = value!),
             ),
-            const SizedBox(height: 12),
+            SizedBox(
+              height: isLargeDesktop
+                  ? 16
+                  : isDesktop
+                  ? 14
+                  : isTablet
+                  ? 12
+                  : isSmallScreen
+                  ? 8
+                  : 12,
+            ),
             _buildPrivacyCard(
               title: 'Contact Information Visibility',
               description: 'Control who can see your email and phone number.',
@@ -794,7 +1624,17 @@ class _PrivacySettingsPageState extends State<PrivacySettingsPage> {
               options: _contactOptions,
               onChanged: (value) => setState(() => _contactVisibility = value!),
             ),
-            const SizedBox(height: 12),
+            SizedBox(
+              height: isLargeDesktop
+                  ? 16
+                  : isDesktop
+                  ? 14
+                  : isTablet
+                  ? 12
+                  : isSmallScreen
+                  ? 8
+                  : 12,
+            ),
             _buildPrivacyCard(
               title: 'Message Permissions',
               description: 'Control who can send you messages.',
@@ -803,7 +1643,17 @@ class _PrivacySettingsPageState extends State<PrivacySettingsPage> {
               onChanged: (value) =>
                   setState(() => _messagePermissions = value!),
             ),
-            const SizedBox(height: 12),
+            SizedBox(
+              height: isLargeDesktop
+                  ? 16
+                  : isDesktop
+                  ? 14
+                  : isTablet
+                  ? 12
+                  : isSmallScreen
+                  ? 8
+                  : 12,
+            ),
             _buildToggleCard(
               title: 'Data Sharing',
               description:
@@ -811,7 +1661,17 @@ class _PrivacySettingsPageState extends State<PrivacySettingsPage> {
               value: _dataSharing,
               onChanged: (value) => setState(() => _dataSharing = value),
             ),
-            const SizedBox(height: 12),
+            SizedBox(
+              height: isLargeDesktop
+                  ? 16
+                  : isDesktop
+                  ? 14
+                  : isTablet
+                  ? 12
+                  : isSmallScreen
+                  ? 8
+                  : 12,
+            ),
             _buildToggleCard(
               title: 'Analytics Tracking',
               description:
@@ -833,53 +1693,183 @@ class _PrivacySettingsPageState extends State<PrivacySettingsPage> {
     required ValueChanged<String?> onChanged,
   }) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(
+        isLargeDesktop
+            ? 20
+            : isDesktop
+            ? 18
+            : isTablet
+            ? 16
+            : isSmallScreen
+            ? 12
+            : 14,
+      ),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFE5E7EB)),
+        borderRadius: BorderRadius.circular(
+          isLargeDesktop
+              ? 16
+              : isDesktop
+              ? 14
+              : isTablet
+              ? 12
+              : isSmallScreen
+              ? 10
+              : 12,
+        ),
+        border: Border.all(
+          color: const Color(0xFFE5E7EB),
+          width: isLargeDesktop || isDesktop
+              ? 1.5
+              : isTablet
+              ? 1.2
+              : isSmallScreen
+              ? 0.8
+              : 1,
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             title,
-            style: const TextStyle(
-              color: Color(0xFF111827),
+            style: TextStyle(
+              color: const Color(0xFF111827),
               fontWeight: FontWeight.w600,
-              fontSize: 16,
+              fontSize: isLargeDesktop
+                  ? 18
+                  : isDesktop
+                  ? 17
+                  : isTablet
+                  ? 16
+                  : isSmallScreen
+                  ? 14
+                  : 15,
             ),
           ),
-          const SizedBox(height: 8),
+          SizedBox(
+            height: isLargeDesktop
+                ? 12
+                : isDesktop
+                ? 10
+                : isTablet
+                ? 8
+                : isSmallScreen
+                ? 6
+                : 8,
+          ),
           DropdownButtonFormField<String>(
             value: value,
             decoration: InputDecoration(
-              contentPadding: const EdgeInsets.symmetric(
-                horizontal: 12,
-                vertical: 8,
+              contentPadding: EdgeInsets.symmetric(
+                horizontal: isLargeDesktop
+                    ? 16
+                    : isDesktop
+                    ? 14
+                    : isTablet
+                    ? 12
+                    : isSmallScreen
+                    ? 10
+                    : 12,
+                vertical: isLargeDesktop
+                    ? 12
+                    : isDesktop
+                    ? 10
+                    : isTablet
+                    ? 8
+                    : isSmallScreen
+                    ? 6
+                    : 8,
               ),
               border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(
+                  isLargeDesktop
+                      ? 10
+                      : isDesktop
+                      ? 9
+                      : isTablet
+                      ? 8
+                      : isSmallScreen
+                      ? 6
+                      : 8,
+                ),
                 borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
               ),
               enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(
+                  isLargeDesktop
+                      ? 10
+                      : isDesktop
+                      ? 9
+                      : isTablet
+                      ? 8
+                      : isSmallScreen
+                      ? 6
+                      : 8,
+                ),
                 borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
               ),
               focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(
+                  isLargeDesktop
+                      ? 10
+                      : isDesktop
+                      ? 9
+                      : isTablet
+                      ? 8
+                      : isSmallScreen
+                      ? 6
+                      : 8,
+                ),
                 borderSide: const BorderSide(color: Color(0xFF6B5FFF)),
               ),
             ),
             items: options.map((String value) {
-              return DropdownMenuItem<String>(value: value, child: Text(value));
+              return DropdownMenuItem<String>(
+                value: value,
+                child: Text(
+                  value,
+                  style: TextStyle(
+                    fontSize: isLargeDesktop
+                        ? 16
+                        : isDesktop
+                        ? 15
+                        : isTablet
+                        ? 14
+                        : isSmallScreen
+                        ? 12
+                        : 13,
+                  ),
+                ),
+              );
             }).toList(),
             onChanged: onChanged,
           ),
-          const SizedBox(height: 8),
+          SizedBox(
+            height: isLargeDesktop
+                ? 12
+                : isDesktop
+                ? 10
+                : isTablet
+                ? 8
+                : isSmallScreen
+                ? 6
+                : 8,
+          ),
           Text(
             description,
-            style: const TextStyle(color: Color(0xFF6B7280), fontSize: 14),
+            style: TextStyle(
+              color: const Color(0xFF6B7280),
+              fontSize: isLargeDesktop
+                  ? 15
+                  : isDesktop
+                  ? 14
+                  : isTablet
+                  ? 13
+                  : isSmallScreen
+                  ? 11
+                  : 12,
+            ),
           ),
         ],
       ),
@@ -893,11 +1883,40 @@ class _PrivacySettingsPageState extends State<PrivacySettingsPage> {
     required ValueChanged<bool> onChanged,
   }) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(
+        isLargeDesktop
+            ? 20
+            : isDesktop
+            ? 18
+            : isTablet
+            ? 16
+            : isSmallScreen
+            ? 12
+            : 14,
+      ),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFE5E7EB)),
+        borderRadius: BorderRadius.circular(
+          isLargeDesktop
+              ? 16
+              : isDesktop
+              ? 14
+              : isTablet
+              ? 12
+              : isSmallScreen
+              ? 10
+              : 12,
+        ),
+        border: Border.all(
+          color: const Color(0xFFE5E7EB),
+          width: isLargeDesktop || isDesktop
+              ? 1.5
+              : isTablet
+              ? 1.2
+              : isSmallScreen
+              ? 0.8
+              : 1,
+        ),
       ),
       child: Row(
         children: [
@@ -907,18 +1926,44 @@ class _PrivacySettingsPageState extends State<PrivacySettingsPage> {
               children: [
                 Text(
                   title,
-                  style: const TextStyle(
-                    color: Color(0xFF111827),
+                  style: TextStyle(
+                    color: const Color(0xFF111827),
                     fontWeight: FontWeight.w600,
-                    fontSize: 16,
+                    fontSize: isLargeDesktop
+                        ? 18
+                        : isDesktop
+                        ? 17
+                        : isTablet
+                        ? 16
+                        : isSmallScreen
+                        ? 14
+                        : 15,
                   ),
                 ),
-                const SizedBox(height: 4),
+                SizedBox(
+                  height: isLargeDesktop
+                      ? 6
+                      : isDesktop
+                      ? 5
+                      : isTablet
+                      ? 4
+                      : isSmallScreen
+                      ? 3
+                      : 4,
+                ),
                 Text(
                   description,
-                  style: const TextStyle(
-                    color: Color(0xFF6B7280),
-                    fontSize: 14,
+                  style: TextStyle(
+                    color: const Color(0xFF6B7280),
+                    fontSize: isLargeDesktop
+                        ? 15
+                        : isDesktop
+                        ? 14
+                        : isTablet
+                        ? 13
+                        : isSmallScreen
+                        ? 11
+                        : 12,
                   ),
                 ),
               ],
@@ -945,6 +1990,18 @@ class AppearanceSettingsPage extends StatefulWidget {
 class _AppearanceSettingsPageState extends State<AppearanceSettingsPage> {
   String _currentTheme = 'Light';
 
+  // Responsive breakpoints
+  double get mobileBreakpoint => 600;
+  double get tabletBreakpoint => 1024;
+  double get desktopBreakpoint => 1440;
+  bool get isMobile => MediaQuery.of(context).size.width < mobileBreakpoint;
+  bool get isTablet => MediaQuery.of(context).size.width >= mobileBreakpoint &&
+      MediaQuery.of(context).size.width < tabletBreakpoint;
+  bool get isDesktop => MediaQuery.of(context).size.width >= tabletBreakpoint &&
+      MediaQuery.of(context).size.width < desktopBreakpoint;
+  bool get isLargeDesktop => MediaQuery.of(context).size.width >= desktopBreakpoint;
+  bool get isSmallScreen => MediaQuery.of(context).size.width < 400;
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -952,20 +2009,51 @@ class _AppearanceSettingsPageState extends State<AppearanceSettingsPage> {
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
-        title: const Text(
+        title: Text(
           'Appearance',
           style: TextStyle(
-            color: Color(0xFF111827),
+            color: const Color(0xFF111827),
             fontWeight: FontWeight.w700,
+            fontSize: isLargeDesktop
+                ? 22
+                : isDesktop
+                ? 20
+                : isTablet
+                ? 19
+                : isSmallScreen
+                ? 16
+                : 18,
           ),
         ),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Color(0xFF111827)),
+          icon: Icon(
+            Icons.arrow_back,
+            color: const Color(0xFF111827),
+            size: isLargeDesktop
+                ? 28
+                : isDesktop
+                ? 26
+                : isTablet
+                ? 24
+                : isSmallScreen
+                ? 20
+                : 22,
+          ),
           onPressed: () => Navigator.of(context).pop(),
         ),
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
+        padding: EdgeInsets.all(
+          isLargeDesktop
+              ? 24
+              : isDesktop
+              ? 20
+              : isTablet
+              ? 18
+              : isSmallScreen
+              ? 12
+              : 16,
+        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [_buildThemeCard()],
@@ -976,44 +2064,151 @@ class _AppearanceSettingsPageState extends State<AppearanceSettingsPage> {
 
   Widget _buildThemeCard() {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(
+        isLargeDesktop
+            ? 20
+            : isDesktop
+            ? 18
+            : isTablet
+            ? 16
+            : isSmallScreen
+            ? 12
+            : 14,
+      ),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFE5E7EB)),
+        borderRadius: BorderRadius.circular(
+          isLargeDesktop
+              ? 16
+              : isDesktop
+              ? 14
+              : isTablet
+              ? 12
+              : isSmallScreen
+              ? 10
+              : 12,
+        ),
+        border: Border.all(
+          color: const Color(0xFFE5E7EB),
+          width: isLargeDesktop || isDesktop
+              ? 1.5
+              : isTablet
+              ? 1.2
+              : isSmallScreen
+              ? 0.8
+              : 1,
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             'Theme',
             style: TextStyle(
-              color: Color(0xFF111827),
+              color: const Color(0xFF111827),
               fontWeight: FontWeight.w600,
-              fontSize: 16,
+              fontSize: isLargeDesktop
+                  ? 18
+                  : isDesktop
+                  ? 17
+                  : isTablet
+                  ? 16
+                  : isSmallScreen
+                  ? 14
+                  : 15,
             ),
           ),
-          const SizedBox(height: 8),
+          SizedBox(
+            height: isLargeDesktop
+                ? 12
+                : isDesktop
+                ? 10
+                : isTablet
+                ? 8
+                : isSmallScreen
+                ? 6
+                : 8,
+          ),
           Text(
             'Current theme: $_currentTheme',
-            style: const TextStyle(color: Color(0xFF6B7280), fontSize: 14),
+            style: TextStyle(
+              color: const Color(0xFF6B7280),
+              fontSize: isLargeDesktop
+                  ? 15
+                  : isDesktop
+                  ? 14
+                  : isTablet
+                  ? 13
+                  : isSmallScreen
+                  ? 11
+                  : 12,
+            ),
           ),
-          const SizedBox(height: 16),
+          SizedBox(
+            height: isLargeDesktop
+                ? 20
+                : isDesktop
+                ? 18
+                : isTablet
+                ? 16
+                : isSmallScreen
+                ? 12
+                : 16,
+          ),
           Center(
             child: ElevatedButton(
               onPressed: _switchTheme,
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF6B5FFF),
                 foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 24,
-                  vertical: 12,
+                padding: EdgeInsets.symmetric(
+                  horizontal: isLargeDesktop
+                      ? 32
+                      : isDesktop
+                      ? 28
+                      : isTablet
+                      ? 24
+                      : isSmallScreen
+                      ? 20
+                      : 24,
+                  vertical: isLargeDesktop
+                      ? 16
+                      : isDesktop
+                      ? 14
+                      : isTablet
+                      ? 12
+                      : isSmallScreen
+                      ? 10
+                      : 12,
                 ),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(
+                    isLargeDesktop
+                        ? 10
+                        : isDesktop
+                        ? 9
+                        : isTablet
+                        ? 8
+                        : isSmallScreen
+                        ? 6
+                        : 8,
+                  ),
                 ),
               ),
-              child: const Text('Switch Theme'),
+              child: Text(
+                'Switch Theme',
+                style: TextStyle(
+                  fontSize: isLargeDesktop
+                      ? 17
+                      : isDesktop
+                      ? 16
+                      : isTablet
+                      ? 15
+                      : isSmallScreen
+                      ? 13
+                      : 14,
+                ),
+              ),
             ),
           ),
         ],
@@ -1063,6 +2258,18 @@ class _DataStorageSettingsPageState extends State<DataStorageSettingsPage> {
 
   final List<String> _exportFormats = ['JSON', 'CSV', 'PDF'];
 
+  // Responsive breakpoints
+  double get mobileBreakpoint => 600;
+  double get tabletBreakpoint => 1024;
+  double get desktopBreakpoint => 1440;
+  bool get isMobile => MediaQuery.of(context).size.width < mobileBreakpoint;
+  bool get isTablet => MediaQuery.of(context).size.width >= mobileBreakpoint &&
+      MediaQuery.of(context).size.width < tabletBreakpoint;
+  bool get isDesktop => MediaQuery.of(context).size.width >= tabletBreakpoint &&
+      MediaQuery.of(context).size.width < desktopBreakpoint;
+  bool get isLargeDesktop => MediaQuery.of(context).size.width >= desktopBreakpoint;
+  bool get isSmallScreen => MediaQuery.of(context).size.width < 400;
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -1070,31 +2277,102 @@ class _DataStorageSettingsPageState extends State<DataStorageSettingsPage> {
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
-        title: const Text(
+        title: Text(
           'Data & Storage',
           style: TextStyle(
-            color: Color(0xFF111827),
+            color: const Color(0xFF111827),
             fontWeight: FontWeight.w700,
+            fontSize: isLargeDesktop
+                ? 22
+                : isDesktop
+                ? 20
+                : isTablet
+                ? 19
+                : isSmallScreen
+                ? 16
+                : 18,
           ),
         ),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Color(0xFF111827)),
+          icon: Icon(
+            Icons.arrow_back,
+            color: const Color(0xFF111827),
+            size: isLargeDesktop
+                ? 28
+                : isDesktop
+                ? 26
+                : isTablet
+                ? 24
+                : isSmallScreen
+                ? 20
+                : 22,
+          ),
           onPressed: () => Navigator.of(context).pop(),
         ),
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
+        padding: EdgeInsets.all(
+          isLargeDesktop
+              ? 24
+              : isDesktop
+              ? 20
+              : isTablet
+              ? 18
+              : isSmallScreen
+              ? 12
+              : 16,
+        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _buildBackupCard(),
-            const SizedBox(height: 12),
+            SizedBox(
+              height: isLargeDesktop
+                  ? 16
+                  : isDesktop
+                  ? 14
+                  : isTablet
+                  ? 12
+                  : isSmallScreen
+                  ? 8
+                  : 12,
+            ),
             _buildFrequencyCard(),
-            const SizedBox(height: 12),
+            SizedBox(
+              height: isLargeDesktop
+                  ? 16
+                  : isDesktop
+                  ? 14
+                  : isTablet
+                  ? 12
+                  : isSmallScreen
+                  ? 8
+                  : 12,
+            ),
             _buildRetentionCard(),
-            const SizedBox(height: 12),
+            SizedBox(
+              height: isLargeDesktop
+                  ? 16
+                  : isDesktop
+                  ? 14
+                  : isTablet
+                  ? 12
+                  : isSmallScreen
+                  ? 8
+                  : 12,
+            ),
             _buildExportCard(),
-            const SizedBox(height: 24),
+            SizedBox(
+              height: isLargeDesktop
+                  ? 32
+                  : isDesktop
+                  ? 28
+                  : isTablet
+                  ? 24
+                  : isSmallScreen
+                  ? 16
+                  : 20,
+            ),
             _buildDeleteAccountCard(),
           ],
         ),
@@ -1104,11 +2382,40 @@ class _DataStorageSettingsPageState extends State<DataStorageSettingsPage> {
 
   Widget _buildBackupCard() {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(
+        isLargeDesktop
+            ? 20
+            : isDesktop
+            ? 18
+            : isTablet
+            ? 16
+            : isSmallScreen
+            ? 12
+            : 14,
+      ),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFE5E7EB)),
+        borderRadius: BorderRadius.circular(
+          isLargeDesktop
+              ? 16
+              : isDesktop
+              ? 14
+              : isTablet
+              ? 12
+              : isSmallScreen
+              ? 10
+              : 12,
+        ),
+        border: Border.all(
+          color: const Color(0xFFE5E7EB),
+          width: isLargeDesktop || isDesktop
+              ? 1.5
+              : isTablet
+              ? 1.2
+              : isSmallScreen
+              ? 0.8
+              : 1,
+        ),
       ),
       child: Row(
         children: [
@@ -1116,18 +2423,47 @@ class _DataStorageSettingsPageState extends State<DataStorageSettingsPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
+                Text(
                   'Automatic Data Backup',
                   style: TextStyle(
-                    color: Color(0xFF111827),
+                    color: const Color(0xFF111827),
                     fontWeight: FontWeight.w600,
-                    fontSize: 16,
+                    fontSize: isLargeDesktop
+                        ? 18
+                        : isDesktop
+                        ? 17
+                        : isTablet
+                        ? 16
+                        : isSmallScreen
+                        ? 14
+                        : 15,
                   ),
                 ),
-                const SizedBox(height: 4),
-                const Text(
+                SizedBox(
+                  height: isLargeDesktop
+                      ? 6
+                      : isDesktop
+                      ? 5
+                      : isTablet
+                      ? 4
+                      : isSmallScreen
+                      ? 3
+                      : 4,
+                ),
+                Text(
                   'Automatically back up your data to the cloud.',
-                  style: TextStyle(color: Color(0xFF6B7280), fontSize: 14),
+                  style: TextStyle(
+                    color: const Color(0xFF6B7280),
+                    fontSize: isLargeDesktop
+                        ? 15
+                        : isDesktop
+                        ? 14
+                        : isTablet
+                        ? 13
+                        : isSmallScreen
+                        ? 11
+                        : 12,
+                  ),
                 ),
               ],
             ),
@@ -1144,46 +2480,155 @@ class _DataStorageSettingsPageState extends State<DataStorageSettingsPage> {
 
   Widget _buildFrequencyCard() {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(
+        isLargeDesktop
+            ? 20
+            : isDesktop
+            ? 18
+            : isTablet
+            ? 16
+            : isSmallScreen
+            ? 12
+            : 14,
+      ),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFE5E7EB)),
+        borderRadius: BorderRadius.circular(
+          isLargeDesktop
+              ? 16
+              : isDesktop
+              ? 14
+              : isTablet
+              ? 12
+              : isSmallScreen
+              ? 10
+              : 12,
+        ),
+        border: Border.all(
+          color: const Color(0xFFE5E7EB),
+          width: isLargeDesktop || isDesktop
+              ? 1.5
+              : isTablet
+              ? 1.2
+              : isSmallScreen
+              ? 0.8
+              : 1,
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             'Backup Frequency',
             style: TextStyle(
-              color: Color(0xFF111827),
+              color: const Color(0xFF111827),
               fontWeight: FontWeight.w600,
-              fontSize: 16,
+              fontSize: isLargeDesktop
+                  ? 18
+                  : isDesktop
+                  ? 17
+                  : isTablet
+                  ? 16
+                  : isSmallScreen
+                  ? 14
+                  : 15,
             ),
           ),
-          const SizedBox(height: 8),
+          SizedBox(
+            height: isLargeDesktop
+                ? 12
+                : isDesktop
+                ? 10
+                : isTablet
+                ? 8
+                : isSmallScreen
+                ? 6
+                : 8,
+          ),
           DropdownButtonFormField<String>(
             value: _backupFrequency,
             decoration: InputDecoration(
-              contentPadding: const EdgeInsets.symmetric(
-                horizontal: 12,
-                vertical: 8,
+              contentPadding: EdgeInsets.symmetric(
+                horizontal: isLargeDesktop
+                    ? 16
+                    : isDesktop
+                    ? 14
+                    : isTablet
+                    ? 12
+                    : isSmallScreen
+                    ? 10
+                    : 12,
+                vertical: isLargeDesktop
+                    ? 12
+                    : isDesktop
+                    ? 10
+                    : isTablet
+                    ? 8
+                    : isSmallScreen
+                    ? 6
+                    : 8,
               ),
               border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(
+                  isLargeDesktop
+                      ? 10
+                      : isDesktop
+                      ? 9
+                      : isTablet
+                      ? 8
+                      : isSmallScreen
+                      ? 6
+                      : 8,
+                ),
                 borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
               ),
               enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(
+                  isLargeDesktop
+                      ? 10
+                      : isDesktop
+                      ? 9
+                      : isTablet
+                      ? 8
+                      : isSmallScreen
+                      ? 6
+                      : 8,
+                ),
                 borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
               ),
               focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(
+                  isLargeDesktop
+                      ? 10
+                      : isDesktop
+                      ? 9
+                      : isTablet
+                      ? 8
+                      : isSmallScreen
+                      ? 6
+                      : 8,
+                ),
                 borderSide: const BorderSide(color: Color(0xFF6B5FFF)),
               ),
             ),
             items: _frequencyOptions.map((String value) {
-              return DropdownMenuItem<String>(value: value, child: Text(value));
+              return DropdownMenuItem<String>(
+                value: value,
+                child: Text(
+                  value,
+                  style: TextStyle(
+                    fontSize: isLargeDesktop
+                        ? 16
+                        : isDesktop
+                        ? 15
+                        : isTablet
+                        ? 14
+                        : isSmallScreen
+                        ? 12
+                        : 13,
+                  ),
+                ),
+              );
             }).toList(),
             onChanged: (String? newValue) {
               if (newValue != null) {
@@ -1191,10 +2636,31 @@ class _DataStorageSettingsPageState extends State<DataStorageSettingsPage> {
               }
             },
           ),
-          const SizedBox(height: 8),
-          const Text(
+          SizedBox(
+            height: isLargeDesktop
+                ? 12
+                : isDesktop
+                ? 10
+                : isTablet
+                ? 8
+                : isSmallScreen
+                ? 6
+                : 8,
+          ),
+          Text(
             'How often your data is automatically backed up.',
-            style: TextStyle(color: Color(0xFF6B7280), fontSize: 14),
+            style: TextStyle(
+              color: const Color(0xFF6B7280),
+              fontSize: isLargeDesktop
+                  ? 15
+                  : isDesktop
+                  ? 14
+                  : isTablet
+                  ? 13
+                  : isSmallScreen
+                  ? 11
+                  : 12,
+            ),
           ),
         ],
       ),
@@ -1203,46 +2669,155 @@ class _DataStorageSettingsPageState extends State<DataStorageSettingsPage> {
 
   Widget _buildRetentionCard() {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(
+        isLargeDesktop
+            ? 20
+            : isDesktop
+            ? 18
+            : isTablet
+            ? 16
+            : isSmallScreen
+            ? 12
+            : 14,
+      ),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFE5E7EB)),
+        borderRadius: BorderRadius.circular(
+          isLargeDesktop
+              ? 16
+              : isDesktop
+              ? 14
+              : isTablet
+              ? 12
+              : isSmallScreen
+              ? 10
+              : 12,
+        ),
+        border: Border.all(
+          color: const Color(0xFFE5E7EB),
+          width: isLargeDesktop || isDesktop
+              ? 1.5
+              : isTablet
+              ? 1.2
+              : isSmallScreen
+              ? 0.8
+              : 1,
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             'Data Retention',
             style: TextStyle(
-              color: Color(0xFF111827),
+              color: const Color(0xFF111827),
               fontWeight: FontWeight.w600,
-              fontSize: 16,
+              fontSize: isLargeDesktop
+                  ? 18
+                  : isDesktop
+                  ? 17
+                  : isTablet
+                  ? 16
+                  : isSmallScreen
+                  ? 14
+                  : 15,
             ),
           ),
-          const SizedBox(height: 8),
+          SizedBox(
+            height: isLargeDesktop
+                ? 12
+                : isDesktop
+                ? 10
+                : isTablet
+                ? 8
+                : isSmallScreen
+                ? 6
+                : 8,
+          ),
           DropdownButtonFormField<String>(
             value: _dataRetention,
             decoration: InputDecoration(
-              contentPadding: const EdgeInsets.symmetric(
-                horizontal: 12,
-                vertical: 8,
+              contentPadding: EdgeInsets.symmetric(
+                horizontal: isLargeDesktop
+                    ? 16
+                    : isDesktop
+                    ? 14
+                    : isTablet
+                    ? 12
+                    : isSmallScreen
+                    ? 10
+                    : 12,
+                vertical: isLargeDesktop
+                    ? 12
+                    : isDesktop
+                    ? 10
+                    : isTablet
+                    ? 8
+                    : isSmallScreen
+                    ? 6
+                    : 8,
               ),
               border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(
+                  isLargeDesktop
+                      ? 10
+                      : isDesktop
+                      ? 9
+                      : isTablet
+                      ? 8
+                      : isSmallScreen
+                      ? 6
+                      : 8,
+                ),
                 borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
               ),
               enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(
+                  isLargeDesktop
+                      ? 10
+                      : isDesktop
+                      ? 9
+                      : isTablet
+                      ? 8
+                      : isSmallScreen
+                      ? 6
+                      : 8,
+                ),
                 borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
               ),
               focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(
+                  isLargeDesktop
+                      ? 10
+                      : isDesktop
+                      ? 9
+                      : isTablet
+                      ? 8
+                      : isSmallScreen
+                      ? 6
+                      : 8,
+                ),
                 borderSide: const BorderSide(color: Color(0xFF6B5FFF)),
               ),
             ),
             items: _retentionOptions.map((String value) {
-              return DropdownMenuItem<String>(value: value, child: Text(value));
+              return DropdownMenuItem<String>(
+                value: value,
+                child: Text(
+                  value,
+                  style: TextStyle(
+                    fontSize: isLargeDesktop
+                        ? 16
+                        : isDesktop
+                        ? 15
+                        : isTablet
+                        ? 14
+                        : isSmallScreen
+                        ? 12
+                        : 13,
+                  ),
+                ),
+              );
             }).toList(),
             onChanged: (String? newValue) {
               if (newValue != null) {
@@ -1250,10 +2825,31 @@ class _DataStorageSettingsPageState extends State<DataStorageSettingsPage> {
               }
             },
           ),
-          const SizedBox(height: 8),
-          const Text(
+          SizedBox(
+            height: isLargeDesktop
+                ? 12
+                : isDesktop
+                ? 10
+                : isTablet
+                ? 8
+                : isSmallScreen
+                ? 6
+                : 8,
+          ),
+          Text(
             'How long your backed-up data is retained.',
-            style: TextStyle(color: Color(0xFF6B7280), fontSize: 14),
+            style: TextStyle(
+              color: const Color(0xFF6B7280),
+              fontSize: isLargeDesktop
+                  ? 15
+                  : isDesktop
+                  ? 14
+                  : isTablet
+                  ? 13
+                  : isSmallScreen
+                  ? 11
+                  : 12,
+            ),
           ),
         ],
       ),
@@ -1262,56 +2858,183 @@ class _DataStorageSettingsPageState extends State<DataStorageSettingsPage> {
 
   Widget _buildExportCard() {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(
+        isLargeDesktop
+            ? 20
+            : isDesktop
+            ? 18
+            : isTablet
+            ? 16
+            : isSmallScreen
+            ? 12
+            : 14,
+      ),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFE5E7EB)),
+        borderRadius: BorderRadius.circular(
+          isLargeDesktop
+              ? 16
+              : isDesktop
+              ? 14
+              : isTablet
+              ? 12
+              : isSmallScreen
+              ? 10
+              : 12,
+        ),
+        border: Border.all(
+          color: const Color(0xFFE5E7EB),
+          width: isLargeDesktop || isDesktop
+              ? 1.5
+              : isTablet
+              ? 1.2
+              : isSmallScreen
+              ? 0.8
+              : 1,
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             'Export Data',
             style: TextStyle(
-              color: Color(0xFF111827),
+              color: const Color(0xFF111827),
               fontWeight: FontWeight.w600,
-              fontSize: 16,
+              fontSize: isLargeDesktop
+                  ? 18
+                  : isDesktop
+                  ? 17
+                  : isTablet
+                  ? 16
+                  : isSmallScreen
+                  ? 14
+                  : 15,
             ),
           ),
-          const SizedBox(height: 8),
-          const Text(
-            'Download a copy of your account data.',
-            style: TextStyle(color: Color(0xFF6B7280), fontSize: 14),
+          SizedBox(
+            height: isLargeDesktop
+                ? 12
+                : isDesktop
+                ? 10
+                : isTablet
+                ? 8
+                : isSmallScreen
+                ? 6
+                : 8,
           ),
-          const SizedBox(height: 12),
+          Text(
+            'Download a copy of your account data.',
+            style: TextStyle(
+              color: const Color(0xFF6B7280),
+              fontSize: isLargeDesktop
+                  ? 15
+                  : isDesktop
+                  ? 14
+                  : isTablet
+                  ? 13
+                  : isSmallScreen
+                  ? 11
+                  : 12,
+            ),
+          ),
+          SizedBox(
+            height: isLargeDesktop
+                ? 16
+                : isDesktop
+                ? 14
+                : isTablet
+                ? 12
+                : isSmallScreen
+                ? 8
+                : 12,
+          ),
           Row(
             children: [
               Expanded(
                 child: DropdownButtonFormField<String>(
                   value: _exportFormat,
                   decoration: InputDecoration(
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 8,
+                    contentPadding: EdgeInsets.symmetric(
+                      horizontal: isLargeDesktop
+                          ? 16
+                          : isDesktop
+                          ? 14
+                          : isTablet
+                          ? 12
+                          : isSmallScreen
+                          ? 10
+                          : 12,
+                      vertical: isLargeDesktop
+                          ? 12
+                          : isDesktop
+                          ? 10
+                          : isTablet
+                          ? 8
+                          : isSmallScreen
+                          ? 6
+                          : 8,
                     ),
                     border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
+                      borderRadius: BorderRadius.circular(
+                        isLargeDesktop
+                            ? 10
+                            : isDesktop
+                            ? 9
+                            : isTablet
+                            ? 8
+                            : isSmallScreen
+                            ? 6
+                            : 8,
+                      ),
                       borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
                     ),
                     enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
+                      borderRadius: BorderRadius.circular(
+                        isLargeDesktop
+                            ? 10
+                            : isDesktop
+                            ? 9
+                            : isTablet
+                            ? 8
+                            : isSmallScreen
+                            ? 6
+                            : 8,
+                      ),
                       borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
                     ),
                     focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
+                      borderRadius: BorderRadius.circular(
+                        isLargeDesktop
+                            ? 10
+                            : isDesktop
+                            ? 9
+                            : isTablet
+                            ? 8
+                            : isSmallScreen
+                            ? 6
+                            : 8,
+                      ),
                       borderSide: const BorderSide(color: Color(0xFF6B5FFF)),
                     ),
                   ),
                   items: _exportFormats.map((String value) {
                     return DropdownMenuItem<String>(
                       value: value,
-                      child: Text(value),
+                      child: Text(
+                        value,
+                        style: TextStyle(
+                          fontSize: isLargeDesktop
+                              ? 16
+                              : isDesktop
+                              ? 15
+                              : isTablet
+                              ? 14
+                              : isSmallScreen
+                              ? 12
+                              : 13,
+                        ),
+                      ),
                     );
                   }).toList(),
                   onChanged: (String? newValue) {
@@ -1321,22 +3044,82 @@ class _DataStorageSettingsPageState extends State<DataStorageSettingsPage> {
                   },
                 ),
               ),
-              const SizedBox(width: 12),
+              SizedBox(
+                width: isLargeDesktop
+                    ? 16
+                    : isDesktop
+                    ? 14
+                    : isTablet
+                    ? 12
+                    : isSmallScreen
+                    ? 8
+                    : 12,
+              ),
               ElevatedButton.icon(
                 onPressed: _exportData,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF6B5FFF),
                   foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 12,
+                  padding: EdgeInsets.symmetric(
+                    horizontal: isLargeDesktop
+                        ? 24
+                        : isDesktop
+                        ? 20
+                        : isTablet
+                        ? 16
+                        : isSmallScreen
+                        ? 12
+                        : 16,
+                    vertical: isLargeDesktop
+                        ? 16
+                        : isDesktop
+                        ? 14
+                        : isTablet
+                        ? 12
+                        : isSmallScreen
+                        ? 10
+                        : 12,
                   ),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(
+                      isLargeDesktop
+                          ? 10
+                          : isDesktop
+                          ? 9
+                          : isTablet
+                          ? 8
+                          : isSmallScreen
+                          ? 6
+                          : 8,
+                    ),
                   ),
                 ),
-                icon: const Icon(Icons.download, size: 18),
-                label: const Text('Export'),
+                icon: Icon(
+                  Icons.download,
+                  size: isLargeDesktop
+                      ? 20
+                      : isDesktop
+                      ? 19
+                      : isTablet
+                      ? 18
+                      : isSmallScreen
+                      ? 16
+                      : 18,
+                ),
+                label: Text(
+                  'Export',
+                  style: TextStyle(
+                    fontSize: isLargeDesktop
+                        ? 17
+                        : isDesktop
+                        ? 16
+                        : isTablet
+                        ? 15
+                        : isSmallScreen
+                        ? 13
+                        : 14,
+                  ),
+                ),
               ),
             ],
           ),
@@ -1347,35 +3130,125 @@ class _DataStorageSettingsPageState extends State<DataStorageSettingsPage> {
 
   Widget _buildDeleteAccountCard() {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(
+        isLargeDesktop
+            ? 20
+            : isDesktop
+            ? 18
+            : isTablet
+            ? 16
+            : isSmallScreen
+            ? 12
+            : 14,
+      ),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.red, width: 2),
+        borderRadius: BorderRadius.circular(
+          isLargeDesktop
+              ? 16
+              : isDesktop
+              ? 14
+              : isTablet
+              ? 12
+              : isSmallScreen
+              ? 10
+              : 12,
+        ),
+        border: Border.all(
+          color: Colors.red,
+          width: isLargeDesktop || isDesktop
+              ? 2.5
+              : isTablet
+              ? 2
+              : isSmallScreen
+              ? 1.5
+              : 2,
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              const Icon(Icons.warning, color: Colors.red),
-              const SizedBox(width: 8),
-              const Text(
+              Icon(
+                Icons.warning,
+                color: Colors.red,
+                size: isLargeDesktop
+                    ? 26
+                    : isDesktop
+                    ? 24
+                    : isTablet
+                    ? 22
+                    : isSmallScreen
+                    ? 18
+                    : 20,
+              ),
+              SizedBox(
+                width: isLargeDesktop
+                    ? 12
+                    : isDesktop
+                    ? 10
+                    : isTablet
+                    ? 8
+                    : isSmallScreen
+                    ? 6
+                    : 8,
+              ),
+              Text(
                 'Delete Account',
                 style: TextStyle(
-                  color: Color(0xFF111827),
+                  color: const Color(0xFF111827),
                   fontWeight: FontWeight.w600,
-                  fontSize: 16,
+                  fontSize: isLargeDesktop
+                      ? 18
+                      : isDesktop
+                      ? 17
+                      : isTablet
+                      ? 16
+                      : isSmallScreen
+                      ? 14
+                      : 15,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 8),
-          const Text(
-            'Permanently delete your account and all associated data. This action cannot be undone.',
-            style: TextStyle(color: Color(0xFF6B7280), fontSize: 14),
+          SizedBox(
+            height: isLargeDesktop
+                ? 12
+                : isDesktop
+                ? 10
+                : isTablet
+                ? 8
+                : isSmallScreen
+                ? 6
+                : 8,
           ),
-          const SizedBox(height: 16),
+          Text(
+            'Permanently delete your account and all associated data. This action cannot be undone.',
+            style: TextStyle(
+              color: const Color(0xFF6B7280),
+              fontSize: isLargeDesktop
+                  ? 15
+                  : isDesktop
+                  ? 14
+                  : isTablet
+                  ? 13
+                  : isSmallScreen
+                  ? 11
+                  : 12,
+            ),
+          ),
+          SizedBox(
+            height: isLargeDesktop
+                ? 20
+                : isDesktop
+                ? 18
+                : isTablet
+                ? 16
+                : isSmallScreen
+                ? 12
+                : 16,
+          ),
           SizedBox(
             width: double.infinity,
             child: ElevatedButton.icon(
@@ -1383,16 +3256,66 @@ class _DataStorageSettingsPageState extends State<DataStorageSettingsPage> {
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.red,
                 foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 12,
+                padding: EdgeInsets.symmetric(
+                  horizontal: isLargeDesktop
+                      ? 24
+                      : isDesktop
+                      ? 20
+                      : isTablet
+                      ? 16
+                      : isSmallScreen
+                      ? 12
+                      : 16,
+                  vertical: isLargeDesktop
+                      ? 16
+                      : isDesktop
+                      ? 14
+                      : isTablet
+                      ? 12
+                      : isSmallScreen
+                      ? 10
+                      : 12,
                 ),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(
+                    isLargeDesktop
+                        ? 10
+                        : isDesktop
+                        ? 9
+                        : isTablet
+                        ? 8
+                        : isSmallScreen
+                        ? 6
+                        : 8,
+                  ),
                 ),
               ),
-              icon: const Icon(Icons.delete, size: 18),
-              label: const Text('Delete Account'),
+              icon: Icon(
+                Icons.delete,
+                size: isLargeDesktop
+                    ? 20
+                    : isDesktop
+                    ? 19
+                    : isTablet
+                    ? 18
+                    : isSmallScreen
+                    ? 16
+                    : 18,
+              ),
+              label: Text(
+                'Delete Account',
+                style: TextStyle(
+                  fontSize: isLargeDesktop
+                      ? 17
+                      : isDesktop
+                      ? 16
+                      : isTablet
+                      ? 15
+                      : isSmallScreen
+                      ? 13
+                      : 14,
+                ),
+              ),
             ),
           ),
         ],
@@ -1460,18 +3383,57 @@ class AccountSettingsPage extends StatefulWidget {
 }
 
 class _AccountSettingsPageState extends State<AccountSettingsPage> {
+  final SettingsCacheService _cacheService = SettingsCacheService();
   bool _loading = true;
   Map<String, dynamic>? _data;
+
+  // Responsive breakpoints
+  double get mobileBreakpoint => 600;
+  double get tabletBreakpoint => 1024;
+  double get desktopBreakpoint => 1440;
+  bool get isMobile => MediaQuery.of(context).size.width < mobileBreakpoint;
+  bool get isTablet => MediaQuery.of(context).size.width >= mobileBreakpoint &&
+      MediaQuery.of(context).size.width < tabletBreakpoint;
+  bool get isDesktop => MediaQuery.of(context).size.width >= tabletBreakpoint &&
+      MediaQuery.of(context).size.width < desktopBreakpoint;
+  bool get isLargeDesktop => MediaQuery.of(context).size.width >= desktopBreakpoint;
+  bool get isSmallScreen => MediaQuery.of(context).size.width < 400;
 
   @override
   void initState() {
     super.initState();
+    _initializeCache();
+  }
+
+  Future<void> _initializeCache() async {
+    await _cacheService.initialize();
     _load();
   }
 
-  Future<void> _load() async {
+  Future<void> _load({bool forceRefresh = false}) async {
+    if (!mounted) return;
+
+    // Try to load from cache first (unless force refresh)
+    if (!forceRefresh) {
+      final cachedData = await _cacheService.getAccountData();
+      if (cachedData != null && mounted) {
+        setState(() {
+          _data = cachedData;
+          _loading = false;
+        });
+        // Still fetch in background to update cache
+        _fetchAccountDataInBackground();
+        return;
+      }
+    }
+
+    setState(() => _loading = true);
+    await _fetchAccountDataInBackground();
+  }
+
+  Future<void> _fetchAccountDataInBackground() async {
     try {
-      final headers = AuthService().getAuthHeaders();
+      final headers = await AuthService().getAuthHeaders();
       final resp = await http.get(
         Uri.parse(ApiEndpoints.studentProfile),
         headers: headers,
@@ -1480,24 +3442,35 @@ class _AccountSettingsPageState extends State<AccountSettingsPage> {
       if (resp.statusCode == 200) {
         final body = json.decode(resp.body) as Map<String, dynamic>;
         final profile = body['data'] as Map<String, dynamic>?;
-        setState(() {
-          _data = {
-            'username': profile?['username'] ?? profile?['name'] ?? '-',
-            'email': profile?['email'] ?? '-',
-            'createdAt': profile?['createdAt'],
-            'lastLogin': profile?['lastLogin'] ?? 'Never',
-          };
-          _loading = false;
-        });
+        final accountData = {
+          'username': profile?['username'] ?? profile?['name'] ?? '-',
+          'email': profile?['email'] ?? '-',
+          'createdAt': profile?['createdAt'],
+          'lastLogin': profile?['lastLogin'] ?? 'Never',
+        };
+        
+        // Cache the data
+        await _cacheService.setAccountData(accountData);
+        
+        if (mounted) {
+          setState(() {
+            _data = accountData;
+            _loading = false;
+          });
+        }
       } else {
+        if (mounted) {
+          setState(() {
+            _loading = false;
+          });
+        }
+      }
+    } catch (_) {
+      if (mounted) {
         setState(() {
           _loading = false;
         });
       }
-    } catch (_) {
-      setState(() {
-        _loading = false;
-      });
     }
   }
 
@@ -1508,22 +3481,66 @@ class _AccountSettingsPageState extends State<AccountSettingsPage> {
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
-        title: const Text(
+        title: Text(
           'Account Information',
           style: TextStyle(
-            color: Color(0xFF111827),
+            color: const Color(0xFF111827),
             fontWeight: FontWeight.w700,
+            fontSize: isLargeDesktop
+                ? 22
+                : isDesktop
+                ? 20
+                : isTablet
+                ? 19
+                : isSmallScreen
+                ? 16
+                : 18,
           ),
         ),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Color(0xFF111827)),
+          icon: Icon(
+            Icons.arrow_back,
+            color: const Color(0xFF111827),
+            size: isLargeDesktop
+                ? 28
+                : isDesktop
+                ? 26
+                : isTablet
+                ? 24
+                : isSmallScreen
+                ? 20
+                : 22,
+          ),
           onPressed: () => Navigator.of(context).pop(),
         ),
       ),
       body: _loading
-          ? const Center(child: CircularProgressIndicator())
+          ? Center(
+              child: CircularProgressIndicator(
+                color: const Color(0xFF6B5FFF),
+                strokeWidth: isLargeDesktop
+                    ? 4
+                    : isDesktop
+                    ? 3.5
+                    : isTablet
+                    ? 3
+                    : isSmallScreen
+                    ? 2.5
+                    : 3,
+              ),
+            )
           : SingleChildScrollView(
-              padding: const EdgeInsets.all(16),
+              padding: EdgeInsets.all(
+                isLargeDesktop
+                    ? 24
+                    : isDesktop
+                    ? 20
+                    : isTablet
+                    ? 18
+                    : isSmallScreen
+                    ? 12
+                    : 16,
+              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -1531,50 +3548,135 @@ class _AccountSettingsPageState extends State<AccountSettingsPage> {
                     status: 'Active',
                     description: 'Your account is active and in good standing',
                   ),
-                  const SizedBox(height: 16),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _readOnlyField(
-                          'Username',
-                          _data?['username']?.toString() ?? '-',
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: _readOnlyField(
-                          'Email Address',
-                          _data?['email']?.toString() ?? '-',
-                        ),
-                      ),
-                    ],
+                  SizedBox(
+                    height: isLargeDesktop
+                        ? 20
+                        : isDesktop
+                        ? 18
+                        : isTablet
+                        ? 16
+                        : isSmallScreen
+                        ? 12
+                        : 16,
                   ),
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _iconInfoCard(
-                          icon: Icons.calendar_today_outlined,
-                          label: 'Member Since',
-                          value:
-                              _data?['createdAt']
-                                  ?.toString()
-                                  .split('T')
-                                  .first ??
-                              '-',
+                  isSmallScreen
+                      ? Column(
+                          children: [
+                            _readOnlyField(
+                              'Username',
+                              _data?['username']?.toString() ?? '-',
+                            ),
+                            SizedBox(
+                              height: isSmallScreen ? 12 : 16,
+                            ),
+                            _readOnlyField(
+                              'Email Address',
+                              _data?['email']?.toString() ?? '-',
+                            ),
+                          ],
+                        )
+                      : Row(
+                          children: [
+                            Expanded(
+                              child: _readOnlyField(
+                                'Username',
+                                _data?['username']?.toString() ?? '-',
+                              ),
+                            ),
+                            SizedBox(
+                              width: isLargeDesktop
+                                  ? 16
+                                  : isDesktop
+                                  ? 14
+                                  : isTablet
+                                  ? 12
+                                  : 12,
+                            ),
+                            Expanded(
+                              child: _readOnlyField(
+                                'Email Address',
+                                _data?['email']?.toString() ?? '-',
+                              ),
+                            ),
+                          ],
                         ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: _iconInfoCard(
-                          icon: Icons.visibility_outlined,
-                          label: 'Last Login',
-                          value: _data?['lastLogin']?.toString() ?? 'Never',
-                        ),
-                      ),
-                    ],
+                  SizedBox(
+                    height: isLargeDesktop
+                        ? 16
+                        : isDesktop
+                        ? 14
+                        : isTablet
+                        ? 12
+                        : isSmallScreen
+                        ? 10
+                        : 12,
                   ),
-                  const SizedBox(height: 24),
+                  isSmallScreen
+                      ? Column(
+                          children: [
+                            _iconInfoCard(
+                              icon: Icons.calendar_today_outlined,
+                              label: 'Member Since',
+                              value:
+                                  _data?['createdAt']
+                                      ?.toString()
+                                      .split('T')
+                                      .first ??
+                                  '-',
+                            ),
+                            SizedBox(
+                              height: isSmallScreen ? 12 : 16,
+                            ),
+                            _iconInfoCard(
+                              icon: Icons.visibility_outlined,
+                              label: 'Last Login',
+                              value: _data?['lastLogin']?.toString() ?? 'Never',
+                            ),
+                          ],
+                        )
+                      : Row(
+                          children: [
+                            Expanded(
+                              child: _iconInfoCard(
+                                icon: Icons.calendar_today_outlined,
+                                label: 'Member Since',
+                                value:
+                                    _data?['createdAt']
+                                        ?.toString()
+                                        .split('T')
+                                        .first ??
+                                    '-',
+                              ),
+                            ),
+                            SizedBox(
+                              width: isLargeDesktop
+                                  ? 16
+                                  : isDesktop
+                                  ? 14
+                                  : isTablet
+                                  ? 12
+                                  : 12,
+                            ),
+                            Expanded(
+                              child: _iconInfoCard(
+                                icon: Icons.visibility_outlined,
+                                label: 'Last Login',
+                                value: _data?['lastLogin']?.toString() ?? 'Never',
+                              ),
+                            ),
+                          ],
+                        ),
+                  SizedBox(
+                    height: isLargeDesktop
+                        ? 32
+                        : isDesktop
+                        ? 28
+                        : isTablet
+                        ? 24
+                        : isSmallScreen
+                        ? 16
+                        : 20,
+                  ),
                 ],
               ),
             ),
@@ -1583,11 +3685,40 @@ class _AccountSettingsPageState extends State<AccountSettingsPage> {
 
   Widget _statusCard({required String status, required String description}) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(
+        isLargeDesktop
+            ? 20
+            : isDesktop
+            ? 18
+            : isTablet
+            ? 16
+            : isSmallScreen
+            ? 12
+            : 14,
+      ),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFE5E7EB)),
+        borderRadius: BorderRadius.circular(
+          isLargeDesktop
+              ? 16
+              : isDesktop
+              ? 14
+              : isTablet
+              ? 12
+              : isSmallScreen
+              ? 10
+              : 12,
+        ),
+        border: Border.all(
+          color: const Color(0xFFE5E7EB),
+          width: isLargeDesktop || isDesktop
+              ? 1.5
+              : isTablet
+              ? 1.2
+              : isSmallScreen
+              ? 0.8
+              : 1,
+        ),
       ),
       child: Row(
         children: [
@@ -1595,32 +3726,100 @@ class _AccountSettingsPageState extends State<AccountSettingsPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
+                Text(
                   'Account Status',
                   style: TextStyle(
-                    color: Color(0xFF111827),
+                    color: const Color(0xFF111827),
                     fontWeight: FontWeight.w700,
+                    fontSize: isLargeDesktop
+                        ? 20
+                        : isDesktop
+                        ? 18
+                        : isTablet
+                        ? 17
+                        : isSmallScreen
+                        ? 14
+                        : 16,
                   ),
                 ),
-                const SizedBox(height: 6),
+                SizedBox(
+                  height: isLargeDesktop
+                      ? 8
+                      : isDesktop
+                      ? 7
+                      : isTablet
+                      ? 6
+                      : isSmallScreen
+                      ? 4
+                      : 6,
+                ),
                 Text(
                   description,
-                  style: const TextStyle(color: Color(0xFF6B7280)),
+                  style: TextStyle(
+                    color: const Color(0xFF6B7280),
+                    fontSize: isLargeDesktop
+                        ? 16
+                        : isDesktop
+                        ? 15
+                        : isTablet
+                        ? 14
+                        : isSmallScreen
+                        ? 12
+                        : 13,
+                  ),
                 ),
               ],
             ),
           ),
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            padding: EdgeInsets.symmetric(
+              horizontal: isLargeDesktop
+                  ? 16
+                  : isDesktop
+                  ? 14
+                  : isTablet
+                  ? 12
+                  : isSmallScreen
+                  ? 8
+                  : 10,
+              vertical: isLargeDesktop
+                  ? 8
+                  : isDesktop
+                  ? 7
+                  : isTablet
+                  ? 6
+                  : isSmallScreen
+                  ? 4
+                  : 5,
+            ),
             decoration: BoxDecoration(
               color: const Color(0xFFD1FAE5),
-              borderRadius: BorderRadius.circular(20),
+              borderRadius: BorderRadius.circular(
+                isLargeDesktop
+                    ? 24
+                    : isDesktop
+                    ? 22
+                    : isTablet
+                    ? 20
+                    : isSmallScreen
+                    ? 16
+                    : 18,
+              ),
             ),
             child: Text(
               status,
-              style: const TextStyle(
-                color: Color(0xFF065F46),
+              style: TextStyle(
+                color: const Color(0xFF065F46),
                 fontWeight: FontWeight.w700,
+                fontSize: isLargeDesktop
+                    ? 16
+                    : isDesktop
+                    ? 15
+                    : isTablet
+                    ? 14
+                    : isSmallScreen
+                    ? 12
+                    : 13,
               ),
             ),
           ),
@@ -1635,20 +3834,91 @@ class _AccountSettingsPageState extends State<AccountSettingsPage> {
       children: [
         Text(
           label,
-          style: const TextStyle(
-            color: Color(0xFF374151),
+          style: TextStyle(
+            color: const Color(0xFF374151),
             fontWeight: FontWeight.w600,
+            fontSize: isLargeDesktop
+                ? 16
+                : isDesktop
+                ? 15
+                : isTablet
+                ? 14
+                : isSmallScreen
+                ? 12
+                : 13,
           ),
         ),
-        const SizedBox(height: 6),
+        SizedBox(
+          height: isLargeDesktop
+              ? 8
+              : isDesktop
+              ? 7
+              : isTablet
+              ? 6
+              : isSmallScreen
+              ? 4
+              : 6,
+        ),
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+          padding: EdgeInsets.symmetric(
+            horizontal: isLargeDesktop
+                ? 16
+                : isDesktop
+                ? 14
+                : isTablet
+                ? 12
+                : isSmallScreen
+                ? 10
+                : 12,
+            vertical: isLargeDesktop
+                ? 18
+                : isDesktop
+                ? 16
+                : isTablet
+                ? 14
+                : isSmallScreen
+                ? 10
+                : 12,
+          ),
           decoration: BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: const Color(0xFFE5E7EB)),
+            borderRadius: BorderRadius.circular(
+              isLargeDesktop
+                  ? 14
+                  : isDesktop
+                  ? 12
+                  : isTablet
+                  ? 10
+                  : isSmallScreen
+                  ? 8
+                  : 10,
+            ),
+            border: Border.all(
+              color: const Color(0xFFE5E7EB),
+              width: isLargeDesktop || isDesktop
+                  ? 1.5
+                  : isTablet
+                  ? 1.2
+                  : isSmallScreen
+                  ? 0.8
+                  : 1,
+            ),
           ),
-          child: Text(value, style: const TextStyle(color: Color(0xFF111827))),
+          child: Text(
+            value,
+            style: TextStyle(
+              color: const Color(0xFF111827),
+              fontSize: isLargeDesktop
+                  ? 16
+                  : isDesktop
+                  ? 15
+                  : isTablet
+                  ? 14
+                  : isSmallScreen
+                  ? 12
+                  : 13,
+            ),
+          ),
         ),
       ],
     );
@@ -1660,30 +3930,114 @@ class _AccountSettingsPageState extends State<AccountSettingsPage> {
     required String value,
   }) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(
+        isLargeDesktop
+            ? 20
+            : isDesktop
+            ? 18
+            : isTablet
+            ? 16
+            : isSmallScreen
+            ? 12
+            : 14,
+      ),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFE5E7EB)),
+        borderRadius: BorderRadius.circular(
+          isLargeDesktop
+              ? 16
+              : isDesktop
+              ? 14
+              : isTablet
+              ? 12
+              : isSmallScreen
+              ? 10
+              : 12,
+        ),
+        border: Border.all(
+          color: const Color(0xFFE5E7EB),
+          width: isLargeDesktop || isDesktop
+              ? 1.5
+              : isTablet
+              ? 1.2
+              : isSmallScreen
+              ? 0.8
+              : 1,
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Icon(icon, color: const Color(0xFF6B7280), size: 18),
-              const SizedBox(width: 6),
+              Icon(
+                icon,
+                color: const Color(0xFF6B7280),
+                size: isLargeDesktop
+                    ? 22
+                    : isDesktop
+                    ? 20
+                    : isTablet
+                    ? 18
+                    : isSmallScreen
+                    ? 16
+                    : 18,
+              ),
+              SizedBox(
+                width: isLargeDesktop
+                    ? 8
+                    : isDesktop
+                    ? 7
+                    : isTablet
+                    ? 6
+                    : isSmallScreen
+                    ? 5
+                    : 6,
+              ),
               Text(
                 label,
-                style: const TextStyle(
-                  color: Color(0xFF6B7280),
+                style: TextStyle(
+                  color: const Color(0xFF6B7280),
                   fontWeight: FontWeight.w600,
+                  fontSize: isLargeDesktop
+                      ? 16
+                      : isDesktop
+                      ? 15
+                      : isTablet
+                      ? 14
+                      : isSmallScreen
+                      ? 12
+                      : 13,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 8),
-          Text(value, style: const TextStyle(color: Color(0xFF111827))),
+          SizedBox(
+            height: isLargeDesktop
+                ? 12
+                : isDesktop
+                ? 10
+                : isTablet
+                ? 8
+                : isSmallScreen
+                ? 6
+                : 8,
+          ),
+          Text(
+            value,
+            style: TextStyle(
+              color: const Color(0xFF111827),
+              fontSize: isLargeDesktop
+                  ? 16
+                  : isDesktop
+                  ? 15
+                  : isTablet
+                  ? 14
+                  : isSmallScreen
+                  ? 12
+                  : 13,
+            ),
+          ),
         ],
       ),
     );

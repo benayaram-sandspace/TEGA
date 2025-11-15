@@ -1,9 +1,12 @@
 import 'dart:ui'; // Required for ImageFilter.blur
+import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'package:tega/core/constants/api_constants.dart';
+import 'package:tega/core/services/principal_dashboard_cache_service.dart';
 import 'package:tega/features/1_authentication/data/auth_repository.dart';
 import 'package:tega/features/1_authentication/presentation/screens/login_page.dart';
 import 'package:tega/features/4_college_panel/presentation/0_dashboard/dashboard_styles.dart';
@@ -26,6 +29,7 @@ class _DashboardScreenState extends State<DashboardScreen>
   int _selectedIndex = 0;
   bool _isSidebarOpen = false;
   final AuthService _authService = AuthService();
+  final PrincipalDashboardCacheService _cacheService = PrincipalDashboardCacheService();
   late AnimationController _sidebarAnimationController;
   
   // Principal data from backend
@@ -54,7 +58,41 @@ class _DashboardScreenState extends State<DashboardScreen>
       vsync: this,
       duration: const Duration(milliseconds: 300),
     );
-    _loadPrincipalData();
+    _initializeCacheAndLoadPrincipalData();
+  }
+
+  Future<void> _initializeCacheAndLoadPrincipalData() async {
+    // Initialize cache service
+    await _cacheService.initialize();
+    
+    // Try to load from cache first
+    await _loadPrincipalDataFromCache();
+    
+    // Then load fresh data
+    await _loadPrincipalData();
+  }
+
+  Future<void> _loadPrincipalDataFromCache() async {
+    try {
+      final cachedData = await _cacheService.getPrincipalData();
+      if (cachedData != null && mounted) {
+        setState(() {
+          _principalData = cachedData;
+        });
+      }
+    } catch (e) {
+      // Silently handle cache errors
+    }
+  }
+
+  bool _isNoInternetError(dynamic error) {
+    return error is SocketException ||
+        error is TimeoutException ||
+        (error.toString().toLowerCase().contains('network') ||
+            error.toString().toLowerCase().contains('connection') ||
+            error.toString().toLowerCase().contains('internet') ||
+            error.toString().toLowerCase().contains('failed host lookup') ||
+            error.toString().toLowerCase().contains('no address associated with hostname'));
   }
 
   Future<void> _loadPrincipalData() async {
@@ -73,12 +111,28 @@ class _DashboardScreenState extends State<DashboardScreen>
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         if (data['success'] == true && data['principal'] != null) {
-          setState(() {
-            _principalData = data['principal'] as Map<String, dynamic>;
-          });
+          final principalData = data['principal'] as Map<String, dynamic>;
+          if (mounted) {
+            setState(() {
+              _principalData = principalData;
+            });
+            
+            // Cache the principal data
+            await _cacheService.setPrincipalData(principalData);
+          }
         }
       }
     } catch (e) {
+      // Check if it's a network/internet error
+      if (_isNoInternetError(e)) {
+        // Try to load from cache if available
+        final cachedData = await _cacheService.getPrincipalData();
+        if (cachedData != null && mounted) {
+          setState(() {
+            _principalData = cachedData;
+          });
+        }
+      }
       // Silently handle errors, fallback to AuthService data
     }
   }
@@ -204,6 +258,13 @@ class _DashboardScreenState extends State<DashboardScreen>
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isMobile = screenWidth < 600;
+    final isTablet = screenWidth >= 600 && screenWidth < 1024;
+    
+    // Fixed sidebar width for all screen sizes
+    final sidebarWidth = 260.0;
+    
     return Scaffold(
       backgroundColor: DashboardStyles.background,
       appBar: AppBar(
@@ -218,6 +279,7 @@ class _DashboardScreenState extends State<DashboardScreen>
               _isSidebarOpen ? Icons.close : Icons.menu,
               key: ValueKey<bool>(_isSidebarOpen),
               color: DashboardStyles.textDark,
+              size: isMobile ? 22 : 24,
             ),
           ),
           onPressed: () {
@@ -225,11 +287,18 @@ class _DashboardScreenState extends State<DashboardScreen>
             _toggleSidebar();
           },
         ),
-        title: Text(_pageTitles[_selectedIndex]),
+        title: Text(
+          _pageTitles[_selectedIndex],
+          style: DashboardStyles.insightTitle.copyWith(
+            fontSize: isMobile ? 18 : isTablet ? 19 : 20,
+          ),
+        ),
         backgroundColor: DashboardStyles.cardBackground,
         elevation: 2,
         iconTheme: const IconThemeData(color: DashboardStyles.textDark),
-        titleTextStyle: DashboardStyles.insightTitle.copyWith(fontSize: 20),
+        titleTextStyle: DashboardStyles.insightTitle.copyWith(
+          fontSize: isMobile ? 18 : isTablet ? 19 : 20,
+        ),
       ),
       body: Stack(
         children: [
@@ -263,10 +332,10 @@ class _DashboardScreenState extends State<DashboardScreen>
           AnimatedPositioned(
             duration: const Duration(milliseconds: 300),
             curve: Curves.easeInOutCubic,
-            left: _isSidebarOpen ? 0 : -280,
+            left: _isSidebarOpen ? 0 : -sidebarWidth,
             top: 0,
             bottom: 0,
-            width: 280,
+            width: sidebarWidth,
             child: Material(
               color: DashboardStyles.cardBackground,
               elevation: 16,
@@ -284,7 +353,7 @@ class _DashboardScreenState extends State<DashboardScreen>
                 ),
                 child: Column(
                   children: [
-                    _buildSidebarHeader(),
+                    _buildSidebarHeader(isMobile, isTablet),
                     Expanded(
                       child: ListView(
                         padding: EdgeInsets.zero,
@@ -319,12 +388,18 @@ class _DashboardScreenState extends State<DashboardScreen>
                                 badge: '3',
                               ),
                             ],
+                            isMobile: isMobile,
+                            isTablet: isTablet,
                           ),
                         ],
                       ),
                     ),
-                    const Divider(height: 1, color: DashboardStyles.textLight),
-                    _buildLogoutTile(),
+                    Divider(
+                      height: 1,
+                      color: DashboardStyles.textLight,
+                      thickness: 1,
+                    ),
+                    _buildLogoutTile(isMobile, isTablet),
                   ],
                 ),
               ),
@@ -335,7 +410,7 @@ class _DashboardScreenState extends State<DashboardScreen>
     );
   }
 
-  Widget _buildSidebarHeader() {
+  Widget _buildSidebarHeader(bool isMobile, bool isTablet) {
     // Use backend data if available, otherwise fallback to AuthService
     final principalName = _principalData?['principalName'] as String? ?? 
                          _authService.currentUser?.name ?? 
@@ -349,9 +424,19 @@ class _DashboardScreenState extends State<DashboardScreen>
         ? principalName[0].toUpperCase() 
         : 'P';
     
+    // Responsive values
+    final padding = isMobile ? 16.0 : isTablet ? 18.0 : 20.0;
+    final topPadding = isMobile ? 32.0 : isTablet ? 36.0 : 40.0;
+    final avatarRadius = isMobile ? 24.0 : isTablet ? 26.0 : 28.0;
+    final avatarFontSize = isMobile ? 28.0 : isTablet ? 30.0 : 32.0;
+    final nameFontSize = isMobile ? 15.0 : isTablet ? 15.5 : 16.0;
+    final collegeFontSize = isMobile ? 11.0 : isTablet ? 11.5 : 12.0;
+    final badgePadding = isMobile ? 8.0 : 10.0;
+    final badgeFontSize = isMobile ? 11.0 : 12.0;
+    
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(20, 40, 20, 24),
+      padding: EdgeInsets.fromLTRB(padding, topPadding, padding, padding * 1.2),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
@@ -366,53 +451,56 @@ class _DashboardScreenState extends State<DashboardScreen>
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
-            padding: const EdgeInsets.all(3),
+            padding: EdgeInsets.all(isMobile ? 2.5 : 3),
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               border: Border.all(
                 color: Colors.white.withOpacity(0.3),
-                width: 2,
+                width: isMobile ? 1.5 : 2,
               ),
             ),
             child: CircleAvatar(
-              radius: 28,
+              radius: avatarRadius,
               backgroundColor: Colors.white,
               child: Text(
                 firstLetter,
                 style: TextStyle(
                   color: DashboardStyles.primary,
-                  fontSize: 32,
+                  fontSize: avatarFontSize,
                   fontWeight: FontWeight.bold,
                 ),
               ),
             ),
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: isMobile ? 10 : 12),
           Text(
             principalName,
-            style: const TextStyle(
+            style: TextStyle(
               color: Colors.white,
               fontWeight: FontWeight.bold,
-              fontSize: 16,
+              fontSize: nameFontSize,
             ),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
-          const SizedBox(height: 4),
+          SizedBox(height: isMobile ? 3 : 4),
           Text(
-            collegeName.length > 30 
-                ? '${collegeName.substring(0, 30)}...' 
+            collegeName.length > (isMobile ? 25 : 30)
+                ? '${collegeName.substring(0, isMobile ? 25 : 30)}...' 
                 : collegeName,
             style: TextStyle(
               color: Colors.white.withOpacity(0.8),
-              fontSize: 12,
+              fontSize: collegeFontSize,
             ),
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: isMobile ? 10 : 12),
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            padding: EdgeInsets.symmetric(
+              horizontal: badgePadding,
+              vertical: isMobile ? 5 : 6,
+            ),
             decoration: BoxDecoration(
               color: DashboardStyles.accentGreen,
               borderRadius: BorderRadius.circular(6),
@@ -421,19 +509,19 @@ class _DashboardScreenState extends State<DashboardScreen>
               mainAxisSize: MainAxisSize.min,
               children: [
                 Container(
-                  width: 6,
-                  height: 6,
+                  width: isMobile ? 5 : 6,
+                  height: isMobile ? 5 : 6,
                   decoration: const BoxDecoration(
                     color: Colors.white,
                     shape: BoxShape.circle,
                   ),
                 ),
-                const SizedBox(width: 6),
-                const Text(
+                SizedBox(width: isMobile ? 5 : 6),
+                Text(
                   'Active',
                   style: TextStyle(
                     color: Colors.white,
-                    fontSize: 12,
+                    fontSize: badgeFontSize,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
@@ -448,28 +536,38 @@ class _DashboardScreenState extends State<DashboardScreen>
   Widget _buildNavSection({
     required String title,
     required List<NavItem> items,
+    required bool isMobile,
+    required bool isTablet,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-          child: Text(
-            title,
-            style: TextStyle(
-              color: DashboardStyles.textLight.withOpacity(0.6),
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-              letterSpacing: 1.2,
+        if (title.isNotEmpty)
+          Padding(
+            padding: EdgeInsets.fromLTRB(
+              isMobile ? 14 : 16,
+              isMobile ? 14 : 16,
+              isMobile ? 14 : 16,
+              isMobile ? 6 : 8,
+            ),
+            child: Text(
+              title,
+              style: TextStyle(
+                color: DashboardStyles.textLight.withOpacity(0.6),
+                fontSize: isMobile ? 11 : 12,
+                fontWeight: FontWeight.w600,
+                letterSpacing: 1.2,
+              ),
             ),
           ),
-        ),
         ...items.map(
           (item) => _buildNavItem(
             icon: item.icon,
             title: item.title,
             index: item.index,
             badge: item.badge,
+            isMobile: isMobile,
+            isTablet: isTablet,
           ),
         ),
       ],
@@ -481,17 +579,28 @@ class _DashboardScreenState extends State<DashboardScreen>
     required String title,
     int? index,
     String? badge,
+    required bool isMobile,
+    required bool isTablet,
   }) {
     final isSelected = index != null && _selectedIndex == index;
 
+    // Responsive values
+    final margin = isMobile ? 6.0 : 8.0;
+    final iconSize = isMobile ? 18.0 : isTablet ? 19.0 : 20.0;
+    final iconPadding = isMobile ? 6.0 : 8.0;
+    final fontSize = isMobile ? 13.0 : isTablet ? 13.5 : 14.0;
+    final badgePadding = isMobile ? 6.0 : 8.0;
+    final badgeFontSize = isMobile ? 11.0 : 12.0;
+    final borderRadius = isMobile ? 10.0 : 12.0;
+
     return AnimatedContainer(
       duration: const Duration(milliseconds: 200),
-      margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      margin: EdgeInsets.symmetric(horizontal: margin, vertical: isMobile ? 0.5 : 1),
       decoration: BoxDecoration(
         color: isSelected
             ? DashboardStyles.primary.withOpacity(0.1)
             : Colors.transparent,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(borderRadius),
         border: Border.all(
           color: isSelected
               ? DashboardStyles.primary.withOpacity(0.3)
@@ -501,9 +610,13 @@ class _DashboardScreenState extends State<DashboardScreen>
       ),
       child: ListTile(
         dense: true,
+        contentPadding: EdgeInsets.symmetric(
+          horizontal: isMobile ? 12 : 16,
+          vertical: isMobile ? 2 : 4,
+        ),
         leading: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
-          padding: const EdgeInsets.all(8),
+          padding: EdgeInsets.all(iconPadding),
           decoration: BoxDecoration(
             color: isSelected
                 ? DashboardStyles.primary.withOpacity(0.15)
@@ -512,7 +625,7 @@ class _DashboardScreenState extends State<DashboardScreen>
           ),
           child: Icon(
             icon,
-            size: 20,
+            size: iconSize,
             color: isSelected
                 ? DashboardStyles.primary
                 : DashboardStyles.textLight,
@@ -525,21 +638,24 @@ class _DashboardScreenState extends State<DashboardScreen>
                 ? DashboardStyles.primary
                 : DashboardStyles.textDark,
             fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-            fontSize: 14,
+            fontSize: fontSize,
           ),
         ),
         trailing: badge != null
             ? Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                padding: EdgeInsets.symmetric(
+                  horizontal: badgePadding,
+                  vertical: isMobile ? 1.5 : 2,
+                ),
                 decoration: BoxDecoration(
                   color: DashboardStyles.primary,
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
                   badge,
-                  style: const TextStyle(
+                  style: TextStyle(
                     color: Colors.white,
-                    fontSize: 12,
+                    fontSize: badgeFontSize,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -547,7 +663,7 @@ class _DashboardScreenState extends State<DashboardScreen>
             : isSelected
                 ? Container(
                     width: 3,
-                    height: 20,
+                    height: isMobile ? 18 : 20,
                     decoration: BoxDecoration(
                       color: DashboardStyles.primary,
                       borderRadius: BorderRadius.circular(2),
@@ -567,12 +683,20 @@ class _DashboardScreenState extends State<DashboardScreen>
     );
   }
 
-  Widget _buildLogoutTile() {
+  Widget _buildLogoutTile(bool isMobile, bool isTablet) {
+    // Responsive values
+    final margin = isMobile ? 6.0 : 8.0;
+    final iconSize = isMobile ? 18.0 : isTablet ? 19.0 : 20.0;
+    final iconPadding = isMobile ? 6.0 : 8.0;
+    final fontSize = isMobile ? 13.0 : isTablet ? 13.5 : 14.0;
+    final trailingIconSize = isMobile ? 14.0 : 16.0;
+    final borderRadius = isMobile ? 10.0 : 12.0;
+
     return Container(
-      margin: const EdgeInsets.all(8),
+      margin: EdgeInsets.all(margin),
       decoration: BoxDecoration(
         color: DashboardStyles.accentRed.withOpacity(0.05),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(borderRadius),
         border: Border.all(
           color: DashboardStyles.accentRed.withOpacity(0.3),
           width: 1,
@@ -580,30 +704,34 @@ class _DashboardScreenState extends State<DashboardScreen>
       ),
       child: ListTile(
         dense: true,
+        contentPadding: EdgeInsets.symmetric(
+          horizontal: isMobile ? 12 : 16,
+          vertical: isMobile ? 4 : 8,
+        ),
         leading: Container(
-          padding: const EdgeInsets.all(8),
+          padding: EdgeInsets.all(iconPadding),
           decoration: BoxDecoration(
             color: DashboardStyles.accentRed.withOpacity(0.1),
             borderRadius: BorderRadius.circular(8),
           ),
-          child: const Icon(
+          child: Icon(
             Icons.logout,
             color: DashboardStyles.accentRed,
-            size: 20,
+            size: iconSize,
           ),
         ),
-        title: const Text(
+        title: Text(
           'Logout',
           style: TextStyle(
             color: DashboardStyles.accentRed,
             fontWeight: FontWeight.w600,
-            fontSize: 14,
+            fontSize: fontSize,
           ),
         ),
-        trailing: const Icon(
+        trailing: Icon(
           Icons.arrow_forward_ios,
           color: DashboardStyles.accentRed,
-          size: 16,
+          size: trailingIconSize,
         ),
         onTap: _showLogoutConfirmation,
       ),

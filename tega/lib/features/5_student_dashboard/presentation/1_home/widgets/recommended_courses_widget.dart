@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 class RecommendedCoursesWidget extends StatefulWidget {
   final List<dynamic> courses;
@@ -165,10 +166,16 @@ class _RecommendedCoursesWidgetState extends State<RecommendedCoursesWidget>
               height: 80,
               color: const Color(0xFF6B5FFF).withOpacity(0.1),
               child: course['image'] != null
-                  ? Image.network(
-                      course['image'],
+                  ? CachedNetworkImage(
+                      imageUrl: course['image'],
                       fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) => const Icon(
+                      placeholder: (context, url) => const Center(
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF6B5FFF)),
+                        ),
+                      ),
+                      errorWidget: (context, url, error) => const Icon(
                         Icons.image_outlined,
                         color: Color(0xFF6B5FFF),
                         size: 32,

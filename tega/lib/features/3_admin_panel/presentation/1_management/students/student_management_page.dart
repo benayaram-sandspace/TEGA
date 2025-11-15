@@ -1,5 +1,8 @@
+import 'dart:async';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:tega/core/services/admin_dashboard_cache_service.dart';
 import 'package:tega/features/3_admin_panel/presentation/0_dashboard/admin_dashboard_styles.dart';
 import 'package:tega/features/5_student_dashboard/data/models/student_model.dart';
 import 'package:tega/data/colleges_data.dart';
@@ -18,6 +21,7 @@ class _StudentManagementPageState extends State<StudentManagementPage>
     with TickerProviderStateMixin {
   final TextEditingController _searchController = TextEditingController();
   final AdminDashboardService _dashboardService = AdminDashboardService();
+  final AdminDashboardCacheService _cacheService = AdminDashboardCacheService();
 
   String _selectedCollege = 'All';
   String _selectedBranch = 'All';
@@ -26,6 +30,7 @@ class _StudentManagementPageState extends State<StudentManagementPage>
 
   // Loading and error states
   bool _isLoading = true;
+  bool _isLoadingFromCache = false;
   String? _errorMessage;
 
   // Enhanced animation controllers
@@ -40,7 +45,60 @@ class _StudentManagementPageState extends State<StudentManagementPage>
   void initState() {
     super.initState();
     _initializeAnimations();
-    _fetchStudentsFromAPI();
+    _initializeCacheAndLoadData();
+  }
+
+  Future<void> _initializeCacheAndLoadData() async {
+    // Initialize cache service
+    await _cacheService.initialize();
+    
+    // Try to load from cache first
+    await _loadFromCache();
+    
+    // Then load fresh data
+    await _fetchStudentsFromAPI();
+  }
+
+  Future<void> _loadFromCache() async {
+    try {
+      setState(() => _isLoadingFromCache = true);
+      
+      Map<String, dynamic>? cachedData;
+      if (_selectedCollege != 'All') {
+        cachedData = await _cacheService.getStudentsDataByCollege(_selectedCollege);
+      } else {
+        cachedData = await _cacheService.getStudentsData();
+      }
+
+      if (cachedData != null && cachedData['success'] == true) {
+        final List<dynamic> studentsJson = cachedData['students'] ?? [];
+
+        setState(() {
+          _students = studentsJson.map((json) {
+            return Student(
+              id: json['_id'] ?? json['id'] ?? '',
+              name: '${json['firstName'] ?? ''} ${json['lastName'] ?? ''}'
+                  .trim(),
+              email: json['email'] ?? '',
+              college: json['institute'] ?? json['college'] ?? 'No Institute',
+              branch: json['branch'] ?? 'Not specified',
+              year: json['yearOfStudy']?.toString() ?? json['year']?.toString(),
+              studentId: json['studentId'] ?? json['id'],
+              status: json['status'] ?? 'Active',
+              cgpa: json['cgpa']?.toDouble(),
+              percentage: json['percentage']?.toDouble(),
+              jobReadiness: json['jobReadiness']?.toDouble(),
+            );
+          }).toList();
+          _isLoadingFromCache = false;
+          _applyFilters();
+        });
+      } else {
+        setState(() => _isLoadingFromCache = false);
+      }
+    } catch (e) {
+      setState(() => _isLoadingFromCache = false);
+    }
   }
 
   void _initializeAnimations() {
@@ -91,7 +149,7 @@ class _StudentManagementPageState extends State<StudentManagementPage>
       MaterialPageRoute(
         builder: (context) => CreateStudentPage(
           onStudentCreated: () {
-            _fetchStudentsFromAPI(); // Refresh student data
+            _fetchStudentsFromAPI(forceRefresh: true); // Refresh student data
           },
         ),
       ),
@@ -107,11 +165,29 @@ class _StudentManagementPageState extends State<StudentManagementPage>
     super.dispose();
   }
 
-  Future<void> _fetchStudentsFromAPI() async {
-    setState(() {
-      _isLoading = true;
-      _errorMessage = null;
-    });
+  bool _isNoInternetError(dynamic error) {
+    return error is SocketException ||
+        error is TimeoutException ||
+        (error.toString().toLowerCase().contains('network') ||
+            error.toString().toLowerCase().contains('connection') ||
+            error.toString().toLowerCase().contains('internet') ||
+            error.toString().toLowerCase().contains('failed host lookup') ||
+            error.toString().toLowerCase().contains('no address associated with hostname'));
+  }
+
+  Future<void> _fetchStudentsFromAPI({bool forceRefresh = false}) async {
+    // If we have cached data and not forcing refresh, load in background
+    if (!forceRefresh && _students.isNotEmpty) {
+      _fetchStudentsFromAPIInBackground();
+      return;
+    }
+
+    if (!_isLoadingFromCache) {
+      setState(() {
+        _isLoading = true;
+        _errorMessage = null;
+      });
+    }
 
     try {
       Map<String, dynamic> data;
@@ -119,8 +195,12 @@ class _StudentManagementPageState extends State<StudentManagementPage>
       // Use college-specific API if a specific college is selected
       if (_selectedCollege != 'All') {
         data = await _dashboardService.getStudentsByCollege(_selectedCollege);
+        // Cache the data
+        await _cacheService.setStudentsDataByCollege(_selectedCollege, data);
       } else {
         data = await _dashboardService.getAllStudents();
+        // Cache the data
+        await _cacheService.setStudentsData(data);
       }
 
       if (data['success'] == true) {
@@ -144,19 +224,114 @@ class _StudentManagementPageState extends State<StudentManagementPage>
             );
           }).toList();
           _isLoading = false;
+          _isLoadingFromCache = false;
+          _errorMessage = null; // Clear error on success
           _applyFilters();
         });
       } else {
         throw Exception(data['message'] ?? 'Failed to load students');
       }
     } catch (e) {
-      setState(() {
-        _isLoading = false;
-        _errorMessage = e.toString().replaceAll('Exception: ', '');
-        // Use empty list on error
-        _students = [];
-        _filteredStudents = [];
-      });
+      // Check if it's a network/internet error
+      if (_isNoInternetError(e)) {
+        // Try to load from cache if available
+        Map<String, dynamic>? cachedData;
+        if (_selectedCollege != 'All') {
+          cachedData = await _cacheService.getStudentsDataByCollege(_selectedCollege);
+        } else {
+          cachedData = await _cacheService.getStudentsData();
+        }
+        
+        if (cachedData != null && cachedData['success'] == true) {
+          final List<dynamic> studentsJson = cachedData['students'] ?? [];
+          if (studentsJson.isNotEmpty) {
+            // Load from cache and show toast
+            setState(() {
+              _students = studentsJson.map((json) {
+                return Student(
+                  id: json['_id'] ?? json['id'] ?? '',
+                  name: '${json['firstName'] ?? ''} ${json['lastName'] ?? ''}'
+                      .trim(),
+                  email: json['email'] ?? '',
+                  college: json['institute'] ?? json['college'] ?? 'No Institute',
+                  branch: json['branch'] ?? 'Not specified',
+                  year: json['yearOfStudy']?.toString() ?? json['year']?.toString(),
+                  studentId: json['studentId'] ?? json['id'],
+                  status: json['status'] ?? 'Active',
+                  cgpa: json['cgpa']?.toDouble(),
+                  percentage: json['percentage']?.toDouble(),
+                  jobReadiness: json['jobReadiness']?.toDouble(),
+                );
+              }).toList();
+              _isLoading = false;
+              _isLoadingFromCache = false;
+              _errorMessage = null; // Clear error since we have cached data
+              _applyFilters();
+            });
+            return;
+          }
+        }
+        
+        // No cache available, show error
+        setState(() {
+          _errorMessage = 'No internet connection';
+          _isLoading = false;
+          _isLoadingFromCache = false;
+        });
+      } else {
+        // Other errors
+        setState(() {
+          _errorMessage = e.toString().replaceAll('Exception: ', '');
+          _isLoading = false;
+          _isLoadingFromCache = false;
+          // Use empty list on error
+          _students = [];
+          _filteredStudents = [];
+        });
+      }
+    }
+  }
+
+  Future<void> _fetchStudentsFromAPIInBackground() async {
+    try {
+      Map<String, dynamic> data;
+
+      // Use college-specific API if a specific college is selected
+      if (_selectedCollege != 'All') {
+        data = await _dashboardService.getStudentsByCollege(_selectedCollege);
+        // Cache the data
+        await _cacheService.setStudentsDataByCollege(_selectedCollege, data);
+      } else {
+        data = await _dashboardService.getAllStudents();
+        // Cache the data
+        await _cacheService.setStudentsData(data);
+      }
+
+      if (data['success'] == true && mounted) {
+        final List<dynamic> studentsJson = data['students'] ?? [];
+
+        setState(() {
+          _students = studentsJson.map((json) {
+            return Student(
+              id: json['_id'] ?? json['id'] ?? '',
+              name: '${json['firstName'] ?? ''} ${json['lastName'] ?? ''}'
+                  .trim(),
+              email: json['email'] ?? '',
+              college: json['institute'] ?? json['college'] ?? 'No Institute',
+              branch: json['branch'] ?? 'Not specified',
+              year: json['yearOfStudy']?.toString() ?? json['year']?.toString(),
+              studentId: json['studentId'] ?? json['id'],
+              status: json['status'] ?? 'Active',
+              cgpa: json['cgpa']?.toDouble(),
+              percentage: json['percentage']?.toDouble(),
+              jobReadiness: json['jobReadiness']?.toDouble(),
+            );
+          }).toList();
+          _applyFilters();
+        });
+      }
+    } catch (e) {
+      // Silently fail in background refresh
     }
   }
 
@@ -203,7 +378,8 @@ class _StudentManagementPageState extends State<StudentManagementPage>
       setState(() {
         _selectedCollege = newValue;
       });
-      // Refresh data when college changes
+      // Refresh data when college changes - load from cache first
+      _loadFromCache();
       _fetchStudentsFromAPI();
     }
   }
@@ -236,9 +412,9 @@ class _StudentManagementPageState extends State<StudentManagementPage>
               child: _buildFilterSection(screenWidth),
             ),
             Expanded(
-              child: _isLoading
+              child: _isLoading && !_isLoadingFromCache
                   ? _buildLoadingState()
-                  : _errorMessage != null
+                  : _errorMessage != null && !_isLoadingFromCache
                   ? _buildErrorState(screenWidth)
                   : _filteredStudents.isEmpty
                   ? _buildEmptyState(screenWidth)
@@ -896,7 +1072,7 @@ class _StudentManagementPageState extends State<StudentManagementPage>
     final isSmallScreen = screenWidth < 600;
 
     return RefreshIndicator(
-      onRefresh: _fetchStudentsFromAPI,
+      onRefresh: () => _fetchStudentsFromAPI(forceRefresh: true),
       color: AdminDashboardStyles.primary,
       backgroundColor: Colors.white,
       child: ListView.builder(
@@ -1171,14 +1347,15 @@ class _StudentManagementPageState extends State<StudentManagementPage>
 
   Widget _buildErrorState(double screenWidth) {
     final isSmallScreen = screenWidth < 600;
+    final isTablet = screenWidth >= 600 && screenWidth < 1024;
 
     return Center(
       child: Container(
-        margin: EdgeInsets.symmetric(horizontal: isSmallScreen ? 20 : 40),
-        padding: EdgeInsets.all(isSmallScreen ? 32 : 48),
+        margin: EdgeInsets.symmetric(horizontal: isSmallScreen ? 20 : isTablet ? 40 : 60),
+        padding: EdgeInsets.all(isSmallScreen ? 24 : isTablet ? 28 : 32),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(isSmallScreen ? 20 : 28),
+          borderRadius: BorderRadius.circular(isSmallScreen ? 16 : isTablet ? 18 : 20),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withOpacity(0.03),
@@ -1190,51 +1367,44 @@ class _StudentManagementPageState extends State<StudentManagementPage>
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Container(
-              padding: EdgeInsets.all(isSmallScreen ? 16 : 20),
-              decoration: BoxDecoration(
-                color: const Color(0xFFFEE2E2),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(
-                Icons.error_outline_rounded,
-                size: isSmallScreen ? 40 : 48,
-                color: const Color(0xFFEF4444),
-              ),
+            Icon(
+              Icons.cloud_off,
+              size: isSmallScreen ? 56 : isTablet ? 64 : 72,
+              color: Colors.grey[400],
             ),
-            SizedBox(height: isSmallScreen ? 20 : 24),
+            SizedBox(height: isSmallScreen ? 16 : isTablet ? 18 : 20),
             Text(
-              'Failed to Load Students',
+              'Failed to load students',
               style: TextStyle(
-                fontSize: isSmallScreen ? 18 : 22,
-                fontWeight: FontWeight.w800,
-                color: AdminDashboardStyles.textDark,
+                fontSize: isSmallScreen ? 18 : isTablet ? 19 : 20,
+                fontWeight: FontWeight.w600,
+                color: Colors.grey[700],
               ),
               textAlign: TextAlign.center,
             ),
-            SizedBox(height: isSmallScreen ? 8 : 12),
+            SizedBox(height: isSmallScreen ? 8 : isTablet ? 9 : 10),
             Text(
               _errorMessage ?? 'An unexpected error occurred',
               style: TextStyle(
-                fontSize: isSmallScreen ? 13 : 15,
-                color: Colors.grey.shade600,
+                fontSize: isSmallScreen ? 14 : isTablet ? 15 : 16,
+                color: Colors.grey[600],
                 height: 1.5,
               ),
               textAlign: TextAlign.center,
               maxLines: 3,
               overflow: TextOverflow.ellipsis,
             ),
-            SizedBox(height: isSmallScreen ? 24 : 32),
+            SizedBox(height: isSmallScreen ? 24 : isTablet ? 28 : 32),
             ElevatedButton.icon(
-              onPressed: _fetchStudentsFromAPI,
-              icon: const Icon(Icons.refresh_rounded),
-              label: const Text('Retry'),
+              onPressed: () => _fetchStudentsFromAPI(forceRefresh: true),
+              icon: Icon(Icons.refresh_rounded, size: isSmallScreen ? 16 : isTablet ? 17 : 18),
+              label: Text('Retry'),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AdminDashboardStyles.primary,
                 foregroundColor: Colors.white,
                 padding: EdgeInsets.symmetric(
-                  horizontal: isSmallScreen ? 24 : 32,
-                  vertical: isSmallScreen ? 12 : 16,
+                  horizontal: isSmallScreen ? 20 : isTablet ? 24 : 28,
+                  vertical: isSmallScreen ? 12 : isTablet ? 13 : 14,
                 ),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),

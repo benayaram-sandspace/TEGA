@@ -1,4 +1,7 @@
+import 'dart:async';
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:tega/core/services/admin_dashboard_cache_service.dart';
 import 'package:tega/features/3_admin_panel/data/models/principal_model.dart';
 import 'package:tega/data/colleges_data.dart';
 import 'package:tega/features/3_admin_panel/data/services/admin_dashboard_service.dart';
@@ -19,6 +22,7 @@ class _PrincipalManagementPageState extends State<PrincipalManagementPage>
     with TickerProviderStateMixin {
   final TextEditingController _searchController = TextEditingController();
   final AdminDashboardService _dashboardService = AdminDashboardService();
+  final AdminDashboardCacheService _cacheService = AdminDashboardCacheService();
 
   String _selectedCollege = 'All';
   String _selectedGender = 'All';
@@ -27,6 +31,7 @@ class _PrincipalManagementPageState extends State<PrincipalManagementPage>
 
   // Loading and error states
   bool _isLoading = true;
+  bool _isLoadingFromCache = false;
   String? _errorMessage;
 
   // Enhanced animation controllers
@@ -44,7 +49,42 @@ class _PrincipalManagementPageState extends State<PrincipalManagementPage>
   void initState() {
     super.initState();
     _initializeAnimations();
-    _fetchPrincipalsFromAPI();
+    _initializeCacheAndLoadData();
+  }
+
+  Future<void> _initializeCacheAndLoadData() async {
+    // Initialize cache service
+    await _cacheService.initialize();
+    
+    // Try to load from cache first
+    await _loadFromCache();
+    
+    // Then load fresh data
+    await _fetchPrincipalsFromAPI();
+  }
+
+  Future<void> _loadFromCache() async {
+    try {
+      setState(() => _isLoadingFromCache = true);
+      
+      final cachedData = await _cacheService.getPrincipalsData();
+
+      if (cachedData != null && cachedData['success'] == true) {
+        final principalsData = cachedData['principals'] as List<dynamic>;
+        setState(() {
+          _principals = principalsData
+              .map((principal) => Principal.fromJson(principal))
+              .toList();
+          _filteredPrincipals = List.from(_principals);
+          _isLoadingFromCache = false;
+        });
+        _startStaggeredAnimations();
+      } else {
+        setState(() => _isLoadingFromCache = false);
+      }
+    } catch (e) {
+      setState(() => _isLoadingFromCache = false);
+    }
   }
 
   void _initializeAnimations() {
@@ -95,7 +135,7 @@ class _PrincipalManagementPageState extends State<PrincipalManagementPage>
       MaterialPageRoute(
         builder: (context) => CreatePrincipalPage(
           onPrincipalCreated: () {
-            _fetchPrincipalsFromAPI(); // Refresh principal data
+            _fetchPrincipalsFromAPI(forceRefresh: true); // Refresh principal data
           },
         ),
       ),
@@ -111,11 +151,29 @@ class _PrincipalManagementPageState extends State<PrincipalManagementPage>
     super.dispose();
   }
 
-  Future<void> _fetchPrincipalsFromAPI() async {
-    setState(() {
-      _isLoading = true;
-      _errorMessage = null;
-    });
+  bool _isNoInternetError(dynamic error) {
+    return error is SocketException ||
+        error is TimeoutException ||
+        (error.toString().toLowerCase().contains('network') ||
+            error.toString().toLowerCase().contains('connection') ||
+            error.toString().toLowerCase().contains('internet') ||
+            error.toString().toLowerCase().contains('failed host lookup') ||
+            error.toString().toLowerCase().contains('no address associated with hostname'));
+  }
+
+  Future<void> _fetchPrincipalsFromAPI({bool forceRefresh = false}) async {
+    // If we have cached data and not forcing refresh, load in background
+    if (!forceRefresh && _principals.isNotEmpty) {
+      _fetchPrincipalsFromAPIInBackground();
+      return;
+    }
+
+    if (!_isLoadingFromCache) {
+      setState(() {
+        _isLoading = true;
+        _errorMessage = null;
+      });
+    }
 
     try {
       final data = await _dashboardService.getAllPrincipals();
@@ -127,19 +185,74 @@ class _PrincipalManagementPageState extends State<PrincipalManagementPage>
               .toList();
           _filteredPrincipals = List.from(_principals);
           _isLoading = false;
+          _isLoadingFromCache = false;
+          _errorMessage = null; // Clear error on success
         });
         _startStaggeredAnimations();
+        
+        // Cache the data
+        await _cacheService.setPrincipalsData(data);
       } else {
-        setState(() {
-          _errorMessage = 'Failed to load principals';
-          _isLoading = false;
-        });
+        throw Exception(data['message'] ?? 'Failed to load principals');
       }
     } catch (e) {
-      setState(() {
-        _errorMessage = e.toString();
-        _isLoading = false;
-      });
+      // Check if it's a network/internet error
+      if (_isNoInternetError(e)) {
+        // Try to load from cache if available
+        final cachedData = await _cacheService.getPrincipalsData();
+        if (cachedData != null && cachedData['success'] == true) {
+          final principalsData = cachedData['principals'] as List<dynamic>;
+          if (principalsData.isNotEmpty) {
+            // Load from cache and show toast
+            setState(() {
+              _principals = principalsData
+                  .map((principal) => Principal.fromJson(principal))
+                  .toList();
+              _filteredPrincipals = List.from(_principals);
+              _isLoading = false;
+              _isLoadingFromCache = false;
+              _errorMessage = null; // Clear error since we have cached data
+            });
+            _startStaggeredAnimations();
+            return;
+          }
+        }
+        
+        // No cache available, show error
+        setState(() {
+          _errorMessage = 'No internet connection';
+          _isLoading = false;
+          _isLoadingFromCache = false;
+        });
+      } else {
+        // Other errors
+        setState(() {
+          _errorMessage = e.toString().replaceAll('Exception: ', '');
+          _isLoading = false;
+          _isLoadingFromCache = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _fetchPrincipalsFromAPIInBackground() async {
+    try {
+      final data = await _dashboardService.getAllPrincipals();
+      if (data['success'] == true && mounted) {
+        final principalsData = data['principals'] as List<dynamic>;
+        setState(() {
+          _principals = principalsData
+              .map((principal) => Principal.fromJson(principal))
+              .toList();
+          _filteredPrincipals = List.from(_principals);
+        });
+        _startStaggeredAnimations();
+        
+        // Cache the data
+        await _cacheService.setPrincipalsData(data);
+      }
+    } catch (e) {
+      // Silently fail in background refresh
     }
   }
 
@@ -171,11 +284,13 @@ class _PrincipalManagementPageState extends State<PrincipalManagementPage>
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
-    final isSmallScreen = screenWidth < 600;
+    final isMobile = screenWidth < 600;
+    final isTablet = screenWidth >= 600 && screenWidth < 1024;
+    final isDesktop = screenWidth >= 1024;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
-      floatingActionButton: _buildCreatePrincipalFAB(),
+      floatingActionButton: _buildCreatePrincipalFAB(isMobile, isTablet, isDesktop),
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
       body: GestureDetector(
         onTap: () {
@@ -186,21 +301,21 @@ class _PrincipalManagementPageState extends State<PrincipalManagementPage>
           children: [
             Padding(
               padding: EdgeInsets.fromLTRB(
-                isSmallScreen ? 16 : 20,
-                isSmallScreen ? 16 : 20,
-                isSmallScreen ? 16 : 20,
-                isSmallScreen ? 12 : 16,
+                isMobile ? 16 : isTablet ? 20 : 24,
+                isMobile ? 16 : isTablet ? 20 : 24,
+                isMobile ? 16 : isTablet ? 20 : 24,
+                isMobile ? 12 : isTablet ? 14 : 16,
               ),
-              child: _buildFilterSection(screenWidth),
+              child: _buildFilterSection(isMobile, isTablet, isDesktop),
             ),
             Expanded(
-              child: _isLoading
-                  ? _buildLoadingState()
-                  : _errorMessage != null
-                  ? _buildErrorState(screenWidth)
+              child: _isLoading && !_isLoadingFromCache
+                  ? _buildLoadingState(isMobile, isTablet, isDesktop)
+                  : _errorMessage != null && !_isLoadingFromCache
+                  ? _buildErrorState(isMobile, isTablet, isDesktop)
                   : _filteredPrincipals.isEmpty
-                  ? _buildEmptyState(screenWidth)
-                  : _buildPrincipalList(screenWidth),
+                  ? _buildEmptyState(isMobile, isTablet, isDesktop)
+                  : _buildPrincipalList(isMobile, isTablet, isDesktop),
             ),
           ],
         ),
@@ -208,14 +323,12 @@ class _PrincipalManagementPageState extends State<PrincipalManagementPage>
     );
   }
 
-  Widget _buildFilterSection(double screenWidth) {
-    final isSmallScreen = screenWidth < 600;
-
+  Widget _buildFilterSection(bool isMobile, bool isTablet, bool isDesktop) {
     return Container(
-      padding: EdgeInsets.all(isSmallScreen ? 16 : 20),
+      padding: EdgeInsets.all(isMobile ? 16 : isTablet ? 18 : 20),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(isMobile ? 14 : isTablet ? 15 : 16),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.05),
@@ -230,29 +343,29 @@ class _PrincipalManagementPageState extends State<PrincipalManagementPage>
           Text(
             'Filter Principals',
             style: TextStyle(
-              fontSize: isSmallScreen ? 16 : 18,
+              fontSize: isMobile ? 16 : isTablet ? 17 : 18,
               fontWeight: FontWeight.bold,
               color: const Color(0xFF1F2937),
             ),
           ),
-          SizedBox(height: isSmallScreen ? 12 : 16),
-          isSmallScreen
+          SizedBox(height: isMobile ? 12 : isTablet ? 14 : 16),
+          isMobile
               ? Column(
                   children: [
-                    _buildSearchBar(isSmallScreen),
-                    const SizedBox(height: 12),
-                    _buildCollegeFilter(isSmallScreen),
-                    const SizedBox(height: 12),
-                    _buildGenderFilter(isSmallScreen),
+                    _buildSearchBar(isMobile, isTablet, isDesktop),
+                    SizedBox(height: isMobile ? 10 : 12),
+                    _buildCollegeFilter(isMobile, isTablet, isDesktop),
+                    SizedBox(height: isMobile ? 10 : 12),
+                    _buildGenderFilter(isMobile, isTablet, isDesktop),
                   ],
                 )
               : Row(
                   children: [
-                    Expanded(flex: 2, child: _buildSearchBar(isSmallScreen)),
-                    const SizedBox(width: 16),
-                    Expanded(child: _buildCollegeFilter(isSmallScreen)),
-                    const SizedBox(width: 16),
-                    Expanded(child: _buildGenderFilter(isSmallScreen)),
+                    Expanded(flex: 2, child: _buildSearchBar(isMobile, isTablet, isDesktop)),
+                    SizedBox(width: isTablet ? 12 : 16),
+                    Expanded(child: _buildCollegeFilter(isMobile, isTablet, isDesktop)),
+                    SizedBox(width: isTablet ? 12 : 16),
+                    Expanded(child: _buildGenderFilter(isMobile, isTablet, isDesktop)),
                   ],
                 ),
         ],
@@ -260,13 +373,13 @@ class _PrincipalManagementPageState extends State<PrincipalManagementPage>
     );
   }
 
-  Widget _buildSearchBar(bool isSmallScreen) {
+  Widget _buildSearchBar(bool isMobile, bool isTablet, bool isDesktop) {
     return GestureDetector(
       onTap: () {}, // Prevent unfocusing
       child: Container(
         decoration: BoxDecoration(
           color: const Color(0xFFF9FAFB),
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(isMobile ? 10 : isTablet ? 11 : 12),
           border: Border.all(color: const Color(0xFFE5E7EB)),
         ),
         child: TextField(
@@ -276,19 +389,19 @@ class _PrincipalManagementPageState extends State<PrincipalManagementPage>
             hintText: 'Search principals...',
             hintStyle: TextStyle(
               color: Colors.grey.shade500,
-              fontSize: isSmallScreen ? 14 : 16,
+              fontSize: isMobile ? 13 : isTablet ? 14 : 16,
             ),
             prefixIcon: Icon(
               Icons.search,
               color: Colors.grey.shade500,
-              size: isSmallScreen ? 20 : 22,
+              size: isMobile ? 18 : isTablet ? 20 : 22,
             ),
             suffixIcon: _searchController.text.isNotEmpty
                 ? IconButton(
                     icon: Icon(
                       Icons.clear,
                       color: Colors.grey.shade500,
-                      size: isSmallScreen ? 18 : 20,
+                      size: isMobile ? 16 : isTablet ? 18 : 20,
                     ),
                     onPressed: () {
                       _searchController.clear();
@@ -298,23 +411,23 @@ class _PrincipalManagementPageState extends State<PrincipalManagementPage>
                 : null,
             border: InputBorder.none,
             contentPadding: EdgeInsets.symmetric(
-              horizontal: isSmallScreen ? 12 : 16,
-              vertical: isSmallScreen ? 12 : 16,
+              horizontal: isMobile ? 12 : isTablet ? 14 : 16,
+              vertical: isMobile ? 12 : isTablet ? 14 : 16,
             ),
           ),
-          style: TextStyle(fontSize: isSmallScreen ? 14 : 16),
+          style: TextStyle(fontSize: isMobile ? 13 : isTablet ? 14 : 16),
         ),
       ),
     );
   }
 
-  Widget _buildCollegeFilter(bool isSmallScreen) {
+  Widget _buildCollegeFilter(bool isMobile, bool isTablet, bool isDesktop) {
     return GestureDetector(
       onTap: () {}, // Prevent unfocusing
       child: Container(
         decoration: BoxDecoration(
           color: const Color(0xFFF9FAFB),
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(isMobile ? 10 : isTablet ? 11 : 12),
           border: Border.all(color: const Color(0xFFE5E7EB)),
         ),
         child: DropdownButtonFormField<String>(
@@ -329,17 +442,17 @@ class _PrincipalManagementPageState extends State<PrincipalManagementPage>
             labelText: 'College',
             labelStyle: TextStyle(
               color: Colors.grey.shade600,
-              fontSize: isSmallScreen ? 12 : 14,
+              fontSize: isMobile ? 11 : isTablet ? 12 : 14,
             ),
             prefixIcon: Icon(
               Icons.school,
               color: Colors.grey.shade500,
-              size: isSmallScreen ? 18 : 20,
+              size: isMobile ? 16 : isTablet ? 18 : 20,
             ),
             border: InputBorder.none,
             contentPadding: EdgeInsets.symmetric(
-              horizontal: isSmallScreen ? 12 : 16,
-              vertical: isSmallScreen ? 12 : 16,
+              horizontal: isMobile ? 12 : isTablet ? 14 : 16,
+              vertical: isMobile ? 12 : isTablet ? 14 : 16,
             ),
           ),
           items: collegeOptions.map((college) {
@@ -347,26 +460,26 @@ class _PrincipalManagementPageState extends State<PrincipalManagementPage>
               value: college,
               child: Text(
                 college,
-                style: TextStyle(fontSize: isSmallScreen ? 13 : 14),
+                style: TextStyle(fontSize: isMobile ? 12 : isTablet ? 13 : 14),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),
             );
           }).toList(),
-          menuMaxHeight: 400,
+          menuMaxHeight: isMobile ? 300 : 400,
           isExpanded: true,
         ),
       ),
     );
   }
 
-  Widget _buildGenderFilter(bool isSmallScreen) {
+  Widget _buildGenderFilter(bool isMobile, bool isTablet, bool isDesktop) {
     return GestureDetector(
       onTap: () {}, // Prevent unfocusing
       child: Container(
         decoration: BoxDecoration(
           color: const Color(0xFFF9FAFB),
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(isMobile ? 10 : isTablet ? 11 : 12),
           border: Border.all(color: const Color(0xFFE5E7EB)),
         ),
         child: DropdownButtonFormField<String>(
@@ -381,17 +494,17 @@ class _PrincipalManagementPageState extends State<PrincipalManagementPage>
             labelText: 'Gender',
             labelStyle: TextStyle(
               color: Colors.grey.shade600,
-              fontSize: isSmallScreen ? 12 : 14,
+              fontSize: isMobile ? 11 : isTablet ? 12 : 14,
             ),
             prefixIcon: Icon(
               Icons.person,
               color: Colors.grey.shade500,
-              size: isSmallScreen ? 18 : 20,
+              size: isMobile ? 16 : isTablet ? 18 : 20,
             ),
             border: InputBorder.none,
             contentPadding: EdgeInsets.symmetric(
-              horizontal: isSmallScreen ? 12 : 16,
-              vertical: isSmallScreen ? 12 : 16,
+              horizontal: isMobile ? 12 : isTablet ? 14 : 16,
+              vertical: isMobile ? 12 : isTablet ? 14 : 16,
             ),
           ),
           items: genderOptions.map((gender) {
@@ -399,7 +512,7 @@ class _PrincipalManagementPageState extends State<PrincipalManagementPage>
               value: gender,
               child: Text(
                 gender,
-                style: TextStyle(fontSize: isSmallScreen ? 13 : 14),
+                style: TextStyle(fontSize: isMobile ? 12 : isTablet ? 13 : 14),
               ),
             );
           }).toList(),
@@ -409,34 +522,35 @@ class _PrincipalManagementPageState extends State<PrincipalManagementPage>
     );
   }
 
-  Widget _buildLoadingState() {
-    return const Center(
+  Widget _buildLoadingState(bool isMobile, bool isTablet, bool isDesktop) {
+    return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          CircularProgressIndicator(
+          const CircularProgressIndicator(
             valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF3B82F6)),
           ),
-          SizedBox(height: 16),
+          SizedBox(height: isMobile ? 12 : isTablet ? 14 : 16),
           Text(
             'Loading principals...',
-            style: TextStyle(fontSize: 16, color: Color(0xFF6B7280)),
+            style: TextStyle(
+              fontSize: isMobile ? 14 : isTablet ? 15 : 16,
+              color: const Color(0xFF6B7280),
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildErrorState(double screenWidth) {
-    final isSmallScreen = screenWidth < 600;
-
+  Widget _buildErrorState(bool isMobile, bool isTablet, bool isDesktop) {
     return Center(
       child: Container(
-        margin: EdgeInsets.all(isSmallScreen ? 16 : 24),
-        padding: EdgeInsets.all(isSmallScreen ? 20 : 24),
+        margin: EdgeInsets.all(isMobile ? 20 : isTablet ? 24 : 28),
+        padding: EdgeInsets.all(isMobile ? 24 : isTablet ? 28 : 32),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(isMobile ? 16 : isTablet ? 18 : 20),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withValues(alpha: 0.05),
@@ -448,42 +562,45 @@ class _PrincipalManagementPageState extends State<PrincipalManagementPage>
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(
-              Icons.error_outline,
-              size: isSmallScreen ? 48 : 64,
-              color: const Color(0xFFEF4444),
+              Icons.cloud_off,
+              size: isMobile ? 56 : isTablet ? 64 : 72,
+              color: Colors.grey[400],
             ),
-            SizedBox(height: isSmallScreen ? 12 : 16),
+            SizedBox(height: isMobile ? 16 : isTablet ? 18 : 20),
             Text(
-              'Error Loading Principals',
+              'Failed to load principals',
               style: TextStyle(
-                fontSize: isSmallScreen ? 18 : 20,
-                fontWeight: FontWeight.bold,
-                color: const Color(0xFF1F2937),
+                fontSize: isMobile ? 18 : isTablet ? 19 : 20,
+                fontWeight: FontWeight.w600,
+                color: Colors.grey[700],
               ),
             ),
-            SizedBox(height: isSmallScreen ? 8 : 12),
+            SizedBox(height: isMobile ? 8 : isTablet ? 9 : 10),
             Text(
               _errorMessage ?? 'An unexpected error occurred',
               style: TextStyle(
-                fontSize: isSmallScreen ? 14 : 16,
-                color: const Color(0xFF6B7280),
+                fontSize: isMobile ? 14 : isTablet ? 15 : 16,
+                color: Colors.grey[600],
               ),
               textAlign: TextAlign.center,
             ),
-            SizedBox(height: isSmallScreen ? 16 : 20),
+            SizedBox(height: isMobile ? 24 : isTablet ? 28 : 32),
             ElevatedButton.icon(
-              onPressed: _fetchPrincipalsFromAPI,
-              icon: const Icon(Icons.refresh),
-              label: const Text('Retry'),
+              onPressed: () => _fetchPrincipalsFromAPI(forceRefresh: true),
+              icon: Icon(Icons.refresh, size: isMobile ? 16 : isTablet ? 17 : 18),
+              label: Text(
+                'Retry',
+                style: TextStyle(fontSize: isMobile ? 13 : isTablet ? 14 : 15),
+              ),
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF3B82F6),
+                backgroundColor: AdminDashboardStyles.primary,
                 foregroundColor: Colors.white,
                 padding: EdgeInsets.symmetric(
-                  horizontal: isSmallScreen ? 16 : 24,
-                  vertical: isSmallScreen ? 12 : 16,
+                  horizontal: isMobile ? 20 : isTablet ? 24 : 28,
+                  vertical: isMobile ? 12 : isTablet ? 13 : 14,
                 ),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(isMobile ? 10 : isTablet ? 11 : 12),
                 ),
               ),
             ),
@@ -493,16 +610,14 @@ class _PrincipalManagementPageState extends State<PrincipalManagementPage>
     );
   }
 
-  Widget _buildEmptyState(double screenWidth) {
-    final isSmallScreen = screenWidth < 600;
-
+  Widget _buildEmptyState(bool isMobile, bool isTablet, bool isDesktop) {
     return Center(
       child: Container(
-        margin: EdgeInsets.all(isSmallScreen ? 16 : 24),
-        padding: EdgeInsets.all(isSmallScreen ? 20 : 24),
+        margin: EdgeInsets.all(isMobile ? 16 : isTablet ? 20 : 24),
+        padding: EdgeInsets.all(isMobile ? 20 : isTablet ? 22 : 24),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(isMobile ? 14 : isTablet ? 15 : 16),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withValues(alpha: 0.05),
@@ -515,49 +630,49 @@ class _PrincipalManagementPageState extends State<PrincipalManagementPage>
           children: [
             Icon(
               Icons.admin_panel_settings_outlined,
-              size: isSmallScreen ? 48 : 64,
+              size: isMobile ? 48 : isTablet ? 56 : 64,
               color: const Color(0xFF6B7280),
             ),
-            SizedBox(height: isSmallScreen ? 12 : 16),
+            SizedBox(height: isMobile ? 12 : isTablet ? 14 : 16),
             Text(
               'No Principals Found',
               style: TextStyle(
-                fontSize: isSmallScreen ? 18 : 20,
+                fontSize: isMobile ? 18 : isTablet ? 19 : 20,
                 fontWeight: FontWeight.bold,
                 color: const Color(0xFF1F2937),
               ),
             ),
-            SizedBox(height: isSmallScreen ? 8 : 12),
+            SizedBox(height: isMobile ? 8 : isTablet ? 10 : 12),
             Text(
               'No principals match your current filters. Try adjusting your search criteria.',
               style: TextStyle(
-                fontSize: isSmallScreen ? 14 : 16,
+                fontSize: isMobile ? 14 : isTablet ? 15 : 16,
                 color: const Color(0xFF6B7280),
               ),
               textAlign: TextAlign.center,
             ),
-            SizedBox(height: isSmallScreen ? 16 : 20),
+            SizedBox(height: isMobile ? 16 : isTablet ? 18 : 20),
             Container(
-              padding: EdgeInsets.all(isSmallScreen ? 12 : 16),
+              padding: EdgeInsets.all(isMobile ? 12 : isTablet ? 14 : 16),
               decoration: BoxDecoration(
                 color: const Color(0xFFF3F4F6),
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(isMobile ? 10 : isTablet ? 11 : 12),
               ),
               child: Column(
                 children: [
                   Text(
                     'Suggestions:',
                     style: TextStyle(
-                      fontSize: isSmallScreen ? 14 : 16,
+                      fontSize: isMobile ? 14 : isTablet ? 15 : 16,
                       fontWeight: FontWeight.w600,
                       color: const Color(0xFF374151),
                     ),
                   ),
-                  SizedBox(height: isSmallScreen ? 8 : 12),
+                  SizedBox(height: isMobile ? 8 : isTablet ? 10 : 12),
                   Text(
                     '• Clear your search terms\n• Try different college filters\n• Check your gender selection',
                     style: TextStyle(
-                      fontSize: isSmallScreen ? 12 : 14,
+                      fontSize: isMobile ? 12 : isTablet ? 13 : 14,
                       color: const Color(0xFF6B7280),
                     ),
                     textAlign: TextAlign.left,
@@ -571,13 +686,11 @@ class _PrincipalManagementPageState extends State<PrincipalManagementPage>
     );
   }
 
-  Widget _buildPrincipalList(double screenWidth) {
-    final isSmallScreen = screenWidth < 600;
-
+  Widget _buildPrincipalList(bool isMobile, bool isTablet, bool isDesktop) {
     return ListView.builder(
       padding: EdgeInsets.symmetric(
-        horizontal: isSmallScreen ? 16 : 20,
-        vertical: isSmallScreen ? 8 : 12,
+        horizontal: isMobile ? 16 : isTablet ? 18 : 20,
+        vertical: isMobile ? 8 : isTablet ? 10 : 12,
       ),
       itemCount: _filteredPrincipals.length,
       itemBuilder: (context, index) {
@@ -593,7 +706,7 @@ class _PrincipalManagementPageState extends State<PrincipalManagementPage>
                 position: _slideAnimations[animationIndex],
                 child: ScaleTransition(
                   scale: _scaleAnimations[animationIndex],
-                  child: _buildPrincipalCard(principal, isSmallScreen),
+                  child: _buildPrincipalCard(principal, isMobile, isTablet, isDesktop),
                 ),
               ),
             );
@@ -603,12 +716,12 @@ class _PrincipalManagementPageState extends State<PrincipalManagementPage>
     );
   }
 
-  Widget _buildPrincipalCard(Principal principal, bool isSmallScreen) {
+  Widget _buildPrincipalCard(Principal principal, bool isMobile, bool isTablet, bool isDesktop) {
     return Container(
-      margin: EdgeInsets.only(bottom: isSmallScreen ? 12 : 16),
+      margin: EdgeInsets.only(bottom: isMobile ? 12 : isTablet ? 14 : 16),
       child: Material(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(isMobile ? 14 : isTablet ? 15 : 16),
         elevation: 2,
         shadowColor: Colors.black.withValues(alpha: 0.1),
         child: InkWell(
@@ -621,19 +734,19 @@ class _PrincipalManagementPageState extends State<PrincipalManagementPage>
               ),
             );
           },
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(isMobile ? 14 : isTablet ? 15 : 16),
           child: Padding(
-            padding: EdgeInsets.all(isSmallScreen ? 16 : 20),
+            padding: EdgeInsets.all(isMobile ? 16 : isTablet ? 18 : 20),
             child: Row(
               children: [
                 // Avatar
                 Container(
-                  width: isSmallScreen ? 48 : 56,
-                  height: isSmallScreen ? 48 : 56,
+                  width: isMobile ? 48 : isTablet ? 52 : 56,
+                  height: isMobile ? 48 : isTablet ? 52 : 56,
                   decoration: BoxDecoration(
                     color: const Color(0xFF3B82F6),
                     borderRadius: BorderRadius.circular(
-                      isSmallScreen ? 24 : 28,
+                      isMobile ? 24 : isTablet ? 26 : 28,
                     ),
                   ),
                   child: Center(
@@ -643,13 +756,13 @@ class _PrincipalManagementPageState extends State<PrincipalManagementPage>
                           : 'P',
                       style: TextStyle(
                         color: Colors.white,
-                        fontSize: isSmallScreen ? 18 : 20,
+                        fontSize: isMobile ? 18 : isTablet ? 19 : 20,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
                   ),
                 ),
-                SizedBox(width: isSmallScreen ? 12 : 16),
+                SizedBox(width: isMobile ? 12 : isTablet ? 14 : 16),
                 // Principal Info
                 Expanded(
                   child: Column(
@@ -658,28 +771,28 @@ class _PrincipalManagementPageState extends State<PrincipalManagementPage>
                       Text(
                         principal.name,
                         style: TextStyle(
-                          fontSize: isSmallScreen ? 16 : 18,
+                          fontSize: isMobile ? 16 : isTablet ? 17 : 18,
                           fontWeight: FontWeight.bold,
                           color: const Color(0xFF1F2937),
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
-                      SizedBox(height: isSmallScreen ? 4 : 6),
+                      SizedBox(height: isMobile ? 4 : isTablet ? 5 : 6),
                       Text(
                         principal.email,
                         style: TextStyle(
-                          fontSize: isSmallScreen ? 13 : 14,
+                          fontSize: isMobile ? 13 : isTablet ? 13.5 : 14,
                           color: const Color(0xFF6B7280),
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
-                      SizedBox(height: isSmallScreen ? 4 : 6),
+                      SizedBox(height: isMobile ? 4 : isTablet ? 5 : 6),
                       Text(
                         principal.university,
                         style: TextStyle(
-                          fontSize: isSmallScreen ? 12 : 13,
+                          fontSize: isMobile ? 12 : isTablet ? 12.5 : 13,
                           color: const Color(0xFF9CA3AF),
                         ),
                         maxLines: 1,
@@ -691,8 +804,8 @@ class _PrincipalManagementPageState extends State<PrincipalManagementPage>
                 // Status Badge
                 Container(
                   padding: EdgeInsets.symmetric(
-                    horizontal: isSmallScreen ? 8 : 12,
-                    vertical: isSmallScreen ? 4 : 6,
+                    horizontal: isMobile ? 8 : isTablet ? 10 : 12,
+                    vertical: isMobile ? 4 : isTablet ? 5 : 6,
                   ),
                   decoration: BoxDecoration(
                     color: principal.isActive
@@ -709,7 +822,7 @@ class _PrincipalManagementPageState extends State<PrincipalManagementPage>
                   child: Text(
                     principal.status,
                     style: TextStyle(
-                      fontSize: isSmallScreen ? 10 : 12,
+                      fontSize: isMobile ? 10 : isTablet ? 11 : 12,
                       fontWeight: FontWeight.w600,
                       color: principal.isActive
                           ? const Color(0xFF10B981)
@@ -725,10 +838,10 @@ class _PrincipalManagementPageState extends State<PrincipalManagementPage>
     );
   }
 
-  Widget _buildCreatePrincipalFAB() {
+  Widget _buildCreatePrincipalFAB(bool isMobile, bool isTablet, bool isDesktop) {
     return Container(
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(isMobile ? 14 : isTablet ? 15 : 16),
             boxShadow: [
               BoxShadow(
                 color: AdminDashboardStyles.primary.withOpacity(0.3),
@@ -750,12 +863,18 @@ class _PrincipalManagementPageState extends State<PrincipalManagementPage>
             foregroundColor: Colors.white,
             elevation: 0,
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(isMobile ? 14 : isTablet ? 15 : 16),
             ),
-            icon: const Icon(Icons.school_rounded, size: 20),
-            label: const Text(
+            icon: Icon(
+              Icons.school_rounded,
+              size: isMobile ? 18 : isTablet ? 19 : 20,
+            ),
+            label: Text(
               'Create Principal',
-              style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+              style: TextStyle(
+                fontWeight: FontWeight.w600,
+                fontSize: isMobile ? 13 : isTablet ? 13.5 : 14,
+              ),
             ),
           ),
         )

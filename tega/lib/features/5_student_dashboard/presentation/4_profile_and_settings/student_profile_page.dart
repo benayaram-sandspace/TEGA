@@ -6,8 +6,10 @@ import 'dart:async';
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:tega/features/1_authentication/data/auth_repository.dart';
 import 'package:tega/core/constants/api_constants.dart';
+import 'package:tega/core/services/profile_cache_service.dart';
 import 'package:intl/intl.dart';
 
 class StudentProfilePage extends StatefulWidget {
@@ -19,12 +21,15 @@ class StudentProfilePage extends StatefulWidget {
 
 class _StudentProfilePageState extends State<StudentProfilePage> {
   final AuthService _authService = AuthService();
+  final ProfileCacheService _cacheService = ProfileCacheService();
   bool _isLoading = true;
   bool _isEditing = false;
   bool _isSaving = false;
   bool _isUploadingPhoto = false;
+  bool _profileImageError = false;
   Map<String, dynamic>? _profileData;
   Map<String, dynamic>? _editedData;
+  String? _errorMessage;
 
   // Text controllers for editable fields
   final Map<String, TextEditingController> _controllers = {};
@@ -32,10 +37,37 @@ class _StudentProfilePageState extends State<StudentProfilePage> {
   // Validation errors map
   final Map<String, String?> _fieldErrors = {};
 
+  // Responsive breakpoints
+  double get mobileBreakpoint => 600;
+  double get tabletBreakpoint => 1024;
+  double get desktopBreakpoint => 1440;
+  bool get isMobile => MediaQuery.of(context).size.width < mobileBreakpoint;
+  bool get isTablet => MediaQuery.of(context).size.width >= mobileBreakpoint &&
+      MediaQuery.of(context).size.width < tabletBreakpoint;
+  bool get isDesktop => MediaQuery.of(context).size.width >= tabletBreakpoint &&
+      MediaQuery.of(context).size.width < desktopBreakpoint;
+  bool get isLargeDesktop => MediaQuery.of(context).size.width >= desktopBreakpoint;
+  bool get isSmallScreen => MediaQuery.of(context).size.width < 400;
+
   @override
   void initState() {
     super.initState();
+    _initializeCache();
+  }
+
+  Future<void> _initializeCache() async {
+    await _cacheService.initialize();
     _loadProfileData();
+  }
+
+  bool _isNoInternetError(dynamic error) {
+    return error is SocketException ||
+        error is TimeoutException ||
+        (error.toString().toLowerCase().contains('network') ||
+            error.toString().toLowerCase().contains('connection') ||
+            error.toString().toLowerCase().contains('internet') ||
+            error.toString().toLowerCase().contains('failed host lookup') ||
+            error.toString().toLowerCase().contains('no address associated with hostname'));
   }
 
   @override
@@ -78,9 +110,36 @@ class _StudentProfilePageState extends State<StudentProfilePage> {
     }
   }
 
-  Future<void> _loadProfileData() async {
+  Future<void> _loadProfileData({bool forceRefresh = false}) async {
+    if (!mounted) return;
+
+    // Try to load from cache first (unless force refresh)
+    if (!forceRefresh) {
+      final cachedData = await _cacheService.getProfileData();
+      if (cachedData != null && mounted) {
+        setState(() {
+          _profileData = cachedData;
+          _editedData = Map<String, dynamic>.from(_profileData!);
+          _isLoading = false;
+          _profileImageError = false;
+        });
+        _initializeControllers();
+        // Still fetch in background to update cache
+        _fetchProfileDataInBackground();
+        return;
+      }
+    }
+
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+    await _fetchProfileDataInBackground();
+  }
+
+  Future<void> _fetchProfileDataInBackground() async {
     try {
-      final headers = _authService.getAuthHeaders();
+      final headers = await _authService.getAuthHeaders();
       final response = await http.get(
         Uri.parse(ApiEndpoints.studentProfile),
         headers: headers,
@@ -89,18 +148,61 @@ class _StudentProfilePageState extends State<StudentProfilePage> {
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         if (data['success'] == true && data['data'] != null) {
+          // Cache the data
+          await _cacheService.setProfileData(data['data']);
+          
+          if (mounted) {
+            setState(() {
+              _profileData = data['data'];
+              _editedData = Map<String, dynamic>.from(_profileData!);
+              _isLoading = false;
+              _profileImageError = false;
+            });
+            _initializeControllers();
+          }
+        } else {
+          if (mounted) {
+            setState(() {
+              _isLoading = false;
+            });
+          }
+        }
+      } else {
+        if (mounted) {
           setState(() {
-            _profileData = data['data'];
-            _editedData = Map<String, dynamic>.from(_profileData!);
             _isLoading = false;
           });
-          _initializeControllers();
         }
       }
     } catch (e) {
-      setState(() {
-        _isLoading = false;
-      });
+      if (mounted) {
+        // Check if it's a network/internet error
+        if (_isNoInternetError(e)) {
+          // Try to load from cache if available
+          final cachedData = await _cacheService.getProfileData();
+          if (cachedData != null) {
+            setState(() {
+              _profileData = cachedData;
+              _editedData = Map<String, dynamic>.from(_profileData!);
+              _errorMessage = null; // Clear error since we have cached data
+              _isLoading = false;
+              _profileImageError = false;
+            });
+            _initializeControllers();
+            return;
+          }
+          // No cache available, show error
+          setState(() {
+            _errorMessage = 'No internet connection';
+            _isLoading = false;
+          });
+        } else {
+          setState(() {
+            _errorMessage = 'Unable to load profile. Please try again.';
+            _isLoading = false;
+          });
+        }
+      }
     }
   }
 
@@ -222,6 +324,11 @@ class _StudentProfilePageState extends State<StudentProfilePage> {
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         if (data['success'] == true) {
+          // Update cache with new data
+          if (data['data'] != null) {
+            await _cacheService.setProfileData(data['data']);
+          }
+          
           setState(() {
             _isEditing = false;
             _profileData = data['data'];
@@ -365,18 +472,96 @@ class _StudentProfilePageState extends State<StudentProfilePage> {
           backgroundColor: Colors.white,
           elevation: 0,
           leading: IconButton(
-            icon: const Icon(Icons.arrow_back, color: Colors.black87),
+            icon: Icon(
+              Icons.arrow_back,
+              color: Colors.black87,
+              size: isLargeDesktop
+                  ? 28
+                  : isDesktop
+                  ? 26
+                  : isTablet
+                  ? 24
+                  : isSmallScreen
+                  ? 20
+                  : 22,
+            ),
             onPressed: () => Navigator.of(context).pop(),
           ),
-          title: const Text(
+          title: Text(
             "Profile",
             style: TextStyle(
               color: Colors.black87,
               fontWeight: FontWeight.bold,
+              fontSize: isLargeDesktop
+                  ? 22
+                  : isDesktop
+                  ? 20
+                  : isTablet
+                  ? 19
+                  : isSmallScreen
+                  ? 16
+                  : 18,
             ),
           ),
         ),
-        body: const Center(child: CircularProgressIndicator()),
+        body: Center(
+          child: CircularProgressIndicator(
+            color: const Color(0xFF6B5FFF),
+            strokeWidth: isLargeDesktop
+                ? 4
+                : isDesktop
+                ? 3.5
+                : isTablet
+                ? 3
+                : isSmallScreen
+                ? 2.5
+                : 3,
+          ),
+        ),
+      );
+    }
+
+    // Show error state if there's an error and no profile data
+    if (_errorMessage != null && _profileData == null) {
+      return Scaffold(
+        backgroundColor: const Color(0xFFF8F9FA),
+        appBar: AppBar(
+          backgroundColor: Colors.white,
+          elevation: 0,
+          leading: IconButton(
+            icon: Icon(
+              Icons.arrow_back,
+              color: Colors.black87,
+              size: isLargeDesktop
+                  ? 28
+                  : isDesktop
+                  ? 26
+                  : isTablet
+                  ? 24
+                  : isSmallScreen
+                  ? 20
+                  : 22,
+            ),
+            onPressed: () => Navigator.of(context).pop(),
+          ),
+          title: Text(
+            "Profile",
+            style: TextStyle(
+              color: Colors.black87,
+              fontWeight: FontWeight.bold,
+              fontSize: isLargeDesktop
+                  ? 22
+                  : isDesktop
+                  ? 20
+                  : isTablet
+                  ? 19
+                  : isSmallScreen
+                  ? 16
+                  : 18,
+            ),
+          ),
+        ),
+        body: _buildErrorState(),
       );
     }
 
@@ -389,19 +574,89 @@ class _StudentProfilePageState extends State<StudentProfilePage> {
             child: Column(
               children: [
                 _buildProfileInfo(),
-                const SizedBox(height: 16),
+                SizedBox(
+                  height: isLargeDesktop
+                      ? 20
+                      : isDesktop
+                      ? 18
+                      : isTablet
+                      ? 16
+                      : isSmallScreen
+                      ? 12
+                      : 16,
+                ),
                 _buildContactInfo(),
-                const SizedBox(height: 16),
+                SizedBox(
+                  height: isLargeDesktop
+                      ? 20
+                      : isDesktop
+                      ? 18
+                      : isTablet
+                      ? 16
+                      : isSmallScreen
+                      ? 12
+                      : 16,
+                ),
                 _buildAcademicDetails(),
-                const SizedBox(height: 16),
+                SizedBox(
+                  height: isLargeDesktop
+                      ? 20
+                      : isDesktop
+                      ? 18
+                      : isTablet
+                      ? 16
+                      : isSmallScreen
+                      ? 12
+                      : 16,
+                ),
                 _buildAddressInfo(),
-                const SizedBox(height: 16),
+                SizedBox(
+                  height: isLargeDesktop
+                      ? 20
+                      : isDesktop
+                      ? 18
+                      : isTablet
+                      ? 16
+                      : isSmallScreen
+                      ? 12
+                      : 16,
+                ),
                 _buildParentGuardianInfo(),
-                const SizedBox(height: 16),
+                SizedBox(
+                  height: isLargeDesktop
+                      ? 20
+                      : isDesktop
+                      ? 18
+                      : isTablet
+                      ? 16
+                      : isSmallScreen
+                      ? 12
+                      : 16,
+                ),
                 _buildProfessionalInfo(),
-                const SizedBox(height: 16),
+                SizedBox(
+                  height: isLargeDesktop
+                      ? 20
+                      : isDesktop
+                      ? 18
+                      : isTablet
+                      ? 16
+                      : isSmallScreen
+                      ? 12
+                      : 16,
+                ),
                 _buildAdditionalInfo(),
-                const SizedBox(height: 40),
+                SizedBox(
+                  height: isLargeDesktop
+                      ? 48
+                      : isDesktop
+                      ? 40
+                      : isTablet
+                      ? 32
+                      : isSmallScreen
+                      ? 24
+                      : 40,
+                ),
               ],
             ),
           ),
@@ -412,7 +667,15 @@ class _StudentProfilePageState extends State<StudentProfilePage> {
 
   Widget _buildSliverAppBar() {
     return SliverAppBar(
-      expandedHeight: 230,
+      expandedHeight: isLargeDesktop
+          ? 280
+          : isDesktop
+          ? 260
+          : isTablet
+          ? 240
+          : isSmallScreen
+          ? 200
+          : 230,
       floating: false,
       pinned: false,
       elevation: 0,
@@ -421,7 +684,19 @@ class _StudentProfilePageState extends State<StudentProfilePage> {
       actions: [
         if (!_isEditing) ...[
           IconButton(
-            icon: const Icon(Icons.edit, color: Colors.white),
+            icon: Icon(
+              Icons.edit,
+              color: Colors.white,
+              size: isLargeDesktop
+                  ? 28
+                  : isDesktop
+                  ? 26
+                  : isTablet
+                  ? 24
+                  : isSmallScreen
+                  ? 20
+                  : 22,
+            ),
             onPressed: () {
               setState(() {
                 _isEditing = true;
@@ -431,21 +706,69 @@ class _StudentProfilePageState extends State<StudentProfilePage> {
           ),
         ] else ...[
           IconButton(
-            icon: const Icon(Icons.close, color: Colors.white),
+            icon: Icon(
+              Icons.close,
+              color: Colors.white,
+              size: isLargeDesktop
+                  ? 28
+                  : isDesktop
+                  ? 26
+                  : isTablet
+                  ? 24
+                  : isSmallScreen
+                  ? 20
+                  : 22,
+            ),
             onPressed: _isSaving ? null : _cancelEdit,
             tooltip: 'Cancel',
           ),
           IconButton(
             icon: _isSaving
-                ? const SizedBox(
-                    width: 18,
-                    height: 18,
+                ? SizedBox(
+                    width: isLargeDesktop
+                        ? 20
+                        : isDesktop
+                        ? 19
+                        : isTablet
+                        ? 18
+                        : isSmallScreen
+                        ? 16
+                        : 18,
+                    height: isLargeDesktop
+                        ? 20
+                        : isDesktop
+                        ? 19
+                        : isTablet
+                        ? 18
+                        : isSmallScreen
+                        ? 16
+                        : 18,
                     child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                      strokeWidth: isLargeDesktop
+                          ? 2.5
+                          : isDesktop
+                          ? 2.2
+                          : isTablet
+                          ? 2
+                          : isSmallScreen
+                          ? 1.8
+                          : 2,
+                      valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
                     ),
                   )
-                : const Icon(Icons.check, color: Colors.white),
+                : Icon(
+                    Icons.check,
+                    color: Colors.white,
+                    size: isLargeDesktop
+                        ? 28
+                        : isDesktop
+                        ? 26
+                        : isTablet
+                        ? 24
+                        : isSmallScreen
+                        ? 20
+                        : 22,
+                  ),
             onPressed: _isSaving ? null : _saveProfile,
             tooltip: 'Save',
           ),
@@ -467,24 +790,80 @@ class _StudentProfilePageState extends State<StudentProfilePage> {
                 mainAxisSize: MainAxisSize.min,
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const SizedBox(height: 12),
+                  SizedBox(
+                    height: isLargeDesktop
+                        ? 16
+                        : isDesktop
+                        ? 14
+                        : isTablet
+                        ? 12
+                        : isSmallScreen
+                        ? 8
+                        : 12,
+                  ),
                   _buildProfileAvatar(),
-                  const SizedBox(height: 8),
+                  SizedBox(
+                    height: isLargeDesktop
+                        ? 12
+                        : isDesktop
+                        ? 10
+                        : isTablet
+                        ? 8
+                        : isSmallScreen
+                        ? 6
+                        : 8,
+                  ),
                   Text(
                     _getFullName(),
-                    style: const TextStyle(
-                      fontSize: 24,
+                    style: TextStyle(
+                      fontSize: isLargeDesktop
+                          ? 28
+                          : isDesktop
+                          ? 26
+                          : isTablet
+                          ? 24
+                          : isSmallScreen
+                          ? 20
+                          : 24,
                       fontWeight: FontWeight.bold,
                       color: Colors.white,
                     ),
                   ),
-                  const SizedBox(height: 4),
+                  SizedBox(
+                    height: isLargeDesktop
+                        ? 6
+                        : isDesktop
+                        ? 5
+                        : isTablet
+                        ? 4
+                        : isSmallScreen
+                        ? 3
+                        : 4,
+                  ),
                   Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    padding: EdgeInsets.symmetric(
+                      horizontal: isLargeDesktop
+                          ? 32
+                          : isDesktop
+                          ? 28
+                          : isTablet
+                          ? 24
+                          : isSmallScreen
+                          ? 16
+                          : 20,
+                    ),
                     child: Text(
                       _getAcademicInfo(),
-                      style: const TextStyle(
-                        fontSize: 14,
+                      style: TextStyle(
+                        fontSize: isLargeDesktop
+                            ? 16
+                            : isDesktop
+                            ? 15
+                            : isTablet
+                            ? 14
+                            : isSmallScreen
+                            ? 12
+                            : 14,
                         color: Colors.white70,
                       ),
                       textAlign: TextAlign.center,
@@ -492,7 +871,17 @@ class _StudentProfilePageState extends State<StudentProfilePage> {
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
-                  const SizedBox(height: 12),
+                  SizedBox(
+                    height: isLargeDesktop
+                        ? 16
+                        : isDesktop
+                        ? 14
+                        : isTablet
+                        ? 12
+                        : isSmallScreen
+                        ? 8
+                        : 12,
+                  ),
                 ],
               ),
             ),
@@ -504,17 +893,66 @@ class _StudentProfilePageState extends State<StudentProfilePage> {
 
   Widget _buildProfileInfo() {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 20),
-      padding: const EdgeInsets.all(20),
+      margin: EdgeInsets.symmetric(
+        horizontal: isLargeDesktop
+            ? 32
+            : isDesktop
+            ? 28
+            : isTablet
+            ? 24
+            : isSmallScreen
+            ? 12
+            : 20,
+      ),
+      padding: EdgeInsets.all(
+        isLargeDesktop
+            ? 28
+            : isDesktop
+            ? 24
+            : isTablet
+            ? 20
+            : isSmallScreen
+            ? 16
+            : 20,
+      ),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(
+          isLargeDesktop
+              ? 20
+              : isDesktop
+              ? 18
+              : isTablet
+              ? 16
+              : isSmallScreen
+              ? 12
+              : 16,
+        ),
         boxShadow: [
           BoxShadow(
             color: Colors.grey.withOpacity(0.1),
-            spreadRadius: 1,
-            blurRadius: 10,
-            offset: const Offset(0, 2),
+            spreadRadius: isLargeDesktop || isDesktop ? 1.5 : 1,
+            blurRadius: isLargeDesktop
+                ? 12
+                : isDesktop
+                ? 10
+                : isTablet
+                ? 8
+                : isSmallScreen
+                ? 6
+                : 10,
+            offset: Offset(
+              0,
+              isLargeDesktop
+                  ? 3
+                  : isDesktop
+                  ? 2.5
+                  : isTablet
+                  ? 2
+                  : isSmallScreen
+                  ? 1.5
+                  : 2,
+            ),
           ),
         ],
       ),
@@ -524,23 +962,69 @@ class _StudentProfilePageState extends State<StudentProfilePage> {
           Row(
             children: [
               Container(
-                padding: const EdgeInsets.all(12),
+                padding: EdgeInsets.all(
+                  isLargeDesktop
+                      ? 14
+                      : isDesktop
+                      ? 13
+                      : isTablet
+                      ? 12
+                      : isSmallScreen
+                      ? 10
+                      : 12,
+                ),
                 decoration: BoxDecoration(
                   color: const Color(0xFF6B5FFF).withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(
+                    isLargeDesktop
+                        ? 14
+                        : isDesktop
+                        ? 12
+                        : isTablet
+                        ? 12
+                        : isSmallScreen
+                        ? 10
+                        : 12,
+                  ),
                 ),
-                child: const Icon(
+                child: Icon(
                   Icons.person,
-                  color: Color(0xFF6B5FFF),
-                  size: 24,
+                  color: const Color(0xFF6B5FFF),
+                  size: isLargeDesktop
+                      ? 28
+                      : isDesktop
+                      ? 26
+                      : isTablet
+                      ? 24
+                      : isSmallScreen
+                      ? 20
+                      : 24,
                 ),
               ),
-              const SizedBox(width: 16),
-              const Expanded(
+              SizedBox(
+                width: isLargeDesktop
+                    ? 20
+                    : isDesktop
+                    ? 18
+                    : isTablet
+                    ? 16
+                    : isSmallScreen
+                    ? 12
+                    : 16,
+              ),
+              Expanded(
                 child: Text(
                   'Personal Information',
                   style: TextStyle(
-                    fontSize: 18,
+                    fontSize: isLargeDesktop
+                        ? 22
+                        : isDesktop
+                        ? 20
+                        : isTablet
+                        ? 19
+                        : isSmallScreen
+                        ? 16
+                        : 18,
                     fontWeight: FontWeight.bold,
                     color: Colors.black87,
                   ),
@@ -548,30 +1032,40 @@ class _StudentProfilePageState extends State<StudentProfilePage> {
               ),
             ],
           ),
-          const SizedBox(height: 20),
+          SizedBox(
+            height: isLargeDesktop
+                ? 24
+                : isDesktop
+                ? 22
+                : isTablet
+                ? 20
+                : isSmallScreen
+                ? 16
+                : 20,
+          ),
           _buildEditableField(
             'firstName',
             Icons.person_outline,
             'First Name',
-            _controllers['firstName']!,
+            _controllers['firstName'] ?? TextEditingController(),
           ),
           _buildEditableField(
             'lastName',
             Icons.person_outline,
             'Last Name',
-            _controllers['lastName']!,
+            _controllers['lastName'] ?? TextEditingController(),
           ),
           _buildEditableField(
             'email',
             Icons.email,
             'Email',
-            _controllers['email']!,
+            _controllers['email'] ?? TextEditingController(),
           ),
           _buildEditableField(
             'studentId',
             Icons.badge,
             'Student ID',
-            _controllers['studentId']!,
+            _controllers['studentId'] ?? TextEditingController(),
             enabled: false, // Student ID cannot be changed
           ),
           _buildDateField('dob', Icons.cake, 'Date of Birth'),
@@ -592,7 +1086,7 @@ class _StudentProfilePageState extends State<StudentProfilePage> {
             'nationality',
             Icons.flag,
             'Nationality',
-            _controllers['nationality']!,
+            _controllers['nationality'] ?? TextEditingController(),
           ),
         ],
       ),
@@ -601,17 +1095,66 @@ class _StudentProfilePageState extends State<StudentProfilePage> {
 
   Widget _buildContactInfo() {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 20),
-      padding: const EdgeInsets.all(20),
+      margin: EdgeInsets.symmetric(
+        horizontal: isLargeDesktop
+            ? 32
+            : isDesktop
+            ? 28
+            : isTablet
+            ? 24
+            : isSmallScreen
+            ? 12
+            : 20,
+      ),
+      padding: EdgeInsets.all(
+        isLargeDesktop
+            ? 28
+            : isDesktop
+            ? 24
+            : isTablet
+            ? 20
+            : isSmallScreen
+            ? 16
+            : 20,
+      ),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(
+          isLargeDesktop
+              ? 20
+              : isDesktop
+              ? 18
+              : isTablet
+              ? 16
+              : isSmallScreen
+              ? 12
+              : 16,
+        ),
         boxShadow: [
           BoxShadow(
             color: Colors.grey.withOpacity(0.1),
-            spreadRadius: 1,
-            blurRadius: 10,
-            offset: const Offset(0, 2),
+            spreadRadius: isLargeDesktop || isDesktop ? 1.5 : 1,
+            blurRadius: isLargeDesktop
+                ? 12
+                : isDesktop
+                ? 10
+                : isTablet
+                ? 8
+                : isSmallScreen
+                ? 6
+                : 10,
+            offset: Offset(
+              0,
+              isLargeDesktop
+                  ? 3
+                  : isDesktop
+                  ? 2.5
+                  : isTablet
+                  ? 2
+                  : isSmallScreen
+                  ? 1.5
+                  : 2,
+            ),
           ),
         ],
       ),
@@ -621,23 +1164,69 @@ class _StudentProfilePageState extends State<StudentProfilePage> {
           Row(
             children: [
               Container(
-                padding: const EdgeInsets.all(12),
+                padding: EdgeInsets.all(
+                  isLargeDesktop
+                      ? 14
+                      : isDesktop
+                      ? 13
+                      : isTablet
+                      ? 12
+                      : isSmallScreen
+                      ? 10
+                      : 12,
+                ),
                 decoration: BoxDecoration(
                   color: const Color(0xFF6B5FFF).withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(
+                    isLargeDesktop
+                        ? 14
+                        : isDesktop
+                        ? 12
+                        : isTablet
+                        ? 12
+                        : isSmallScreen
+                        ? 10
+                        : 12,
+                  ),
                 ),
-                child: const Icon(
+                child: Icon(
                   Icons.phone,
-                  color: Color(0xFF6B5FFF),
-                  size: 24,
+                  color: const Color(0xFF6B5FFF),
+                  size: isLargeDesktop
+                      ? 28
+                      : isDesktop
+                      ? 26
+                      : isTablet
+                      ? 24
+                      : isSmallScreen
+                      ? 20
+                      : 24,
                 ),
               ),
-              const SizedBox(width: 16),
-              const Expanded(
+              SizedBox(
+                width: isLargeDesktop
+                    ? 20
+                    : isDesktop
+                    ? 18
+                    : isTablet
+                    ? 16
+                    : isSmallScreen
+                    ? 12
+                    : 16,
+              ),
+              Expanded(
                 child: Text(
                   'Contact Information',
                   style: TextStyle(
-                    fontSize: 18,
+                    fontSize: isLargeDesktop
+                        ? 22
+                        : isDesktop
+                        ? 20
+                        : isTablet
+                        ? 19
+                        : isSmallScreen
+                        ? 16
+                        : 18,
                     fontWeight: FontWeight.bold,
                     color: Colors.black87,
                   ),
@@ -645,42 +1234,52 @@ class _StudentProfilePageState extends State<StudentProfilePage> {
               ),
             ],
           ),
-          const SizedBox(height: 20),
+          SizedBox(
+            height: isLargeDesktop
+                ? 24
+                : isDesktop
+                ? 22
+                : isTablet
+                ? 20
+                : isSmallScreen
+                ? 16
+                : 20,
+          ),
           _buildEditableField(
             'phone',
             Icons.phone,
             'Phone',
-            _controllers['phone']!,
+            _controllers['phone'] ?? TextEditingController(),
           ),
           _buildEditableField(
             'contactNumber',
             Icons.phone_android,
             'Contact Number',
-            _controllers['contactNumber']!,
+            _controllers['contactNumber'] ?? TextEditingController(),
           ),
           _buildEditableField(
             'alternateNumber',
             Icons.phone_iphone,
             'Alternate Number',
-            _controllers['alternateNumber']!,
+            _controllers['alternateNumber'] ?? TextEditingController(),
           ),
           _buildEditableField(
             'personalEmail',
             Icons.alternate_email,
             'Personal Email',
-            _controllers['personalEmail']!,
+            _controllers['personalEmail'] ?? TextEditingController(),
           ),
           _buildEditableField(
             'emergencyContact',
             Icons.emergency,
             'Emergency Contact Name',
-            _controllers['emergencyContact']!,
+            _controllers['emergencyContact'] ?? TextEditingController(),
           ),
           _buildEditableField(
             'emergencyPhone',
             Icons.phone_in_talk,
             'Emergency Phone',
-            _controllers['emergencyPhone']!,
+            _controllers['emergencyPhone'] ?? TextEditingController(),
           ),
         ],
       ),
@@ -689,17 +1288,66 @@ class _StudentProfilePageState extends State<StudentProfilePage> {
 
   Widget _buildAcademicDetails() {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 20),
-      padding: const EdgeInsets.all(20),
+      margin: EdgeInsets.symmetric(
+        horizontal: isLargeDesktop
+            ? 32
+            : isDesktop
+            ? 28
+            : isTablet
+            ? 24
+            : isSmallScreen
+            ? 12
+            : 20,
+      ),
+      padding: EdgeInsets.all(
+        isLargeDesktop
+            ? 28
+            : isDesktop
+            ? 24
+            : isTablet
+            ? 20
+            : isSmallScreen
+            ? 16
+            : 20,
+      ),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(
+          isLargeDesktop
+              ? 20
+              : isDesktop
+              ? 18
+              : isTablet
+              ? 16
+              : isSmallScreen
+              ? 12
+              : 16,
+        ),
         boxShadow: [
           BoxShadow(
             color: Colors.grey.withOpacity(0.1),
-            spreadRadius: 1,
-            blurRadius: 10,
-            offset: const Offset(0, 2),
+            spreadRadius: isLargeDesktop || isDesktop ? 1.5 : 1,
+            blurRadius: isLargeDesktop
+                ? 12
+                : isDesktop
+                ? 10
+                : isTablet
+                ? 8
+                : isSmallScreen
+                ? 6
+                : 10,
+            offset: Offset(
+              0,
+              isLargeDesktop
+                  ? 3
+                  : isDesktop
+                  ? 2.5
+                  : isTablet
+                  ? 2
+                  : isSmallScreen
+                  ? 1.5
+                  : 2,
+            ),
           ),
         ],
       ),
@@ -709,23 +1357,69 @@ class _StudentProfilePageState extends State<StudentProfilePage> {
           Row(
             children: [
               Container(
-                padding: const EdgeInsets.all(12),
+                padding: EdgeInsets.all(
+                  isLargeDesktop
+                      ? 14
+                      : isDesktop
+                      ? 13
+                      : isTablet
+                      ? 12
+                      : isSmallScreen
+                      ? 10
+                      : 12,
+                ),
                 decoration: BoxDecoration(
                   color: const Color(0xFF6B5FFF).withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(
+                    isLargeDesktop
+                        ? 14
+                        : isDesktop
+                        ? 12
+                        : isTablet
+                        ? 12
+                        : isSmallScreen
+                        ? 10
+                        : 12,
+                  ),
                 ),
-                child: const Icon(
+                child: Icon(
                   Icons.school,
-                  color: Color(0xFF6B5FFF),
-                  size: 24,
+                  color: const Color(0xFF6B5FFF),
+                  size: isLargeDesktop
+                      ? 28
+                      : isDesktop
+                      ? 26
+                      : isTablet
+                      ? 24
+                      : isSmallScreen
+                      ? 20
+                      : 24,
                 ),
               ),
-              const SizedBox(width: 16),
-              const Expanded(
+              SizedBox(
+                width: isLargeDesktop
+                    ? 20
+                    : isDesktop
+                    ? 18
+                    : isTablet
+                    ? 16
+                    : isSmallScreen
+                    ? 12
+                    : 16,
+              ),
+              Expanded(
                 child: Text(
                   'Academic Details',
                   style: TextStyle(
-                    fontSize: 18,
+                    fontSize: isLargeDesktop
+                        ? 22
+                        : isDesktop
+                        ? 20
+                        : isTablet
+                        ? 19
+                        : isSmallScreen
+                        ? 16
+                        : 18,
                     fontWeight: FontWeight.bold,
                     color: Colors.black87,
                   ),
@@ -733,25 +1427,35 @@ class _StudentProfilePageState extends State<StudentProfilePage> {
               ),
             ],
           ),
-          const SizedBox(height: 20),
+          SizedBox(
+            height: isLargeDesktop
+                ? 24
+                : isDesktop
+                ? 22
+                : isTablet
+                ? 20
+                : isSmallScreen
+                ? 16
+                : 20,
+          ),
           _buildEditableField(
             'institute',
             Icons.account_balance,
             'Institute',
-            _controllers['institute']!,
+            _controllers['institute'] ?? TextEditingController(),
             enabled: false, // Institute cannot be changed
           ),
           _buildEditableField(
             'course',
             Icons.menu_book,
             'Course',
-            _controllers['course']!,
+            _controllers['course'] ?? TextEditingController(),
           ),
           _buildEditableField(
             'major',
             Icons.trending_up,
             'Major',
-            _controllers['major']!,
+            _controllers['major'] ?? TextEditingController(),
           ),
           _buildNumberField(
             'yearOfStudy',
@@ -765,17 +1469,66 @@ class _StudentProfilePageState extends State<StudentProfilePage> {
 
   Widget _buildAddressInfo() {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 20),
-      padding: const EdgeInsets.all(20),
+      margin: EdgeInsets.symmetric(
+        horizontal: isLargeDesktop
+            ? 32
+            : isDesktop
+            ? 28
+            : isTablet
+            ? 24
+            : isSmallScreen
+            ? 12
+            : 20,
+      ),
+      padding: EdgeInsets.all(
+        isLargeDesktop
+            ? 28
+            : isDesktop
+            ? 24
+            : isTablet
+            ? 20
+            : isSmallScreen
+            ? 16
+            : 20,
+      ),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(
+          isLargeDesktop
+              ? 20
+              : isDesktop
+              ? 18
+              : isTablet
+              ? 16
+              : isSmallScreen
+              ? 12
+              : 16,
+        ),
         boxShadow: [
           BoxShadow(
             color: Colors.grey.withOpacity(0.1),
-            spreadRadius: 1,
-            blurRadius: 10,
-            offset: const Offset(0, 2),
+            spreadRadius: isLargeDesktop || isDesktop ? 1.5 : 1,
+            blurRadius: isLargeDesktop
+                ? 12
+                : isDesktop
+                ? 10
+                : isTablet
+                ? 8
+                : isSmallScreen
+                ? 6
+                : 10,
+            offset: Offset(
+              0,
+              isLargeDesktop
+                  ? 3
+                  : isDesktop
+                  ? 2.5
+                  : isTablet
+                  ? 2
+                  : isSmallScreen
+                  ? 1.5
+                  : 2,
+            ),
           ),
         ],
       ),
@@ -785,23 +1538,69 @@ class _StudentProfilePageState extends State<StudentProfilePage> {
           Row(
             children: [
               Container(
-                padding: const EdgeInsets.all(12),
+                padding: EdgeInsets.all(
+                  isLargeDesktop
+                      ? 14
+                      : isDesktop
+                      ? 13
+                      : isTablet
+                      ? 12
+                      : isSmallScreen
+                      ? 10
+                      : 12,
+                ),
                 decoration: BoxDecoration(
                   color: const Color(0xFF6B5FFF).withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(
+                    isLargeDesktop
+                        ? 14
+                        : isDesktop
+                        ? 12
+                        : isTablet
+                        ? 12
+                        : isSmallScreen
+                        ? 10
+                        : 12,
+                  ),
                 ),
-                child: const Icon(
+                child: Icon(
                   Icons.location_on,
-                  color: Color(0xFF6B5FFF),
-                  size: 24,
+                  color: const Color(0xFF6B5FFF),
+                  size: isLargeDesktop
+                      ? 28
+                      : isDesktop
+                      ? 26
+                      : isTablet
+                      ? 24
+                      : isSmallScreen
+                      ? 20
+                      : 24,
                 ),
               ),
-              const SizedBox(width: 16),
-              const Expanded(
+              SizedBox(
+                width: isLargeDesktop
+                    ? 20
+                    : isDesktop
+                    ? 18
+                    : isTablet
+                    ? 16
+                    : isSmallScreen
+                    ? 12
+                    : 16,
+              ),
+              Expanded(
                 child: Text(
                   'Address Information',
                   style: TextStyle(
-                    fontSize: 18,
+                    fontSize: isLargeDesktop
+                        ? 22
+                        : isDesktop
+                        ? 20
+                        : isTablet
+                        ? 19
+                        : isSmallScreen
+                        ? 16
+                        : 18,
                     fontWeight: FontWeight.bold,
                     color: Colors.black87,
                   ),
@@ -809,55 +1608,65 @@ class _StudentProfilePageState extends State<StudentProfilePage> {
               ),
             ],
           ),
-          const SizedBox(height: 20),
+          SizedBox(
+            height: isLargeDesktop
+                ? 24
+                : isDesktop
+                ? 22
+                : isTablet
+                ? 20
+                : isSmallScreen
+                ? 16
+                : 20,
+          ),
           _buildEditableField(
             'address',
             Icons.home,
             'Address',
-            _controllers['address']!,
+            _controllers['address'] ?? TextEditingController(),
             maxLines: 2,
           ),
           _buildEditableField(
             'landmark',
             Icons.place,
             'Landmark',
-            _controllers['landmark']!,
+            _controllers['landmark'] ?? TextEditingController(),
           ),
           _buildEditableField(
             'city',
             Icons.location_city,
             'City',
-            _controllers['city']!,
+            _controllers['city'] ?? TextEditingController(),
           ),
           _buildEditableField(
             'district',
             Icons.map,
             'District',
-            _controllers['district']!,
+            _controllers['district'] ?? TextEditingController(),
           ),
           _buildEditableField(
             'state',
             Icons.public,
             'State',
-            _controllers['state']!,
+            _controllers['state'] ?? TextEditingController(),
           ),
           _buildEditableField(
             'country',
             Icons.language,
             'Country',
-            _controllers['country']!,
+            _controllers['country'] ?? TextEditingController(),
           ),
           _buildEditableField(
             'zipcode',
             Icons.pin_drop,
             'ZIP Code',
-            _controllers['zipcode']!,
+            _controllers['zipcode'] ?? TextEditingController(),
           ),
           _buildEditableField(
             'permanentAddress',
             Icons.home_work,
             'Permanent Address',
-            _controllers['permanentAddress']!,
+            _controllers['permanentAddress'] ?? TextEditingController(),
             maxLines: 2,
           ),
         ],
@@ -867,17 +1676,66 @@ class _StudentProfilePageState extends State<StudentProfilePage> {
 
   Widget _buildParentGuardianInfo() {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 20),
-      padding: const EdgeInsets.all(20),
+      margin: EdgeInsets.symmetric(
+        horizontal: isLargeDesktop
+            ? 32
+            : isDesktop
+            ? 28
+            : isTablet
+            ? 24
+            : isSmallScreen
+            ? 12
+            : 20,
+      ),
+      padding: EdgeInsets.all(
+        isLargeDesktop
+            ? 28
+            : isDesktop
+            ? 24
+            : isTablet
+            ? 20
+            : isSmallScreen
+            ? 16
+            : 20,
+      ),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(
+          isLargeDesktop
+              ? 20
+              : isDesktop
+              ? 18
+              : isTablet
+              ? 16
+              : isSmallScreen
+              ? 12
+              : 16,
+        ),
         boxShadow: [
           BoxShadow(
             color: Colors.grey.withOpacity(0.1),
-            spreadRadius: 1,
-            blurRadius: 10,
-            offset: const Offset(0, 2),
+            spreadRadius: isLargeDesktop || isDesktop ? 1.5 : 1,
+            blurRadius: isLargeDesktop
+                ? 12
+                : isDesktop
+                ? 10
+                : isTablet
+                ? 8
+                : isSmallScreen
+                ? 6
+                : 10,
+            offset: Offset(
+              0,
+              isLargeDesktop
+                  ? 3
+                  : isDesktop
+                  ? 2.5
+                  : isTablet
+                  ? 2
+                  : isSmallScreen
+                  ? 1.5
+                  : 2,
+            ),
           ),
         ],
       ),
@@ -887,23 +1745,69 @@ class _StudentProfilePageState extends State<StudentProfilePage> {
           Row(
             children: [
               Container(
-                padding: const EdgeInsets.all(12),
+                padding: EdgeInsets.all(
+                  isLargeDesktop
+                      ? 14
+                      : isDesktop
+                      ? 13
+                      : isTablet
+                      ? 12
+                      : isSmallScreen
+                      ? 10
+                      : 12,
+                ),
                 decoration: BoxDecoration(
                   color: const Color(0xFF6B5FFF).withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(
+                    isLargeDesktop
+                        ? 14
+                        : isDesktop
+                        ? 12
+                        : isTablet
+                        ? 12
+                        : isSmallScreen
+                        ? 10
+                        : 12,
+                  ),
                 ),
-                child: const Icon(
+                child: Icon(
                   Icons.family_restroom,
-                  color: Color(0xFF6B5FFF),
-                  size: 24,
+                  color: const Color(0xFF6B5FFF),
+                  size: isLargeDesktop
+                      ? 28
+                      : isDesktop
+                      ? 26
+                      : isTablet
+                      ? 24
+                      : isSmallScreen
+                      ? 20
+                      : 24,
                 ),
               ),
-              const SizedBox(width: 16),
-              const Expanded(
+              SizedBox(
+                width: isLargeDesktop
+                    ? 20
+                    : isDesktop
+                    ? 18
+                    : isTablet
+                    ? 16
+                    : isSmallScreen
+                    ? 12
+                    : 16,
+              ),
+              Expanded(
                 child: Text(
                   'Parent/Guardian Information',
                   style: TextStyle(
-                    fontSize: 18,
+                    fontSize: isLargeDesktop
+                        ? 22
+                        : isDesktop
+                        ? 20
+                        : isTablet
+                        ? 19
+                        : isSmallScreen
+                        ? 16
+                        : 18,
                     fontWeight: FontWeight.bold,
                     color: Colors.black87,
                   ),
@@ -911,60 +1815,70 @@ class _StudentProfilePageState extends State<StudentProfilePage> {
               ),
             ],
           ),
-          const SizedBox(height: 20),
+          SizedBox(
+            height: isLargeDesktop
+                ? 24
+                : isDesktop
+                ? 22
+                : isTablet
+                ? 20
+                : isSmallScreen
+                ? 16
+                : 20,
+          ),
           _buildEditableField(
             'fatherName',
             Icons.person,
             'Father\'s Name',
-            _controllers['fatherName']!,
+            _controllers['fatherName'] ?? TextEditingController(),
           ),
           _buildEditableField(
             'fatherOccupation',
             Icons.work_outline,
             'Father\'s Occupation',
-            _controllers['fatherOccupation']!,
+            _controllers['fatherOccupation'] ?? TextEditingController(),
           ),
           _buildEditableField(
             'fatherPhone',
             Icons.phone,
             'Father\'s Phone',
-            _controllers['fatherPhone']!,
+            _controllers['fatherPhone'] ?? TextEditingController(),
           ),
           _buildEditableField(
             'motherName',
             Icons.person,
             'Mother\'s Name',
-            _controllers['motherName']!,
+            _controllers['motherName'] ?? TextEditingController(),
           ),
           _buildEditableField(
             'motherOccupation',
             Icons.work_outline,
             'Mother\'s Occupation',
-            _controllers['motherOccupation']!,
+            _controllers['motherOccupation'] ?? TextEditingController(),
           ),
           _buildEditableField(
             'motherPhone',
             Icons.phone,
             'Mother\'s Phone',
-            _controllers['motherPhone']!,
+            _controllers['motherPhone'] ?? TextEditingController(),
           ),
           _buildEditableField(
             'guardianName',
             Icons.person,
             'Guardian\'s Name',
-            _controllers['guardianName']!,
+            _controllers['guardianName'] ?? TextEditingController(),
           ),
           _buildEditableField(
             'guardianRelation',
             Icons.people_outline,
             'Guardian Relation',
-            _controllers['guardianRelation']!,
+            _controllers['guardianRelation'] ?? TextEditingController(),
           ),
           _buildEditableField(
             'guardianPhone',
             Icons.phone,
             'Guardian\'s Phone',
-            _controllers['guardianPhone']!,
+            _controllers['guardianPhone'] ?? TextEditingController(),
           ),
         ],
       ),
@@ -973,17 +1887,66 @@ class _StudentProfilePageState extends State<StudentProfilePage> {
 
   Widget _buildProfessionalInfo() {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 20),
-      padding: const EdgeInsets.all(20),
+      margin: EdgeInsets.symmetric(
+        horizontal: isLargeDesktop
+            ? 32
+            : isDesktop
+            ? 28
+            : isTablet
+            ? 24
+            : isSmallScreen
+            ? 12
+            : 20,
+      ),
+      padding: EdgeInsets.all(
+        isLargeDesktop
+            ? 28
+            : isDesktop
+            ? 24
+            : isTablet
+            ? 20
+            : isSmallScreen
+            ? 16
+            : 20,
+      ),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(
+          isLargeDesktop
+              ? 20
+              : isDesktop
+              ? 18
+              : isTablet
+              ? 16
+              : isSmallScreen
+              ? 12
+              : 16,
+        ),
         boxShadow: [
           BoxShadow(
             color: Colors.grey.withOpacity(0.1),
-            spreadRadius: 1,
-            blurRadius: 10,
-            offset: const Offset(0, 2),
+            spreadRadius: isLargeDesktop || isDesktop ? 1.5 : 1,
+            blurRadius: isLargeDesktop
+                ? 12
+                : isDesktop
+                ? 10
+                : isTablet
+                ? 8
+                : isSmallScreen
+                ? 6
+                : 10,
+            offset: Offset(
+              0,
+              isLargeDesktop
+                  ? 3
+                  : isDesktop
+                  ? 2.5
+                  : isTablet
+                  ? 2
+                  : isSmallScreen
+                  ? 1.5
+                  : 2,
+            ),
           ),
         ],
       ),
@@ -993,23 +1956,69 @@ class _StudentProfilePageState extends State<StudentProfilePage> {
           Row(
             children: [
               Container(
-                padding: const EdgeInsets.all(12),
+                padding: EdgeInsets.all(
+                  isLargeDesktop
+                      ? 14
+                      : isDesktop
+                      ? 13
+                      : isTablet
+                      ? 12
+                      : isSmallScreen
+                      ? 10
+                      : 12,
+                ),
                 decoration: BoxDecoration(
                   color: const Color(0xFF6B5FFF).withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(
+                    isLargeDesktop
+                        ? 14
+                        : isDesktop
+                        ? 12
+                        : isTablet
+                        ? 12
+                        : isSmallScreen
+                        ? 10
+                        : 12,
+                  ),
                 ),
-                child: const Icon(
+                child: Icon(
                   Icons.work,
-                  color: Color(0xFF6B5FFF),
-                  size: 24,
+                  color: const Color(0xFF6B5FFF),
+                  size: isLargeDesktop
+                      ? 28
+                      : isDesktop
+                      ? 26
+                      : isTablet
+                      ? 24
+                      : isSmallScreen
+                      ? 20
+                      : 24,
                 ),
               ),
-              const SizedBox(width: 16),
-              const Expanded(
+              SizedBox(
+                width: isLargeDesktop
+                    ? 20
+                    : isDesktop
+                    ? 18
+                    : isTablet
+                    ? 16
+                    : isSmallScreen
+                    ? 12
+                    : 16,
+              ),
+              Expanded(
                 child: Text(
                   'Professional Information',
                   style: TextStyle(
-                    fontSize: 18,
+                    fontSize: isLargeDesktop
+                        ? 22
+                        : isDesktop
+                        ? 20
+                        : isTablet
+                        ? 19
+                        : isSmallScreen
+                        ? 16
+                        : 18,
                     fontWeight: FontWeight.bold,
                     color: Colors.black87,
                   ),
@@ -1017,103 +2026,153 @@ class _StudentProfilePageState extends State<StudentProfilePage> {
               ),
             ],
           ),
-          const SizedBox(height: 20),
+          SizedBox(
+            height: isLargeDesktop
+                ? 24
+                : isDesktop
+                ? 22
+                : isTablet
+                ? 20
+                : isSmallScreen
+                ? 16
+                : 20,
+          ),
           _buildEditableField(
             'title',
             Icons.title,
             'Title',
-            _controllers['title']!,
+            _controllers['title'] ?? TextEditingController(),
           ),
           _buildEditableField(
             'summary',
             Icons.description,
             'Summary',
-            _controllers['summary']!,
+            _controllers['summary'] ?? TextEditingController(),
             maxLines: 3,
           ),
           _buildEditableField(
             'linkedin',
             Icons.link,
             'LinkedIn',
-            _controllers['linkedin']!,
+            _controllers['linkedin'] ?? TextEditingController(),
           ),
           _buildEditableField(
             'website',
             Icons.web,
             'Website',
-            _controllers['website']!,
+            _controllers['website'] ?? TextEditingController(),
           ),
           _buildEditableField(
             'github',
             Icons.code,
             'GitHub',
-            _controllers['github']!,
+            _controllers['github'] ?? TextEditingController(),
           ),
           _buildEditableField(
             'portfolio',
             Icons.business_center,
             'Portfolio',
-            _controllers['portfolio']!,
+            _controllers['portfolio'] ?? TextEditingController(),
           ),
           _buildEditableField(
             'behance',
             Icons.palette,
             'Behance',
-            _controllers['behance']!,
+            _controllers['behance'] ?? TextEditingController(),
           ),
           _buildEditableField(
             'dribbble',
             Icons.design_services,
             'Dribbble',
-            _controllers['dribbble']!,
+            _controllers['dribbble'] ?? TextEditingController(),
           ),
-          const SizedBox(height: 16),
-          const Divider(),
-          const SizedBox(height: 16),
-          const Text(
+          SizedBox(
+            height: isLargeDesktop
+                ? 20
+                : isDesktop
+                ? 18
+                : isTablet
+                ? 16
+                : isSmallScreen
+                ? 12
+                : 16,
+          ),
+          Divider(
+            thickness: isLargeDesktop || isDesktop ? 1.5 : 1,
+          ),
+          SizedBox(
+            height: isLargeDesktop
+                ? 20
+                : isDesktop
+                ? 18
+                : isTablet
+                ? 16
+                : isSmallScreen
+                ? 12
+                : 16,
+          ),
+          Text(
             'Job Preferences',
             style: TextStyle(
-              fontSize: 16,
+              fontSize: isLargeDesktop
+                  ? 20
+                  : isDesktop
+                  ? 18
+                  : isTablet
+                  ? 17
+                  : isSmallScreen
+                  ? 14
+                  : 16,
               fontWeight: FontWeight.bold,
               color: Colors.black87,
             ),
           ),
-          const SizedBox(height: 16),
+          SizedBox(
+            height: isLargeDesktop
+                ? 20
+                : isDesktop
+                ? 18
+                : isTablet
+                ? 16
+                : isSmallScreen
+                ? 12
+                : 16,
+          ),
           _buildEditableField(
             'jobType',
             Icons.business,
             'Job Type',
-            _controllers['jobType']!,
+            _controllers['jobType'] ?? TextEditingController(),
           ),
           _buildEditableField(
             'preferredLocation',
             Icons.location_city,
             'Preferred Location',
-            _controllers['preferredLocation']!,
+            _controllers['preferredLocation'] ?? TextEditingController(),
           ),
           _buildEditableField(
             'workMode',
             Icons.work_outline,
             'Work Mode',
-            _controllers['workMode']!,
+            _controllers['workMode'] ?? TextEditingController(),
           ),
           _buildEditableField(
             'salaryExpectation',
             Icons.attach_money,
             'Salary Expectation',
-            _controllers['salaryExpectation']!,
+            _controllers['salaryExpectation'] ?? TextEditingController(),
           ),
           _buildEditableField(
             'noticePeriod',
             Icons.schedule,
             'Notice Period',
-            _controllers['noticePeriod']!,
+            _controllers['noticePeriod'] ?? TextEditingController(),
           ),
           _buildEditableField(
             'availability',
             Icons.event_available,
             'Availability',
-            _controllers['availability']!,
+            _controllers['availability'] ?? TextEditingController(),
           ),
         ],
       ),
@@ -1122,17 +2181,66 @@ class _StudentProfilePageState extends State<StudentProfilePage> {
 
   Widget _buildAdditionalInfo() {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 20),
-      padding: const EdgeInsets.all(20),
+      margin: EdgeInsets.symmetric(
+        horizontal: isLargeDesktop
+            ? 32
+            : isDesktop
+            ? 28
+            : isTablet
+            ? 24
+            : isSmallScreen
+            ? 12
+            : 20,
+      ),
+      padding: EdgeInsets.all(
+        isLargeDesktop
+            ? 28
+            : isDesktop
+            ? 24
+            : isTablet
+            ? 20
+            : isSmallScreen
+            ? 16
+            : 20,
+      ),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(
+          isLargeDesktop
+              ? 20
+              : isDesktop
+              ? 18
+              : isTablet
+              ? 16
+              : isSmallScreen
+              ? 12
+              : 16,
+        ),
         boxShadow: [
           BoxShadow(
             color: Colors.grey.withOpacity(0.1),
-            spreadRadius: 1,
-            blurRadius: 10,
-            offset: const Offset(0, 2),
+            spreadRadius: isLargeDesktop || isDesktop ? 1.5 : 1,
+            blurRadius: isLargeDesktop
+                ? 12
+                : isDesktop
+                ? 10
+                : isTablet
+                ? 8
+                : isSmallScreen
+                ? 6
+                : 10,
+            offset: Offset(
+              0,
+              isLargeDesktop
+                  ? 3
+                  : isDesktop
+                  ? 2.5
+                  : isTablet
+                  ? 2
+                  : isSmallScreen
+                  ? 1.5
+                  : 2,
+            ),
           ),
         ],
       ),
@@ -1142,23 +2250,69 @@ class _StudentProfilePageState extends State<StudentProfilePage> {
           Row(
             children: [
               Container(
-                padding: const EdgeInsets.all(12),
+                padding: EdgeInsets.all(
+                  isLargeDesktop
+                      ? 14
+                      : isDesktop
+                      ? 13
+                      : isTablet
+                      ? 12
+                      : isSmallScreen
+                      ? 10
+                      : 12,
+                ),
                 decoration: BoxDecoration(
                   color: const Color(0xFF6B5FFF).withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(
+                    isLargeDesktop
+                        ? 14
+                        : isDesktop
+                        ? 12
+                        : isTablet
+                        ? 12
+                        : isSmallScreen
+                        ? 10
+                        : 12,
+                  ),
                 ),
-                child: const Icon(
+                child: Icon(
                   Icons.info_outline,
-                  color: Color(0xFF6B5FFF),
-                  size: 24,
+                  color: const Color(0xFF6B5FFF),
+                  size: isLargeDesktop
+                      ? 28
+                      : isDesktop
+                      ? 26
+                      : isTablet
+                      ? 24
+                      : isSmallScreen
+                      ? 20
+                      : 24,
                 ),
               ),
-              const SizedBox(width: 16),
-              const Expanded(
+              SizedBox(
+                width: isLargeDesktop
+                    ? 20
+                    : isDesktop
+                    ? 18
+                    : isTablet
+                    ? 16
+                    : isSmallScreen
+                    ? 12
+                    : 16,
+              ),
+              Expanded(
                 child: Text(
                   'Additional Information',
                   style: TextStyle(
-                    fontSize: 18,
+                    fontSize: isLargeDesktop
+                        ? 22
+                        : isDesktop
+                        ? 20
+                        : isTablet
+                        ? 19
+                        : isSmallScreen
+                        ? 16
+                        : 18,
                     fontWeight: FontWeight.bold,
                     color: Colors.black87,
                   ),
@@ -1166,40 +2320,50 @@ class _StudentProfilePageState extends State<StudentProfilePage> {
               ),
             ],
           ),
-          const SizedBox(height: 20),
+          SizedBox(
+            height: isLargeDesktop
+                ? 24
+                : isDesktop
+                ? 22
+                : isTablet
+                ? 20
+                : isSmallScreen
+                ? 16
+                : 20,
+          ),
           _buildEditableField(
             'interests',
             Icons.favorite,
             'Interests',
-            _controllers['interests']!,
+            _controllers['interests'] ?? TextEditingController(),
             maxLines: 2,
           ),
           _buildEditableField(
             'achievements',
             Icons.emoji_events,
             'Achievements',
-            _controllers['achievements']!,
+            _controllers['achievements'] ?? TextEditingController(),
             maxLines: 3,
           ),
           _buildEditableField(
             'publications',
             Icons.article,
             'Publications',
-            _controllers['publications']!,
+            _controllers['publications'] ?? TextEditingController(),
             maxLines: 2,
           ),
           _buildEditableField(
             'patents',
             Icons.description,
             'Patents',
-            _controllers['patents']!,
+            _controllers['patents'] ?? TextEditingController(),
             maxLines: 2,
           ),
           _buildEditableField(
             'awards',
             Icons.stars,
             'Awards',
-            _controllers['awards']!,
+            _controllers['awards'] ?? TextEditingController(),
             maxLines: 2,
           ),
         ],
@@ -1246,12 +2410,44 @@ class _StudentProfilePageState extends State<StudentProfilePage> {
     final errorText = _fieldErrors[key];
     
     return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
+      padding: EdgeInsets.only(
+        bottom: isLargeDesktop
+            ? 20
+            : isDesktop
+            ? 18
+            : isTablet
+            ? 16
+            : isSmallScreen
+            ? 12
+            : 16,
+      ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, size: 20, color: Colors.grey[600]),
-          const SizedBox(width: 12),
+          Icon(
+            icon,
+            size: isLargeDesktop
+                ? 24
+                : isDesktop
+                ? 22
+                : isTablet
+                ? 20
+                : isSmallScreen
+                ? 18
+                : 20,
+            color: Colors.grey[600],
+          ),
+          SizedBox(
+            width: isLargeDesktop
+                ? 16
+                : isDesktop
+                ? 14
+                : isTablet
+                ? 12
+                : isSmallScreen
+                ? 10
+                : 12,
+          ),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -1259,12 +2455,30 @@ class _StudentProfilePageState extends State<StudentProfilePage> {
                 Text(
                   label,
                   style: TextStyle(
-                    fontSize: 12,
+                    fontSize: isLargeDesktop
+                        ? 14
+                        : isDesktop
+                        ? 13
+                        : isTablet
+                        ? 12
+                        : isSmallScreen
+                        ? 11
+                        : 12,
                     color: Colors.grey[600],
                     fontWeight: FontWeight.w500,
                   ),
                 ),
-                const SizedBox(height: 4),
+                SizedBox(
+                  height: isLargeDesktop
+                      ? 6
+                      : isDesktop
+                      ? 5
+                      : isTablet
+                      ? 4
+                      : isSmallScreen
+                      ? 3
+                      : 4,
+                ),
                 _isEditing && enabled
                     ? TextFormField(
                         controller: controller,
@@ -1272,8 +2486,16 @@ class _StudentProfilePageState extends State<StudentProfilePage> {
                         maxLines: maxLines,
                         keyboardType: keyboardType,
                         inputFormatters: inputFormatters,
-                        style: const TextStyle(
-                          fontSize: 14,
+                        style: TextStyle(
+                          fontSize: isLargeDesktop
+                              ? 16
+                              : isDesktop
+                              ? 15
+                              : isTablet
+                              ? 14
+                              : isSmallScreen
+                              ? 13
+                              : 14,
                           color: Colors.black87,
                           fontWeight: FontWeight.w500,
                         ),
@@ -1299,47 +2521,123 @@ class _StudentProfilePageState extends State<StudentProfilePage> {
                         },
                         decoration: InputDecoration(
                           isDense: true,
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 8,
+                          contentPadding: EdgeInsets.symmetric(
+                            horizontal: isLargeDesktop
+                                ? 16
+                                : isDesktop
+                                ? 14
+                                : isTablet
+                                ? 12
+                                : isSmallScreen
+                                ? 10
+                                : 12,
+                            vertical: isLargeDesktop
+                                ? 12
+                                : isDesktop
+                                ? 10
+                                : isTablet
+                                ? 8
+                                : isSmallScreen
+                                ? 6
+                                : 8,
                           ),
                           errorText: errorText,
                           errorMaxLines: 2,
-                          errorStyle: const TextStyle(
-                            fontSize: 11,
+                          errorStyle: TextStyle(
+                            fontSize: isLargeDesktop
+                                ? 13
+                                : isDesktop
+                                ? 12
+                                : isTablet
+                                ? 11
+                                : isSmallScreen
+                                ? 10
+                                : 11,
                             color: Colors.red,
                           ),
                           border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
+                            borderRadius: BorderRadius.circular(
+                              isLargeDesktop
+                                  ? 10
+                                  : isDesktop
+                                  ? 9
+                                  : isTablet
+                                  ? 8
+                                  : isSmallScreen
+                                  ? 6
+                                  : 8,
+                            ),
                             borderSide: BorderSide(
                               color: errorText != null ? Colors.red : Colors.grey[300]!,
+                              width: isLargeDesktop || isDesktop ? 1.5 : 1,
                             ),
                           ),
                           enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
+                            borderRadius: BorderRadius.circular(
+                              isLargeDesktop
+                                  ? 10
+                                  : isDesktop
+                                  ? 9
+                                  : isTablet
+                                  ? 8
+                                  : isSmallScreen
+                                  ? 6
+                                  : 8,
+                            ),
                             borderSide: BorderSide(
                               color: errorText != null ? Colors.red : Colors.grey[300]!,
+                              width: isLargeDesktop || isDesktop ? 1.5 : 1,
                             ),
                           ),
                           focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
+                            borderRadius: BorderRadius.circular(
+                              isLargeDesktop
+                                  ? 10
+                                  : isDesktop
+                                  ? 9
+                                  : isTablet
+                                  ? 8
+                                  : isSmallScreen
+                                  ? 6
+                                  : 8,
+                            ),
                             borderSide: BorderSide(
                               color: errorText != null ? Colors.red : const Color(0xFF6B5FFF),
-                              width: 2,
+                              width: isLargeDesktop || isDesktop ? 2.5 : 2,
                             ),
                           ),
                           errorBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
-                            borderSide: const BorderSide(
+                            borderRadius: BorderRadius.circular(
+                              isLargeDesktop
+                                  ? 10
+                                  : isDesktop
+                                  ? 9
+                                  : isTablet
+                                  ? 8
+                                  : isSmallScreen
+                                  ? 6
+                                  : 8,
+                            ),
+                            borderSide: BorderSide(
                               color: Colors.red,
-                              width: 1.5,
+                              width: isLargeDesktop || isDesktop ? 2 : 1.5,
                             ),
                           ),
                           focusedErrorBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
-                            borderSide: const BorderSide(
+                            borderRadius: BorderRadius.circular(
+                              isLargeDesktop
+                                  ? 10
+                                  : isDesktop
+                                  ? 9
+                                  : isTablet
+                                  ? 8
+                                  : isSmallScreen
+                                  ? 6
+                                  : 8,
+                            ),
+                            borderSide: BorderSide(
                               color: Colors.red,
-                              width: 2,
+                              width: isLargeDesktop || isDesktop ? 2.5 : 2,
                             ),
                           ),
                         ),
@@ -1347,7 +2645,15 @@ class _StudentProfilePageState extends State<StudentProfilePage> {
                     : Text(
                         controller.text.isEmpty ? 'Not provided' : controller.text,
                         style: TextStyle(
-                          fontSize: 14,
+                          fontSize: isLargeDesktop
+                              ? 16
+                              : isDesktop
+                              ? 15
+                              : isTablet
+                              ? 14
+                              : isSmallScreen
+                              ? 13
+                              : 14,
                           color: controller.text.isEmpty
                               ? Colors.grey[400]
                               : Colors.black87,
@@ -1375,12 +2681,44 @@ class _StudentProfilePageState extends State<StudentProfilePage> {
     }
 
     return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
+      padding: EdgeInsets.only(
+        bottom: isLargeDesktop
+            ? 20
+            : isDesktop
+            ? 18
+            : isTablet
+            ? 16
+            : isSmallScreen
+            ? 12
+            : 16,
+      ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, size: 20, color: Colors.grey[600]),
-          const SizedBox(width: 12),
+          Icon(
+            icon,
+            size: isLargeDesktop
+                ? 24
+                : isDesktop
+                ? 22
+                : isTablet
+                ? 20
+                : isSmallScreen
+                ? 18
+                : 20,
+            color: Colors.grey[600],
+          ),
+          SizedBox(
+            width: isLargeDesktop
+                ? 16
+                : isDesktop
+                ? 14
+                : isTablet
+                ? 12
+                : isSmallScreen
+                ? 10
+                : 12,
+          ),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -1388,12 +2726,30 @@ class _StudentProfilePageState extends State<StudentProfilePage> {
                 Text(
                   label,
                   style: TextStyle(
-                    fontSize: 12,
+                    fontSize: isLargeDesktop
+                        ? 14
+                        : isDesktop
+                        ? 13
+                        : isTablet
+                        ? 12
+                        : isSmallScreen
+                        ? 11
+                        : 12,
                     color: Colors.grey[600],
                     fontWeight: FontWeight.w500,
                   ),
                 ),
-                const SizedBox(height: 4),
+                SizedBox(
+                  height: isLargeDesktop
+                      ? 6
+                      : isDesktop
+                      ? 5
+                      : isTablet
+                      ? 4
+                      : isSmallScreen
+                      ? 3
+                      : 4,
+                ),
                 _isEditing
                     ? InkWell(
                         onTap: () async {
@@ -1413,27 +2769,75 @@ class _StudentProfilePageState extends State<StudentProfilePage> {
                           }
                         },
                         child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 8,
+                          padding: EdgeInsets.symmetric(
+                            horizontal: isLargeDesktop
+                                ? 16
+                                : isDesktop
+                                ? 14
+                                : isTablet
+                                ? 12
+                                : isSmallScreen
+                                ? 10
+                                : 12,
+                            vertical: isLargeDesktop
+                                ? 12
+                                : isDesktop
+                                ? 10
+                                : isTablet
+                                ? 8
+                                : isSmallScreen
+                                ? 6
+                                : 8,
                           ),
                           decoration: BoxDecoration(
-                            border: Border.all(color: Colors.grey[300]!),
-                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(
+                              color: Colors.grey[300]!,
+                              width: isLargeDesktop || isDesktop ? 1.5 : 1,
+                            ),
+                            borderRadius: BorderRadius.circular(
+                              isLargeDesktop
+                                  ? 10
+                                  : isDesktop
+                                  ? 9
+                                  : isTablet
+                                  ? 8
+                                  : isSmallScreen
+                                  ? 6
+                                  : 8,
+                            ),
                           ),
                           child: Row(
                             children: [
                               Text(
                                 displayValue,
-                                style: const TextStyle(
-                                  fontSize: 14,
+                                style: TextStyle(
+                                  fontSize: isLargeDesktop
+                                      ? 16
+                                      : isDesktop
+                                      ? 15
+                                      : isTablet
+                                      ? 14
+                                      : isSmallScreen
+                                      ? 13
+                                      : 14,
                                   color: Colors.black87,
                                   fontWeight: FontWeight.w500,
                                 ),
                               ),
                               const Spacer(),
-                              Icon(Icons.calendar_today,
-                                  size: 16, color: Colors.grey[600]),
+                              Icon(
+                                Icons.calendar_today,
+                                size: isLargeDesktop
+                                    ? 20
+                                    : isDesktop
+                                    ? 18
+                                    : isTablet
+                                    ? 16
+                                    : isSmallScreen
+                                    ? 14
+                                    : 16,
+                                color: Colors.grey[600],
+                              ),
                             ],
                           ),
                         ),
@@ -1441,7 +2845,15 @@ class _StudentProfilePageState extends State<StudentProfilePage> {
                     : Text(
                         displayValue,
                         style: TextStyle(
-                          fontSize: 14,
+                          fontSize: isLargeDesktop
+                              ? 16
+                              : isDesktop
+                              ? 15
+                              : isTablet
+                              ? 14
+                              : isSmallScreen
+                              ? 13
+                              : 14,
                           color: displayValue == 'Not provided'
                               ? Colors.grey[400]
                               : Colors.black87,
@@ -1467,12 +2879,44 @@ class _StudentProfilePageState extends State<StudentProfilePage> {
     final selectedValue = options.contains(currentValue) ? currentValue : null;
 
     return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
+      padding: EdgeInsets.only(
+        bottom: isLargeDesktop
+            ? 20
+            : isDesktop
+            ? 18
+            : isTablet
+            ? 16
+            : isSmallScreen
+            ? 12
+            : 16,
+      ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, size: 20, color: Colors.grey[600]),
-          const SizedBox(width: 12),
+          Icon(
+            icon,
+            size: isLargeDesktop
+                ? 24
+                : isDesktop
+                ? 22
+                : isTablet
+                ? 20
+                : isSmallScreen
+                ? 18
+                : 20,
+            color: Colors.grey[600],
+          ),
+          SizedBox(
+            width: isLargeDesktop
+                ? 16
+                : isDesktop
+                ? 14
+                : isTablet
+                ? 12
+                : isSmallScreen
+                ? 10
+                : 12,
+          ),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -1480,34 +2924,104 @@ class _StudentProfilePageState extends State<StudentProfilePage> {
                 Text(
                   label,
                   style: TextStyle(
-                    fontSize: 12,
+                    fontSize: isLargeDesktop
+                        ? 14
+                        : isDesktop
+                        ? 13
+                        : isTablet
+                        ? 12
+                        : isSmallScreen
+                        ? 11
+                        : 12,
                     color: Colors.grey[600],
                     fontWeight: FontWeight.w500,
                   ),
                 ),
-                const SizedBox(height: 4),
+                SizedBox(
+                  height: isLargeDesktop
+                      ? 6
+                      : isDesktop
+                      ? 5
+                      : isTablet
+                      ? 4
+                      : isSmallScreen
+                      ? 3
+                      : 4,
+                ),
                 _isEditing
                     ? DropdownButtonFormField<String>(
                         value: selectedValue,
                         decoration: InputDecoration(
                           isDense: true,
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 8,
+                          contentPadding: EdgeInsets.symmetric(
+                            horizontal: isLargeDesktop
+                                ? 16
+                                : isDesktop
+                                ? 14
+                                : isTablet
+                                ? 12
+                                : isSmallScreen
+                                ? 10
+                                : 12,
+                            vertical: isLargeDesktop
+                                ? 12
+                                : isDesktop
+                                ? 10
+                                : isTablet
+                                ? 8
+                                : isSmallScreen
+                                ? 6
+                                : 8,
                           ),
                           border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
-                            borderSide: BorderSide(color: Colors.grey[300]!),
+                            borderRadius: BorderRadius.circular(
+                              isLargeDesktop
+                                  ? 10
+                                  : isDesktop
+                                  ? 9
+                                  : isTablet
+                                  ? 8
+                                  : isSmallScreen
+                                  ? 6
+                                  : 8,
+                            ),
+                            borderSide: BorderSide(
+                              color: Colors.grey[300]!,
+                              width: isLargeDesktop || isDesktop ? 1.5 : 1,
+                            ),
                           ),
                           enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
-                            borderSide: BorderSide(color: Colors.grey[300]!),
+                            borderRadius: BorderRadius.circular(
+                              isLargeDesktop
+                                  ? 10
+                                  : isDesktop
+                                  ? 9
+                                  : isTablet
+                                  ? 8
+                                  : isSmallScreen
+                                  ? 6
+                                  : 8,
+                            ),
+                            borderSide: BorderSide(
+                              color: Colors.grey[300]!,
+                              width: isLargeDesktop || isDesktop ? 1.5 : 1,
+                            ),
                           ),
                           focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
-                            borderSide: const BorderSide(
-                              color: Color(0xFF6B5FFF),
-                              width: 2,
+                            borderRadius: BorderRadius.circular(
+                              isLargeDesktop
+                                  ? 10
+                                  : isDesktop
+                                  ? 9
+                                  : isTablet
+                                  ? 8
+                                  : isSmallScreen
+                                  ? 6
+                                  : 8,
+                            ),
+                            borderSide: BorderSide(
+                              color: const Color(0xFF6B5FFF),
+                              width: isLargeDesktop || isDesktop ? 2.5 : 2,
                             ),
                           ),
                         ),
@@ -1515,11 +3029,37 @@ class _StudentProfilePageState extends State<StudentProfilePage> {
                           if (allowCustom && currentValue.isNotEmpty && !options.contains(currentValue))
                             DropdownMenuItem(
                               value: currentValue,
-                              child: Text(currentValue),
+                              child: Text(
+                                currentValue,
+                                style: TextStyle(
+                                  fontSize: isLargeDesktop
+                                      ? 16
+                                      : isDesktop
+                                      ? 15
+                                      : isTablet
+                                      ? 14
+                                      : isSmallScreen
+                                      ? 13
+                                      : 14,
+                                ),
+                              ),
                             ),
                           ...options.map((option) => DropdownMenuItem(
                                 value: option,
-                                child: Text(option),
+                                child: Text(
+                                  option,
+                                  style: TextStyle(
+                                    fontSize: isLargeDesktop
+                                        ? 16
+                                        : isDesktop
+                                        ? 15
+                                        : isTablet
+                                        ? 14
+                                        : isSmallScreen
+                                        ? 13
+                                        : 14,
+                                  ),
+                                ),
                               )),
                         ],
                         onChanged: (value) {
@@ -1531,7 +3071,15 @@ class _StudentProfilePageState extends State<StudentProfilePage> {
                     : Text(
                         currentValue.isEmpty ? 'Not specified' : currentValue,
                         style: TextStyle(
-                          fontSize: 14,
+                          fontSize: isLargeDesktop
+                              ? 16
+                              : isDesktop
+                              ? 15
+                              : isTablet
+                              ? 14
+                              : isSmallScreen
+                              ? 13
+                              : 14,
                           color: currentValue.isEmpty
                               ? Colors.grey[400]
                               : Colors.black87,
@@ -1559,12 +3107,44 @@ class _StudentProfilePageState extends State<StudentProfilePage> {
     ];
 
     return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
+      padding: EdgeInsets.only(
+        bottom: isLargeDesktop
+            ? 20
+            : isDesktop
+            ? 18
+            : isTablet
+            ? 16
+            : isSmallScreen
+            ? 12
+            : 16,
+      ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, size: 20, color: Colors.grey[600]),
-          const SizedBox(width: 12),
+          Icon(
+            icon,
+            size: isLargeDesktop
+                ? 24
+                : isDesktop
+                ? 22
+                : isTablet
+                ? 20
+                : isSmallScreen
+                ? 18
+                : 20,
+            color: Colors.grey[600],
+          ),
+          SizedBox(
+            width: isLargeDesktop
+                ? 16
+                : isDesktop
+                ? 14
+                : isTablet
+                ? 12
+                : isSmallScreen
+                ? 10
+                : 12,
+          ),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -1572,19 +3152,45 @@ class _StudentProfilePageState extends State<StudentProfilePage> {
                 Text(
                   label,
                   style: TextStyle(
-                    fontSize: 12,
+                    fontSize: isLargeDesktop
+                        ? 14
+                        : isDesktop
+                        ? 13
+                        : isTablet
+                        ? 12
+                        : isSmallScreen
+                        ? 11
+                        : 12,
                     color: Colors.grey[600],
                     fontWeight: FontWeight.w500,
                   ),
                 ),
-                const SizedBox(height: 4),
+                SizedBox(
+                  height: isLargeDesktop
+                      ? 6
+                      : isDesktop
+                      ? 5
+                      : isTablet
+                      ? 4
+                      : isSmallScreen
+                      ? 3
+                      : 4,
+                ),
                 _isEditing
                     ? TextFormField(
                         controller: controller,
                         keyboardType: TextInputType.number,
                         inputFormatters: inputFormatters,
-                        style: const TextStyle(
-                          fontSize: 14,
+                        style: TextStyle(
+                          fontSize: isLargeDesktop
+                              ? 16
+                              : isDesktop
+                              ? 15
+                              : isTablet
+                              ? 14
+                              : isSmallScreen
+                              ? 13
+                              : 14,
                           color: Colors.black87,
                           fontWeight: FontWeight.w500,
                         ),
@@ -1614,47 +3220,123 @@ class _StudentProfilePageState extends State<StudentProfilePage> {
                         },
                         decoration: InputDecoration(
                           isDense: true,
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 8,
+                          contentPadding: EdgeInsets.symmetric(
+                            horizontal: isLargeDesktop
+                                ? 16
+                                : isDesktop
+                                ? 14
+                                : isTablet
+                                ? 12
+                                : isSmallScreen
+                                ? 10
+                                : 12,
+                            vertical: isLargeDesktop
+                                ? 12
+                                : isDesktop
+                                ? 10
+                                : isTablet
+                                ? 8
+                                : isSmallScreen
+                                ? 6
+                                : 8,
                           ),
                           errorText: errorText,
                           errorMaxLines: 2,
-                          errorStyle: const TextStyle(
-                            fontSize: 11,
+                          errorStyle: TextStyle(
+                            fontSize: isLargeDesktop
+                                ? 13
+                                : isDesktop
+                                ? 12
+                                : isTablet
+                                ? 11
+                                : isSmallScreen
+                                ? 10
+                                : 11,
                             color: Colors.red,
                           ),
                           border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
+                            borderRadius: BorderRadius.circular(
+                              isLargeDesktop
+                                  ? 10
+                                  : isDesktop
+                                  ? 9
+                                  : isTablet
+                                  ? 8
+                                  : isSmallScreen
+                                  ? 6
+                                  : 8,
+                            ),
                             borderSide: BorderSide(
                               color: errorText != null ? Colors.red : Colors.grey[300]!,
+                              width: isLargeDesktop || isDesktop ? 1.5 : 1,
                             ),
                           ),
                           enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
+                            borderRadius: BorderRadius.circular(
+                              isLargeDesktop
+                                  ? 10
+                                  : isDesktop
+                                  ? 9
+                                  : isTablet
+                                  ? 8
+                                  : isSmallScreen
+                                  ? 6
+                                  : 8,
+                            ),
                             borderSide: BorderSide(
                               color: errorText != null ? Colors.red : Colors.grey[300]!,
+                              width: isLargeDesktop || isDesktop ? 1.5 : 1,
                             ),
                           ),
                           focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
+                            borderRadius: BorderRadius.circular(
+                              isLargeDesktop
+                                  ? 10
+                                  : isDesktop
+                                  ? 9
+                                  : isTablet
+                                  ? 8
+                                  : isSmallScreen
+                                  ? 6
+                                  : 8,
+                            ),
                             borderSide: BorderSide(
                               color: errorText != null ? Colors.red : const Color(0xFF6B5FFF),
-                              width: 2,
+                              width: isLargeDesktop || isDesktop ? 2.5 : 2,
                             ),
                           ),
                           errorBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
-                            borderSide: const BorderSide(
+                            borderRadius: BorderRadius.circular(
+                              isLargeDesktop
+                                  ? 10
+                                  : isDesktop
+                                  ? 9
+                                  : isTablet
+                                  ? 8
+                                  : isSmallScreen
+                                  ? 6
+                                  : 8,
+                            ),
+                            borderSide: BorderSide(
                               color: Colors.red,
-                              width: 1.5,
+                              width: isLargeDesktop || isDesktop ? 2 : 1.5,
                             ),
                           ),
                           focusedErrorBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
-                            borderSide: const BorderSide(
+                            borderRadius: BorderRadius.circular(
+                              isLargeDesktop
+                                  ? 10
+                                  : isDesktop
+                                  ? 9
+                                  : isTablet
+                                  ? 8
+                                  : isSmallScreen
+                                  ? 6
+                                  : 8,
+                            ),
+                            borderSide: BorderSide(
                               color: Colors.red,
-                              width: 2,
+                              width: isLargeDesktop || isDesktop ? 2.5 : 2,
                             ),
                           ),
                         ),
@@ -1664,7 +3346,15 @@ class _StudentProfilePageState extends State<StudentProfilePage> {
                             ? 'Not specified'
                             : controller.text,
                         style: TextStyle(
-                          fontSize: 14,
+                          fontSize: isLargeDesktop
+                              ? 16
+                              : isDesktop
+                              ? 15
+                              : isTablet
+                              ? 14
+                              : isSmallScreen
+                              ? 13
+                              : 14,
                           color: controller.text.isEmpty
                               ? Colors.grey[400]
                               : Colors.black87,
@@ -1713,28 +3403,58 @@ class _StudentProfilePageState extends State<StudentProfilePage> {
         _profileData?['profilePicture']?['url'];
     final username = _profileData?['username'] ?? _profileData?['email'] ?? 'U';
     final initials = _getInitials(username);
-    final hasPhoto = profilePhoto != null && profilePhoto.toString().isNotEmpty;
+    final hasPhoto = profilePhoto != null && 
+        profilePhoto.toString().isNotEmpty && 
+        !_profileImageError;
 
     return Stack(
       children: [
         CircleAvatar(
-          radius: 45,
+          radius: isLargeDesktop
+              ? 55
+              : isDesktop
+              ? 50
+              : isTablet
+              ? 45
+              : isSmallScreen
+              ? 35
+              : 45,
           backgroundColor: const Color(0xFF6B5FFF),
           backgroundImage: hasPhoto
-              ? NetworkImage(profilePhoto.toString())
+              ? CachedNetworkImageProvider(profilePhoto.toString())
+              : null,
+          // Only set onBackgroundImageError when backgroundImage is not null
+          onBackgroundImageError: hasPhoto
+              ? (exception, stackTrace) {
+                  // Handle image loading errors (404, network errors, etc.)
+                  if (mounted) {
+                    setState(() {
+                      _profileImageError = true;
+                    });
+                  }
+                }
               : null,
           child: !hasPhoto
               ? Text(
                   initials,
-                  style: const TextStyle(
-                    fontSize: 28,
+                  style: TextStyle(
+                    fontSize: isLargeDesktop
+                        ? 34
+                        : isDesktop
+                        ? 32
+                        : isTablet
+                        ? 28
+                        : isSmallScreen
+                        ? 22
+                        : 28,
                     fontWeight: FontWeight.bold,
                     color: Colors.white,
                   ),
                 )
               : _isUploadingPhoto
-                  ? const CircularProgressIndicator(
-                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                  ? CircularProgressIndicator(
+                      valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
+                      strokeWidth: isLargeDesktop || isDesktop ? 3 : 2.5,
                     )
                   : null,
         ),
@@ -1745,25 +3465,62 @@ class _StudentProfilePageState extends State<StudentProfilePage> {
             child: GestureDetector(
               onTap: _isUploadingPhoto ? null : () => _showPhotoOptions(),
               child: Container(
-                padding: const EdgeInsets.all(8),
+                padding: EdgeInsets.all(
+                  isLargeDesktop
+                      ? 10
+                      : isDesktop
+                      ? 9
+                      : isTablet
+                      ? 8
+                      : isSmallScreen
+                      ? 6
+                      : 8,
+                ),
                 decoration: BoxDecoration(
                   color: Colors.white,
                   shape: BoxShape.circle,
-                  border: Border.all(color: const Color(0xFF6B5FFF), width: 2),
+                  border: Border.all(
+                    color: const Color(0xFF6B5FFF),
+                    width: isLargeDesktop || isDesktop ? 2.5 : 2,
+                  ),
                 ),
                 child: _isUploadingPhoto
-                    ? const SizedBox(
-                        width: 16,
-                        height: 16,
+                    ? SizedBox(
+                        width: isLargeDesktop
+                            ? 20
+                            : isDesktop
+                            ? 18
+                            : isTablet
+                            ? 16
+                            : isSmallScreen
+                            ? 12
+                            : 16,
+                        height: isLargeDesktop
+                            ? 20
+                            : isDesktop
+                            ? 18
+                            : isTablet
+                            ? 16
+                            : isSmallScreen
+                            ? 12
+                            : 16,
                         child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF6B5FFF)),
+                          strokeWidth: isLargeDesktop || isDesktop ? 2.5 : 2,
+                          valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF6B5FFF)),
                         ),
                       )
-                    : const Icon(
+                    : Icon(
                         Icons.camera_alt,
-                        size: 16,
-                        color: Color(0xFF6B5FFF),
+                        size: isLargeDesktop
+                            ? 20
+                            : isDesktop
+                            ? 18
+                            : isTablet
+                            ? 16
+                            : isSmallScreen
+                            ? 12
+                            : 16,
+                        color: const Color(0xFF6B5FFF),
                       ),
               ),
             ),
@@ -2234,5 +3991,216 @@ class _StudentProfilePageState extends State<StudentProfilePage> {
 
     return '${words[0].substring(0, 1)}${words[1].substring(0, 1)}'
         .toUpperCase();
+  }
+
+  Widget _buildErrorState() {
+    final isNoInternet = _errorMessage == 'No internet connection';
+    
+    return Center(
+      child: Padding(
+        padding: EdgeInsets.all(
+          isLargeDesktop
+              ? 48
+              : isDesktop
+              ? 40
+              : isTablet
+              ? 36
+              : isSmallScreen
+              ? 24
+              : 32,
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.cloud_off,
+              size: isLargeDesktop
+                  ? 80
+                  : isDesktop
+                  ? 72
+                  : isTablet
+                  ? 64
+                  : isSmallScreen
+                  ? 48
+                  : 56,
+              color: Colors.grey[400],
+            ),
+            SizedBox(
+              height: isLargeDesktop
+                  ? 24
+                  : isDesktop
+                  ? 20
+                  : isTablet
+                  ? 18
+                  : isSmallScreen
+                  ? 12
+                  : 16,
+            ),
+            Text(
+              isNoInternet
+                  ? 'No internet connection'
+                  : 'Failed to Load Profile',
+              style: TextStyle(
+                fontSize: isLargeDesktop
+                    ? 24
+                    : isDesktop
+                    ? 22
+                    : isTablet
+                    ? 20
+                    : isSmallScreen
+                    ? 16
+                    : 18,
+                fontWeight: FontWeight.bold,
+                color: Colors.grey[700],
+              ),
+              textAlign: TextAlign.center,
+            ),
+            if (isNoInternet) ...[
+              SizedBox(
+                height: isLargeDesktop
+                    ? 12
+                    : isDesktop
+                    ? 10
+                    : isTablet
+                    ? 8
+                    : isSmallScreen
+                    ? 6
+                    : 8,
+              ),
+              Text(
+                'Please check your connection and try again',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: Colors.grey[600],
+                  fontSize: isLargeDesktop
+                      ? 18
+                      : isDesktop
+                      ? 16
+                      : isTablet
+                      ? 15
+                      : isSmallScreen
+                      ? 12
+                      : 14,
+                ),
+              ),
+            ] else ...[
+              SizedBox(
+                height: isLargeDesktop
+                    ? 12
+                    : isDesktop
+                    ? 10
+                    : isTablet
+                    ? 8
+                    : isSmallScreen
+                    ? 6
+                    : 8,
+              ),
+              Text(
+                _errorMessage ?? 'Unknown error occurred',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: Colors.grey[600],
+                  fontSize: isLargeDesktop
+                      ? 18
+                      : isDesktop
+                      ? 16
+                      : isTablet
+                      ? 15
+                      : isSmallScreen
+                      ? 12
+                      : 14,
+                ),
+              ),
+            ],
+            SizedBox(
+              height: isLargeDesktop
+                  ? 32
+                  : isDesktop
+                  ? 28
+                  : isTablet
+                  ? 24
+                  : isSmallScreen
+                  ? 16
+                  : 24,
+            ),
+            ElevatedButton.icon(
+              onPressed: () {
+                setState(() {
+                  _errorMessage = null;
+                });
+                _loadProfileData(forceRefresh: true);
+              },
+              icon: Icon(
+                Icons.refresh,
+                size: isLargeDesktop
+                    ? 24
+                    : isDesktop
+                    ? 22
+                    : isTablet
+                    ? 20
+                    : isSmallScreen
+                    ? 18
+                    : 20,
+                color: Colors.white,
+              ),
+              label: Text(
+                'Retry',
+                style: TextStyle(
+                  fontSize: isLargeDesktop
+                      ? 18
+                      : isDesktop
+                      ? 16
+                      : isTablet
+                      ? 15
+                      : isSmallScreen
+                      ? 13
+                      : 14,
+                  color: Colors.white,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF9C88FF),
+                foregroundColor: Colors.white,
+                padding: EdgeInsets.symmetric(
+                  horizontal: isLargeDesktop
+                      ? 32
+                      : isDesktop
+                      ? 28
+                      : isTablet
+                      ? 24
+                      : isSmallScreen
+                      ? 16
+                      : 20,
+                  vertical: isLargeDesktop
+                      ? 16
+                      : isDesktop
+                      ? 14
+                      : isTablet
+                      ? 12
+                      : isSmallScreen
+                      ? 8
+                      : 10,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(
+                    isLargeDesktop
+                        ? 12
+                        : isDesktop
+                        ? 11
+                        : isTablet
+                        ? 10
+                        : isSmallScreen
+                        ? 8
+                        : 9,
+                  ),
+                ),
+                elevation: 2,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }

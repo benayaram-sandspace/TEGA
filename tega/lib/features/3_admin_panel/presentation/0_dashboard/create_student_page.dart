@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
+import 'package:tega/core/services/admin_dashboard_cache_service.dart';
 import 'package:tega/features/3_admin_panel/data/services/admin_dashboard_service.dart';
 import 'package:tega/features/3_admin_panel/presentation/0_dashboard/admin_dashboard_styles.dart';
 import 'package:tega/data/colleges_data.dart';
@@ -17,6 +18,7 @@ class CreateStudentPage extends StatefulWidget {
 class _CreateStudentPageState extends State<CreateStudentPage> {
   final _formKey = GlobalKey<FormState>();
   final AdminDashboardService _dashboardService = AdminDashboardService();
+  final AdminDashboardCacheService _cacheService = AdminDashboardCacheService();
 
   // Form controllers
   final _firstNameController = TextEditingController();
@@ -40,7 +42,7 @@ class _CreateStudentPageState extends State<CreateStudentPage> {
   String? _selectedInstitute;
   DateTime? _selectedDateOfBirth;
 
-  final List<String> _institutes = List.from(collegesData);
+  List<String> _institutes = List.from(collegesData);
   final List<String> _genders = ['Male', 'Female', 'Other'];
   List<String> _filteredInstitutes = [];
   final TextEditingController _instituteSearchController =
@@ -58,6 +60,24 @@ class _CreateStudentPageState extends State<CreateStudentPage> {
     _filteredInstitutes = List.from(_institutes);
     _instituteSearchController.addListener(_filterInstitutes);
     _instituteFocusNode.addListener(_onInstituteFocusChange);
+    _initializeCache();
+  }
+
+  Future<void> _initializeCache() async {
+    // Initialize cache service (for consistency with other pages)
+    await _cacheService.initialize();
+    
+    // Try to load institutes from cache if available
+    final cachedInstitutes = await _cacheService.getAvailableInstitutes();
+    if (cachedInstitutes != null && cachedInstitutes.isNotEmpty) {
+      setState(() {
+        _institutes = List.from(cachedInstitutes);
+        _filteredInstitutes = List.from(_institutes);
+      });
+    } else {
+      // Cache the static colleges data
+      await _cacheService.setAvailableInstitutes(_institutes);
+    }
   }
 
   @override
@@ -104,62 +124,99 @@ class _CreateStudentPageState extends State<CreateStudentPage> {
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isMobile = screenWidth < 600;
+    final isTablet = screenWidth >= 600 && screenWidth < 1024;
+    final isDesktop = screenWidth >= 1024;
+
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        leading: IconButton(
-          onPressed: () => Navigator.of(context).pop(),
-          icon: Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(12),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.1),
-                  blurRadius: 10,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
-            child: const Icon(
-              Icons.arrow_back_rounded,
-              color: Color(0xFF2D3748),
-              size: 20,
-            ),
-          ),
-        ),
-        title: const Text(
-          'Create New Student',
-          style: TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-            color: Color(0xFF2D3748),
-          ),
-        ),
-        centerTitle: true,
-      ),
-      body: Form(
-        key: _formKey,
+      body: SafeArea(
         child: Column(
           children: [
-            // Progress Indicator
-            _buildProgressIndicator(),
+            // Custom AppBar
+            Container(
+              padding: EdgeInsets.symmetric(
+                horizontal: isMobile ? 16 : isTablet ? 20 : 24,
+                vertical: isMobile ? 12 : 16,
+              ),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 10,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Row(
+                children: [
+                  IconButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    icon: Container(
+                      padding: EdgeInsets.all(isMobile ? 8 : 10),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(isMobile ? 10 : 12),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.1),
+                            blurRadius: 10,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: Icon(
+                        Icons.arrow_back_rounded,
+                        color: const Color(0xFF2D3748),
+                        size: isMobile ? 18 : 20,
+                      ),
+                    ),
+                  ),
+                  Expanded(
+                    child: Text(
+                      'Create New Student',
+                      style: TextStyle(
+                        fontSize: isMobile ? 18 : isTablet ? 20 : 22,
+                        fontWeight: FontWeight.bold,
+                        color: const Color(0xFF2D3748),
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                  SizedBox(width: isMobile ? 48 : 56), // Balance the back button
+                ],
+              ),
+            ),
             // Form Content
-            Expanded(child: _buildStepperForm()),
-            // Action Buttons
-            _buildFloatingActions(),
+            Expanded(
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  children: [
+                    // Progress Indicator
+                    _buildProgressIndicator(isMobile, isTablet, isDesktop),
+                    // Form Content
+                    Expanded(child: _buildStepperForm(isMobile, isTablet, isDesktop)),
+                    // Action Buttons
+                    _buildFloatingActions(isMobile, isTablet, isDesktop),
+                  ],
+                ),
+              ),
+            ),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildProgressIndicator() {
+  Widget _buildProgressIndicator(bool isMobile, bool isTablet, bool isDesktop) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+      padding: EdgeInsets.symmetric(
+        horizontal: isMobile ? 16 : isTablet ? 20 : 24,
+        vertical: isMobile ? 12 : 16,
+      ),
       child: Row(
         children: List.generate(3, (index) {
           final isActive = index <= _currentStep;
@@ -169,8 +226,8 @@ class _CreateStudentPageState extends State<CreateStudentPage> {
             child: Row(
               children: [
                 Container(
-                  width: 32,
-                  height: 32,
+                  width: isMobile ? 28 : isTablet ? 30 : 32,
+                  height: isMobile ? 28 : isTablet ? 30 : 32,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     gradient: isActive
@@ -190,10 +247,10 @@ class _CreateStudentPageState extends State<CreateStudentPage> {
                     ),
                   ),
                   child: isCompleted
-                      ? const Icon(
+                      ? Icon(
                           Icons.check_rounded,
                           color: Colors.white,
-                          size: 18,
+                          size: isMobile ? 16 : 18,
                         )
                       : Center(
                           child: Text(
@@ -203,7 +260,7 @@ class _CreateStudentPageState extends State<CreateStudentPage> {
                                   ? Colors.white
                                   : const Color(0xFF718096),
                               fontWeight: FontWeight.bold,
-                              fontSize: 14,
+                              fontSize: isMobile ? 12 : 14,
                             ),
                           ),
                         ),
@@ -212,7 +269,7 @@ class _CreateStudentPageState extends State<CreateStudentPage> {
                   Expanded(
                     child: Container(
                       height: 2,
-                      margin: const EdgeInsets.symmetric(horizontal: 8),
+                      margin: EdgeInsets.symmetric(horizontal: isMobile ? 6 : 8),
                       decoration: BoxDecoration(
                         gradient: isCompleted
                             ? LinearGradient(
@@ -235,7 +292,7 @@ class _CreateStudentPageState extends State<CreateStudentPage> {
     );
   }
 
-  Widget _buildStepperForm() {
+  Widget _buildStepperForm(bool isMobile, bool isTablet, bool isDesktop) {
     return PageView(
       controller: _pageController,
       onPageChanged: (index) {
@@ -244,138 +301,174 @@ class _CreateStudentPageState extends State<CreateStudentPage> {
         });
       },
       children: [
-        _buildStep1PersonalInfo(),
-        _buildStep2AcademicInfo(),
-        _buildStep3AddressInfo(),
+        _buildStep1PersonalInfo(isMobile, isTablet, isDesktop),
+        _buildStep2AcademicInfo(isMobile, isTablet, isDesktop),
+        _buildStep3AddressInfo(isMobile, isTablet, isDesktop),
       ],
     );
   }
 
-  Widget _buildStep1PersonalInfo() {
+  Widget _buildStep1PersonalInfo(bool isMobile, bool isTablet, bool isDesktop) {
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(24),
+      padding: EdgeInsets.all(isMobile ? 16 : isTablet ? 20 : 24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildStepTitle('Personal Information', 'Tell us about the student'),
-          const SizedBox(height: 24),
+          _buildStepTitle('Personal Information', 'Tell us about the student', isMobile, isTablet, isDesktop),
+          SizedBox(height: isMobile ? 20 : 24),
           _buildFloatingCard([
             _buildHolographicField(
               controller: _firstNameController,
               label: 'First Name',
               icon: Icons.badge_rounded,
               isRequired: true,
+              isMobile: isMobile,
+              isTablet: isTablet,
+              isDesktop: isDesktop,
             ),
-            const SizedBox(height: 20),
+            SizedBox(height: isMobile ? 16 : 20),
             _buildHolographicField(
               controller: _lastNameController,
               label: 'Last Name',
               icon: Icons.family_restroom_rounded,
               isRequired: true,
+              isMobile: isMobile,
+              isTablet: isTablet,
+              isDesktop: isDesktop,
             ),
-            const SizedBox(height: 20),
+            SizedBox(height: isMobile ? 16 : 20),
             _buildHolographicField(
               controller: _usernameController,
               label: 'Username',
               icon: Icons.person_rounded,
               isRequired: true,
+              isMobile: isMobile,
+              isTablet: isTablet,
+              isDesktop: isDesktop,
             ),
-            const SizedBox(height: 20),
+            SizedBox(height: isMobile ? 16 : 20),
             _buildHolographicField(
               controller: _studentNameController,
               label: 'Student Name',
               icon: Icons.badge_outlined,
               isRequired: true,
+              isMobile: isMobile,
+              isTablet: isTablet,
+              isDesktop: isDesktop,
             ),
-            const SizedBox(height: 20),
+            SizedBox(height: isMobile ? 16 : 20),
             _buildHolographicField(
               controller: _emailController,
               label: 'Email Address',
               icon: Icons.email_rounded,
               keyboardType: TextInputType.emailAddress,
               isRequired: true,
+              isMobile: isMobile,
+              isTablet: isTablet,
+              isDesktop: isDesktop,
             ),
-            const SizedBox(height: 20),
+            SizedBox(height: isMobile ? 16 : 20),
             _buildHolographicField(
               controller: _phoneController,
               label: 'Phone Number',
               icon: Icons.phone_rounded,
               keyboardType: TextInputType.phone,
               isRequired: true,
+              isMobile: isMobile,
+              isTablet: isTablet,
+              isDesktop: isDesktop,
             ),
-            const SizedBox(height: 20),
-            _buildHolographicDateField(),
-            const SizedBox(height: 20),
+            SizedBox(height: isMobile ? 16 : 20),
+            _buildHolographicDateField(isMobile, isTablet, isDesktop),
+            SizedBox(height: isMobile ? 16 : 20),
             _buildHolographicField(
               controller: _passwordController,
               label: 'Password',
               icon: Icons.lock_rounded,
               isPassword: true,
               isRequired: true,
+              isMobile: isMobile,
+              isTablet: isTablet,
+              isDesktop: isDesktop,
             ),
-          ]),
+          ], isMobile, isTablet, isDesktop),
         ],
       ),
     );
   }
 
-  Widget _buildStep2AcademicInfo() {
+  Widget _buildStep2AcademicInfo(bool isMobile, bool isTablet, bool isDesktop) {
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(24),
+      padding: EdgeInsets.all(isMobile ? 16 : isTablet ? 20 : 24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _buildStepTitle(
             'Academic Information',
             'Educational background details',
+            isMobile,
+            isTablet,
+            isDesktop,
           ),
-          const SizedBox(height: 24),
+          SizedBox(height: isMobile ? 20 : 24),
           _buildFloatingCard([
-            _buildSearchableInstituteField(),
-            const SizedBox(height: 20),
+            _buildSearchableInstituteField(isMobile, isTablet, isDesktop),
+            SizedBox(height: isMobile ? 16 : 20),
             _buildHolographicField(
               controller: _courseController,
               label: 'Course',
               icon: Icons.school_rounded,
               isRequired: true,
+              isMobile: isMobile,
+              isTablet: isTablet,
+              isDesktop: isDesktop,
             ),
-            const SizedBox(height: 20),
+            SizedBox(height: isMobile ? 16 : 20),
             _buildHolographicField(
               controller: _majorController,
               label: 'Major',
               icon: Icons.engineering_rounded,
               isRequired: true,
+              isMobile: isMobile,
+              isTablet: isTablet,
+              isDesktop: isDesktop,
             ),
-            const SizedBox(height: 20),
+            SizedBox(height: isMobile ? 16 : 20),
             _buildHolographicField(
               controller: _yearOfStudyController,
               label: 'Year of Study',
               icon: Icons.calendar_today_rounded,
               keyboardType: TextInputType.number,
               isRequired: true,
+              isMobile: isMobile,
+              isTablet: isTablet,
+              isDesktop: isDesktop,
             ),
-            const SizedBox(height: 20),
+            SizedBox(height: isMobile ? 16 : 20),
             _buildHolographicDropdownField(
               label: 'Gender',
               icon: Icons.person_rounded,
               value: _selectedGender,
               items: _genders,
               onChanged: (value) => setState(() => _selectedGender = value),
+              isMobile: isMobile,
+              isTablet: isTablet,
+              isDesktop: isDesktop,
             ),
-          ]),
+          ], isMobile, isTablet, isDesktop),
         ],
       ),
     );
   }
 
-  Widget _buildStep3AddressInfo() {
+  Widget _buildStep3AddressInfo(bool isMobile, bool isTablet, bool isDesktop) {
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(24),
+      padding: EdgeInsets.all(isMobile ? 16 : isTablet ? 20 : 24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildStepTitle('Address Information', 'Student location details'),
-          const SizedBox(height: 24),
+          _buildStepTitle('Address Information', 'Student location details', isMobile, isTablet, isDesktop),
+          SizedBox(height: isMobile ? 20 : 24),
           _buildFloatingCard([
             _buildHolographicField(
               controller: _addressController,
@@ -383,78 +476,121 @@ class _CreateStudentPageState extends State<CreateStudentPage> {
               icon: Icons.home_rounded,
               maxLines: 3,
               isRequired: true,
+              isMobile: isMobile,
+              isTablet: isTablet,
+              isDesktop: isDesktop,
             ),
-            const SizedBox(height: 20),
+            SizedBox(height: isMobile ? 16 : 20),
             _buildHolographicField(
               controller: _landmarkController,
               label: 'Landmark',
               icon: Icons.location_on_rounded,
               isRequired: true,
+              isMobile: isMobile,
+              isTablet: isTablet,
+              isDesktop: isDesktop,
             ),
-            const SizedBox(height: 20),
-            Row(
-              children: [
-                Expanded(
-                  child: _buildHolographicField(
-                    controller: _zipcodeController,
-                    label: 'Zipcode',
-                    icon: Icons.pin_drop_rounded,
-                    keyboardType: TextInputType.number,
-                    isRequired: true,
+            SizedBox(height: isMobile ? 16 : 20),
+            isMobile
+                ? Column(
+                    children: [
+                      _buildHolographicField(
+                        controller: _zipcodeController,
+                        label: 'Zipcode',
+                        icon: Icons.pin_drop_rounded,
+                        keyboardType: TextInputType.number,
+                        isRequired: true,
+                        isMobile: isMobile,
+                        isTablet: isTablet,
+                        isDesktop: isDesktop,
+                      ),
+                      SizedBox(height: isMobile ? 16 : 20),
+                      _buildHolographicField(
+                        controller: _cityController,
+                        label: 'City',
+                        icon: Icons.location_city_rounded,
+                        isRequired: true,
+                        isMobile: isMobile,
+                        isTablet: isTablet,
+                        isDesktop: isDesktop,
+                      ),
+                    ],
+                  )
+                : Row(
+                    children: [
+                      Expanded(
+                        child: _buildHolographicField(
+                          controller: _zipcodeController,
+                          label: 'Zipcode',
+                          icon: Icons.pin_drop_rounded,
+                          keyboardType: TextInputType.number,
+                          isRequired: true,
+                          isMobile: isMobile,
+                          isTablet: isTablet,
+                          isDesktop: isDesktop,
+                        ),
+                      ),
+                      SizedBox(width: isTablet ? 12 : 16),
+                      Expanded(
+                        child: _buildHolographicField(
+                          controller: _cityController,
+                          label: 'City',
+                          icon: Icons.location_city_rounded,
+                          isRequired: true,
+                          isMobile: isMobile,
+                          isTablet: isTablet,
+                          isDesktop: isDesktop,
+                        ),
+                      ),
+                    ],
                   ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: _buildHolographicField(
-                    controller: _cityController,
-                    label: 'City',
-                    icon: Icons.location_city_rounded,
-                    isRequired: true,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 20),
+            SizedBox(height: isMobile ? 16 : 20),
             _buildHolographicField(
               controller: _districtController,
               label: 'District',
               icon: Icons.map_rounded,
               isRequired: true,
+              isMobile: isMobile,
+              isTablet: isTablet,
+              isDesktop: isDesktop,
             ),
-            const SizedBox(height: 20),
+            SizedBox(height: isMobile ? 16 : 20),
             Container(
-              padding: const EdgeInsets.all(16),
+              padding: EdgeInsets.all(isMobile ? 12 : isTablet ? 14 : 16),
               decoration: BoxDecoration(
                 color: const Color(0xFFF7FAFC),
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(isMobile ? 10 : isTablet ? 11 : 12),
                 border: Border.all(color: const Color(0xFFE2E8F0), width: 1),
               ),
-              child: const Row(
+              child: Row(
                 children: [
                   Icon(
                     Icons.info_outline_rounded,
-                    color: Color(0xFF4299E1),
-                    size: 20,
+                    color: const Color(0xFF4299E1),
+                    size: isMobile ? 18 : 20,
                   ),
-                  SizedBox(width: 12),
+                  SizedBox(width: isMobile ? 10 : 12),
                   Expanded(
                     child: Text(
                       'Student ID will be automatically generated. All information will be securely stored.',
-                      style: TextStyle(fontSize: 14, color: Color(0xFF718096)),
+                      style: TextStyle(
+                        fontSize: isMobile ? 12 : isTablet ? 13 : 14,
+                        color: const Color(0xFF718096),
+                      ),
                     ),
                   ),
                 ],
               ),
             ),
-          ]),
+          ], isMobile, isTablet, isDesktop),
         ],
       ),
     );
   }
 
-  Widget _buildFloatingActions() {
+  Widget _buildFloatingActions(bool isMobile, bool isTablet, bool isDesktop) {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: EdgeInsets.all(isMobile ? 16 : isTablet ? 18 : 20),
       decoration: BoxDecoration(
         color: Colors.white,
         boxShadow: [
@@ -465,138 +601,249 @@ class _CreateStudentPageState extends State<CreateStudentPage> {
           ),
         ],
       ),
-      child: Row(
-        children: [
-          if (_currentStep > 0)
-            Expanded(
-              child: Container(
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: const Color(0xFFE2E8F0), width: 2),
-                ),
-                child: TextButton(
-                  onPressed: () {
-                    _pageController.previousPage(
-                      duration: const Duration(milliseconds: 300),
-                      curve: Curves.easeInOut,
-                    );
-                  },
-                  style: TextButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14),
+      child: isMobile
+          ? Column(
+              children: [
+                Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        AdminDashboardStyles.primary,
+                        AdminDashboardStyles.primary.withOpacity(0.8),
+                      ],
                     ),
-                  ),
-                  child: const Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.arrow_back_rounded, size: 18),
-                      SizedBox(width: 6),
-                      Text(
-                        'Previous',
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                        ),
+                    borderRadius: BorderRadius.circular(isMobile ? 12 : 14),
+                    boxShadow: [
+                      BoxShadow(
+                        color: AdminDashboardStyles.primary.withOpacity(0.3),
+                        blurRadius: 12,
+                        offset: const Offset(0, 6),
                       ),
                     ],
                   ),
-                ),
-              ),
-            ),
-          if (_currentStep > 0) const SizedBox(width: 12),
-          Expanded(
-            child: Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    AdminDashboardStyles.primary,
-                    AdminDashboardStyles.primary.withOpacity(0.8),
-                  ],
-                ),
-                borderRadius: BorderRadius.circular(14),
-                boxShadow: [
-                  BoxShadow(
-                    color: AdminDashboardStyles.primary.withOpacity(0.3),
-                    blurRadius: 12,
-                    offset: const Offset(0, 6),
+                  child: SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: _isLoading ? null : _handleNextOrSubmit,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.transparent,
+                        shadowColor: Colors.transparent,
+                        padding: EdgeInsets.symmetric(vertical: isMobile ? 14 : 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(isMobile ? 12 : 14),
+                        ),
+                      ),
+                      child: _isLoading
+                          ? SizedBox(
+                              width: isMobile ? 16 : 18,
+                              height: isMobile ? 16 : 18,
+                              child: const CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                  Colors.white,
+                                ),
+                              ),
+                            )
+                          : Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  _currentStep == 2 ? 'Create Student' : 'Next',
+                                  style: TextStyle(
+                                    fontSize: isMobile ? 13 : 14,
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                                SizedBox(width: isMobile ? 5 : 6),
+                                Icon(
+                                  _currentStep == 2
+                                      ? Icons.person_add_rounded
+                                      : Icons.arrow_forward_rounded,
+                                  size: isMobile ? 16 : 18,
+                                  color: Colors.white,
+                                ),
+                              ],
+                            ),
+                    ),
                   ),
-                ],
-              ),
-              child: ElevatedButton(
-                onPressed: _isLoading ? null : _handleNextOrSubmit,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.transparent,
-                  shadowColor: Colors.transparent,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14),
-                  ),
                 ),
-                child: _isLoading
-                    ? const SizedBox(
-                        width: 18,
-                        height: 18,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          valueColor: AlwaysStoppedAnimation<Color>(
-                            Colors.white,
+                if (_currentStep > 0) ...[
+                  SizedBox(height: isMobile ? 12 : 16),
+                  Container(
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(isMobile ? 12 : 14),
+                      border: Border.all(color: const Color(0xFFE2E8F0), width: 2),
+                    ),
+                    child: SizedBox(
+                      width: double.infinity,
+                      child: TextButton(
+                        onPressed: () {
+                          _pageController.previousPage(
+                            duration: const Duration(milliseconds: 300),
+                            curve: Curves.easeInOut,
+                          );
+                        },
+                        style: TextButton.styleFrom(
+                          padding: EdgeInsets.symmetric(vertical: isMobile ? 14 : 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(isMobile ? 12 : 14),
                           ),
                         ),
-                      )
-                    : Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            _currentStep == 2 ? 'Create Student' : 'Next',
-                            style: const TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.white,
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.arrow_back_rounded, size: isMobile ? 16 : 18),
+                            SizedBox(width: isMobile ? 5 : 6),
+                            Text(
+                              'Previous',
+                              style: TextStyle(
+                                fontSize: isMobile ? 13 : 14,
+                                fontWeight: FontWeight.w600,
+                              ),
                             ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ],
+            )
+          : Row(
+              children: [
+                if (_currentStep > 0)
+                  Expanded(
+                    child: Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(isTablet ? 12 : 14),
+                        border: Border.all(color: const Color(0xFFE2E8F0), width: 2),
+                      ),
+                      child: TextButton(
+                        onPressed: () {
+                          _pageController.previousPage(
+                            duration: const Duration(milliseconds: 300),
+                            curve: Curves.easeInOut,
+                          );
+                        },
+                        style: TextButton.styleFrom(
+                          padding: EdgeInsets.symmetric(vertical: isTablet ? 14 : 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(isTablet ? 12 : 14),
                           ),
-                          const SizedBox(width: 6),
-                          Icon(
-                            _currentStep == 2
-                                ? Icons.person_add_rounded
-                                : Icons.arrow_forward_rounded,
-                            size: 18,
-                            color: Colors.white,
-                          ),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.arrow_back_rounded, size: isTablet ? 16 : 18),
+                            SizedBox(width: isTablet ? 5 : 6),
+                            Text(
+                              'Previous',
+                              style: TextStyle(
+                                fontSize: isTablet ? 13 : 14,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                if (_currentStep > 0) SizedBox(width: isTablet ? 10 : 12),
+                Expanded(
+                  child: Container(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          AdminDashboardStyles.primary,
+                          AdminDashboardStyles.primary.withOpacity(0.8),
                         ],
                       ),
-              ),
+                      borderRadius: BorderRadius.circular(isTablet ? 12 : 14),
+                      boxShadow: [
+                        BoxShadow(
+                          color: AdminDashboardStyles.primary.withOpacity(0.3),
+                          blurRadius: 12,
+                          offset: const Offset(0, 6),
+                        ),
+                      ],
+                    ),
+                    child: ElevatedButton(
+                      onPressed: _isLoading ? null : _handleNextOrSubmit,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.transparent,
+                        shadowColor: Colors.transparent,
+                        padding: EdgeInsets.symmetric(vertical: isTablet ? 14 : 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(isTablet ? 12 : 14),
+                        ),
+                      ),
+                      child: _isLoading
+                          ? SizedBox(
+                              width: isTablet ? 16 : 18,
+                              height: isTablet ? 16 : 18,
+                              child: const CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                  Colors.white,
+                                ),
+                              ),
+                            )
+                          : Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  _currentStep == 2 ? 'Create Student' : 'Next',
+                                  style: TextStyle(
+                                    fontSize: isTablet ? 13 : 14,
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                                SizedBox(width: isTablet ? 5 : 6),
+                                Icon(
+                                  _currentStep == 2
+                                      ? Icons.person_add_rounded
+                                      : Icons.arrow_forward_rounded,
+                                  size: isTablet ? 16 : 18,
+                                  color: Colors.white,
+                                ),
+                              ],
+                            ),
+                    ),
+                  ),
+                ),
+              ],
             ),
-          ),
-        ],
-      ),
     );
   }
 
-  Widget _buildStepTitle(String title, String subtitle) {
+  Widget _buildStepTitle(String title, String subtitle, bool isMobile, bool isTablet, bool isDesktop) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
         Text(
           title,
-          style: const TextStyle(
-            fontSize: 28,
+          style: TextStyle(
+            fontSize: isMobile ? 22 : isTablet ? 24 : 28,
             fontWeight: FontWeight.bold,
-            color: Color(0xFF2D3748),
+            color: const Color(0xFF2D3748),
             letterSpacing: -0.5,
           ),
           maxLines: 2,
           overflow: TextOverflow.ellipsis,
         ),
-        const SizedBox(height: 8),
+        SizedBox(height: isMobile ? 6 : 8),
         Text(
           subtitle,
-          style: const TextStyle(
-            fontSize: 16,
-            color: Color(0xFF718096),
+          style: TextStyle(
+            fontSize: isMobile ? 14 : isTablet ? 15 : 16,
+            color: const Color(0xFF718096),
             fontWeight: FontWeight.w500,
           ),
           maxLines: 2,
@@ -606,12 +853,12 @@ class _CreateStudentPageState extends State<CreateStudentPage> {
     );
   }
 
-  Widget _buildFloatingCard(List<Widget> children) {
+  Widget _buildFloatingCard(List<Widget> children, bool isMobile, bool isTablet, bool isDesktop) {
     return Container(
-      padding: const EdgeInsets.all(24),
+      padding: EdgeInsets.all(isMobile ? 16 : isTablet ? 20 : 24),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(isMobile ? 16 : isTablet ? 18 : 20),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.05),
@@ -640,22 +887,25 @@ class _CreateStudentPageState extends State<CreateStudentPage> {
     bool isPassword = false,
     TextInputType? keyboardType,
     int maxLines = 1,
+    bool isMobile = false,
+    bool isTablet = false,
+    bool isDesktop = false,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           label + (isRequired ? ' *' : ''),
-          style: const TextStyle(
-            fontSize: 14,
+          style: TextStyle(
+            fontSize: isMobile ? 13 : isTablet ? 13.5 : 14,
             fontWeight: FontWeight.w600,
-            color: Color(0xFF2D3748),
+            color: const Color(0xFF2D3748),
           ),
         ),
-        const SizedBox(height: 8),
+        SizedBox(height: isMobile ? 6 : 8),
         Container(
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(isMobile ? 12 : isTablet ? 14 : 16),
             gradient: LinearGradient(
               colors: [Colors.white, const Color(0xFFFAFAFA)],
             ),
@@ -684,8 +934,8 @@ class _CreateStudentPageState extends State<CreateStudentPage> {
                 : null,
             decoration: InputDecoration(
               prefixIcon: Container(
-                margin: const EdgeInsets.all(12),
-                padding: const EdgeInsets.all(10),
+                margin: EdgeInsets.all(isMobile ? 10 : 12),
+                padding: EdgeInsets.all(isMobile ? 8 : 10),
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     colors: [
@@ -693,7 +943,7 @@ class _CreateStudentPageState extends State<CreateStudentPage> {
                       AdminDashboardStyles.primary.withOpacity(0.05),
                     ],
                   ),
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(isMobile ? 10 : 12),
                   border: Border.all(
                     color: AdminDashboardStyles.primary.withOpacity(0.2),
                     width: 1,
@@ -702,23 +952,23 @@ class _CreateStudentPageState extends State<CreateStudentPage> {
                 child: Icon(
                   icon,
                   color: AdminDashboardStyles.primary,
-                  size: 20,
+                  size: isMobile ? 18 : 20,
                 ),
               ),
               border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(isMobile ? 12 : isTablet ? 14 : 16),
                 borderSide: BorderSide.none,
               ),
               filled: true,
               fillColor: Colors.transparent,
-              contentPadding: const EdgeInsets.symmetric(
-                horizontal: 20,
-                vertical: 18,
+              contentPadding: EdgeInsets.symmetric(
+                horizontal: isMobile ? 16 : isTablet ? 18 : 20,
+                vertical: isMobile ? 14 : isTablet ? 16 : 18,
               ),
               hintText: 'Enter ${label.toLowerCase()}',
-              hintStyle: const TextStyle(
-                color: Color(0xFFA0AEC0),
-                fontSize: 14,
+              hintStyle: TextStyle(
+                color: const Color(0xFFA0AEC0),
+                fontSize: isMobile ? 13 : isTablet ? 13.5 : 14,
                 fontWeight: FontWeight.w400,
               ),
               counterText: label == 'Phone Number' ? '' : null,
@@ -816,22 +1066,25 @@ class _CreateStudentPageState extends State<CreateStudentPage> {
     required String? value,
     required List<String> items,
     required ValueChanged<String?> onChanged,
+    bool isMobile = false,
+    bool isTablet = false,
+    bool isDesktop = false,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           label + ' *',
-          style: const TextStyle(
-            fontSize: 14,
+          style: TextStyle(
+            fontSize: isMobile ? 13 : isTablet ? 13.5 : 14,
             fontWeight: FontWeight.w600,
-            color: Color(0xFF2D3748),
+            color: const Color(0xFF2D3748),
           ),
         ),
-        const SizedBox(height: 8),
+        SizedBox(height: isMobile ? 6 : 8),
         Container(
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(isMobile ? 12 : isTablet ? 14 : 16),
             gradient: LinearGradient(
               colors: [Colors.white, const Color(0xFFFAFAFA)],
             ),
@@ -852,13 +1105,19 @@ class _CreateStudentPageState extends State<CreateStudentPage> {
           child: DropdownButtonFormField<String>(
             value: value,
             items: items.map((item) {
-              return DropdownMenuItem(value: item, child: Text(item));
+              return DropdownMenuItem(
+                value: item,
+                child: Text(
+                  item,
+                  style: TextStyle(fontSize: isMobile ? 13 : isTablet ? 13.5 : 14),
+                ),
+              );
             }).toList(),
             onChanged: onChanged,
             decoration: InputDecoration(
               prefixIcon: Container(
-                margin: const EdgeInsets.all(12),
-                padding: const EdgeInsets.all(10),
+                margin: EdgeInsets.all(isMobile ? 10 : 12),
+                padding: EdgeInsets.all(isMobile ? 8 : 10),
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     colors: [
@@ -866,7 +1125,7 @@ class _CreateStudentPageState extends State<CreateStudentPage> {
                       AdminDashboardStyles.primary.withOpacity(0.05),
                     ],
                   ),
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(isMobile ? 10 : 12),
                   border: Border.all(
                     color: AdminDashboardStyles.primary.withOpacity(0.2),
                     width: 1,
@@ -875,29 +1134,29 @@ class _CreateStudentPageState extends State<CreateStudentPage> {
                 child: Icon(
                   icon,
                   color: AdminDashboardStyles.primary,
-                  size: 20,
+                  size: isMobile ? 18 : 20,
                 ),
               ),
               border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(isMobile ? 12 : isTablet ? 14 : 16),
                 borderSide: BorderSide.none,
               ),
               filled: true,
               fillColor: Colors.transparent,
-              contentPadding: const EdgeInsets.symmetric(
-                horizontal: 20,
-                vertical: 18,
+              contentPadding: EdgeInsets.symmetric(
+                horizontal: isMobile ? 16 : isTablet ? 18 : 20,
+                vertical: isMobile ? 14 : isTablet ? 16 : 18,
               ),
               hintText: 'Select ${label.toLowerCase()}',
-              hintStyle: const TextStyle(
-                color: Color(0xFFA0AEC0),
-                fontSize: 14,
+              hintStyle: TextStyle(
+                color: const Color(0xFFA0AEC0),
+                fontSize: isMobile ? 13 : isTablet ? 13.5 : 14,
                 fontWeight: FontWeight.w400,
               ),
-              suffixIcon: const Icon(
+              suffixIcon: Icon(
                 Icons.keyboard_arrow_down_rounded,
-                color: Color(0xFF718096),
-                size: 24,
+                color: const Color(0xFF718096),
+                size: isMobile ? 20 : isTablet ? 22 : 24,
               ),
             ),
             validator: (value) {
@@ -912,22 +1171,22 @@ class _CreateStudentPageState extends State<CreateStudentPage> {
     );
   }
 
-  Widget _buildHolographicDateField() {
+  Widget _buildHolographicDateField(bool isMobile, bool isTablet, bool isDesktop) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
+        Text(
           'Date of Birth *',
           style: TextStyle(
-            fontSize: 14,
+            fontSize: isMobile ? 13 : isTablet ? 13.5 : 14,
             fontWeight: FontWeight.w600,
-            color: Color(0xFF2D3748),
+            color: const Color(0xFF2D3748),
           ),
         ),
-        const SizedBox(height: 8),
+        SizedBox(height: isMobile ? 6 : 8),
         Container(
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(isMobile ? 12 : isTablet ? 14 : 16),
             gradient: LinearGradient(
               colors: [Colors.white, const Color(0xFFFAFAFA)],
             ),
@@ -961,14 +1220,17 @@ class _CreateStudentPageState extends State<CreateStudentPage> {
                 setState(() => _selectedDateOfBirth = date);
               }
             },
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(isMobile ? 12 : isTablet ? 14 : 16),
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+              padding: EdgeInsets.symmetric(
+                horizontal: isMobile ? 16 : isTablet ? 18 : 20,
+                vertical: isMobile ? 14 : isTablet ? 16 : 18,
+              ),
               child: Row(
                 children: [
                   Container(
-                    margin: const EdgeInsets.only(right: 12),
-                    padding: const EdgeInsets.all(10),
+                    margin: EdgeInsets.only(right: isMobile ? 10 : 12),
+                    padding: EdgeInsets.all(isMobile ? 8 : 10),
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
                         colors: [
@@ -976,7 +1238,7 @@ class _CreateStudentPageState extends State<CreateStudentPage> {
                           AdminDashboardStyles.primary.withOpacity(0.05),
                         ],
                       ),
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(isMobile ? 10 : 12),
                       border: Border.all(
                         color: AdminDashboardStyles.primary.withOpacity(0.2),
                         width: 1,
@@ -985,7 +1247,7 @@ class _CreateStudentPageState extends State<CreateStudentPage> {
                     child: Icon(
                       Icons.cake_rounded,
                       color: AdminDashboardStyles.primary,
-                      size: 20,
+                      size: isMobile ? 18 : 20,
                     ),
                   ),
                   Expanded(
@@ -997,14 +1259,14 @@ class _CreateStudentPageState extends State<CreateStudentPage> {
                         color: _selectedDateOfBirth != null
                             ? const Color(0xFF2D3748)
                             : const Color(0xFFA0AEC0),
-                        fontSize: 14,
+                        fontSize: isMobile ? 13 : isTablet ? 13.5 : 14,
                         fontWeight: FontWeight.w400,
                       ),
                     ),
                   ),
                   Icon(
                     Icons.calendar_today_rounded,
-                    size: 20,
+                    size: isMobile ? 18 : 20,
                     color: const Color(0xFF718096),
                   ),
                 ],
@@ -1014,11 +1276,14 @@ class _CreateStudentPageState extends State<CreateStudentPage> {
         ),
         // Add validation message for date of birth
         if (_selectedDateOfBirth == null && _currentStep == 0)
-          const Padding(
-            padding: EdgeInsets.only(top: 4),
+          Padding(
+            padding: EdgeInsets.only(top: isMobile ? 3 : 4),
             child: Text(
               'Date of birth is required',
-              style: TextStyle(color: Colors.red, fontSize: 12),
+              style: TextStyle(
+                color: Colors.red,
+                fontSize: isMobile ? 11 : 12,
+              ),
             ),
           ),
       ],
@@ -1151,14 +1416,14 @@ class _CreateStudentPageState extends State<CreateStudentPage> {
     }
   }
 
-  Widget _buildSearchableInstituteField() {
+  Widget _buildSearchableInstituteField(bool isMobile, bool isTablet, bool isDesktop) {
     return GestureDetector(
       onTap: () {
         // This will be handled by the inner GestureDetector
       },
       child: Container(
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(isMobile ? 12 : isTablet ? 14 : 16),
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
@@ -1199,8 +1464,8 @@ class _CreateStudentPageState extends State<CreateStudentPage> {
                 },
                 decoration: InputDecoration(
                   prefixIcon: Container(
-                    margin: const EdgeInsets.all(12),
-                    padding: const EdgeInsets.all(10),
+                    margin: EdgeInsets.all(isMobile ? 10 : 12),
+                    padding: EdgeInsets.all(isMobile ? 8 : 10),
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
                         colors: [
@@ -1208,7 +1473,7 @@ class _CreateStudentPageState extends State<CreateStudentPage> {
                           AdminDashboardStyles.primary.withOpacity(0.05),
                         ],
                       ),
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(isMobile ? 10 : 12),
                       border: Border.all(
                         color: AdminDashboardStyles.primary.withOpacity(0.2),
                         width: 1,
@@ -1217,31 +1482,31 @@ class _CreateStudentPageState extends State<CreateStudentPage> {
                     child: Icon(
                       Icons.business_rounded,
                       color: AdminDashboardStyles.primary,
-                      size: 20,
+                      size: isMobile ? 18 : 20,
                     ),
                   ),
                   border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(16),
+                    borderRadius: BorderRadius.circular(isMobile ? 12 : isTablet ? 14 : 16),
                     borderSide: BorderSide.none,
                   ),
                   filled: true,
                   fillColor: Colors.transparent,
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 20,
-                    vertical: 18,
+                  contentPadding: EdgeInsets.symmetric(
+                    horizontal: isMobile ? 16 : isTablet ? 18 : 20,
+                    vertical: isMobile ? 14 : isTablet ? 16 : 18,
                   ),
                   hintText: _selectedInstitute ?? 'Search and select institute',
-                  hintStyle: const TextStyle(
-                    color: Color(0xFFA0AEC0),
-                    fontSize: 14,
+                  hintStyle: TextStyle(
+                    color: const Color(0xFFA0AEC0),
+                    fontSize: isMobile ? 13 : isTablet ? 13.5 : 14,
                     fontWeight: FontWeight.w400,
                   ),
                   suffixIcon: _selectedInstitute != null
                       ? IconButton(
-                          icon: const Icon(
+                          icon: Icon(
                             Icons.clear_rounded,
-                            color: Color(0xFF718096),
-                            size: 20,
+                            color: const Color(0xFF718096),
+                            size: isMobile ? 18 : 20,
                           ),
                           onPressed: () {
                             setState(() {
@@ -1251,10 +1516,10 @@ class _CreateStudentPageState extends State<CreateStudentPage> {
                             });
                           },
                         )
-                      : const Icon(
+                      : Icon(
                           Icons.search_rounded,
-                          color: Color(0xFF718096),
-                          size: 20,
+                          color: const Color(0xFF718096),
+                          size: isMobile ? 18 : 20,
                         ),
                 ),
                 validator: (value) {
@@ -1267,10 +1532,10 @@ class _CreateStudentPageState extends State<CreateStudentPage> {
             ),
             if (_showInstituteDropdown)
               Container(
-                margin: const EdgeInsets.only(top: 4),
+                margin: EdgeInsets.only(top: isMobile ? 3 : 4),
                 decoration: BoxDecoration(
                   color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(isMobile ? 10 : isTablet ? 11 : 12),
                   boxShadow: [
                     BoxShadow(
                       color: Colors.black.withOpacity(0.1),
@@ -1283,15 +1548,15 @@ class _CreateStudentPageState extends State<CreateStudentPage> {
                     width: 1,
                   ),
                 ),
-                constraints: const BoxConstraints(maxHeight: 200),
+                constraints: BoxConstraints(maxHeight: isMobile ? 180 : 200),
                 child: _filteredInstitutes.isEmpty
                     ? Container(
-                        padding: const EdgeInsets.all(16),
-                        child: const Text(
+                        padding: EdgeInsets.all(isMobile ? 12 : 16),
+                        child: Text(
                           'No institutes found',
                           style: TextStyle(
-                            color: Color(0xFF718096),
-                            fontSize: 14,
+                            color: const Color(0xFF718096),
+                            fontSize: isMobile ? 13 : 14,
                           ),
                         ),
                       )
@@ -1312,9 +1577,9 @@ class _CreateStudentPageState extends State<CreateStudentPage> {
                               });
                             },
                             child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 12,
+                              padding: EdgeInsets.symmetric(
+                                horizontal: isMobile ? 12 : 16,
+                                vertical: isMobile ? 10 : 12,
                               ),
                               decoration: BoxDecoration(
                                 color: isSelected
@@ -1337,7 +1602,7 @@ class _CreateStudentPageState extends State<CreateStudentPage> {
                                     child: Text(
                                       institute,
                                       style: TextStyle(
-                                        fontSize: 14,
+                                        fontSize: isMobile ? 13 : 14,
                                         fontWeight: isSelected
                                             ? FontWeight.w600
                                             : FontWeight.w400,
@@ -1351,7 +1616,7 @@ class _CreateStudentPageState extends State<CreateStudentPage> {
                                     Icon(
                                       Icons.check_circle_rounded,
                                       color: AdminDashboardStyles.primary,
-                                      size: 18,
+                                      size: isMobile ? 16 : 18,
                                     ),
                                 ],
                               ),

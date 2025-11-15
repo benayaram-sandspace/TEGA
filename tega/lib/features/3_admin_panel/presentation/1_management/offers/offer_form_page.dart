@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:tega/core/constants/app_colors.dart';
+import 'package:tega/core/services/admin_dashboard_cache_service.dart';
 import 'package:tega/features/3_admin_panel/data/models/offer_model.dart';
 import 'package:tega/features/3_admin_panel/data/repositories/offer_repository.dart';
 
@@ -16,6 +17,7 @@ class OfferFormPage extends StatefulWidget {
 class _OfferFormPageState extends State<OfferFormPage> {
   final _formKey = GlobalKey<FormState>();
   final _offerRepository = OfferRepository();
+  final _cacheService = AdminDashboardCacheService();
 
   // Form controllers
   final _instituteNameController = TextEditingController();
@@ -27,6 +29,7 @@ class _OfferFormPageState extends State<OfferFormPage> {
   DateTime _validUntil = DateTime.now().add(const Duration(days: 30));
   bool _isActive = true;
   bool _isLoading = false;
+  bool _isLoadingFromCache = false;
 
   // Available options
   List<Map<String, dynamic>> _availableCourses = [];
@@ -52,7 +55,41 @@ class _OfferFormPageState extends State<OfferFormPage> {
   void initState() {
     super.initState();
     _initializeForm();
-    _loadAvailableOptions();
+    _initializeCacheAndLoadData();
+  }
+
+  Future<void> _initializeCacheAndLoadData() async {
+    // Initialize cache service
+    await _cacheService.initialize();
+    
+    // Try to load from cache first
+    await _loadFromCache();
+    
+    // Then load fresh data
+    await _loadAvailableOptions();
+  }
+
+  Future<void> _loadFromCache() async {
+    try {
+      setState(() => _isLoadingFromCache = true);
+      
+      final cachedCourses = await _cacheService.getAvailableCourses();
+      final cachedExams = await _cacheService.getAvailableTegaExams();
+      final cachedInstitutes = await _cacheService.getAvailableInstitutes();
+
+      if (cachedCourses != null && cachedExams != null && cachedInstitutes != null) {
+        setState(() {
+          _availableCourses = List<Map<String, dynamic>>.from(cachedCourses);
+          _availableTegaExams = List<Map<String, dynamic>>.from(cachedExams);
+          _availableInstitutes = List<String>.from(cachedInstitutes);
+          _isLoadingFromCache = false;
+        });
+      } else {
+        setState(() => _isLoadingFromCache = false);
+      }
+    } catch (e) {
+      setState(() => _isLoadingFromCache = false);
+    }
   }
 
   void _initializeForm() {
@@ -69,7 +106,14 @@ class _OfferFormPageState extends State<OfferFormPage> {
     }
   }
 
-  Future<void> _loadAvailableOptions() async {
+  Future<void> _loadAvailableOptions({bool forceRefresh = false}) async {
+    // If we have cached data and not forcing refresh, load in background
+    if (!forceRefresh && _availableCourses.isNotEmpty && 
+        _availableTegaExams.isNotEmpty && _availableInstitutes.isNotEmpty) {
+      _loadAvailableOptionsInBackground();
+      return;
+    }
+
     setState(() => _isLoading = true);
 
     try {
@@ -85,6 +129,11 @@ class _OfferFormPageState extends State<OfferFormPage> {
         _availableInstitutes = List<String>.from(results[2]);
         _isLoading = false;
       });
+
+      // Cache the results
+      await _cacheService.setAvailableCourses(results[0]);
+      await _cacheService.setAvailableTegaExams(results[1]);
+      await _cacheService.setAvailableInstitutes(List<String>.from(results[2]));
     } catch (e) {
       setState(() => _isLoading = false);
       if (mounted) {
@@ -95,6 +144,31 @@ class _OfferFormPageState extends State<OfferFormPage> {
           ),
         );
       }
+    }
+  }
+
+  Future<void> _loadAvailableOptionsInBackground() async {
+    try {
+      final results = await Future.wait([
+        _offerRepository.getAvailableCourses(),
+        _offerRepository.getAvailableTegaExams(),
+        _offerRepository.getAvailableInstitutes(),
+      ]);
+
+      if (mounted) {
+        setState(() {
+          _availableCourses = List<Map<String, dynamic>>.from(results[0]);
+          _availableTegaExams = List<Map<String, dynamic>>.from(results[1]);
+          _availableInstitutes = List<String>.from(results[2]);
+        });
+      }
+
+      // Cache the results
+      await _cacheService.setAvailableCourses(results[0]);
+      await _cacheService.setAvailableTegaExams(results[1]);
+      await _cacheService.setAvailableInstitutes(List<String>.from(results[2]));
+    } catch (e) {
+      // Silently fail in background
     }
   }
 
@@ -112,46 +186,67 @@ class _OfferFormPageState extends State<OfferFormPage> {
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isMobile = screenWidth < 600;
+    final isTablet = screenWidth >= 600 && screenWidth < 1024;
+    final isDesktop = screenWidth >= 1024;
+
+    if (_isLoading && !_isLoadingFromCache) {
+      return Scaffold(
+        backgroundColor: Colors.grey[50],
+        body: const Center(
+          child: CircularProgressIndicator(
+            valueColor: AlwaysStoppedAnimation<Color>(AppColors.warmOrange),
+          ),
+        ),
+      );
+    }
+
     return Scaffold(
       backgroundColor: Colors.grey[50],
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : GestureDetector(
-              onTap: () {
-                FocusScope.of(context).unfocus();
-              },
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  children: [
-                    _buildHeader(),
-                    Expanded(
-                      child: SingleChildScrollView(
-                        padding: const EdgeInsets.all(20.0),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            _buildOfferDetailsSection(),
-                            const SizedBox(height: 24),
-                            _buildCourseOffersSection(),
-                            const SizedBox(height: 24),
-                            _buildTegaExamOffersSection(),
-                            const SizedBox(height: 32),
-                            _buildActionButtons(),
-                          ],
-                        ),
-                      ),
+      body: SafeArea(
+        child: GestureDetector(
+          onTap: () {
+            FocusScope.of(context).unfocus();
+          },
+          child: Form(
+            key: _formKey,
+            child: Column(
+              children: [
+                _buildHeader(isMobile, isTablet, isDesktop),
+                Expanded(
+                  child: SingleChildScrollView(
+                    padding: EdgeInsets.all(isMobile ? 16 : isTablet ? 20 : 24),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _buildOfferDetailsSection(isMobile, isTablet, isDesktop),
+                        SizedBox(height: isMobile ? 20 : 24),
+                        _buildCourseOffersSection(isMobile, isTablet, isDesktop),
+                        SizedBox(height: isMobile ? 20 : 24),
+                        _buildTegaExamOffersSection(isMobile, isTablet, isDesktop),
+                        SizedBox(height: isMobile ? 24 : 32),
+                        _buildActionButtons(isMobile, isTablet, isDesktop),
+                      ],
                     ),
-                  ],
+                  ),
                 ),
-              ),
+              ],
             ),
+          ),
+        ),
+      ),
     );
   }
 
-  Widget _buildHeader() {
+  Widget _buildHeader(bool isMobile, bool isTablet, bool isDesktop) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+      padding: EdgeInsets.only(
+        left: isMobile ? 16 : isTablet ? 20 : 24,
+        right: isMobile ? 16 : isTablet ? 20 : 24,
+        top: isMobile ? 12 : 16,
+        bottom: isMobile ? 12 : 16,
+      ),
       decoration: BoxDecoration(
         color: Colors.white,
         border: Border(
@@ -162,22 +257,25 @@ class _OfferFormPageState extends State<OfferFormPage> {
         children: [
           Text(
             widget.isEdit ? 'Edit Offer' : 'Create Offer',
-            style: const TextStyle(
-              fontSize: 20,
+            style: TextStyle(
+              fontSize: isMobile ? 18 : isTablet ? 20 : 22,
               fontWeight: FontWeight.bold,
               color: AppColors.textPrimary,
             ),
           ),
           const Spacer(),
-          if (_isLoading)
-            const SizedBox(
-              width: 20,
-              height: 20,
-              child: CircularProgressIndicator(strokeWidth: 2),
+          if (_isLoading && !_isLoadingFromCache)
+            SizedBox(
+              width: isMobile ? 18 : 20,
+              height: isMobile ? 18 : 20,
+              child: const CircularProgressIndicator(
+                strokeWidth: 2,
+                valueColor: AlwaysStoppedAnimation<Color>(AppColors.warmOrange),
+              ),
             )
           else
             IconButton(
-              icon: const Icon(Icons.close),
+              icon: Icon(Icons.close, size: isMobile ? 20 : 24),
               onPressed: () => Navigator.of(context).pop(),
               color: AppColors.textSecondary,
             ),
@@ -186,26 +284,26 @@ class _OfferFormPageState extends State<OfferFormPage> {
     );
   }
 
-  Widget _buildOfferDetailsSection() {
+  Widget _buildOfferDetailsSection(bool isMobile, bool isTablet, bool isDesktop) {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: EdgeInsets.all(isMobile ? 16 : isTablet ? 18 : 20),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(isMobile ? 10 : 12),
         border: Border.all(color: Colors.grey[200]!, width: 1),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             'Offer Details',
             style: TextStyle(
-              fontSize: 18,
+              fontSize: isMobile ? 16 : isTablet ? 18 : 20,
               fontWeight: FontWeight.bold,
               color: AppColors.textPrimary,
             ),
           ),
-          const SizedBox(height: 20),
+          SizedBox(height: isMobile ? 16 : 20),
           // Institute Name
           DropdownButtonFormField<String>(
             value: _instituteNameController.text.isNotEmpty
@@ -557,26 +655,26 @@ class _OfferFormPageState extends State<OfferFormPage> {
     );
   }
 
-  Widget _buildCourseOffersSection() {
+  Widget _buildCourseOffersSection(bool isMobile, bool isTablet, bool isDesktop) {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: EdgeInsets.all(isMobile ? 16 : isTablet ? 18 : 20),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(isMobile ? 10 : 12),
         border: Border.all(color: Colors.grey[200]!, width: 1),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             'Course Offers',
             style: TextStyle(
-              fontSize: 18,
+              fontSize: isMobile ? 16 : isTablet ? 18 : 20,
               fontWeight: FontWeight.bold,
               color: AppColors.textPrimary,
             ),
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: isMobile ? 14 : 16),
           // Inline input fields for adding course
           LayoutBuilder(
             builder: (context, constraints) {
@@ -801,15 +899,18 @@ class _OfferFormPageState extends State<OfferFormPage> {
               }
             },
           ),
-          const SizedBox(height: 20),
+          SizedBox(height: isMobile ? 16 : 20),
           // List of added course offers
           if (_selectedCourseOffers.isEmpty)
             Center(
               child: Padding(
-                padding: const EdgeInsets.all(20),
+                padding: EdgeInsets.all(isMobile ? 16 : 20),
                 child: Text(
                   'No course offers added yet',
-                  style: TextStyle(color: Colors.grey[600]),
+                  style: TextStyle(
+                    color: Colors.grey[600],
+                    fontSize: isMobile ? 14 : 16,
+                  ),
                 ),
               ),
             )
@@ -817,7 +918,7 @@ class _OfferFormPageState extends State<OfferFormPage> {
             ..._selectedCourseOffers.asMap().entries.map((entry) {
               final index = entry.key;
               final offer = entry.value;
-              return _buildCourseOfferItem(offer, index);
+              return _buildCourseOfferItem(offer, index, isMobile, isTablet, isDesktop);
             }),
         ],
       ),
@@ -864,13 +965,13 @@ class _OfferFormPageState extends State<OfferFormPage> {
     });
   }
 
-  Widget _buildCourseOfferItem(CourseOffer offer, int index) {
+  Widget _buildCourseOfferItem(CourseOffer offer, int index, bool isMobile, bool isTablet, bool isDesktop) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(12),
+      margin: EdgeInsets.only(bottom: isMobile ? 10 : 12),
+      padding: EdgeInsets.all(isMobile ? 10 : 12),
       decoration: BoxDecoration(
         border: Border.all(color: AppColors.borderLight),
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(isMobile ? 8 : 10),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -968,26 +1069,26 @@ class _OfferFormPageState extends State<OfferFormPage> {
     );
   }
 
-  Widget _buildTegaExamOffersSection() {
+  Widget _buildTegaExamOffersSection(bool isMobile, bool isTablet, bool isDesktop) {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: EdgeInsets.all(isMobile ? 16 : isTablet ? 18 : 20),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(isMobile ? 10 : 12),
         border: Border.all(color: Colors.grey[200]!, width: 1),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             'TEGA Exam Offers',
             style: TextStyle(
-              fontSize: 18,
+              fontSize: isMobile ? 16 : isTablet ? 18 : 20,
               fontWeight: FontWeight.bold,
               color: AppColors.textPrimary,
             ),
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: isMobile ? 14 : 16),
           // Inline input fields for adding TEGA exam
           LayoutBuilder(
             builder: (context, constraints) {
@@ -1314,15 +1415,18 @@ class _OfferFormPageState extends State<OfferFormPage> {
               }
             },
           ),
-          const SizedBox(height: 20),
+          SizedBox(height: isMobile ? 16 : 20),
           // List of added TEGA exam offers
           if (_selectedTegaExamOffers.isEmpty)
             Center(
               child: Padding(
-                padding: const EdgeInsets.all(20),
+                padding: EdgeInsets.all(isMobile ? 16 : 20),
                 child: Text(
                   'No TEGA exam offers added yet',
-                  style: TextStyle(color: Colors.grey[600]),
+                  style: TextStyle(
+                    color: Colors.grey[600],
+                    fontSize: isMobile ? 14 : 16,
+                  ),
                 ),
               ),
             )
@@ -1330,7 +1434,7 @@ class _OfferFormPageState extends State<OfferFormPage> {
             ..._selectedTegaExamOffers.asMap().entries.map((entry) {
               final index = entry.key;
               final offer = entry.value;
-              return _buildTegaExamOfferItem(offer, index);
+              return _buildTegaExamOfferItem(offer, index, isMobile, isTablet, isDesktop);
             }),
         ],
       ),
@@ -1380,13 +1484,13 @@ class _OfferFormPageState extends State<OfferFormPage> {
     });
   }
 
-  Widget _buildTegaExamOfferItem(TegaExamOffer offer, int index) {
+  Widget _buildTegaExamOfferItem(TegaExamOffer offer, int index, bool isMobile, bool isTablet, bool isDesktop) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(12),
+      margin: EdgeInsets.only(bottom: isMobile ? 10 : 12),
+      padding: EdgeInsets.all(isMobile ? 10 : 12),
       decoration: BoxDecoration(
         border: Border.all(color: AppColors.borderLight),
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(isMobile ? 8 : 10),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1828,61 +1932,126 @@ class _OfferFormPageState extends State<OfferFormPage> {
     );
   }
 
-  Widget _buildActionButtons() {
-    return Row(
-      children: [
-        Expanded(
-          child: OutlinedButton(
-            onPressed: () => Navigator.of(context).pop(),
-            style: OutlinedButton.styleFrom(
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              side: BorderSide(color: Colors.grey[300]!),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-            child: const Text(
-              'Cancel',
-              style: TextStyle(
-                color: AppColors.textSecondary,
-                fontWeight: FontWeight.w600,
-                fontSize: 16,
-              ),
-            ),
-          ),
-        ),
-        const SizedBox(width: 16),
-        Expanded(
-          child: ElevatedButton(
-            onPressed: _isLoading ? null : _saveOffer,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.warmOrange,
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-            child: _isLoading
-                ? const SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+  Widget _buildActionButtons(bool isMobile, bool isTablet, bool isDesktop) {
+    return isMobile
+        ? Column(
+            children: [
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: _isLoading ? null : _saveOffer,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.warmOrange,
+                    foregroundColor: Colors.white,
+                    padding: EdgeInsets.symmetric(
+                      vertical: isMobile ? 14 : 16,
                     ),
-                  )
-                : Text(
-                    widget.isEdit ? 'Update Offer' : 'Create Offer',
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w600,
-                      fontSize: 16,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(isMobile ? 8 : 10),
                     ),
                   ),
-          ),
-        ),
-      ],
-    );
+                  child: _isLoading
+                      ? SizedBox(
+                          width: isMobile ? 18 : 20,
+                          height: isMobile ? 18 : 20,
+                          child: const CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                          ),
+                        )
+                      : Text(
+                          widget.isEdit ? 'Update Offer' : 'Create Offer',
+                          style: TextStyle(
+                            fontWeight: FontWeight.w600,
+                            fontSize: isMobile ? 15 : 16,
+                          ),
+                        ),
+                ),
+              ),
+              SizedBox(height: isMobile ? 12 : 16),
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  style: OutlinedButton.styleFrom(
+                    padding: EdgeInsets.symmetric(
+                      vertical: isMobile ? 14 : 16,
+                    ),
+                    side: BorderSide(color: Colors.grey[300]!),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(isMobile ? 8 : 10),
+                    ),
+                  ),
+                  child: Text(
+                    'Cancel',
+                    style: TextStyle(
+                      color: AppColors.textSecondary,
+                      fontWeight: FontWeight.w600,
+                      fontSize: isMobile ? 15 : 16,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          )
+        : Row(
+            children: [
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  style: OutlinedButton.styleFrom(
+                    padding: EdgeInsets.symmetric(
+                      vertical: isTablet ? 15 : 16,
+                    ),
+                    side: BorderSide(color: Colors.grey[300]!),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(isTablet ? 8 : 10),
+                    ),
+                  ),
+                  child: Text(
+                    'Cancel',
+                    style: TextStyle(
+                      color: AppColors.textSecondary,
+                      fontWeight: FontWeight.w600,
+                      fontSize: isTablet ? 15 : 16,
+                    ),
+                  ),
+                ),
+              ),
+              SizedBox(width: isTablet ? 14 : 16),
+              Expanded(
+                child: ElevatedButton(
+                  onPressed: _isLoading ? null : _saveOffer,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.warmOrange,
+                    foregroundColor: Colors.white,
+                    padding: EdgeInsets.symmetric(
+                      vertical: isTablet ? 15 : 16,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(isTablet ? 8 : 10),
+                    ),
+                  ),
+                  child: _isLoading
+                      ? SizedBox(
+                          width: isTablet ? 18 : 20,
+                          height: isTablet ? 18 : 20,
+                          child: const CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                          ),
+                        )
+                      : Text(
+                          widget.isEdit ? 'Update Offer' : 'Create Offer',
+                          style: TextStyle(
+                            fontWeight: FontWeight.w600,
+                            fontSize: isTablet ? 15 : 16,
+                          ),
+                        ),
+                ),
+              ),
+            ],
+          );
   }
 
   Future<void> _selectDate(BuildContext context, bool isFromDate) async {

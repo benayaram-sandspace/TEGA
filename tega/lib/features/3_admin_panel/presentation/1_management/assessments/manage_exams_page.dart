@@ -1,6 +1,9 @@
+import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:tega/core/services/admin_dashboard_cache_service.dart';
 import 'package:tega/core/constants/api_constants.dart';
 import 'package:tega/features/1_authentication/data/auth_repository.dart';
 import 'package:tega/features/3_admin_panel/data/repositories/exam_repository.dart';
@@ -17,6 +20,7 @@ class ManageExamsPage extends StatefulWidget {
 class _ManageExamsPageState extends State<ManageExamsPage> {
   final ExamRepository _examRepository = ExamRepository();
   final AuthService _authService = AuthService();
+  final AdminDashboardCacheService _cacheService = AdminDashboardCacheService();
 
   bool _isLoading = false;
   List<Map<String, dynamic>> _exams = [];
@@ -24,10 +28,50 @@ class _ManageExamsPageState extends State<ManageExamsPage> {
   @override
   void initState() {
     super.initState();
-    _loadExams();
+    _initializeCacheAndLoadData();
   }
 
-  Future<void> _loadExams() async {
+  Future<void> _initializeCacheAndLoadData() async {
+    // Initialize cache service
+    await _cacheService.initialize();
+    
+    // Try to load from cache first
+    await _loadFromCache();
+    
+    // Then load fresh data
+    await _loadExams();
+  }
+
+  Future<void> _loadFromCache() async {
+    try {
+      final cachedExams = await _cacheService.getExamsData();
+      if (cachedExams != null && cachedExams.isNotEmpty) {
+        setState(() {
+          _exams = cachedExams;
+        });
+      }
+    } catch (e) {
+      // Silently handle cache errors
+    }
+  }
+
+  bool _isNoInternetError(dynamic error) {
+    return error is SocketException ||
+        error is TimeoutException ||
+        (error.toString().toLowerCase().contains('network') ||
+            error.toString().toLowerCase().contains('connection') ||
+            error.toString().toLowerCase().contains('internet') ||
+            error.toString().toLowerCase().contains('failed host lookup') ||
+            error.toString().toLowerCase().contains('no address associated with hostname'));
+  }
+
+  Future<void> _loadExams({bool forceRefresh = false}) async {
+    // If we have cached data and not forcing refresh, load in background
+    if (!forceRefresh && _exams.isNotEmpty) {
+      _loadExamsInBackground();
+      return;
+    }
+
     setState(() => _isLoading = true);
     try {
       // Some backends return { success, exams: [] }, others { success, data: [] }
@@ -39,7 +83,13 @@ class _ManageExamsPageState extends State<ManageExamsPage> {
           final list = (data['exams'] ?? data['data'] ?? []) as List<dynamic>;
           setState(() {
             _exams = List<Map<String, dynamic>>.from(list);
+            _isLoading = false;
           });
+          
+          // Cache the data
+          await _cacheService.setExamsData(_exams);
+          // Reset toast flag on successful load (internet is back)
+          _cacheService.resetNoInternetToastFlag();
         } else {
           throw Exception(data['message'] ?? 'Failed to load exams');
         }
@@ -47,13 +97,54 @@ class _ManageExamsPageState extends State<ManageExamsPage> {
         throw Exception('Failed to load exams: ${res.statusCode}');
       }
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error loading exams: $e'), backgroundColor: Colors.red),
-        );
+      // Check if it's a network/internet error
+      if (_isNoInternetError(e)) {
+        // Try to load from cache if available
+        final cachedExams = await _cacheService.getExamsData();
+        if (cachedExams != null && cachedExams.isNotEmpty) {
+          // Load from cache
+          setState(() {
+            _exams = cachedExams;
+            _isLoading = false;
+          });
+          return;
+        }
+        
+        // No cache available
+        setState(() => _isLoading = false);
+      } else {
+        // Other errors
+        if (mounted) {
+          setState(() => _isLoading = false);
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Error loading exams: $e'), backgroundColor: Colors.red),
+          );
+        }
       }
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _loadExamsInBackground() async {
+    try {
+      final headers = await _authService.getAuthHeaders();
+      final res = await http.get(Uri.parse(ApiEndpoints.adminExamsAll), headers: headers);
+      if (res.statusCode == 200 && mounted) {
+        final data = json.decode(res.body);
+        if (data['success'] == true) {
+          final list = (data['exams'] ?? data['data'] ?? []) as List<dynamic>;
+          setState(() {
+            _exams = List<Map<String, dynamic>>.from(list);
+          });
+          
+          // Cache the data
+          await _cacheService.setExamsData(_exams);
+          // Reset toast flag on successful load (internet is back)
+          _cacheService.resetNoInternetToastFlag();
+        }
+      }
+    } catch (e) {
+      // Silently fail in background refresh - don't show toast here
+      // Toast is only shown once in the main load method
     }
   }
 
@@ -82,7 +173,7 @@ class _ManageExamsPageState extends State<ManageExamsPage> {
           const SnackBar(content: Text('Exam deleted'), backgroundColor: Colors.green),
         );
       }
-      _loadExams();
+      _loadExams(forceRefresh: true);
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -94,31 +185,39 @@ class _ManageExamsPageState extends State<ManageExamsPage> {
 
   @override
   Widget build(BuildContext context) {
-    final isSmall = MediaQuery.of(context).size.width < 800;
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isMobile = screenWidth < 600;
+    final isTablet = screenWidth >= 600 && screenWidth < 1024;
+    final isDesktop = screenWidth >= 1024;
+    
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(20),
+      padding: EdgeInsets.all(isMobile ? 16 : isTablet ? 18 : 20),
       child: Column(
         children: [
-          _buildHeader(),
-          const SizedBox(height: 16),
-          _buildTableHeader(isSmall),
-          const SizedBox(height: 8),
+          _buildHeader(isMobile, isTablet, isDesktop),
+          SizedBox(height: isMobile ? 12 : isTablet ? 14 : 16),
+          _buildTableHeader(isMobile, isTablet, isDesktop),
+          SizedBox(height: isMobile ? 6 : isTablet ? 7 : 8),
           if (_isLoading)
-            const Padding(
-              padding: EdgeInsets.all(40),
-              child: Center(child: CircularProgressIndicator()),
+            Padding(
+              padding: EdgeInsets.all(isMobile ? 32 : isTablet ? 36 : 40),
+              child: Center(
+                child: CircularProgressIndicator(
+                  valueColor: AlwaysStoppedAnimation<Color>(AdminDashboardStyles.primary),
+                ),
+              ),
             )
           else if (_exams.isEmpty)
-            _buildEmptyState()
+            _buildEmptyState(isMobile, isTablet, isDesktop)
           else
             ListView.separated(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
               itemCount: _exams.length,
-              separatorBuilder: (_, __) => const Divider(height: 1),
+              separatorBuilder: (_, __) => SizedBox(height: isMobile ? 8 : isTablet ? 10 : 12),
               itemBuilder: (context, index) {
                 final exam = _exams[index];
-                return _buildExamRow(exam, isSmall);
+                return _buildExamRow(exam, isMobile, isTablet, isDesktop);
               },
             ),
         ],
@@ -126,23 +225,32 @@ class _ManageExamsPageState extends State<ManageExamsPage> {
     );
   }
 
-  Widget _buildHeader() {
+  Widget _buildHeader(bool isMobile, bool isTablet, bool isDesktop) {
     return Row(
       children: [
         Container(
-          padding: const EdgeInsets.all(12),
+          padding: EdgeInsets.all(isMobile ? 10 : isTablet ? 11 : 12),
           decoration: BoxDecoration(
             color: AdminDashboardStyles.primary.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(isMobile ? 10 : isTablet ? 11 : 12),
           ),
-          child: Icon(Icons.description_rounded, color: AdminDashboardStyles.primary),
+          child: Icon(
+            Icons.description_rounded,
+            color: AdminDashboardStyles.primary,
+            size: isMobile ? 20 : isTablet ? 22 : 24,
+          ),
         ),
-        const SizedBox(width: 12),
+        SizedBox(width: isMobile ? 10 : isTablet ? 11 : 12),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Manage Assessments', style: AdminDashboardStyles.welcomeHeader.copyWith(fontSize: 22)),
+              Text(
+                'Manage Assessments',
+                style: AdminDashboardStyles.welcomeHeader.copyWith(
+                  fontSize: isMobile ? 18 : isTablet ? 20 : 22,
+                ),
+              ),
             ],
           ),
         ),
@@ -150,52 +258,66 @@ class _ManageExamsPageState extends State<ManageExamsPage> {
     );
   }
 
-  Widget _buildTableHeader(bool isSmall) {
+  Widget _buildTableHeader(bool isMobile, bool isTablet, bool isDesktop) {
     final style = TextStyle(
       fontWeight: FontWeight.w600,
-      fontSize: 12,
+      fontSize: isMobile ? 10 : isTablet ? 11 : 12,
       color: AdminDashboardStyles.textLight,
     );
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      padding: EdgeInsets.symmetric(
+        horizontal: isMobile ? 12 : isTablet ? 14 : 16,
+        vertical: isMobile ? 12 : isTablet ? 13 : 14,
+      ),
       decoration: BoxDecoration(
         color: Colors.grey[100],
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(isMobile ? 8 : isTablet ? 9 : 10),
         border: Border.all(color: AdminDashboardStyles.borderLight),
       ),
       child: Row(
         children: [
           _cell('ASSESSMENT', flex: 3, style: style),
-          if (!isSmall) _cell('COURSE', flex: 2, style: style),
+          if (!isMobile) _cell('COURSE', flex: 2, style: style),
           _cell('DATE & SLOTS', flex: 3, style: style),
-          if (!isSmall) _cell('QUESTIONS', flex: 2, style: style),
-          if (!isSmall) _cell('DURATION', flex: 2, style: style),
+          if (!isMobile) _cell('QUESTIONS', flex: 2, style: style),
+          if (!isMobile) _cell('DURATION', flex: 2, style: style),
           _cell('ACTIONS', flex: 2, alignEnd: true, style: style),
         ],
       ),
     );
   }
 
-  Widget _buildEmptyState() {
+  Widget _buildEmptyState(bool isMobile, bool isTablet, bool isDesktop) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(32),
+      padding: EdgeInsets.all(isMobile ? 24 : isTablet ? 28 : 32),
       decoration: BoxDecoration(
         color: AdminDashboardStyles.primary.withOpacity(0.05),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(isMobile ? 10 : isTablet ? 11 : 12),
         border: Border.all(color: AdminDashboardStyles.primary.withOpacity(0.2)),
       ),
       child: Column(
         children: [
-          Icon(Icons.assignment_rounded, size: 48, color: AdminDashboardStyles.primary.withOpacity(0.6)),
-          const SizedBox(height: 8),
-          Text('No exams found', style: TextStyle(color: AdminDashboardStyles.textDark, fontWeight: FontWeight.w600)),
+          Icon(
+            Icons.assignment_rounded,
+            size: isMobile ? 40 : isTablet ? 44 : 48,
+            color: AdminDashboardStyles.primary.withOpacity(0.6),
+          ),
+          SizedBox(height: isMobile ? 6 : isTablet ? 7 : 8),
+          Text(
+            'No exams found',
+            style: TextStyle(
+              color: AdminDashboardStyles.textDark,
+              fontWeight: FontWeight.w600,
+              fontSize: isMobile ? 16 : isTablet ? 17 : 18,
+            ),
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildExamRow(Map<String, dynamic> exam, bool isSmall) {
+  Widget _buildExamRow(Map<String, dynamic> exam, bool isMobile, bool isTablet, bool isDesktop) {
     // Extract title
     final String title = (exam['title'] ?? exam['name'] ?? 'Untitled').toString();
     
@@ -254,10 +376,13 @@ class _ManageExamsPageState extends State<ManageExamsPage> {
     final int duration = (exam['duration'] ?? exam['durationMinutes'] ?? 0) as int;
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+      padding: EdgeInsets.symmetric(
+        horizontal: isMobile ? 16 : isTablet ? 18 : 20,
+        vertical: isMobile ? 16 : isTablet ? 18 : 20,
+      ),
       decoration: BoxDecoration(
         color: AdminDashboardStyles.cardBackground,
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(isMobile ? 14 : isTablet ? 16 : 18),
         border: Border.all(color: AdminDashboardStyles.borderLight),
         boxShadow: [
           BoxShadow(
@@ -267,9 +392,9 @@ class _ManageExamsPageState extends State<ManageExamsPage> {
           ),
         ],
       ),
-      margin: const EdgeInsets.only(bottom: 16),
-      constraints: const BoxConstraints(minHeight: 120),
-      child: isSmall
+      margin: EdgeInsets.only(bottom: isMobile ? 12 : isTablet ? 14 : 16),
+      constraints: BoxConstraints(minHeight: isMobile ? 100 : isTablet ? 110 : 120),
+      child: isMobile
           // Stacked layout on small screens to avoid any overflow
           ? Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -278,32 +403,40 @@ class _ManageExamsPageState extends State<ManageExamsPage> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Container(
-                      width: 44,
-                      height: 44,
+                      width: isMobile ? 40 : isTablet ? 42 : 44,
+                      height: isMobile ? 40 : isTablet ? 42 : 44,
                       decoration: BoxDecoration(
                         color: AdminDashboardStyles.primary.withOpacity(0.12),
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(isMobile ? 10 : isTablet ? 11 : 12),
                         border: Border.all(color: AdminDashboardStyles.primary.withOpacity(0.2)),
                       ),
-                      child: Icon(Icons.assignment_rounded, size: 22, color: AdminDashboardStyles.primary),
+                      child: Icon(
+                        Icons.assignment_rounded,
+                        size: isMobile ? 20 : isTablet ? 21 : 22,
+                        color: AdminDashboardStyles.primary,
+                      ),
                     ),
-                    const SizedBox(width: 14),
+                    SizedBox(width: isMobile ? 12 : isTablet ? 13 : 14),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
                             title,
-                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: AdminDashboardStyles.textDark),
+                            style: TextStyle(
+                              fontSize: isMobile ? 14 : isTablet ? 15 : 16,
+                              fontWeight: FontWeight.w700,
+                              color: AdminDashboardStyles.textDark,
+                            ),
                             overflow: TextOverflow.ellipsis,
                           ),
-                          const SizedBox(height: 8),
+                          SizedBox(height: isMobile ? 6 : isTablet ? 7 : 8),
                           Wrap(
-                            spacing: 8,
-                            runSpacing: 6,
+                            spacing: isMobile ? 6 : isTablet ? 7 : 8,
+                            runSpacing: isMobile ? 4 : isTablet ? 5 : 6,
                             children: [
-                              if (exam['isTegaExam'] == true) _badge('TEGA', AdminDashboardStyles.accentBlue),
-                              if (courseName.isNotEmpty) _badge(courseName, AdminDashboardStyles.primary),
+                              if (exam['isTegaExam'] == true) _badge('TEGA', AdminDashboardStyles.accentBlue, isMobile, isTablet, isDesktop),
+                              if (courseName.isNotEmpty) _badge(courseName, AdminDashboardStyles.primary, isMobile, isTablet, isDesktop),
                             ],
                           ),
                         ],
@@ -311,27 +444,37 @@ class _ManageExamsPageState extends State<ManageExamsPage> {
                     ),
                   ],
                 ),
-                const SizedBox(height: 12),
+                SizedBox(height: isMobile ? 10 : isTablet ? 11 : 12),
                 Row(
                   children: [
-                    Icon(Icons.event_rounded, size: 18, color: AdminDashboardStyles.textLight),
-                    const SizedBox(width: 8),
-                    Text(dateStr, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14)),
+                    Icon(
+                      Icons.event_rounded,
+                      size: isMobile ? 16 : isTablet ? 17 : 18,
+                      color: AdminDashboardStyles.textLight,
+                    ),
+                    SizedBox(width: isMobile ? 6 : isTablet ? 7 : 8),
+                    Text(
+                      dateStr,
+                      style: TextStyle(
+                        fontWeight: FontWeight.w700,
+                        fontSize: isMobile ? 13 : isTablet ? 13.5 : 14,
+                      ),
+                    ),
                   ],
                 ),
-                const SizedBox(height: 10),
+                SizedBox(height: isMobile ? 8 : isTablet ? 9 : 10),
                 Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
+                  spacing: isMobile ? 6 : isTablet ? 7 : 8,
+                  runSpacing: isMobile ? 6 : isTablet ? 7 : 8,
                   children: [
-                    _chip(icon: Icons.schedule_rounded, label: '${slotsCount} slots'),
-                    if (slotRange.isNotEmpty) _chip(icon: Icons.access_time_rounded, label: slotRange),
-                    if (seatsInfo.isNotEmpty) _chip(icon: Icons.event_seat_rounded, label: seatsInfo),
-                    if (questions > 0) _chip(icon: Icons.quiz_rounded, label: '$questions questions'),
-                    if (duration > 0) _chip(icon: Icons.timer_rounded, label: '$duration min'),
+                    _chip(icon: Icons.schedule_rounded, label: '${slotsCount} slots', isMobile: isMobile, isTablet: isTablet, isDesktop: isDesktop),
+                    if (slotRange.isNotEmpty) _chip(icon: Icons.access_time_rounded, label: slotRange, isMobile: isMobile, isTablet: isTablet, isDesktop: isDesktop),
+                    if (seatsInfo.isNotEmpty) _chip(icon: Icons.event_seat_rounded, label: seatsInfo, isMobile: isMobile, isTablet: isTablet, isDesktop: isDesktop),
+                    if (questions > 0) _chip(icon: Icons.quiz_rounded, label: '$questions questions', isMobile: isMobile, isTablet: isTablet, isDesktop: isDesktop),
+                    if (duration > 0) _chip(icon: Icons.timer_rounded, label: '$duration min', isMobile: isMobile, isTablet: isTablet, isDesktop: isDesktop),
                   ],
                 ),
-                const SizedBox(height: 12),
+                SizedBox(height: isMobile ? 10 : isTablet ? 11 : 12),
                 Align(
                   alignment: Alignment.centerRight,
                   child: Row(
@@ -347,15 +490,21 @@ class _ManageExamsPageState extends State<ManageExamsPage> {
                             ),
                           );
                           if (result == true) {
-                            _loadExams(); // Reload exams after successful update
+                            _loadExams(forceRefresh: true); // Reload exams after successful update
                           }
                         },
+                        isMobile: isMobile,
+                        isTablet: isTablet,
+                        isDesktop: isDesktop,
                       ),
-                      const SizedBox(width: 8),
+                      SizedBox(width: isMobile ? 6 : isTablet ? 7 : 8),
                       _iconButton(
                         icon: Icons.delete_rounded,
                         color: AdminDashboardStyles.statusError,
                         onTap: () => _deleteExam((exam['_id'] ?? exam['id']).toString()),
+                        isMobile: isMobile,
+                        isTablet: isTablet,
+                        isDesktop: isDesktop,
                       ),
                     ],
                   ),
@@ -370,21 +519,21 @@ class _ManageExamsPageState extends State<ManageExamsPage> {
                 _cell(
                   Row(
                     children: [
-                      Container(
-                        width: 44,
-                        height: 44,
+                        Container(
+                        width: isTablet ? 42 : 44,
+                        height: isTablet ? 42 : 44,
                         decoration: BoxDecoration(
                           color: AdminDashboardStyles.primary.withOpacity(0.12),
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(isTablet ? 11 : 12),
                           border: Border.all(color: AdminDashboardStyles.primary.withOpacity(0.2)),
                         ),
                         child: Icon(
                           Icons.assignment_rounded,
-                          size: 22,
+                          size: isTablet ? 21 : 22,
                           color: AdminDashboardStyles.primary,
                         ),
                       ),
-                      const SizedBox(width: 14),
+                      SizedBox(width: isTablet ? 13 : 14),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -392,21 +541,21 @@ class _ManageExamsPageState extends State<ManageExamsPage> {
                             Text(
                               title,
                               style: TextStyle(
-                                fontSize: 16,
+                                fontSize: isTablet ? 15 : 16,
                                 fontWeight: FontWeight.w700,
                                 color: AdminDashboardStyles.textDark,
                               ),
                               overflow: TextOverflow.ellipsis,
                             ),
-                            const SizedBox(height: 8),
+                            SizedBox(height: isTablet ? 7 : 8),
                             Wrap(
-                              spacing: 8,
-                              runSpacing: 6,
+                              spacing: isTablet ? 7 : 8,
+                              runSpacing: isTablet ? 5 : 6,
                               children: [
                                 if (exam['isTegaExam'] == true)
-                                  _badge('TEGA', AdminDashboardStyles.accentBlue),
+                                  _badge('TEGA', AdminDashboardStyles.accentBlue, isMobile, isTablet, isDesktop),
                                 if (courseName.isNotEmpty)
-                                  _badge(courseName, AdminDashboardStyles.primary),
+                                  _badge(courseName, AdminDashboardStyles.primary, isMobile, isTablet, isDesktop),
                               ],
                             ),
                           ],
@@ -430,25 +579,31 @@ class _ManageExamsPageState extends State<ManageExamsPage> {
                     children: [
                       Row(
                         children: [
-                          Icon(Icons.event_rounded, size: 18, color: AdminDashboardStyles.textLight),
-                          const SizedBox(width: 8),
+                          Icon(
+                            Icons.event_rounded,
+                            size: isTablet ? 17 : 18,
+                            color: AdminDashboardStyles.textLight,
+                          ),
+                          SizedBox(width: isTablet ? 7 : 8),
                           Text(
                             dateStr,
-                            style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
+                            style: TextStyle(
+                              fontWeight: FontWeight.w700,
+                              fontSize: isTablet ? 13.5 : 14,
+                            ),
                           ),
                         ],
                       ),
-                      const SizedBox(height: 10),
+                      SizedBox(height: isTablet ? 9 : 10),
                       Wrap(
-                        spacing: 8,
-                        runSpacing: 8,
+                        spacing: isTablet ? 7 : 8,
+                        runSpacing: isTablet ? 7 : 8,
                         children: [
-                          _chip(icon: Icons.schedule_rounded, label: '${slotsCount} slots'),
-                          if (slotRange.isNotEmpty) _chip(icon: Icons.access_time_rounded, label: slotRange),
-                          if (seatsInfo.isNotEmpty) _chip(icon: Icons.event_seat_rounded, label: seatsInfo),
-                          // extra chips to enrich/bulk up card height
-                          if (questions > 0) _chip(icon: Icons.quiz_rounded, label: '$questions questions'),
-                          if (duration > 0) _chip(icon: Icons.timer_rounded, label: '$duration min'),
+                          _chip(icon: Icons.schedule_rounded, label: '${slotsCount} slots', isMobile: isMobile, isTablet: isTablet, isDesktop: isDesktop),
+                          if (slotRange.isNotEmpty) _chip(icon: Icons.access_time_rounded, label: slotRange, isMobile: isMobile, isTablet: isTablet, isDesktop: isDesktop),
+                          if (seatsInfo.isNotEmpty) _chip(icon: Icons.event_seat_rounded, label: seatsInfo, isMobile: isMobile, isTablet: isTablet, isDesktop: isDesktop),
+                          if (questions > 0) _chip(icon: Icons.quiz_rounded, label: '$questions questions', isMobile: isMobile, isTablet: isTablet, isDesktop: isDesktop),
+                          if (duration > 0) _chip(icon: Icons.timer_rounded, label: '$duration min', isMobile: isMobile, isTablet: isTablet, isDesktop: isDesktop),
                         ],
                       ),
                     ],
@@ -485,12 +640,18 @@ class _ManageExamsPageState extends State<ManageExamsPage> {
                               const SnackBar(content: Text('Edit exam not implemented yet')),
                             );
                           },
+                          isMobile: isMobile,
+                          isTablet: isTablet,
+                          isDesktop: isDesktop,
                         ),
-                        const SizedBox(width: 8),
+                        SizedBox(width: isTablet ? 7 : 8),
                         _iconButton(
                           icon: Icons.delete_rounded,
                           color: AdminDashboardStyles.statusError,
                           onTap: () => _deleteExam((exam['_id'] ?? exam['id']).toString()),
+                          isMobile: isMobile,
+                          isTablet: isTablet,
+                          isDesktop: isDesktop,
                         ),
                       ],
                     ),
@@ -555,34 +716,44 @@ class _ManageExamsPageState extends State<ManageExamsPage> {
     required IconData icon,
     required Color color,
     required VoidCallback onTap,
+    bool isMobile = false,
+    bool isTablet = false,
+    bool isDesktop = false,
   }) {
     return Material(
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(isMobile ? 6 : isTablet ? 7 : 8),
         splashColor: color.withOpacity(0.2),
         highlightColor: color.withOpacity(0.1),
         child: Container(
-          padding: const EdgeInsets.all(8),
+          padding: EdgeInsets.all(isMobile ? 6 : isTablet ? 7 : 8),
           decoration: BoxDecoration(
             color: color.withOpacity(0.08),
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(isMobile ? 6 : isTablet ? 7 : 8),
             border: Border.all(color: color.withOpacity(0.25)),
           ),
-          child: Icon(icon, size: 18, color: color),
+          child: Icon(
+            icon,
+            size: isMobile ? 16 : isTablet ? 17 : 18,
+            color: color,
+          ),
         ),
       ),
     );
   }
 
   // UI helpers
-  Widget _badge(String text, Color color) {
+  Widget _badge(String text, Color color, bool isMobile, bool isTablet, bool isDesktop) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      padding: EdgeInsets.symmetric(
+        horizontal: isMobile ? 6 : isTablet ? 7 : 8,
+        vertical: isMobile ? 3 : isTablet ? 3.5 : 4,
+      ),
       decoration: BoxDecoration(
         color: color.withOpacity(0.08),
-        borderRadius: BorderRadius.circular(6),
+        borderRadius: BorderRadius.circular(isMobile ? 4 : isTablet ? 5 : 6),
         border: Border.all(color: color.withOpacity(0.25)),
       ),
       child: Text(
@@ -590,7 +761,7 @@ class _ManageExamsPageState extends State<ManageExamsPage> {
         style: TextStyle(
           color: color,
           fontWeight: FontWeight.w700,
-          fontSize: 10,
+          fontSize: isMobile ? 9 : isTablet ? 9.5 : 10,
           letterSpacing: 0.2,
         ),
         overflow: TextOverflow.ellipsis,
@@ -598,22 +769,37 @@ class _ManageExamsPageState extends State<ManageExamsPage> {
     );
   }
 
-  Widget _chip({required IconData icon, required String label}) {
+  Widget _chip({
+    required IconData icon,
+    required String label,
+    bool isMobile = false,
+    bool isTablet = false,
+    bool isDesktop = false,
+  }) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      padding: EdgeInsets.symmetric(
+        horizontal: isMobile ? 8 : isTablet ? 9 : 10,
+        vertical: isMobile ? 4 : isTablet ? 5 : 6,
+      ),
       decoration: BoxDecoration(
         color: Colors.grey[100],
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(isMobile ? 16 : isTablet ? 18 : 20),
         border: Border.all(color: AdminDashboardStyles.borderLight),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 14, color: AdminDashboardStyles.textLight),
-          const SizedBox(width: 6),
+          Icon(
+            icon,
+            size: isMobile ? 12 : isTablet ? 13 : 14,
+            color: AdminDashboardStyles.textLight,
+          ),
+          SizedBox(width: isMobile ? 4 : isTablet ? 5 : 6),
           Text(
             label,
-            style: AdminDashboardStyles.statTitle,
+            style: AdminDashboardStyles.statTitle.copyWith(
+              fontSize: isMobile ? 11 : isTablet ? 11.5 : 12,
+            ),
           ),
         ],
       ),
