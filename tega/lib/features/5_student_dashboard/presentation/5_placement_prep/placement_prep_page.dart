@@ -57,7 +57,7 @@ class _PlacementPrepPageState extends State<PlacementPrepPage> {
   Future<void> _fetchPlacementDataInBackground() async {
     try {
       final auth = AuthService();
-      final headers = await auth.getAuthHeaders();
+      final headers = auth.getAuthHeaders();
       final api = StudentDashboardService();
 
       // Fetch placement-specific data

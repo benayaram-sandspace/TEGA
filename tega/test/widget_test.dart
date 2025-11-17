@@ -3,9 +3,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:tega/main.dart';
 import 'package:tega/core/config/env_config.dart';
+import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 void main() {
   setUpAll(() async {
+    // Initialize SQLite FFI for testing
+    sqfliteFfiInit();
+    databaseFactory = databaseFactoryFfi;
+
     // Initialize environment config for tests
     try {
       await EnvConfig.initialize();

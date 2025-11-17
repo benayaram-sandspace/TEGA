@@ -207,9 +207,19 @@ class _LearningHistoryPageState extends State<LearningHistoryPage> {
 
       // Merge paid courses with progress data
       final mergedCourses = paidCourses.map((course) {
-        final courseId = course['courseId']?.toString() ?? 
-                        course['id']?.toString() ?? 
-                        course['_id']?.toString() ?? '';
+        // Check if courseId is a nested object (populated by MongoDB)
+        String courseId;
+        if (course['courseId'] is Map) {
+          // If courseId is an object, get its _id or id
+          courseId = course['courseId']['_id']?.toString() ?? 
+                    course['courseId']['id']?.toString() ?? '';
+        } else {
+          // If courseId is a string
+          courseId = course['courseId']?.toString() ?? 
+                    course['id']?.toString() ?? 
+                    course['_id']?.toString() ?? '';
+        }
+        
         final progress = progressMap[courseId];
         
         // Get course title
@@ -252,15 +262,17 @@ class _LearningHistoryPageState extends State<LearningHistoryPage> {
           'id': courseId,
           'title': title,
           'progress': progressPercentage,
-          'enrollmentDate': enrollmentDate ?? DateTime.now(),
+          'enrollmentDate': (enrollmentDate ?? DateTime.now()).toIso8601String(),
           'thumbnail': course['thumbnail']?.toString(),
         };
       }).toList();
 
       // Sort by enrollment date (newest first)
       mergedCourses.sort((a, b) {
-        final aDate = a['enrollmentDate'] as DateTime;
-        final bDate = b['enrollmentDate'] as DateTime;
+        final aDateStr = a['enrollmentDate'] as String;
+        final bDateStr = b['enrollmentDate'] as String;
+        final aDate = DateTime.parse(aDateStr);
+        final bDate = DateTime.parse(bDateStr);
         return bDate.compareTo(aDate);
       });
 
@@ -1751,7 +1763,8 @@ class _LearningHistoryPageState extends State<LearningHistoryPage> {
   Widget _buildCourseCard(Map<String, dynamic> course) {
     final title = course['title'] as String;
     final progress = (course['progress'] as num).toDouble();
-    final enrollmentDate = course['enrollmentDate'] as DateTime;
+    final enrollmentDateStr = course['enrollmentDate'] as String;
+    final enrollmentDate = DateTime.parse(enrollmentDateStr);
     final progressPercent = progress.round();
     
     // Format date

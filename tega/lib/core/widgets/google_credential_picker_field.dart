@@ -310,18 +310,47 @@ class _GoogleCredentialPickerFieldState
                   return Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      if (widget.controller.text.isNotEmpty && hasCredentials)
-                        IconButton(
-                          onPressed: () =>
-                              _loadSuggestions(widget.controller.text),
-                          icon: const Icon(Icons.search),
-                          tooltip: 'Search saved credentials',
-                        ),
                       if (hasCredentials)
-                        IconButton(
-                          onPressed: _showCredentialPicker,
-                          icon: const Icon(Icons.account_circle),
-                          tooltip: 'Show saved credentials',
+                        Tooltip(
+                          message: 'Use saved credentials',
+                          child: InkWell(
+                            onTap: _showCredentialPicker,
+                            borderRadius: BorderRadius.circular(20),
+                            child: Container(
+                              margin: const EdgeInsets.only(right: 8),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 6,
+                              ),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF9C88FF).withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(20),
+                                border: Border.all(
+                                  color: const Color(0xFF9C88FF).withOpacity(0.3),
+                                  width: 1,
+                                ),
+                              ),
+                              child: const Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    Icons.person_outline,
+                                    color: Color(0xFF9C88FF),
+                                    size: 18,
+                                  ),
+                                  SizedBox(width: 4),
+                                  Text(
+                                    'Saved',
+                                    style: TextStyle(
+                                      color: Color(0xFF9C88FF),
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
                         ),
                     ],
                   );
@@ -332,16 +361,10 @@ class _GoogleCredentialPickerFieldState
             onChanged: (value) {
               _loadSuggestions(value);
             },
-            onTap: () async {
-              // If field is empty, check if there are saved credentials first
-              if (widget.controller.text.isEmpty) {
-                final hasCredentials = await _credentialManager
-                    .hasAnyCredentials();
-                if (hasCredentials) {
-                  _showCredentialPicker();
-                }
-                // If no credentials, allow normal typing (don't show picker)
-              } else if (_suggestions.isNotEmpty) {
+            onTap: () {
+              // Only show suggestions if user is typing and there are matches
+              // Don't auto-trigger credential picker on tap - let user click the button instead
+              if (_suggestions.isNotEmpty && widget.controller.text.isNotEmpty) {
                 setState(() => _showSuggestions = true);
               }
             },

@@ -126,7 +126,7 @@ class _CourseContentPageState extends State<CourseContentPage> {
       }
 
       final authService = AuthService();
-      final headers = await authService.getAuthHeaders();
+      final headers = authService.getAuthHeaders();
 
       final apiUrl = ApiEndpoints.realTimeCourseContent(courseId);
 
@@ -299,7 +299,7 @@ class _CourseContentPageState extends State<CourseContentPage> {
   Future<String> _getSignedVideoUrl(String courseId, String lectureId) async {
     try {
       final authService = AuthService();
-      final headers = await authService.getAuthHeaders();
+      final headers = authService.getAuthHeaders();
 
       final apiUrl = ApiEndpoints.videoDeliverySignedUrl(courseId, lectureId);
 

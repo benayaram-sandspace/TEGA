@@ -1,5 +1,4 @@
-import 'dart:convert';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:tega/core/services/sqlite_cache_service.dart';
 
 /// Cache service for student dashboard data
 /// Provides caching with TTL (Time To Live) for dashboard, sidebar counts, and profile data
@@ -8,47 +7,27 @@ class DashboardCacheService {
   factory DashboardCacheService() => _instance;
   DashboardCacheService._internal();
 
-  SharedPreferences? _prefs;
+  final SQLiteCacheService _cache = SQLiteCacheService.instance;
 
   // Cache keys
   static const String _dashboardDataKey = 'dashboard_data';
   static const String _sidebarCountsKey = 'sidebar_counts';
   static const String _profileDataKey = 'profile_data';
-  static const String _cacheTimestampKey = 'cache_timestamp';
+  static const String _category = 'student_dashboard';
 
-  // Cache TTL - 5 minutes
-  static const Duration _cacheTTL = Duration(minutes: 5);
+  // Cache TTL - 10 minutes
+  static const Duration _cacheTTL = Duration(minutes: 10);
 
   /// Initialize the cache service
   Future<void> initialize() async {
-    _prefs ??= await SharedPreferences.getInstance();
-  }
-
-  /// Ensure SharedPreferences is initialized
-  Future<void> _ensurePrefs() async {
-    _prefs ??= await SharedPreferences.getInstance();
+    // SQLite cache initializes automatically
   }
 
   /// Get cached dashboard data
   Future<Map<String, dynamic>?> getDashboardData() async {
-    await _ensurePrefs();
     try {
-      final dataJson = _prefs?.getString(_dashboardDataKey);
-      if (dataJson == null) return null;
-
-      final timestamp = _prefs?.getString(_cacheTimestampKey);
-      if (timestamp == null) return null;
-
-      final cacheTime = DateTime.parse(timestamp);
-      final now = DateTime.now();
-
-      // Check if cache is expired
-      if (now.difference(cacheTime) > _cacheTTL) {
-        await clearCache();
-        return null;
-      }
-
-      return json.decode(dataJson) as Map<String, dynamic>;
+      final data = await _cache.get(key: _dashboardDataKey, category: _category);
+      return data as Map<String, dynamic>?;
     } catch (e) {
       return null;
     }
@@ -56,24 +35,9 @@ class DashboardCacheService {
 
   /// Get cached sidebar counts
   Future<Map<String, dynamic>?> getSidebarCounts() async {
-    await _ensurePrefs();
     try {
-      final dataJson = _prefs?.getString(_sidebarCountsKey);
-      if (dataJson == null) return null;
-
-      final timestamp = _prefs?.getString(_cacheTimestampKey);
-      if (timestamp == null) return null;
-
-      final cacheTime = DateTime.parse(timestamp);
-      final now = DateTime.now();
-
-      // Check if cache is expired
-      if (now.difference(cacheTime) > _cacheTTL) {
-        await clearCache();
-        return null;
-      }
-
-      return json.decode(dataJson) as Map<String, dynamic>;
+      final data = await _cache.get(key: _sidebarCountsKey, category: _category);
+      return data as Map<String, dynamic>?;
     } catch (e) {
       return null;
     }
@@ -81,24 +45,9 @@ class DashboardCacheService {
 
   /// Get cached profile data
   Future<Map<String, dynamic>?> getProfileData() async {
-    await _ensurePrefs();
     try {
-      final dataJson = _prefs?.getString(_profileDataKey);
-      if (dataJson == null) return null;
-
-      final timestamp = _prefs?.getString(_cacheTimestampKey);
-      if (timestamp == null) return null;
-
-      final cacheTime = DateTime.parse(timestamp);
-      final now = DateTime.now();
-
-      // Check if cache is expired
-      if (now.difference(cacheTime) > _cacheTTL) {
-        await clearCache();
-        return null;
-      }
-
-      return json.decode(dataJson) as Map<String, dynamic>;
+      final data = await _cache.get(key: _profileDataKey, category: _category);
+      return data as Map<String, dynamic>?;
     } catch (e) {
       return null;
     }
@@ -106,32 +55,19 @@ class DashboardCacheService {
 
   /// Get all cached data at once
   Future<Map<String, dynamic>?> getAllCachedData() async {
-    await _ensurePrefs();
     try {
-      final timestamp = _prefs?.getString(_cacheTimestampKey);
-      if (timestamp == null) return null;
+      final dashboard = await getDashboardData();
+      final sidebarCounts = await getSidebarCounts();
+      final profile = await getProfileData();
 
-      final cacheTime = DateTime.parse(timestamp);
-      final now = DateTime.now();
-
-      // Check if cache is expired
-      if (now.difference(cacheTime) > _cacheTTL) {
-        await clearCache();
-        return null;
-      }
-
-      final dashboardJson = _prefs?.getString(_dashboardDataKey);
-      final sidebarJson = _prefs?.getString(_sidebarCountsKey);
-      final profileJson = _prefs?.getString(_profileDataKey);
-
-      if (dashboardJson == null || sidebarJson == null || profileJson == null) {
+      if (dashboard == null || sidebarCounts == null || profile == null) {
         return null;
       }
 
       return {
-        'dashboard': json.decode(dashboardJson) as Map<String, dynamic>,
-        'sidebarCounts': json.decode(sidebarJson) as Map<String, dynamic>,
-        'profile': json.decode(profileJson) as Map<String, dynamic>,
+        'dashboard': dashboard,
+        'sidebarCounts': sidebarCounts,
+        'profile': profile,
       };
     } catch (e) {
       return null;
@@ -140,11 +76,13 @@ class DashboardCacheService {
 
   /// Cache dashboard data
   Future<void> setDashboardData(Map<String, dynamic> data) async {
-    await _ensurePrefs();
     try {
-      final dataJson = json.encode(data);
-      await _prefs?.setString(_dashboardDataKey, dataJson);
-      await _prefs?.setString(_cacheTimestampKey, DateTime.now().toIso8601String());
+      await _cache.set(
+        key: _dashboardDataKey,
+        category: _category,
+        value: data,
+        ttl: _cacheTTL,
+      );
     } catch (e) {
       // Silently handle errors
     }
@@ -152,11 +90,13 @@ class DashboardCacheService {
 
   /// Cache sidebar counts
   Future<void> setSidebarCounts(Map<String, dynamic> counts) async {
-    await _ensurePrefs();
     try {
-      final countsJson = json.encode(counts);
-      await _prefs?.setString(_sidebarCountsKey, countsJson);
-      await _prefs?.setString(_cacheTimestampKey, DateTime.now().toIso8601String());
+      await _cache.set(
+        key: _sidebarCountsKey,
+        category: _category,
+        value: counts,
+        ttl: _cacheTTL,
+      );
     } catch (e) {
       // Silently handle errors
     }
@@ -164,11 +104,13 @@ class DashboardCacheService {
 
   /// Cache profile data
   Future<void> setProfileData(Map<String, dynamic> profile) async {
-    await _ensurePrefs();
     try {
-      final profileJson = json.encode(profile);
-      await _prefs?.setString(_profileDataKey, profileJson);
-      await _prefs?.setString(_cacheTimestampKey, DateTime.now().toIso8601String());
+      await _cache.set(
+        key: _profileDataKey,
+        category: _category,
+        value: profile,
+        ttl: _cacheTTL,
+      );
     } catch (e) {
       // Silently handle errors
     }
@@ -180,12 +122,10 @@ class DashboardCacheService {
     required Map<String, dynamic> sidebarCounts,
     required Map<String, dynamic> profile,
   }) async {
-    await _ensurePrefs();
     try {
-      await _prefs?.setString(_dashboardDataKey, json.encode(dashboard));
-      await _prefs?.setString(_sidebarCountsKey, json.encode(sidebarCounts));
-      await _prefs?.setString(_profileDataKey, json.encode(profile));
-      await _prefs?.setString(_cacheTimestampKey, DateTime.now().toIso8601String());
+      await setDashboardData(dashboard);
+      await setSidebarCounts(sidebarCounts);
+      await setProfileData(profile);
     } catch (e) {
       // Silently handle errors
     }
@@ -193,12 +133,8 @@ class DashboardCacheService {
 
   /// Clear all cached data
   Future<void> clearCache() async {
-    await _ensurePrefs();
     try {
-      await _prefs?.remove(_dashboardDataKey);
-      await _prefs?.remove(_sidebarCountsKey);
-      await _prefs?.remove(_profileDataKey);
-      await _prefs?.remove(_cacheTimestampKey);
+      await _cache.deleteCategory(_category);
     } catch (e) {
       // Silently handle errors
     }
@@ -206,34 +142,17 @@ class DashboardCacheService {
 
   /// Check if cache is valid (not expired)
   Future<bool> isCacheValid() async {
-    await _ensurePrefs();
     try {
-      final timestamp = _prefs?.getString(_cacheTimestampKey);
-      if (timestamp == null) return false;
-
-      final cacheTime = DateTime.parse(timestamp);
-      final now = DateTime.now();
-
-      return now.difference(cacheTime) <= _cacheTTL;
+      return await _cache.has(key: _dashboardDataKey, category: _category);
     } catch (e) {
       return false;
     }
   }
 
-  /// Get cache age (time since last cache update)
+  /// Get cache age (not directly supported by SQLite cache)
   Future<Duration?> getCacheAge() async {
-    await _ensurePrefs();
-    try {
-      final timestamp = _prefs?.getString(_cacheTimestampKey);
-      if (timestamp == null) return null;
-
-      final cacheTime = DateTime.parse(timestamp);
-      final now = DateTime.now();
-
-      return now.difference(cacheTime);
-    } catch (e) {
-      return null;
-    }
+    // SQLite cache handles TTL internally
+    return null;
   }
 }
 

@@ -97,7 +97,7 @@ class _SkillAssessmentModulesPageState
   Future<void> _fetchSkillAssessmentsInBackground() async {
     try {
       final auth = AuthService();
-      final headers = await auth.getAuthHeaders();
+      final headers = auth.getAuthHeaders();
       final service = StudentDashboardService();
 
       final data = await service.getSkillAssessments(headers);

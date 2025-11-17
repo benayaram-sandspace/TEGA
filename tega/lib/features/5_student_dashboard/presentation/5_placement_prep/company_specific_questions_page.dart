@@ -122,7 +122,7 @@ class _CompanySpecificQuestionsPageState
   Future<void> _fetchCompaniesInBackground() async {
     try {
       final auth = AuthService();
-      final headers = await auth.getAuthHeaders();
+      final headers = auth.getAuthHeaders();
 
       final companiesResp = await http.get(
         Uri.parse(ApiEndpoints.companyQuestionsList),

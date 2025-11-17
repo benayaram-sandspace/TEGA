@@ -169,7 +169,7 @@ class _ExamsPageState extends State<ExamsPage>
         return;
       }
 
-      final headers = await auth.getAuthHeaders();
+      final headers = auth.getAuthHeaders();
       final api = StudentDashboardService();
 
       // Fetch available exams from backend
@@ -320,7 +320,7 @@ class _ExamsPageState extends State<ExamsPage>
   Future<void> _handleStartExam(Map<String, dynamic> exam) async {
     try {
       final auth = AuthService();
-      final headers = await auth.getAuthHeaders();
+      final headers = auth.getAuthHeaders();
       final api = StudentDashboardService();
       final examId = exam['id'] as String;
 
