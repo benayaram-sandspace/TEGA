@@ -5,9 +5,12 @@ import 'package:tega/features/1_authentication/data/auth_repository.dart';
 import 'package:tega/core/constants/api_constants.dart';
 import 'package:tega/features/5_student_dashboard/data/payment_service.dart';
 import 'package:tega/core/config/env_config.dart';
+import 'package:tega/core/services/video_cache_service.dart';
 import 'package:http/http.dart' as http;
 import 'package:razorpay_flutter/razorpay_flutter.dart';
 import 'dart:convert';
+import 'dart:async';
+import 'dart:io';
 
 class CourseContentPage extends StatefulWidget {
   final Map<String, dynamic> course;
@@ -36,6 +39,18 @@ class _CourseContentPageState extends State<CourseContentPage> {
   // Progress bar dragging
   bool _isDraggingProgress = false;
   double? _dragProgressPosition;
+  bool _isHoveringProgress = false;
+  bool _isSeeking = false;
+  
+  // Drag-up gesture for fullscreen
+  bool _isDraggingUp = false;
+  double _dragUpStartY = 0;
+  double _dragUpStartX = 0;
+  double _dragUpTotalDelta = 0;
+  double _dragUpHorizontalDelta = 0;
+
+  // Controls timer
+  Timer? _hideControlsTimer;
 
   // Module expansion state
   Map<String, bool> _expandedModules = {};
@@ -47,15 +62,48 @@ class _CourseContentPageState extends State<CourseContentPage> {
   final PaymentService _paymentService = PaymentService();
   bool _isPaymentLoading = false;
 
+  // Video cache service
+  final VideoCacheService _videoCacheService = VideoCacheService();
+
   @override
   void initState() {
     super.initState();
+    _initializeVideoCache();
     _loadCourseContent();
     _initializeRazorpay();
   }
 
+  Future<void> _initializeVideoCache() async {
+    await _videoCacheService.initialize();
+  }
+
+  /// Preload upcoming videos in background
+  Future<void> _preloadUpcomingVideos(int currentIndex) async {
+    // Preload next 2-3 videos for smoother playback
+    final preloadCount = 3;
+    for (int i = 1; i <= preloadCount; i++) {
+      final nextIndex = currentIndex + i;
+      if (nextIndex < _lectures.length) {
+        final nextLecture = _lectures[nextIndex];
+        if (!nextLecture['isLocked'] && nextLecture['videoKey'] != null) {
+          try {
+            final videoUrl = await _getSignedVideoUrl(
+              widget.course['id'],
+              nextLecture['id'],
+            );
+            // Preload in background (don't await)
+            _videoCacheService.preloadVideo(videoUrl);
+          } catch (e) {
+            // Silently handle preload errors
+          }
+        }
+      }
+    }
+  }
+
   @override
   void dispose() {
+    _hideControlsTimer?.cancel();
     _videoController?.removeListener(_videoListener);
     _videoController?.dispose();
     _paymentService.dispose();
@@ -334,17 +382,48 @@ class _CourseContentPageState extends State<CourseContentPage> {
       // Dispose previous controller
       await _videoController?.dispose();
 
-      // Create new controller
-      _videoController = VideoPlayerController.networkUrl(Uri.parse(videoUrl));
+      // Check cache first - if cached, use local file, otherwise use network URL
+      String? cachedVideoPath = await _videoCacheService.getCachedVideoPath(videoUrl);
+      VideoPlayerController controller;
+
+      if (cachedVideoPath != null && await File(cachedVideoPath).exists()) {
+        // Use cached video file
+        controller = VideoPlayerController.file(
+          File(cachedVideoPath),
+          videoPlayerOptions: VideoPlayerOptions(
+            mixWithOthers: false,
+            allowBackgroundPlayback: false,
+          ),
+        );
+      } else {
+        // Use network URL and cache it in background
+        controller = VideoPlayerController.networkUrl(
+          Uri.parse(videoUrl),
+          videoPlayerOptions: VideoPlayerOptions(
+            mixWithOthers: false,
+            allowBackgroundPlayback: false,
+          ),
+        );
+        
+        // Start caching video in background (don't await)
+        _videoCacheService.cacheVideo(videoUrl).catchError((_) {
+          // Silently handle cache errors - video will still play from network
+          return null;
+        });
+      }
+
+      _videoController = controller;
 
       // Add listeners
       _videoController!.addListener(_videoListener);
 
       await _videoController!.initialize();
 
-      // Set initial duration
+      // Set initial duration and optimize playback
       if (_videoController!.value.isInitialized) {
         _totalDuration = _videoController!.value.duration;
+        _videoController!.setLooping(false);
+        _videoController!.setVolume(1.0);
       }
 
       setState(() {
@@ -358,6 +437,9 @@ class _CourseContentPageState extends State<CourseContentPage> {
       if (index == 0) {
         _videoController!.play();
       }
+
+      // Preload next 2-3 videos in background for smoother experience
+      _preloadUpcomingVideos(index);
     } catch (e) {
       setState(() {
         _errorMessage =
@@ -370,7 +452,18 @@ class _CourseContentPageState extends State<CourseContentPage> {
 
   void _videoListener() {
     if (_videoController!.value.hasError) {
-      _handleVideoError();
+      // Only handle error if we're not currently seeking
+      // Seek operations can sometimes trigger transient errors
+      if (!_isSeeking && !_isDraggingProgress) {
+        // Check if it's a real error or just a seek-related transient error
+        final errorDescription = _videoController!.value.errorDescription ?? '';
+        
+        // Ignore transient seek errors
+        if (!errorDescription.toLowerCase().contains('seek') &&
+            !errorDescription.toLowerCase().contains('position')) {
+          _handleVideoError();
+        }
+      }
     } else {
       setState(() {
         _currentPosition = _videoController!.value.position;
@@ -380,11 +473,16 @@ class _CourseContentPageState extends State<CourseContentPage> {
   }
 
   void _handleVideoError() {
-    setState(() {
-      _errorMessage =
-          'Video file not found. The video may have been moved or is temporarily unavailable.';
-      _isVideoInitialized = false;
-    });
+    // Only set error if video is actually initialized and has a real error
+    if (_videoController != null && 
+        _videoController!.value.isInitialized &&
+        _videoController!.value.hasError) {
+      setState(() {
+        _errorMessage =
+            'Video file not found. The video may have been moved or is temporarily unavailable.';
+        _isVideoInitialized = false;
+      });
+    }
   }
 
   // Video control methods
@@ -396,10 +494,55 @@ class _CourseContentPageState extends State<CourseContentPage> {
         _videoController!.play();
       }
     });
+    _showControlsTemporarily();
   }
 
-  void _seekTo(Duration position) {
-    _videoController!.seekTo(position);
+  void _seekTo(Duration position) async {
+    if (_videoController == null || !_videoController!.value.isInitialized) {
+      return;
+    }
+
+    // Validate duration is valid
+    if (_totalDuration == Duration.zero || _totalDuration.inMilliseconds <= 0) {
+      return;
+    }
+
+    try {
+      // Ensure position is within valid range
+      final clampedPosition = position < Duration.zero
+          ? Duration.zero
+          : (position > _totalDuration ? _totalDuration : position);
+      
+      // Don't seek if position is the same (within 1 second)
+      if ((clampedPosition - _currentPosition).abs().inSeconds < 1) {
+        return;
+      }
+      
+      setState(() {
+        _isSeeking = true;
+      });
+
+      await _videoController!.seekTo(clampedPosition);
+      
+      // Wait a bit for seek to complete before clearing the flag
+      await Future.delayed(const Duration(milliseconds: 300));
+      
+      if (mounted) {
+        setState(() {
+          _isSeeking = false;
+        });
+      }
+    } catch (e) {
+      // Seek errors are not fatal - just log and continue
+      // These are usually transient network issues or buffering problems
+      if (mounted) {
+        setState(() {
+          _isSeeking = false;
+        });
+      }
+      // Don't set error message for seek failures - they're usually transient
+      // and don't indicate a course loading failure
+    }
   }
 
   void _skipForward() {
@@ -407,6 +550,7 @@ class _CourseContentPageState extends State<CourseContentPage> {
     if (newPosition <= _totalDuration) {
       _seekTo(newPosition);
     }
+    _showControlsTemporarily();
   }
 
   void _skipBackward() {
@@ -414,6 +558,7 @@ class _CourseContentPageState extends State<CourseContentPage> {
     if (newPosition >= Duration.zero) {
       _seekTo(newPosition);
     }
+    _showControlsTemporarily();
   }
 
   void _toggleFullscreen() {
@@ -457,9 +602,12 @@ class _CourseContentPageState extends State<CourseContentPage> {
       _showControls = true;
     });
 
-    // Hide controls after 3 seconds
-    Future.delayed(const Duration(seconds: 3), () {
-      if (mounted && _videoController!.value.isPlaying) {
+    // Cancel any existing timer
+    _hideControlsTimer?.cancel();
+
+    // Hide controls after 2 seconds if video is playing
+    _hideControlsTimer = Timer(const Duration(seconds: 2), () {
+      if (mounted && _showControls && _videoController != null && _videoController!.value.isPlaying) {
         _hideControls();
       }
     });
@@ -1476,25 +1624,70 @@ class _CourseContentPageState extends State<CourseContentPage> {
   Widget _buildAdvancedVideoPlayer() {
     return GestureDetector(
       onTap: () {
-        _showControlsTemporarily();
+        if (!_isDraggingUp) {
+          _showControlsTemporarily();
+        }
       },
       onDoubleTapDown: (details) {
-        final screenWidth = MediaQuery.of(context).size.width;
-        final tapPosition = details.globalPosition.dx;
+        if (!_isDraggingUp) {
+          final screenWidth = MediaQuery.of(context).size.width;
+          final tapPosition = details.globalPosition.dx;
 
-        if (tapPosition < screenWidth / 2) {
-          // Double tap left side - rewind 10 seconds
-          _skipBackward();
-        } else {
-          // Double tap right side - forward 10 seconds
-          _skipForward();
+          if (tapPosition < screenWidth / 2) {
+            // Double tap left side - rewind 10 seconds
+            _skipBackward();
+          } else {
+            // Double tap right side - forward 10 seconds
+            _skipForward();
+          }
+        }
+      },
+      onPanStart: (details) {
+        // Track drag gesture for fullscreen toggle
+        // Only start tracking if not dragging on progress bar
+        if (!_isDraggingProgress) {
+          _isDraggingUp = true;
+          _dragUpStartY = details.globalPosition.dy;
+          _dragUpStartX = details.globalPosition.dx;
+          _dragUpTotalDelta = 0;
+          _dragUpHorizontalDelta = 0;
         }
       },
       onPanUpdate: (details) {
-        // Drag up gesture for fullscreen
-        if (details.delta.dy < -10) {
-          _toggleFullscreen();
+        if (_isDraggingUp && !_isDraggingProgress) {
+          final currentY = details.globalPosition.dy;
+          final currentX = details.globalPosition.dx;
+          _dragUpTotalDelta = _dragUpStartY - currentY; // Positive when dragging up, negative when dragging down
+          _dragUpHorizontalDelta = (currentX - _dragUpStartX).abs();
+          
+          // Cancel vertical drag if horizontal movement is too large (user is seeking)
+          if (_dragUpHorizontalDelta > 30) {
+            _isDraggingUp = false;
+          }
         }
+      },
+      onPanEnd: (details) {
+        if (_isDraggingUp && !_isDraggingProgress) {
+          // Only trigger if vertical movement is significant and horizontal movement is minimal
+          if (_dragUpHorizontalDelta < 30) {
+            // Drag up to enter fullscreen (when not in fullscreen)
+            if (!_isFullscreen && _dragUpTotalDelta > 50) {
+              _toggleFullscreen();
+            }
+            // Drag down to exit fullscreen (when in fullscreen)
+            else if (_isFullscreen && _dragUpTotalDelta < -50) {
+              _toggleFullscreen();
+            }
+          }
+          _isDraggingUp = false;
+          _dragUpTotalDelta = 0;
+          _dragUpHorizontalDelta = 0;
+        }
+      },
+      onPanCancel: () {
+        _isDraggingUp = false;
+        _dragUpTotalDelta = 0;
+        _dragUpHorizontalDelta = 0;
       },
       child: Container(
         height: _isFullscreen
@@ -1673,91 +1866,138 @@ class _CourseContentPageState extends State<CourseContentPage> {
     final progress = _totalDuration.inMilliseconds > 0
         ? position.inMilliseconds / _totalDuration.inMilliseconds
         : 0.0;
-    
-    final progressBarWidth = MediaQuery.of(context).size.width - 24;
 
-    return GestureDetector(
-      onHorizontalDragStart: (details) {
-        setState(() {
-          _isDraggingProgress = true;
-          _showControls = true; // Keep controls visible while dragging
-        });
-      },
-      onHorizontalDragUpdate: (details) {
-        final RenderBox? renderBox = context.findRenderObject() as RenderBox?;
-        if (renderBox != null) {
-          final localPosition = renderBox.globalToLocal(details.globalPosition);
-          final newProgress = (localPosition.dx / renderBox.size.width).clamp(0.0, 1.0);
-          
-          setState(() {
-            _dragProgressPosition = _totalDuration.inMilliseconds * newProgress;
-          });
-        }
-      },
-      onHorizontalDragEnd: (details) {
-        if (_dragProgressPosition != null) {
-          _seekTo(Duration(milliseconds: _dragProgressPosition!.round()));
-        }
-        setState(() {
-          _isDraggingProgress = false;
-          _dragProgressPosition = null;
-        });
-        // Restart auto-hide timer if video is playing
-        if (_videoController != null && _videoController!.value.isPlaying) {
-          _showControlsTemporarily();
-        }
-      },
-      onTapDown: (details) {
-        final RenderBox? renderBox = context.findRenderObject() as RenderBox?;
-        if (renderBox != null) {
-          final localPosition = renderBox.globalToLocal(details.globalPosition);
-          final newProgress = (localPosition.dx / renderBox.size.width).clamp(0.0, 1.0);
-          final newPosition = Duration(
-            milliseconds: (_totalDuration.inMilliseconds * newProgress).round(),
-          );
-          _seekTo(newPosition);
-        }
-      },
-      child: Container(
-        height: 4,
-        margin: const EdgeInsets.symmetric(horizontal: 12),
-        child: Stack(
-          children: [
-            // Background
-            Container(
-              height: 4,
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.3),
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-            // Progress
-            Container(
-              height: 4,
-              width: progressBarWidth * progress,
-              decoration: BoxDecoration(
-                color: Colors.red, // YouTube red color
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-            // Thumb (visible when dragging or controls are shown)
-            if (_isDraggingProgress || _showControls)
-              Positioned(
-                left: progressBarWidth * progress - 6,
-                top: -2,
-                child: Container(
-                  width: 12,
-                  height: 12,
-                  decoration: BoxDecoration(
-                    color: Colors.red,
-                    shape: BoxShape.circle,
-                    border: Border.all(color: Colors.white, width: 2),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return MouseRegion(
+          onEnter: (_) {
+            setState(() {
+              _isHoveringProgress = true;
+            });
+          },
+          onExit: (_) {
+            if (!_isDraggingProgress) {
+              setState(() {
+                _isHoveringProgress = false;
+              });
+            }
+          },
+          child: GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onHorizontalDragStart: (details) {
+              setState(() {
+                _isDraggingProgress = true;
+                _isHoveringProgress = true;
+                _showControls = true;
+              });
+            },
+            onHorizontalDragUpdate: (details) {
+              final localPosition = details.localPosition.dx;
+              final newProgress = (localPosition / constraints.maxWidth).clamp(0.0, 1.0);
+              
+              setState(() {
+                _dragProgressPosition = _totalDuration.inMilliseconds * newProgress;
+              });
+            },
+            onHorizontalDragEnd: (details) {
+              if (_dragProgressPosition != null && _totalDuration.inMilliseconds > 0) {
+                final seekPosition = Duration(
+                  milliseconds: _dragProgressPosition!.round().clamp(
+                    0,
+                    _totalDuration.inMilliseconds,
                   ),
+                );
+                _seekTo(seekPosition);
+              }
+              setState(() {
+                _isDraggingProgress = false;
+                _dragProgressPosition = null;
+              });
+              _showControlsTemporarily();
+            },
+            onTapDown: (details) {
+              final localPosition = details.localPosition.dx;
+              final newProgress = (localPosition / constraints.maxWidth).clamp(0.0, 1.0);
+              final newPosition = Duration(
+                milliseconds: (_totalDuration.inMilliseconds * newProgress).round().clamp(
+                  0,
+                  _totalDuration.inMilliseconds,
                 ),
+              );
+              _seekTo(newPosition);
+              _showControlsTemporarily();
+            },
+            child: Container(
+              height: _isHoveringProgress || _isDraggingProgress ? 8 : 4,
+              padding: EdgeInsets.symmetric(
+                vertical: _isHoveringProgress || _isDraggingProgress ? 2 : 0,
               ),
-          ],
-        ),
-      ),
+              child: Stack(
+                alignment: Alignment.centerLeft,
+                children: [
+                  // Background track - YouTube style (very thin)
+                  Container(
+                    height: _isHoveringProgress || _isDraggingProgress ? 4 : 3,
+                    width: constraints.maxWidth,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.3),
+                      borderRadius: BorderRadius.circular(1.5),
+                    ),
+                  ),
+                  // Played progress - YouTube red
+                  AnimatedContainer(
+                    duration: const Duration(milliseconds: 50),
+                    height: _isHoveringProgress || _isDraggingProgress ? 4 : 3,
+                    width: constraints.maxWidth * progress.clamp(0.0, 1.0),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFDC2626), // YouTube red
+                      borderRadius: BorderRadius.circular(1.5),
+                    ),
+                  ),
+                  // Thumb - YouTube style (hidden by default, shows on hover/drag)
+                  if (_isHoveringProgress || _isDraggingProgress || _showControls)
+                    AnimatedPositioned(
+                      duration: const Duration(milliseconds: 50),
+                      curve: Curves.easeOut,
+                      left: (constraints.maxWidth * progress.clamp(0.0, 1.0)) - (_isDraggingProgress ? 10 : 8),
+                      child: AnimatedScale(
+                        scale: _isDraggingProgress ? 1.4 : 1.0,
+                        duration: const Duration(milliseconds: 150),
+                        curve: Curves.easeOut,
+                        child: Container(
+                          width: _isDraggingProgress ? 20 : 16,
+                          height: _isDraggingProgress ? 20 : 16,
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            shape: BoxShape.circle,
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.4),
+                                blurRadius: 4,
+                                offset: const Offset(0, 1),
+                                spreadRadius: 0.5,
+                              ),
+                            ],
+                          ),
+                          child: Center(
+                            child: Container(
+                              width: _isDraggingProgress ? 8 : 6,
+                              height: _isDraggingProgress ? 8 : 6,
+                              decoration: const BoxDecoration(
+                                color: Color(0xFFDC2626), // YouTube red center
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 
