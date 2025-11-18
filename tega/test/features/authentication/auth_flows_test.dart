@@ -20,7 +20,7 @@ void main() {
       test('should handle email validation', () {
         const validEmail = 'test@example.com';
         const invalidEmail = 'invalid-email';
-        
+
         final validRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
         expect(validRegex.hasMatch(validEmail), isTrue);
         expect(validRegex.hasMatch(invalidEmail), isFalse);
@@ -29,7 +29,7 @@ void main() {
       test('should handle password strength requirements', () {
         const weakPassword = '123';
         const strongPassword = 'Password123!';
-        
+
         expect(weakPassword.length >= 6, isFalse);
         expect(strongPassword.length >= 6, isTrue);
       });
@@ -71,7 +71,7 @@ void main() {
       test('should validate OTP format', () {
         const validOTP = '123456';
         const invalidOTP = '12';
-        
+
         expect(validOTP.length, equals(6));
         expect(invalidOTP.length == 6, isFalse);
       });
@@ -138,4 +138,3 @@ void main() {
     });
   });
 }
-

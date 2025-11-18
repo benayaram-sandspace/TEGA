@@ -46,10 +46,10 @@ class _OfferManagementPageState extends State<OfferManagementPage> {
     try {
       // Initialize cache service
       await _cacheService.initialize();
-      
+
       // Try to load from cache first
       await _loadFromCache();
-      
+
       // Then load fresh data
       await _fetchOffers();
       await _fetchPackageOffers();
@@ -82,7 +82,9 @@ class _OfferManagementPageState extends State<OfferManagementPage> {
       final cachedPackageOffers = await _cacheService.getPackageOffersData();
       final cachedStats = await _cacheService.getOfferStats();
 
-      if (cachedOffers != null || cachedPackageOffers != null || cachedStats != null) {
+      if (cachedOffers != null ||
+          cachedPackageOffers != null ||
+          cachedStats != null) {
         setState(() {
           _isLoadingFromCache = true;
         });
@@ -137,13 +139,17 @@ class _OfferManagementPageState extends State<OfferManagementPage> {
             error.toString().toLowerCase().contains('connection') ||
             error.toString().toLowerCase().contains('internet') ||
             error.toString().toLowerCase().contains('failed host lookup') ||
-            error.toString().toLowerCase().contains('no address associated with hostname'));
+            error.toString().toLowerCase().contains(
+              'no address associated with hostname',
+            ));
   }
 
   Future<void> _fetchOffers({bool forceRefresh = false}) async {
     try {
       // Skip cache if force refresh or filters are applied
-      if (!forceRefresh && _selectedInstitute == 'All' && _selectedStatus == 'All') {
+      if (!forceRefresh &&
+          _selectedInstitute == 'All' &&
+          _selectedStatus == 'All') {
         final cachedData = await _cacheService.getOffersData();
         if (cachedData != null && !_isLoadingFromCache) {
           // Already loaded from cache, just update in background
@@ -197,7 +203,7 @@ class _OfferManagementPageState extends State<OfferManagementPage> {
             return;
           }
         }
-        
+
         // No cache available, show error
         setState(() {
           _error = 'No internet connection';
@@ -206,11 +212,11 @@ class _OfferManagementPageState extends State<OfferManagementPage> {
         });
       } else {
         // Other errors
-      setState(() {
-        _error = e.toString();
-        _isLoading = false;
+        setState(() {
+          _error = e.toString();
+          _isLoading = false;
           _isLoadingFromCache = false;
-      });
+        });
       }
     }
   }
@@ -221,7 +227,7 @@ class _OfferManagementPageState extends State<OfferManagementPage> {
       await _cacheService.setOffersData({
         'offers': result['offers'].map((o) => o.toJson()).toList(),
       });
-      
+
       if (mounted && _selectedInstitute == 'All' && _selectedStatus == 'All') {
         setState(() {
           _offers = result['offers'];
@@ -248,7 +254,7 @@ class _OfferManagementPageState extends State<OfferManagementPage> {
       }
 
       final packages = await _offerRepository.getPackageOffers();
-      
+
       // Cache the package offers
       await _cacheService.setPackageOffersData(packages);
 
@@ -269,7 +275,6 @@ class _OfferManagementPageState extends State<OfferManagementPage> {
             _filteredPackageOffers = _packageOffers;
           });
           _filterOffers();
-          
         }
       }
       // Handle other errors silently for package offers
@@ -280,7 +285,7 @@ class _OfferManagementPageState extends State<OfferManagementPage> {
     try {
       final packages = await _offerRepository.getPackageOffers();
       await _cacheService.setPackageOffersData(packages);
-      
+
       if (mounted) {
         setState(() {
           _packageOffers = packages;
@@ -306,7 +311,7 @@ class _OfferManagementPageState extends State<OfferManagementPage> {
       }
 
       final stats = await _offerRepository.getOfferStats();
-      
+
       // Cache the stats
       await _cacheService.setOfferStats(stats);
 
@@ -333,7 +338,7 @@ class _OfferManagementPageState extends State<OfferManagementPage> {
     try {
       final stats = await _offerRepository.getOfferStats();
       await _cacheService.setOfferStats(stats);
-      
+
       if (mounted) {
         setState(() {
           _stats = stats;
@@ -370,9 +375,15 @@ class _OfferManagementPageState extends State<OfferManagementPage> {
       }).toList();
 
       _filteredPackageOffers = _packageOffers.where((package) {
-        final packageName = (package['packageName'] ?? '').toString().toLowerCase();
-        final description = (package['description'] ?? '').toString().toLowerCase();
-        final instituteName = (package['instituteName'] ?? '').toString().toLowerCase();
+        final packageName = (package['packageName'] ?? '')
+            .toString()
+            .toLowerCase();
+        final description = (package['description'] ?? '')
+            .toString()
+            .toLowerCase();
+        final instituteName = (package['instituteName'] ?? '')
+            .toString()
+            .toLowerCase();
         return packageName.contains(query) ||
             description.contains(query) ||
             instituteName.contains(query);
@@ -406,10 +417,8 @@ class _OfferManagementPageState extends State<OfferManagementPage> {
   Future<void> _editPackageOffer(Map<String, dynamic> packageOffer) async {
     final result = await Navigator.of(context).push<bool>(
       MaterialPageRoute(
-        builder: (context) => PackageOfferFormPage(
-          packageOffer: packageOffer,
-          isEdit: true,
-        ),
+        builder: (context) =>
+            PackageOfferFormPage(packageOffer: packageOffer, isEdit: true),
       ),
     );
 
@@ -852,11 +861,7 @@ class _OfferManagementPageState extends State<OfferManagementPage> {
                   ? Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(
-                          icon,
-                          color: color,
-                          size: isSmallScreen ? 14 : 16,
-                        ),
+                        Icon(icon, color: color, size: isSmallScreen ? 14 : 16),
                         const SizedBox(width: 8),
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -899,11 +904,7 @@ class _OfferManagementPageState extends State<OfferManagementPage> {
                     )
                   : Column(
                       children: [
-                        Icon(
-                          icon,
-                          color: color,
-                          size: isSmallScreen ? 14 : 16,
-                        ),
+                        Icon(icon, color: color, size: isSmallScreen ? 14 : 16),
                         SizedBox(height: isSmallScreen ? 4 : 6),
                         AnimatedSwitcher(
                           duration: const Duration(milliseconds: 300),
@@ -979,7 +980,7 @@ class _OfferManagementPageState extends State<OfferManagementPage> {
     // Animation durations
     const animationDuration = Duration(milliseconds: 550);
     const staggerDelay = Duration(milliseconds: 60);
-    
+
     return AnimatedContainer(
       duration: animationDuration,
       curve: Curves.easeInOut,
@@ -996,11 +997,13 @@ class _OfferManagementPageState extends State<OfferManagementPage> {
             curve: Curves.easeOutCubic,
             builder: (context, value, child) {
               // Apply stagger delay for opening, immediate for closing
-              final adjustedValue = _isFabExpanded 
-                  ? (value * animationDuration.inMilliseconds - staggerDelay.inMilliseconds) / animationDuration.inMilliseconds
+              final adjustedValue = _isFabExpanded
+                  ? (value * animationDuration.inMilliseconds -
+                            staggerDelay.inMilliseconds) /
+                        animationDuration.inMilliseconds
                   : value;
               final finalValue = adjustedValue.clamp(0.0, 1.0);
-              
+
               return Transform.translate(
                 offset: Offset(0, -140 * finalValue),
                 child: Opacity(
@@ -1022,7 +1025,10 @@ class _OfferManagementPageState extends State<OfferManagementPage> {
                       icon: const Icon(Icons.inventory_2_rounded),
                       label: const Text(
                         'Create Package',
-                        style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
+                        style: TextStyle(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 16,
+                        ),
                       ),
                     ),
                   ),
@@ -1037,11 +1043,13 @@ class _OfferManagementPageState extends State<OfferManagementPage> {
             curve: Curves.easeOutCubic,
             builder: (context, value, child) {
               // Apply stagger delay for opening, immediate for closing
-              final adjustedValue = _isFabExpanded 
-                  ? (value * animationDuration.inMilliseconds - (staggerDelay.inMilliseconds * 2)) / animationDuration.inMilliseconds
+              final adjustedValue = _isFabExpanded
+                  ? (value * animationDuration.inMilliseconds -
+                            (staggerDelay.inMilliseconds * 2)) /
+                        animationDuration.inMilliseconds
                   : value;
               final finalValue = adjustedValue.clamp(0.0, 1.0);
-              
+
               return Transform.translate(
                 offset: Offset(0, -76 * finalValue),
                 child: Opacity(
@@ -1063,7 +1071,10 @@ class _OfferManagementPageState extends State<OfferManagementPage> {
                       icon: const Icon(Icons.add_rounded),
                       label: const Text(
                         'Create Offer',
-                        style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
+                        style: TextStyle(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 16,
+                        ),
                       ),
                     ),
                   ),
@@ -1377,14 +1388,32 @@ class _OfferManagementPageState extends State<OfferManagementPage> {
     final screenWidth = MediaQuery.of(context).size.width;
     final isMobile = screenWidth < 600;
     final isTablet = screenWidth >= 600 && screenWidth < 1024;
-    
+
     return Center(
       child: Container(
-        margin: EdgeInsets.all(isMobile ? 20 : isTablet ? 24 : 28),
-        padding: EdgeInsets.all(isMobile ? 24 : isTablet ? 28 : 32),
+        margin: EdgeInsets.all(
+          isMobile
+              ? 20
+              : isTablet
+              ? 24
+              : 28,
+        ),
+        padding: EdgeInsets.all(
+          isMobile
+              ? 24
+              : isTablet
+              ? 28
+              : 32,
+        ),
         decoration: BoxDecoration(
           color: AppColors.pureWhite,
-          borderRadius: BorderRadius.circular(isMobile ? 16 : isTablet ? 18 : 20),
+          borderRadius: BorderRadius.circular(
+            isMobile
+                ? 16
+                : isTablet
+                ? 18
+                : 20,
+          ),
           boxShadow: [
             BoxShadow(
               color: AppColors.shadowLight,
@@ -1398,42 +1427,87 @@ class _OfferManagementPageState extends State<OfferManagementPage> {
           children: [
             Icon(
               Icons.cloud_off,
-              size: isMobile ? 56 : isTablet ? 64 : 72,
+              size: isMobile
+                  ? 56
+                  : isTablet
+                  ? 64
+                  : 72,
               color: Colors.grey[400],
             ),
-            SizedBox(height: isMobile ? 16 : isTablet ? 18 : 20),
+            SizedBox(
+              height: isMobile
+                  ? 16
+                  : isTablet
+                  ? 18
+                  : 20,
+            ),
             Text(
               'Failed to load offers',
               style: TextStyle(
-                fontSize: isMobile ? 18 : isTablet ? 19 : 20,
+                fontSize: isMobile
+                    ? 18
+                    : isTablet
+                    ? 19
+                    : 20,
                 fontWeight: FontWeight.w600,
                 color: Colors.grey[700],
               ),
             ),
-            SizedBox(height: isMobile ? 8 : isTablet ? 9 : 10),
+            SizedBox(
+              height: isMobile
+                  ? 8
+                  : isTablet
+                  ? 9
+                  : 10,
+            ),
             Text(
               _error ?? 'Unknown error occurred',
               style: TextStyle(
-                fontSize: isMobile ? 14 : isTablet ? 15 : 16,
+                fontSize: isMobile
+                    ? 14
+                    : isTablet
+                    ? 15
+                    : 16,
                 color: Colors.grey[600],
               ),
               textAlign: TextAlign.center,
             ),
-            SizedBox(height: isMobile ? 24 : isTablet ? 28 : 32),
+            SizedBox(
+              height: isMobile
+                  ? 24
+                  : isTablet
+                  ? 28
+                  : 32,
+            ),
             ElevatedButton.icon(
               onPressed: () {
                 _fetchOffers(forceRefresh: true);
                 _fetchPackageOffers(forceRefresh: true);
                 _fetchStats(forceRefresh: true);
               },
-              icon: Icon(Icons.refresh_rounded, size: isMobile ? 16 : isTablet ? 17 : 18),
+              icon: Icon(
+                Icons.refresh_rounded,
+                size: isMobile
+                    ? 16
+                    : isTablet
+                    ? 17
+                    : 18,
+              ),
               label: Text('Retry'),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.warmOrange,
                 foregroundColor: AppColors.pureWhite,
                 padding: EdgeInsets.symmetric(
-                  horizontal: isMobile ? 20 : isTablet ? 24 : 28,
-                  vertical: isMobile ? 12 : isTablet ? 13 : 14,
+                  horizontal: isMobile
+                      ? 20
+                      : isTablet
+                      ? 24
+                      : 28,
+                  vertical: isMobile
+                      ? 12
+                      : isTablet
+                      ? 13
+                      : 14,
                 ),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
@@ -1652,11 +1726,7 @@ class _OfferManagementPageState extends State<OfferManagementPage> {
       allItems.add(
         _buildOfferListItem(_filteredOffers[i])
             .animate()
-            .fadeIn(
-              duration: 600.ms,
-              delay: (i * 80).ms,
-              curve: Curves.easeOut,
-            )
+            .fadeIn(duration: 600.ms, delay: (i * 80).ms, curve: Curves.easeOut)
             .slideY(
               begin: 0.3,
               end: 0,
@@ -1792,8 +1862,8 @@ class _OfferManagementPageState extends State<OfferManagementPage> {
                 color: isActive
                     ? AppColors.success.withOpacity(0.2)
                     : isExpired
-                        ? AppColors.error.withOpacity(0.2)
-                        : AppColors.borderLight,
+                    ? AppColors.error.withOpacity(0.2)
+                    : AppColors.borderLight,
                 width: 1,
               ),
               boxShadow: [
@@ -1809,111 +1879,111 @@ class _OfferManagementPageState extends State<OfferManagementPage> {
               children: [
                 // Header section
                 Container(
-                  constraints: BoxConstraints(
-                    minHeight: isMobile ? 60 : 68,
-                  ),
+                  constraints: BoxConstraints(minHeight: isMobile ? 60 : 68),
                   child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Container(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
                         padding: EdgeInsets.all(isMobile ? 8 : 10),
-                      decoration: BoxDecoration(
-                        color: AppColors.warmOrange.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(isMobile ? 8 : 10),
-                      ),
-                      child: Icon(
-                        Icons.school_rounded,
-                        color: AppColors.warmOrange,
+                        decoration: BoxDecoration(
+                          color: AppColors.warmOrange.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(
+                            isMobile ? 8 : 10,
+                          ),
+                        ),
+                        child: Icon(
+                          Icons.school_rounded,
+                          color: AppColors.warmOrange,
                           size: isMobile ? 18 : 20,
+                        ),
                       ),
-                    ),
                       SizedBox(width: isMobile ? 10 : 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            offer.instituteName,
-                            style: TextStyle(
+                          children: [
+                            Text(
+                              offer.instituteName,
+                              style: TextStyle(
                                 fontSize: isMobile ? 15 : 16,
-                              fontWeight: FontWeight.bold,
-                              color: AppColors.textPrimary,
-                            ),
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.textPrimary,
+                              ),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
-                          ),
-                            SizedBox(height: isMobile ? 3 : 4),
-                          Text(
-                            offer.description,
-                            style: TextStyle(
-                                fontSize: isMobile ? 12 : 13,
-                              color: AppColors.textSecondary,
-                                height: 1.3,
                             ),
+                            SizedBox(height: isMobile ? 3 : 4),
+                            Text(
+                              offer.description,
+                              style: TextStyle(
+                                fontSize: isMobile ? 12 : 13,
+                                color: AppColors.textSecondary,
+                                height: 1.3,
+                              ),
                               maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
                             SizedBox(height: isMobile ? 4 : 6),
                             _buildStatusBadge(isActive, isExpired, isMobile),
-                        ],
+                          ],
+                        ),
                       ),
-                    ),
-                  ],
-                ),
+                    ],
+                  ),
                 ),
                 SizedBox(height: isMobile ? 12 : 14),
                 // Stats row
                 isMobile
                     ? Column(
                         children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: _buildStatItem(
-                        '${offer.courseOffers.length}',
-                        'Courses',
-                        Icons.school_rounded,
-                        AppColors.info,
+                          Row(
+                            children: [
+                              Expanded(
+                                child: _buildStatItem(
+                                  '${offer.courseOffers.length}',
+                                  'Courses',
+                                  Icons.school_rounded,
+                                  AppColors.info,
                                   isMobile: true,
-                      ),
-                    ),
+                                ),
+                              ),
                               SizedBox(width: isMobile ? 4 : 8),
-                    Expanded(
-                      child: _buildStatItem(
-                        '${offer.tegaExamOffers.length}',
-                        'Exams',
-                        Icons.quiz_rounded,
-                        AppColors.warning,
+                              Expanded(
+                                child: _buildStatItem(
+                                  '${offer.tegaExamOffers.length}',
+                                  'Exams',
+                                  Icons.quiz_rounded,
+                                  AppColors.warning,
                                   isMobile: true,
-                      ),
-                    ),
+                                ),
+                              ),
                             ],
                           ),
                           SizedBox(height: isMobile ? 4 : 6),
                           Row(
                             children: [
-                    Expanded(
-                      child: _buildStatItem(
-                        '${offer.studentCount}',
-                        'Students',
-                        Icons.people_rounded,
-                        AppColors.success,
+                              Expanded(
+                                child: _buildStatItem(
+                                  '${offer.studentCount}',
+                                  'Students',
+                                  Icons.people_rounded,
+                                  AppColors.success,
                                   isMobile: true,
-                      ),
-                    ),
+                                ),
+                              ),
                               SizedBox(width: isMobile ? 4 : 8),
-                    Expanded(
-                      child: _buildStatItem(
-                        '₹${_formatCurrency(offer.totalRevenue)}',
-                        'Revenue',
-                        Icons.currency_rupee_rounded,
-                        AppColors.warmOrange,
+                              Expanded(
+                                child: _buildStatItem(
+                                  '₹${_formatCurrency(offer.totalRevenue)}',
+                                  'Revenue',
+                                  Icons.currency_rupee_rounded,
+                                  AppColors.warmOrange,
                                   isMobile: true,
-                      ),
-                    ),
-                  ],
-                ),
+                                ),
+                              ),
+                            ],
+                          ),
                         ],
                       )
                     : Row(
@@ -1967,11 +2037,11 @@ class _OfferManagementPageState extends State<OfferManagementPage> {
                         SizedBox(width: isMobile ? 3 : 4),
                         Flexible(
                           child: Text(
-                          'Until ${offer.validUntil.day}/${offer.validUntil.month}/${offer.validUntil.year}',
-                          style: TextStyle(
+                            'Until ${offer.validUntil.day}/${offer.validUntil.month}/${offer.validUntil.year}',
+                            style: TextStyle(
                               fontSize: isMobile ? 10 : 11,
-                            color: AppColors.textSecondary,
-                            fontWeight: FontWeight.w500,
+                              color: AppColors.textSecondary,
+                              fontWeight: FontWeight.w500,
                             ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
@@ -2017,7 +2087,8 @@ class _OfferManagementPageState extends State<OfferManagementPage> {
     final bool isExpired = validUntil.isBefore(DateTime.now());
     final bool isActiveAndValid = isActive && !isExpired;
 
-    final includedCourses = packageOffer['includedCourses'] as List<dynamic>? ?? [];
+    final includedCourses =
+        packageOffer['includedCourses'] as List<dynamic>? ?? [];
     final includedExam = packageOffer['includedExam'];
     final hasExam = includedExam != null && includedExam != '';
 
@@ -2047,8 +2118,8 @@ class _OfferManagementPageState extends State<OfferManagementPage> {
                 color: isActiveAndValid
                     ? AppColors.success.withOpacity(0.2)
                     : isExpired
-                        ? AppColors.error.withOpacity(0.2)
-                        : AppColors.borderLight,
+                    ? AppColors.error.withOpacity(0.2)
+                    : AppColors.borderLight,
                 width: 1,
               ),
               boxShadow: [
@@ -2064,53 +2135,57 @@ class _OfferManagementPageState extends State<OfferManagementPage> {
               children: [
                 // Header section
                 Container(
-                  constraints: BoxConstraints(
-                    minHeight: isMobile ? 60 : 68,
-                  ),
+                  constraints: BoxConstraints(minHeight: isMobile ? 60 : 68),
                   child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Container(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
                         padding: EdgeInsets.all(isMobile ? 8 : 10),
-                      decoration: BoxDecoration(
-                        color: AppColors.info.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(isMobile ? 8 : 10),
-                      ),
-                      child: Icon(
-                        Icons.inventory_2_rounded,
-                        color: AppColors.info,
+                        decoration: BoxDecoration(
+                          color: AppColors.info.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(
+                            isMobile ? 8 : 10,
+                          ),
+                        ),
+                        child: Icon(
+                          Icons.inventory_2_rounded,
+                          color: AppColors.info,
                           size: isMobile ? 18 : 20,
+                        ),
                       ),
-                    ),
                       SizedBox(width: isMobile ? 10 : 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            packageOffer['packageName'] ?? 'Package Offer',
-                            style: TextStyle(
+                          children: [
+                            Text(
+                              packageOffer['packageName'] ?? 'Package Offer',
+                              style: TextStyle(
                                 fontSize: isMobile ? 15 : 16,
-                              fontWeight: FontWeight.bold,
-                              color: AppColors.textPrimary,
-                            ),
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.textPrimary,
+                              ),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
-                          ),
-                            SizedBox(height: isMobile ? 3 : 4),
-                          Text(
-                            packageOffer['description'] ?? '',
-                            style: TextStyle(
-                                fontSize: isMobile ? 12 : 13,
-                              color: AppColors.textSecondary,
-                                height: 1.3,
                             ),
+                            SizedBox(height: isMobile ? 3 : 4),
+                            Text(
+                              packageOffer['description'] ?? '',
+                              style: TextStyle(
+                                fontSize: isMobile ? 12 : 13,
+                                color: AppColors.textSecondary,
+                                height: 1.3,
+                              ),
                               maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
                             SizedBox(height: isMobile ? 4 : 6),
-                            _buildStatusBadge(isActiveAndValid, isExpired, isMobile),
+                            _buildStatusBadge(
+                              isActiveAndValid,
+                              isExpired,
+                              isMobile,
+                            ),
                           ],
                         ),
                       ),
@@ -2131,8 +2206,8 @@ class _OfferManagementPageState extends State<OfferManagementPage> {
                                   Icons.school_rounded,
                                   AppColors.info,
                                   isMobile: true,
-                            ),
-                          ),
+                                ),
+                              ),
                               SizedBox(width: isMobile ? 4 : 8),
                               Expanded(
                                 child: _buildStatItem(
@@ -2141,10 +2216,10 @@ class _OfferManagementPageState extends State<OfferManagementPage> {
                                   Icons.quiz_rounded,
                                   AppColors.warning,
                                   isMobile: true,
-                      ),
-                    ),
-                  ],
-                ),
+                                ),
+                              ),
+                            ],
+                          ),
                           SizedBox(height: isMobile ? 4 : 6),
                           Row(
                             children: [
@@ -2157,40 +2232,44 @@ class _OfferManagementPageState extends State<OfferManagementPage> {
                                   isMobile: true,
                                 ),
                               ),
-                              Expanded(child: SizedBox()), // Spacer for symmetry
+                              Expanded(
+                                child: SizedBox(),
+                              ), // Spacer for symmetry
                             ],
                           ),
                         ],
                       )
                     : Row(
-                  children: [
-                    Expanded(
-                      child: _buildStatItem(
-                        '${includedCourses.length}',
-                        'Courses',
-                        Icons.school_rounded,
-                        AppColors.info,
+                        children: [
+                          Expanded(
+                            child: _buildStatItem(
+                              '${includedCourses.length}',
+                              'Courses',
+                              Icons.school_rounded,
+                              AppColors.info,
+                            ),
+                          ),
+                          Expanded(
+                            child: _buildStatItem(
+                              hasExam ? '1' : '0',
+                              'Exams',
+                              Icons.quiz_rounded,
+                              AppColors.warning,
+                            ),
+                          ),
+                          Expanded(
+                            child: _buildStatItem(
+                              '₹${_formatCurrency((packageOffer['price'] ?? 0).toDouble())}',
+                              'Price',
+                              Icons.currency_rupee_rounded,
+                              AppColors.warmOrange,
+                            ),
+                          ),
+                          Expanded(
+                            child: SizedBox(),
+                          ), // Spacer for symmetry with 4-stat cards
+                        ],
                       ),
-                    ),
-                    Expanded(
-                      child: _buildStatItem(
-                        hasExam ? '1' : '0',
-                        'Exams',
-                        Icons.quiz_rounded,
-                        AppColors.warning,
-                      ),
-                    ),
-                    Expanded(
-                      child: _buildStatItem(
-                        '₹${_formatCurrency((packageOffer['price'] ?? 0).toDouble())}',
-                        'Price',
-                        Icons.currency_rupee_rounded,
-                        AppColors.warmOrange,
-                      ),
-                    ),
-                          Expanded(child: SizedBox()), // Spacer for symmetry with 4-stat cards
-                  ],
-                ),
                 SizedBox(height: isMobile ? 12 : 14),
                 // Footer section
                 Row(
@@ -2206,11 +2285,11 @@ class _OfferManagementPageState extends State<OfferManagementPage> {
                         SizedBox(width: isMobile ? 3 : 4),
                         Flexible(
                           child: Text(
-                          'Until ${validUntil.day}/${validUntil.month}/${validUntil.year}',
-                          style: TextStyle(
+                            'Until ${validUntil.day}/${validUntil.month}/${validUntil.year}',
+                            style: TextStyle(
                               fontSize: isMobile ? 10 : 11,
-                            color: AppColors.textSecondary,
-                            fontWeight: FontWeight.w500,
+                              color: AppColors.textSecondary,
+                              fontWeight: FontWeight.w500,
                             ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
@@ -2263,9 +2342,7 @@ class _OfferManagementPageState extends State<OfferManagementPage> {
     bool isMobile = false,
   }) {
     return Container(
-      constraints: BoxConstraints(
-        minHeight: isMobile ? 36 : 48,
-      ),
+      constraints: BoxConstraints(minHeight: isMobile ? 36 : 48),
       padding: EdgeInsets.symmetric(
         horizontal: isMobile ? 4 : 0,
         vertical: isMobile ? 2 : 0,
@@ -2273,40 +2350,40 @@ class _OfferManagementPageState extends State<OfferManagementPage> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         mainAxisSize: MainAxisSize.min,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
             mainAxisSize: MainAxisSize.min,
-          children: [
+            children: [
               Icon(icon, size: isMobile ? 11 : 13, color: color),
               SizedBox(width: isMobile ? 2 : 3),
               Flexible(
                 child: Text(
-              value,
-              style: TextStyle(
+                  value,
+                  style: TextStyle(
                     fontSize: isMobile ? 12 : 14,
-                fontWeight: FontWeight.bold,
-                color: color,
+                    fontWeight: FontWeight.bold,
+                    color: color,
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
+                ),
               ),
-            ),
-          ],
-        ),
-          SizedBox(height: isMobile ? 2 : 3),
-        Text(
-          label,
-          style: TextStyle(
-              fontSize: isMobile ? 9 : 10,
-            color: AppColors.textSecondary,
-            fontWeight: FontWeight.w500,
+            ],
           ),
+          SizedBox(height: isMobile ? 2 : 3),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: isMobile ? 9 : 10,
+              color: AppColors.textSecondary,
+              fontWeight: FontWeight.w500,
+            ),
             textAlign: TextAlign.center,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-        ),
-      ],
+          ),
+        ],
       ),
     );
   }
@@ -2331,16 +2408,9 @@ class _OfferManagementPageState extends State<OfferManagementPage> {
           decoration: BoxDecoration(
             color: color.withOpacity(0.1),
             borderRadius: BorderRadius.circular(isMobile ? 6 : 8),
-            border: Border.all(
-              color: color.withOpacity(0.3),
-              width: 1,
-            ),
+            border: Border.all(color: color.withOpacity(0.3), width: 1),
           ),
-          child: Icon(
-            icon,
-            size: isMobile ? 14 : 16,
-            color: color,
-          ),
+          child: Icon(icon, size: isMobile ? 14 : 16, color: color),
         ),
       ),
     );
@@ -2392,7 +2462,6 @@ class _OfferManagementPageState extends State<OfferManagementPage> {
       ),
     );
   }
-
 
   void _showOfferDetails(Offer offer) {
     showDialog(

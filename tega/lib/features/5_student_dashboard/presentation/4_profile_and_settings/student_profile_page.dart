@@ -33,7 +33,7 @@ class _StudentProfilePageState extends State<StudentProfilePage> {
 
   // Text controllers for editable fields
   final Map<String, TextEditingController> _controllers = {};
-  
+
   // Validation errors map
   final Map<String, String?> _fieldErrors = {};
 
@@ -42,11 +42,14 @@ class _StudentProfilePageState extends State<StudentProfilePage> {
   double get tabletBreakpoint => 1024;
   double get desktopBreakpoint => 1440;
   bool get isMobile => MediaQuery.of(context).size.width < mobileBreakpoint;
-  bool get isTablet => MediaQuery.of(context).size.width >= mobileBreakpoint &&
+  bool get isTablet =>
+      MediaQuery.of(context).size.width >= mobileBreakpoint &&
       MediaQuery.of(context).size.width < tabletBreakpoint;
-  bool get isDesktop => MediaQuery.of(context).size.width >= tabletBreakpoint &&
+  bool get isDesktop =>
+      MediaQuery.of(context).size.width >= tabletBreakpoint &&
       MediaQuery.of(context).size.width < desktopBreakpoint;
-  bool get isLargeDesktop => MediaQuery.of(context).size.width >= desktopBreakpoint;
+  bool get isLargeDesktop =>
+      MediaQuery.of(context).size.width >= desktopBreakpoint;
   bool get isSmallScreen => MediaQuery.of(context).size.width < 400;
 
   @override
@@ -67,7 +70,9 @@ class _StudentProfilePageState extends State<StudentProfilePage> {
             error.toString().toLowerCase().contains('connection') ||
             error.toString().toLowerCase().contains('internet') ||
             error.toString().toLowerCase().contains('failed host lookup') ||
-            error.toString().toLowerCase().contains('no address associated with hostname'));
+            error.toString().toLowerCase().contains(
+              'no address associated with hostname',
+            ));
   }
 
   @override
@@ -83,17 +88,57 @@ class _StudentProfilePageState extends State<StudentProfilePage> {
 
     // Initialize controllers for all editable fields
     final fields = [
-      'firstName', 'lastName', 'email', 'phone', 'contactNumber',
-      'alternateNumber', 'personalEmail', 'studentId', 'institute', 'course',
-      'major', 'yearOfStudy', 'address', 'landmark', 'city', 'district',
-      'state', 'country', 'zipcode', 'permanentAddress', 'title', 'summary',
-      'linkedin', 'website', 'github', 'portfolio', 'behance', 'dribbble',
-      'fatherName', 'fatherOccupation', 'fatherPhone', 'motherName',
-      'motherOccupation', 'motherPhone', 'guardianName', 'guardianRelation',
-      'guardianPhone', 'emergencyContact', 'emergencyPhone', 'nationality',
-      'interests', 'achievements', 'publications', 'patents', 'awards',
-      'jobType', 'preferredLocation', 'workMode', 'salaryExpectation',
-      'noticePeriod', 'availability'
+      'firstName',
+      'lastName',
+      'email',
+      'phone',
+      'contactNumber',
+      'alternateNumber',
+      'personalEmail',
+      'studentId',
+      'institute',
+      'course',
+      'major',
+      'yearOfStudy',
+      'address',
+      'landmark',
+      'city',
+      'district',
+      'state',
+      'country',
+      'zipcode',
+      'permanentAddress',
+      'title',
+      'summary',
+      'linkedin',
+      'website',
+      'github',
+      'portfolio',
+      'behance',
+      'dribbble',
+      'fatherName',
+      'fatherOccupation',
+      'fatherPhone',
+      'motherName',
+      'motherOccupation',
+      'motherPhone',
+      'guardianName',
+      'guardianRelation',
+      'guardianPhone',
+      'emergencyContact',
+      'emergencyPhone',
+      'nationality',
+      'interests',
+      'achievements',
+      'publications',
+      'patents',
+      'awards',
+      'jobType',
+      'preferredLocation',
+      'workMode',
+      'salaryExpectation',
+      'noticePeriod',
+      'availability',
     ];
 
     for (var field in fields) {
@@ -150,7 +195,7 @@ class _StudentProfilePageState extends State<StudentProfilePage> {
         if (data['success'] == true && data['data'] != null) {
           // Cache the data
           await _cacheService.setProfileData(data['data']);
-          
+
           if (mounted) {
             setState(() {
               _profileData = data['data'];
@@ -234,23 +279,31 @@ class _StudentProfilePageState extends State<StudentProfilePage> {
 
       // Prepare update data - only include fields that have changed
       final updateData = <String, dynamic>{};
-      
+
       // Fields that should NOT be sent (disabled fields)
       final excludedFields = {'studentId', 'institute'};
-      
+
       // Array fields that are complex objects (not simple strings) - should not be sent as text
       final arrayObjectFields = {
-        'achievements', 'projects', 'education', 'experience', 'skills',
-        'certifications', 'languages', 'hobbies', 'volunteerExperience',
-        'extracurricularActivities'
+        'achievements',
+        'projects',
+        'education',
+        'experience',
+        'skills',
+        'certifications',
+        'languages',
+        'hobbies',
+        'volunteerExperience',
+        'extracurricularActivities',
       };
-      
+
       // Process text fields from controllers
       for (var entry in _controllers.entries) {
         final key = entry.key;
         if (excludedFields.contains(key)) continue; // Skip disabled fields
-        if (arrayObjectFields.contains(key)) continue; // Skip array object fields (they need special handling)
-        
+        if (arrayObjectFields.contains(key))
+          continue; // Skip array object fields (they need special handling)
+
         final value = entry.value.text.trim();
         // Email should be lowercase (backend requirement)
         if (key == 'email') {
@@ -260,7 +313,7 @@ class _StudentProfilePageState extends State<StudentProfilePage> {
           updateData[key] = value;
         }
       }
-      
+
       // Note: Array fields (achievements, projects, education, etc.) are complex objects
       // and should not be sent as simple text strings. They require a proper UI for editing.
       // For now, we exclude them from updates to avoid validation errors.
@@ -277,9 +330,10 @@ class _StudentProfilePageState extends State<StudentProfilePage> {
           updateData['dob'] = dob.toIso8601String();
         }
       }
-      
+
       // Gender - normalize to match backend enum values
-      if (_editedData!['gender'] != null && _editedData!['gender'].toString().isNotEmpty) {
+      if (_editedData!['gender'] != null &&
+          _editedData!['gender'].toString().isNotEmpty) {
         final gender = _editedData!['gender'].toString().trim();
         // Normalize to match backend: 'Male', 'Female', 'Other'
         final normalizedGender = gender.toLowerCase();
@@ -287,18 +341,22 @@ class _StudentProfilePageState extends State<StudentProfilePage> {
           updateData['gender'] = 'Male';
         } else if (normalizedGender == 'female') {
           updateData['gender'] = 'Female';
-        } else if (normalizedGender == 'other' || normalizedGender == 'prefer-not-to-say') {
+        } else if (normalizedGender == 'other' ||
+            normalizedGender == 'prefer-not-to-say') {
           updateData['gender'] = 'Other';
         } else if (['Male', 'Female', 'Other'].contains(gender)) {
           updateData['gender'] = gender; // Already correct
         }
       }
-      
+
       // Marital status - trim whitespace
-      if (_editedData!['maritalStatus'] != null && _editedData!['maritalStatus'].toString().isNotEmpty) {
-        updateData['maritalStatus'] = _editedData!['maritalStatus'].toString().trim();
+      if (_editedData!['maritalStatus'] != null &&
+          _editedData!['maritalStatus'].toString().isNotEmpty) {
+        updateData['maritalStatus'] = _editedData!['maritalStatus']
+            .toString()
+            .trim();
       }
-      
+
       // Year of study - ensure it's a number
       if (_editedData!['yearOfStudy'] != null) {
         final yearValue = _editedData!['yearOfStudy'];
@@ -328,14 +386,14 @@ class _StudentProfilePageState extends State<StudentProfilePage> {
           if (data['data'] != null) {
             await _cacheService.setProfileData(data['data']);
           }
-          
+
           setState(() {
             _isEditing = false;
             _profileData = data['data'];
             _editedData = Map<String, dynamic>.from(_profileData!);
           });
           _initializeControllers();
-          
+
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
@@ -352,7 +410,8 @@ class _StudentProfilePageState extends State<StudentProfilePage> {
         String errorMessage = 'Failed to update profile';
         try {
           final errorData = json.decode(response.body);
-          errorMessage = errorData['message'] ?? errorData['error'] ?? errorMessage;
+          errorMessage =
+              errorData['message'] ?? errorData['error'] ?? errorMessage;
         } catch (_) {
           errorMessage = 'Server error: ${response.statusCode}';
         }
@@ -391,16 +450,18 @@ class _StudentProfilePageState extends State<StudentProfilePage> {
     });
     _initializeControllers();
   }
-  
+
   // Validation methods
   String? _validateField(String key, String value) {
     if (value.trim().isEmpty) {
       return null; // Empty is allowed for optional fields
     }
-    
+
     switch (key) {
       case 'email':
-        final emailRegex = RegExp(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$');
+        final emailRegex = RegExp(
+          r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$',
+        );
         if (!emailRegex.hasMatch(value.trim())) {
           return 'Please enter a valid email address';
         }
@@ -436,7 +497,9 @@ class _StudentProfilePageState extends State<StudentProfilePage> {
         }
         break;
       case 'personalEmail':
-        final emailRegex = RegExp(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$');
+        final emailRegex = RegExp(
+          r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$',
+        );
         if (!emailRegex.hasMatch(value.trim())) {
           return 'Please enter a valid email address';
         }
@@ -444,11 +507,11 @@ class _StudentProfilePageState extends State<StudentProfilePage> {
     }
     return null;
   }
-  
+
   bool _validateAllFields() {
     _fieldErrors.clear();
     bool isValid = true;
-    
+
     for (var entry in _controllers.entries) {
       final key = entry.key;
       final value = entry.value.text;
@@ -458,7 +521,7 @@ class _StudentProfilePageState extends State<StudentProfilePage> {
         isValid = false;
       }
     }
-    
+
     setState(() {}); // Update UI to show errors
     return isValid;
   }
@@ -753,7 +816,9 @@ class _StudentProfilePageState extends State<StudentProfilePage> {
                           : isSmallScreen
                           ? 1.8
                           : 2,
-                      valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
+                      valueColor: const AlwaysStoppedAnimation<Color>(
+                        Colors.white,
+                      ),
                     ),
                   )
                 : Icon(
@@ -1069,12 +1134,11 @@ class _StudentProfilePageState extends State<StudentProfilePage> {
             enabled: false, // Student ID cannot be changed
           ),
           _buildDateField('dob', Icons.cake, 'Date of Birth'),
-          _buildDropdownField(
-            'gender',
-            Icons.person_outline,
-            'Gender',
-            ['Male', 'Female', 'Other'],
-          ),
+          _buildDropdownField('gender', Icons.person_outline, 'Gender', [
+            'Male',
+            'Female',
+            'Other',
+          ]),
           _buildDropdownField(
             'maritalStatus',
             Icons.favorite_outline,
@@ -2097,9 +2161,7 @@ class _StudentProfilePageState extends State<StudentProfilePage> {
                 ? 12
                 : 16,
           ),
-          Divider(
-            thickness: isLargeDesktop || isDesktop ? 1.5 : 1,
-          ),
+          Divider(thickness: isLargeDesktop || isDesktop ? 1.5 : 1),
           SizedBox(
             height: isLargeDesktop
                 ? 20
@@ -2382,9 +2444,13 @@ class _StudentProfilePageState extends State<StudentProfilePage> {
     // Get input formatters based on field type
     List<TextInputFormatter>? inputFormatters;
     TextInputType? keyboardType;
-    
-    if (key == 'phone' || key == 'contactNumber' || key == 'alternateNumber' ||
-        key == 'fatherPhone' || key == 'motherPhone' || key == 'guardianPhone' ||
+
+    if (key == 'phone' ||
+        key == 'contactNumber' ||
+        key == 'alternateNumber' ||
+        key == 'fatherPhone' ||
+        key == 'motherPhone' ||
+        key == 'guardianPhone' ||
         key == 'emergencyPhone') {
       inputFormatters = [
         FilteringTextInputFormatter.digitsOnly,
@@ -2406,9 +2472,9 @@ class _StudentProfilePageState extends State<StudentProfilePage> {
       ];
       keyboardType = TextInputType.number;
     }
-    
+
     final errorText = _fieldErrors[key];
-    
+
     return Padding(
       padding: EdgeInsets.only(
         bottom: isLargeDesktop
@@ -2512,7 +2578,8 @@ class _StudentProfilePageState extends State<StudentProfilePage> {
                         },
                         onChanged: (value) {
                           // Clear error when user starts typing
-                          if (_fieldErrors.containsKey(key) && _fieldErrors[key] != null) {
+                          if (_fieldErrors.containsKey(key) &&
+                              _fieldErrors[key] != null) {
                             final error = _validateField(key, value);
                             setState(() {
                               _fieldErrors[key] = error;
@@ -2568,7 +2635,9 @@ class _StudentProfilePageState extends State<StudentProfilePage> {
                                   : 8,
                             ),
                             borderSide: BorderSide(
-                              color: errorText != null ? Colors.red : Colors.grey[300]!,
+                              color: errorText != null
+                                  ? Colors.red
+                                  : Colors.grey[300]!,
                               width: isLargeDesktop || isDesktop ? 1.5 : 1,
                             ),
                           ),
@@ -2585,7 +2654,9 @@ class _StudentProfilePageState extends State<StudentProfilePage> {
                                   : 8,
                             ),
                             borderSide: BorderSide(
-                              color: errorText != null ? Colors.red : Colors.grey[300]!,
+                              color: errorText != null
+                                  ? Colors.red
+                                  : Colors.grey[300]!,
                               width: isLargeDesktop || isDesktop ? 1.5 : 1,
                             ),
                           ),
@@ -2602,7 +2673,9 @@ class _StudentProfilePageState extends State<StudentProfilePage> {
                                   : 8,
                             ),
                             borderSide: BorderSide(
-                              color: errorText != null ? Colors.red : const Color(0xFF6B5FFF),
+                              color: errorText != null
+                                  ? Colors.red
+                                  : const Color(0xFF6B5FFF),
                               width: isLargeDesktop || isDesktop ? 2.5 : 2,
                             ),
                           ),
@@ -2643,7 +2716,9 @@ class _StudentProfilePageState extends State<StudentProfilePage> {
                         ),
                       )
                     : Text(
-                        controller.text.isEmpty ? 'Not provided' : controller.text,
+                        controller.text.isEmpty
+                            ? 'Not provided'
+                            : controller.text,
                         style: TextStyle(
                           fontSize: isLargeDesktop
                               ? 16
@@ -2754,8 +2829,12 @@ class _StudentProfilePageState extends State<StudentProfilePage> {
                     ? InkWell(
                         onTap: () async {
                           final initialDate = dob != null
-                              ? (dob is String ? DateTime.parse(dob) : dob as DateTime)
-                              : DateTime.now().subtract(const Duration(days: 365 * 18));
+                              ? (dob is String
+                                    ? DateTime.parse(dob)
+                                    : dob as DateTime)
+                              : DateTime.now().subtract(
+                                  const Duration(days: 365 * 18),
+                                );
                           final picked = await showDatePicker(
                             context: context,
                             initialDate: initialDate,
@@ -3026,7 +3105,9 @@ class _StudentProfilePageState extends State<StudentProfilePage> {
                           ),
                         ),
                         items: [
-                          if (allowCustom && currentValue.isNotEmpty && !options.contains(currentValue))
+                          if (allowCustom &&
+                              currentValue.isNotEmpty &&
+                              !options.contains(currentValue))
                             DropdownMenuItem(
                               value: currentValue,
                               child: Text(
@@ -3044,23 +3125,25 @@ class _StudentProfilePageState extends State<StudentProfilePage> {
                                 ),
                               ),
                             ),
-                          ...options.map((option) => DropdownMenuItem(
-                                value: option,
-                                child: Text(
-                                  option,
-                                  style: TextStyle(
-                                    fontSize: isLargeDesktop
-                                        ? 16
-                                        : isDesktop
-                                        ? 15
-                                        : isTablet
-                                        ? 14
-                                        : isSmallScreen
-                                        ? 13
-                                        : 14,
-                                  ),
+                          ...options.map(
+                            (option) => DropdownMenuItem(
+                              value: option,
+                              child: Text(
+                                option,
+                                style: TextStyle(
+                                  fontSize: isLargeDesktop
+                                      ? 16
+                                      : isDesktop
+                                      ? 15
+                                      : isTablet
+                                      ? 14
+                                      : isSmallScreen
+                                      ? 13
+                                      : 14,
                                 ),
-                              )),
+                              ),
+                            ),
+                          ),
                         ],
                         onChanged: (value) {
                           setState(() {
@@ -3099,7 +3182,7 @@ class _StudentProfilePageState extends State<StudentProfilePage> {
     if (!_controllers.containsKey(key)) {
       _controllers[key] = controller;
     }
-    
+
     final errorText = _fieldErrors[key];
     final inputFormatters = [
       FilteringTextInputFormatter.digitsOnly,
@@ -3211,7 +3294,8 @@ class _StudentProfilePageState extends State<StudentProfilePage> {
                             _editedData![key] = numValue;
                           }
                           // Clear error when user starts typing
-                          if (_fieldErrors.containsKey(key) && _fieldErrors[key] != null) {
+                          if (_fieldErrors.containsKey(key) &&
+                              _fieldErrors[key] != null) {
                             final error = _validateField(key, value);
                             setState(() {
                               _fieldErrors[key] = error;
@@ -3267,7 +3351,9 @@ class _StudentProfilePageState extends State<StudentProfilePage> {
                                   : 8,
                             ),
                             borderSide: BorderSide(
-                              color: errorText != null ? Colors.red : Colors.grey[300]!,
+                              color: errorText != null
+                                  ? Colors.red
+                                  : Colors.grey[300]!,
                               width: isLargeDesktop || isDesktop ? 1.5 : 1,
                             ),
                           ),
@@ -3284,7 +3370,9 @@ class _StudentProfilePageState extends State<StudentProfilePage> {
                                   : 8,
                             ),
                             borderSide: BorderSide(
-                              color: errorText != null ? Colors.red : Colors.grey[300]!,
+                              color: errorText != null
+                                  ? Colors.red
+                                  : Colors.grey[300]!,
                               width: isLargeDesktop || isDesktop ? 1.5 : 1,
                             ),
                           ),
@@ -3301,7 +3389,9 @@ class _StudentProfilePageState extends State<StudentProfilePage> {
                                   : 8,
                             ),
                             borderSide: BorderSide(
-                              color: errorText != null ? Colors.red : const Color(0xFF6B5FFF),
+                              color: errorText != null
+                                  ? Colors.red
+                                  : const Color(0xFF6B5FFF),
                               width: isLargeDesktop || isDesktop ? 2.5 : 2,
                             ),
                           ),
@@ -3399,12 +3489,14 @@ class _StudentProfilePageState extends State<StudentProfilePage> {
   }
 
   Widget _buildProfileAvatar() {
-    final profilePhoto = _profileData?['profilePhoto'] ??
+    final profilePhoto =
+        _profileData?['profilePhoto'] ??
         _profileData?['profilePicture']?['url'];
     final username = _profileData?['username'] ?? _profileData?['email'] ?? 'U';
     final initials = _getInitials(username);
-    final hasPhoto = profilePhoto != null && 
-        profilePhoto.toString().isNotEmpty && 
+    final hasPhoto =
+        profilePhoto != null &&
+        profilePhoto.toString().isNotEmpty &&
         !_profileImageError;
 
     return Stack(
@@ -3452,11 +3544,11 @@ class _StudentProfilePageState extends State<StudentProfilePage> {
                   ),
                 )
               : _isUploadingPhoto
-                  ? CircularProgressIndicator(
-                      valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
-                      strokeWidth: isLargeDesktop || isDesktop ? 3 : 2.5,
-                    )
-                  : null,
+              ? CircularProgressIndicator(
+                  valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
+                  strokeWidth: isLargeDesktop || isDesktop ? 3 : 2.5,
+                )
+              : null,
         ),
         if (_isEditing)
           Positioned(
@@ -3506,7 +3598,9 @@ class _StudentProfilePageState extends State<StudentProfilePage> {
                             : 16,
                         child: CircularProgressIndicator(
                           strokeWidth: isLargeDesktop || isDesktop ? 2.5 : 2,
-                          valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF6B5FFF)),
+                          valueColor: const AlwaysStoppedAnimation<Color>(
+                            Color(0xFF6B5FFF),
+                          ),
                         ),
                       )
                     : Icon(
@@ -3528,10 +3622,12 @@ class _StudentProfilePageState extends State<StudentProfilePage> {
       ],
     );
   }
-  
+
   void _showPhotoOptions() {
-    final hasPhoto = (_profileData?['profilePhoto'] ??
-            _profileData?['profilePicture']?['url']) != null &&
+    final hasPhoto =
+        (_profileData?['profilePhoto'] ??
+                _profileData?['profilePicture']?['url']) !=
+            null &&
         (_profileData?['profilePhoto'] ??
                 _profileData?['profilePicture']?['url'])
             .toString()
@@ -3548,7 +3644,10 @@ class _StudentProfilePageState extends State<StudentProfilePage> {
           mainAxisSize: MainAxisSize.min,
           children: [
             ListTile(
-              leading: const Icon(Icons.photo_library, color: Color(0xFF6B5FFF)),
+              leading: const Icon(
+                Icons.photo_library,
+                color: Color(0xFF6B5FFF),
+              ),
               title: const Text('Choose from Gallery'),
               onTap: () {
                 Navigator.pop(context);
@@ -3558,7 +3657,10 @@ class _StudentProfilePageState extends State<StudentProfilePage> {
             if (hasPhoto)
               ListTile(
                 leading: const Icon(Icons.delete, color: Colors.red),
-                title: const Text('Remove Photo', style: TextStyle(color: Colors.red)),
+                title: const Text(
+                  'Remove Photo',
+                  style: TextStyle(color: Colors.red),
+                ),
                 onTap: () {
                   Navigator.pop(context);
                   _deleteProfilePhoto();
@@ -3570,7 +3672,7 @@ class _StudentProfilePageState extends State<StudentProfilePage> {
       ),
     );
   }
-  
+
   Future<void> _pickAndUploadImage() async {
     try {
       // Using file_picker for cross-platform compatibility
@@ -3581,11 +3683,11 @@ class _StudentProfilePageState extends State<StudentProfilePage> {
 
       if (result != null && result.files.isNotEmpty) {
         final pickedFile = result.files.single;
-        
+
         // Handle both path and bytes (for web/Android compatibility)
         File? file;
         List<int>? fileBytes;
-        
+
         // Prefer bytes if available (more reliable on Android)
         if (pickedFile.bytes != null) {
           fileBytes = pickedFile.bytes;
@@ -3621,14 +3723,16 @@ class _StudentProfilePageState extends State<StudentProfilePage> {
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
-                content: Text('Unable to access selected file. Please try again.'),
+                content: Text(
+                  'Unable to access selected file. Please try again.',
+                ),
                 backgroundColor: Colors.red,
               ),
             );
           }
           return;
         }
-        
+
         // Check file size (5MB limit)
         if (fileBytes == null || fileBytes.isEmpty) {
           if (mounted) {
@@ -3641,7 +3745,7 @@ class _StudentProfilePageState extends State<StudentProfilePage> {
           }
           return;
         }
-        
+
         final fileSize = fileBytes.length;
         if (fileSize > 5 * 1024 * 1024) {
           if (mounted) {
@@ -3678,15 +3782,18 @@ class _StudentProfilePageState extends State<StudentProfilePage> {
       }
     }
   }
-  
-  Future<void> _uploadProfilePhotoFromBytes(List<int> bytes, String fileName) async {
+
+  Future<void> _uploadProfilePhotoFromBytes(
+    List<int> bytes,
+    String fileName,
+  ) async {
     setState(() {
       _isUploadingPhoto = true;
     });
 
     try {
       final headers = _authService.getAuthHeaders();
-      
+
       // Determine content type from file extension
       String contentType = 'image/jpeg';
       final extension = fileName.toLowerCase().split('.').last;
@@ -3705,17 +3812,19 @@ class _StudentProfilePageState extends State<StudentProfilePage> {
         default:
           contentType = 'image/jpeg';
       }
-      
+
       // Create multipart request
       var request = http.MultipartRequest(
         'POST',
         Uri.parse(ApiEndpoints.r2ProfilePictureUpload),
       );
-      
+
       // Add headers (don't set Content-Type, let multipart set it)
       request.headers.addAll(headers);
-      request.headers.remove('Content-Type'); // Remove if present, let multipart set it
-      
+      request.headers.remove(
+        'Content-Type',
+      ); // Remove if present, let multipart set it
+
       // Add file from bytes with proper content type
       request.files.add(
         http.MultipartFile.fromBytes(
@@ -3730,10 +3839,12 @@ class _StudentProfilePageState extends State<StudentProfilePage> {
       var streamedResponse = await request.send().timeout(
         const Duration(seconds: 30),
         onTimeout: () {
-          throw Exception('Upload timeout. Please check your connection and try again.');
+          throw Exception(
+            'Upload timeout. Please check your connection and try again.',
+          );
         },
       );
-      
+
       var response = await http.Response.fromStream(streamedResponse);
 
       if (response.statusCode == 200) {
@@ -3750,17 +3861,20 @@ class _StudentProfilePageState extends State<StudentProfilePage> {
         String errorMessage = 'Server error occurred';
         try {
           final errorData = json.decode(response.body);
-          errorMessage = errorData['message'] ?? errorData['error'] ?? errorMessage;
+          errorMessage =
+              errorData['message'] ?? errorData['error'] ?? errorMessage;
         } catch (_) {
           errorMessage = 'Server error: ${response.statusCode}';
         }
-        
+
         // Try legacy upload as fallback
         try {
           await _legacyUploadProfilePhoto(bytes, fileName, contentType);
         } catch (legacyError) {
           // If legacy also fails, show the original error
-          throw Exception('R2 Upload failed: $errorMessage. Legacy upload also failed: ${legacyError.toString()}');
+          throw Exception(
+            'R2 Upload failed: $errorMessage. Legacy upload also failed: ${legacyError.toString()}',
+          );
         }
       } else {
         // Other errors - try legacy upload
@@ -3769,7 +3883,7 @@ class _StudentProfilePageState extends State<StudentProfilePage> {
           final errorData = json.decode(response.body);
           errorMessage = errorData['message'] ?? errorMessage;
         } catch (_) {}
-        
+
         try {
           await _legacyUploadProfilePhoto(bytes, fileName, contentType);
         } catch (legacyError) {
@@ -3780,7 +3894,9 @@ class _StudentProfilePageState extends State<StudentProfilePage> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Upload timeout. Please check your connection and try again.'),
+            content: Text(
+              'Upload timeout. Please check your connection and try again.',
+            ),
             backgroundColor: Colors.red,
           ),
         );
@@ -3804,7 +3920,11 @@ class _StudentProfilePageState extends State<StudentProfilePage> {
     }
   }
 
-  Future<void> _legacyUploadProfilePhoto(List<int> bytes, String fileName, String contentType) async {
+  Future<void> _legacyUploadProfilePhoto(
+    List<int> bytes,
+    String fileName,
+    String contentType,
+  ) async {
     // Try legacy student endpoint: POST /api/student/profile/photo with field 'profilePhoto'
     try {
       final headers = _authService.getAuthHeaders();
@@ -3846,7 +3966,8 @@ class _StudentProfilePageState extends State<StudentProfilePage> {
         String errorMessage = 'Failed to upload photo';
         try {
           final errorData = json.decode(resp.body);
-          errorMessage = errorData['message'] ?? errorData['error'] ?? errorMessage;
+          errorMessage =
+              errorData['message'] ?? errorData['error'] ?? errorMessage;
         } catch (_) {
           errorMessage = 'Server error: ${resp.statusCode}';
         }
@@ -3857,8 +3978,10 @@ class _StudentProfilePageState extends State<StudentProfilePage> {
       throw Exception('Legacy upload failed: ${e.toString()}');
     }
   }
-  
-  Future<void> _updateProfilePictureWithR2Data(Map<String, dynamic> r2Data) async {
+
+  Future<void> _updateProfilePictureWithR2Data(
+    Map<String, dynamic> r2Data,
+  ) async {
     try {
       final headers = _authService.getAuthHeaders();
       headers['Content-Type'] = 'application/json';
@@ -3874,7 +3997,7 @@ class _StudentProfilePageState extends State<StudentProfilePage> {
         if (data['success'] == true) {
           // Reload profile data to get updated photo
           await _loadProfileData();
-          
+
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
@@ -3884,11 +4007,15 @@ class _StudentProfilePageState extends State<StudentProfilePage> {
             );
           }
         } else {
-          throw Exception(data['message'] ?? 'Failed to update profile picture');
+          throw Exception(
+            data['message'] ?? 'Failed to update profile picture',
+          );
         }
       } else {
         final errorData = json.decode(response.body);
-        throw Exception(errorData['message'] ?? 'Failed to update profile picture');
+        throw Exception(
+          errorData['message'] ?? 'Failed to update profile picture',
+        );
       }
     } catch (e) {
       if (mounted) {
@@ -3901,14 +4028,16 @@ class _StudentProfilePageState extends State<StudentProfilePage> {
       }
     }
   }
-  
+
   Future<void> _deleteProfilePhoto() async {
     // Show confirmation dialog
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Delete Profile Photo'),
-        content: const Text('Are you sure you want to remove your profile photo?'),
+        content: const Text(
+          'Are you sure you want to remove your profile photo?',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
@@ -3940,7 +4069,7 @@ class _StudentProfilePageState extends State<StudentProfilePage> {
       if (response.statusCode == 200) {
         // Reload profile data
         await _loadProfileData();
-        
+
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
@@ -3995,7 +4124,7 @@ class _StudentProfilePageState extends State<StudentProfilePage> {
 
   Widget _buildErrorState() {
     final isNoInternet = _errorMessage == 'No internet connection';
-    
+
     return Center(
       child: Padding(
         padding: EdgeInsets.all(

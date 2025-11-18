@@ -88,7 +88,9 @@ class _ForgetPasswordPageState extends State<ForgetPasswordPage> {
             content: Text(msg),
             backgroundColor: AppColors.error,
             behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
           ),
         );
       }
@@ -100,7 +102,9 @@ class _ForgetPasswordPageState extends State<ForgetPasswordPage> {
           content: Text('Error sending reset email: $e'),
           backgroundColor: AppColors.error,
           behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
         ),
       );
     }
@@ -112,9 +116,7 @@ class _ForgetPasswordPageState extends State<ForgetPasswordPage> {
       body: Container(
         width: double.infinity,
         height: double.infinity,
-        decoration: const BoxDecoration(
-          color: AppColors.background,
-        ),
+        decoration: const BoxDecoration(color: AppColors.background),
         child: SafeArea(
           child: SingleChildScrollView(
             padding: const EdgeInsets.all(20),
@@ -222,10 +224,7 @@ class _ForgetPasswordPageState extends State<ForgetPasswordPage> {
           TextFormField(
             controller: _emailController,
             keyboardType: TextInputType.emailAddress,
-            style: const TextStyle(
-              fontSize: 15,
-              color: AppColors.textPrimary,
-            ),
+            style: const TextStyle(fontSize: 15, color: AppColors.textPrimary),
             decoration: _inputDecoration(
               _tr('email_hint'),
               Icons.email_rounded,
@@ -363,7 +362,11 @@ class _ForgetPasswordPageState extends State<ForgetPasswordPage> {
         child: DropdownButton<String>(
           value: _selectedLanguage,
           underline: const SizedBox(),
-          icon: const Icon(Icons.language_rounded, size: 18, color: AppColors.textSecondary),
+          icon: const Icon(
+            Icons.language_rounded,
+            size: 18,
+            color: AppColors.textSecondary,
+          ),
           style: const TextStyle(
             color: AppColors.textPrimary,
             fontSize: 14,

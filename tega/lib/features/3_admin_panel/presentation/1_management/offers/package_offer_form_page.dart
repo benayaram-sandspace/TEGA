@@ -54,10 +54,10 @@ class _PackageOfferFormPageState extends State<PackageOfferFormPage> {
   Future<void> _initializeCacheAndLoadData() async {
     // Initialize cache service
     await _cacheService.initialize();
-    
+
     // Try to load from cache first
     await _loadFromCache();
-    
+
     // Then load fresh data
     await _loadAvailableOptions();
   }
@@ -65,18 +65,21 @@ class _PackageOfferFormPageState extends State<PackageOfferFormPage> {
   Future<void> _loadFromCache() async {
     try {
       setState(() => _isLoadingFromCache = true);
-      
+
       final cachedCourses = await _cacheService.getAvailableCourses();
       final cachedExams = await _cacheService.getAvailableTegaExams();
       final cachedInstitutes = await _cacheService.getAvailableInstitutes();
 
-      if (cachedCourses != null && cachedExams != null && cachedInstitutes != null) {
+      if (cachedCourses != null &&
+          cachedExams != null &&
+          cachedInstitutes != null) {
         // Deduplicate courses by ID
         final coursesList = List<Map<String, dynamic>>.from(cachedCourses);
         final seenCourseIds = <String>{};
         final deduplicatedCourses = <Map<String, dynamic>>[];
         for (final course in coursesList) {
-          final courseId = course['_id']?.toString() ?? course['id']?.toString();
+          final courseId =
+              course['_id']?.toString() ?? course['id']?.toString();
           if (courseId != null && !seenCourseIds.contains(courseId)) {
             seenCourseIds.add(courseId);
             deduplicatedCourses.add(course);
@@ -103,27 +106,31 @@ class _PackageOfferFormPageState extends State<PackageOfferFormPage> {
     _descriptionController.text = package['description'] ?? '';
     _priceController.text = (package['price'] ?? 0).toString();
     _selectedInstitute = package['instituteName'];
-    
+
     if (package['validUntil'] != null) {
       _validUntil = DateTime.parse(package['validUntil']);
     }
-    
+
     if (package['includedCourses'] != null) {
       _selectedCourses = List<Map<String, dynamic>>.from(
-        package['includedCourses'].map((course) => {
-          'courseId': course['courseId'] ?? course['_id'],
-          'courseName': course['courseName'] ?? course['title'] ?? 'Unknown',
-        }),
+        package['includedCourses'].map(
+          (course) => {
+            'courseId': course['courseId'] ?? course['_id'],
+            'courseName': course['courseName'] ?? course['title'] ?? 'Unknown',
+          },
+        ),
       );
     }
-    
+
     _selectedTegaExamId = package['includedExam'];
   }
 
   Future<void> _loadAvailableOptions({bool forceRefresh = false}) async {
     // If we have cached data and not forcing refresh, load in background
-    if (!forceRefresh && _availableCourses.isNotEmpty && 
-        _availableTegaExams.isNotEmpty && _availableInstitutes.isNotEmpty) {
+    if (!forceRefresh &&
+        _availableCourses.isNotEmpty &&
+        _availableTegaExams.isNotEmpty &&
+        _availableInstitutes.isNotEmpty) {
       _loadAvailableOptionsInBackground();
       return;
     }
@@ -250,7 +257,13 @@ class _PackageOfferFormPageState extends State<PackageOfferFormPage> {
                 _buildHeader(isMobile, isTablet, isDesktop),
                 Expanded(
                   child: SingleChildScrollView(
-                    padding: EdgeInsets.all(isMobile ? 16 : isTablet ? 20 : 24),
+                    padding: EdgeInsets.all(
+                      isMobile
+                          ? 16
+                          : isTablet
+                          ? 20
+                          : 24,
+                    ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -284,23 +297,33 @@ class _PackageOfferFormPageState extends State<PackageOfferFormPage> {
   Widget _buildHeader(bool isMobile, bool isTablet, bool isDesktop) {
     return Container(
       padding: EdgeInsets.only(
-        left: isMobile ? 16 : isTablet ? 20 : 24,
-        right: isMobile ? 16 : isTablet ? 20 : 24,
+        left: isMobile
+            ? 16
+            : isTablet
+            ? 20
+            : 24,
+        right: isMobile
+            ? 16
+            : isTablet
+            ? 20
+            : 24,
         top: isMobile ? 12 : 16,
         bottom: isMobile ? 12 : 16,
       ),
       decoration: BoxDecoration(
         color: Colors.white,
-        border: Border(
-          bottom: BorderSide(color: Colors.grey[200]!, width: 1),
-        ),
+        border: Border(bottom: BorderSide(color: Colors.grey[200]!, width: 1)),
       ),
       child: Row(
         children: [
           Text(
             widget.isEdit ? 'Edit Package Offer' : 'Create Package Offer',
             style: TextStyle(
-              fontSize: isMobile ? 18 : isTablet ? 20 : 22,
+              fontSize: isMobile
+                  ? 18
+                  : isTablet
+                  ? 20
+                  : 22,
               fontWeight: FontWeight.bold,
               color: AppColors.textPrimary,
             ),
@@ -462,7 +485,11 @@ class _PackageOfferFormPageState extends State<PackageOfferFormPage> {
         Text(
           'Select Courses *',
           style: TextStyle(
-            fontSize: isMobile ? 15 : isTablet ? 16 : 18,
+            fontSize: isMobile
+                ? 15
+                : isTablet
+                ? 16
+                : 18,
             fontWeight: FontWeight.w600,
             color: AppColors.textPrimary,
           ),
@@ -489,11 +516,12 @@ class _PackageOfferFormPageState extends State<PackageOfferFormPage> {
             // Filter and deduplicate in one pass
             final seenIds = <String>{};
             final items = <DropdownMenuItem<String>>[];
-            
+
             for (final course in _availableCourses) {
-              final courseId = course['_id']?.toString() ?? course['id']?.toString();
-              if (courseId != null && 
-                  !seenIds.contains(courseId) && 
+              final courseId =
+                  course['_id']?.toString() ?? course['id']?.toString();
+              if (courseId != null &&
+                  !seenIds.contains(courseId) &&
                   !selectedIds.contains(courseId)) {
                 seenIds.add(courseId);
                 items.add(
@@ -530,7 +558,10 @@ class _PackageOfferFormPageState extends State<PackageOfferFormPage> {
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(isMobile ? 8 : 10),
-                  borderSide: const BorderSide(color: AppColors.warmOrange, width: 2),
+                  borderSide: const BorderSide(
+                    color: AppColors.warmOrange,
+                    width: 2,
+                  ),
                 ),
                 filled: true,
                 fillColor: Colors.grey[50],
@@ -542,19 +573,19 @@ class _PackageOfferFormPageState extends State<PackageOfferFormPage> {
               items: items,
               onChanged: (value) {
                 if (value != null) {
-                  final course = _availableCourses.firstWhere(
-                    (c) {
-                      final id = c['_id']?.toString() ?? c['id']?.toString();
-                      return id == value;
-                    },
-                    orElse: () => <String, dynamic>{},
-                  );
-                  
+                  final course = _availableCourses.firstWhere((c) {
+                    final id = c['_id']?.toString() ?? c['id']?.toString();
+                    return id == value;
+                  }, orElse: () => <String, dynamic>{});
+
                   if (course.isNotEmpty) {
                     setState(() {
                       _selectedCourses.add({
                         'courseId': value,
-                        'courseName': course['title'] ?? course['courseName'] ?? 'Unknown',
+                        'courseName':
+                            course['title'] ??
+                            course['courseName'] ??
+                            'Unknown',
                       });
                     });
                   }
@@ -592,7 +623,9 @@ class _PackageOfferFormPageState extends State<PackageOfferFormPage> {
                         padding: EdgeInsets.all(isMobile ? 10 : 12),
                         decoration: BoxDecoration(
                           color: Colors.white,
-                          borderRadius: BorderRadius.circular(isMobile ? 8 : 10),
+                          borderRadius: BorderRadius.circular(
+                            isMobile ? 8 : 10,
+                          ),
                           border: Border.all(color: Colors.grey[300]!),
                         ),
                         child: Row(
@@ -607,10 +640,7 @@ class _PackageOfferFormPageState extends State<PackageOfferFormPage> {
                               ),
                             ),
                             IconButton(
-                              icon: Icon(
-                                Icons.close,
-                                size: isMobile ? 18 : 20,
-                              ),
+                              icon: Icon(Icons.close, size: isMobile ? 18 : 20),
                               color: AppColors.error,
                               padding: EdgeInsets.all(isMobile ? 4 : 8),
                               constraints: BoxConstraints(
@@ -654,7 +684,11 @@ class _PackageOfferFormPageState extends State<PackageOfferFormPage> {
             Text(
               'TEGA Exam',
               style: TextStyle(
-                fontSize: isMobile ? 15 : isTablet ? 16 : 18,
+                fontSize: isMobile
+                    ? 15
+                    : isTablet
+                    ? 16
+                    : 18,
                 fontWeight: FontWeight.w600,
                 color: AppColors.textPrimary,
               ),
@@ -691,7 +725,10 @@ class _PackageOfferFormPageState extends State<PackageOfferFormPage> {
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(isMobile ? 8 : 10),
-              borderSide: const BorderSide(color: AppColors.warmOrange, width: 2),
+              borderSide: const BorderSide(
+                color: AppColors.warmOrange,
+                width: 2,
+              ),
             ),
             filled: true,
             fillColor: Colors.grey[50],
@@ -780,7 +817,11 @@ class _PackageOfferFormPageState extends State<PackageOfferFormPage> {
         Text(
           'Valid Until Date *',
           style: TextStyle(
-            fontSize: isMobile ? 15 : isTablet ? 16 : 18,
+            fontSize: isMobile
+                ? 15
+                : isTablet
+                ? 16
+                : 18,
             fontWeight: FontWeight.w600,
             color: AppColors.textPrimary,
           ),
@@ -805,7 +846,10 @@ class _PackageOfferFormPageState extends State<PackageOfferFormPage> {
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(isMobile ? 8 : 10),
-                borderSide: const BorderSide(color: AppColors.warmOrange, width: 2),
+                borderSide: const BorderSide(
+                  color: AppColors.warmOrange,
+                  width: 2,
+                ),
               ),
               filled: true,
               fillColor: Colors.grey[50],
@@ -865,7 +909,9 @@ class _PackageOfferFormPageState extends State<PackageOfferFormPage> {
             child: ElevatedButton.icon(
               onPressed: _isLoading ? null : _createPackageOffer,
               icon: Icon(
-                widget.isEdit ? Icons.save_outlined : Icons.inventory_2_outlined,
+                widget.isEdit
+                    ? Icons.save_outlined
+                    : Icons.inventory_2_outlined,
                 size: isMobile ? 18 : 20,
               ),
               label: Text(
@@ -993,8 +1039,8 @@ class _PackageOfferFormPageState extends State<PackageOfferFormPage> {
         if (_selectedTegaExamId != null)
           'includedExam': {
             'examId': _selectedTegaExamId,
-            'examTitle': _availableTegaExams
-                .firstWhere(
+            'examTitle':
+                _availableTegaExams.firstWhere(
                   (e) =>
                       (e['_id']?.toString() ?? e['id']?.toString()) ==
                       _selectedTegaExamId,
@@ -1004,9 +1050,13 @@ class _PackageOfferFormPageState extends State<PackageOfferFormPage> {
       };
 
       if (widget.isEdit && widget.packageOffer != null) {
-        final packageId = widget.packageOffer!['_id'] ?? widget.packageOffer!['packageId'];
-        await _offerRepository.updatePackageOffer(packageId.toString(), packageData);
-        
+        final packageId =
+            widget.packageOffer!['_id'] ?? widget.packageOffer!['packageId'];
+        await _offerRepository.updatePackageOffer(
+          packageId.toString(),
+          packageData,
+        );
+
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
@@ -1042,4 +1092,3 @@ class _PackageOfferFormPageState extends State<PackageOfferFormPage> {
     }
   }
 }
-

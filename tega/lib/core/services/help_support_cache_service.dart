@@ -4,7 +4,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 /// Cache service for help & support data
 /// Provides caching with TTL (Time To Live) for help articles and categories
 class HelpSupportCacheService {
-  static final HelpSupportCacheService _instance = HelpSupportCacheService._internal();
+  static final HelpSupportCacheService _instance =
+      HelpSupportCacheService._internal();
   factory HelpSupportCacheService() => _instance;
   HelpSupportCacheService._internal();
 
@@ -62,7 +63,10 @@ class HelpSupportCacheService {
   Future<void> setCategoriesData(List<Map<String, dynamic>> data) async {
     await _ensurePrefs();
     await _prefs?.setString(_categoriesDataKey, json.encode(data));
-    await _prefs?.setString(_cacheTimestampKey, DateTime.now().toIso8601String());
+    await _prefs?.setString(
+      _cacheTimestampKey,
+      DateTime.now().toIso8601String(),
+    );
   }
 
   /// Get cached articles data if valid
@@ -88,7 +92,10 @@ class HelpSupportCacheService {
   Future<void> setArticlesData(List<Map<String, dynamic>> data) async {
     await _ensurePrefs();
     await _prefs?.setString(_articlesDataKey, json.encode(data));
-    await _prefs?.setString(_cacheTimestampKey, DateTime.now().toIso8601String());
+    await _prefs?.setString(
+      _cacheTimestampKey,
+      DateTime.now().toIso8601String(),
+    );
   }
 
   /// Clear all cached data
@@ -99,4 +106,3 @@ class HelpSupportCacheService {
     await _prefs?.remove(_cacheTimestampKey);
   }
 }
-

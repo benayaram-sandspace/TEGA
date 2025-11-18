@@ -60,7 +60,10 @@ class ProfileCacheService {
   Future<void> setProfileData(Map<String, dynamic> data) async {
     await _ensurePrefs();
     await _prefs?.setString(_profileDataKey, json.encode(data));
-    await _prefs?.setString(_cacheTimestampKey, DateTime.now().toIso8601String());
+    await _prefs?.setString(
+      _cacheTimestampKey,
+      DateTime.now().toIso8601String(),
+    );
   }
 
   /// Clear all cached data
@@ -70,4 +73,3 @@ class ProfileCacheService {
     await _prefs?.remove(_cacheTimestampKey);
   }
 }
-

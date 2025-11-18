@@ -62,7 +62,7 @@ class _PlacementPrepPageState extends State<PlacementPrepPage> {
 
       // Fetch placement-specific data
       final data = await api.getDashboard(headers);
-      
+
       // Cache the data
       await _cacheService.setPlacementPrepData(data ?? {});
 
@@ -108,11 +108,14 @@ class _PlacementPrepPageState extends State<PlacementPrepPage> {
   double get tabletBreakpoint => 1024;
   double get desktopBreakpoint => 1440;
   bool get isMobile => MediaQuery.of(context).size.width < mobileBreakpoint;
-  bool get isTablet => MediaQuery.of(context).size.width >= mobileBreakpoint &&
+  bool get isTablet =>
+      MediaQuery.of(context).size.width >= mobileBreakpoint &&
       MediaQuery.of(context).size.width < tabletBreakpoint;
-  bool get isDesktop => MediaQuery.of(context).size.width >= tabletBreakpoint &&
+  bool get isDesktop =>
+      MediaQuery.of(context).size.width >= tabletBreakpoint &&
       MediaQuery.of(context).size.width < desktopBreakpoint;
-  bool get isLargeDesktop => MediaQuery.of(context).size.width >= desktopBreakpoint;
+  bool get isLargeDesktop =>
+      MediaQuery.of(context).size.width >= desktopBreakpoint;
   bool get isSmallScreen => MediaQuery.of(context).size.width < 400;
 
   @override
@@ -405,14 +408,14 @@ class _PlacementPrepPageState extends State<PlacementPrepPage> {
             bottom: action == actions.last
                 ? 0
                 : (isLargeDesktop
-                    ? 20
-                    : isDesktop
-                    ? 16
-                    : isTablet
-                    ? 14
-                    : isSmallScreen
-                    ? 10
-                    : 12),
+                      ? 20
+                      : isDesktop
+                      ? 16
+                      : isTablet
+                      ? 14
+                      : isSmallScreen
+                      ? 10
+                      : 12),
           ),
           child: _buildModernActionCard(
             title: action['title'] as String,

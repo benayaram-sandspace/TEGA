@@ -20,6 +20,7 @@ import 'package:tega/features/5_student_dashboard/presentation/3_ai_tools/studen
 import 'package:tega/features/5_student_dashboard/presentation/3_ai_tools/student_internships_page.dart';
 // import 'package:tega/features/5_student_dashboard/presentation/3_ai_tools/resume_builder_page.dart'; // Kept for future use - removed from navbar
 import 'package:tega/features/5_student_dashboard/data/student_dashboard_service.dart';
+import 'package:tega/features/5_student_dashboard/data/notification_service.dart';
 import 'package:tega/features/5_student_dashboard/presentation/4_profile_and_settings/student_profile_page.dart';
 import 'package:tega/features/5_student_dashboard/presentation/4_profile_and_settings/student_setting_page.dart';
 import 'package:tega/features/5_student_dashboard/presentation/4_profile_and_settings/help_support_page.dart';
@@ -30,6 +31,71 @@ import 'package:tega/features/5_student_dashboard/presentation/7_results/my_resu
 import 'package:tega/features/5_student_dashboard/presentation/3_ai_tools/ai_assistant_page.dart'
     as ai;
 import 'package:tega/core/services/dashboard_cache_service.dart';
+
+// --- AnnouncementDialog widget for college announcements ---
+class AnnouncementDialog extends StatelessWidget {
+  final List<NotificationModel> announcements;
+  const AnnouncementDialog({super.key, required this.announcements});
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Padding(
+        padding: const EdgeInsets.all(20.0),
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                'College Announcement',
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 12),
+              ...announcements.map(
+                (a) => Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(a.icon, color: a.color),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            a.title,
+                            style: const TextStyle(fontWeight: FontWeight.w600),
+                          ),
+                        ),
+                      ],
+                    ),
+                    if (a.message != null && a.message!.isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 8.0),
+                        child: Text(a.message!),
+                      ),
+                    Text(
+                      a.timeAgo,
+                      style: const TextStyle(fontSize: 12, color: Colors.grey),
+                    ),
+                    const Divider(),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 8),
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: const Text('Close'),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
 
 class StudentHomePage extends StatefulWidget {
   const StudentHomePage({super.key});
@@ -68,10 +134,10 @@ class _StudentHomePageState extends State<StudentHomePage>
   bool get isLargeDesktop =>
       MediaQuery.of(context).size.width >= desktopBreakpoint;
   bool get isSmallScreen => MediaQuery.of(context).size.width < 400;
-  
+
   double get screenWidth => MediaQuery.of(context).size.width;
   double get screenHeight => MediaQuery.of(context).size.height;
-  
+
   // Responsive sidebar width
   double get sidebarWidth {
     if (isLargeDesktop) return 320;
@@ -79,26 +145,26 @@ class _StudentHomePageState extends State<StudentHomePage>
     if (isTablet) return 280;
     return 300; // Mobile drawer width
   }
-  
+
   // Should sidebar be always visible
   bool get shouldShowSidebarPermanently => isDesktop || isLargeDesktop;
 
   final List<String> _pageTitles = [
-    'Dashboard',           // 0
-    'Explore Courses',     // 1
-    'Placement Prep',      // 2
-    'Exams',               // 3
-    'My Results',          // 4
-    'Jobs',                // 5
-    'Internships',        // 6
-    'AI Assistant',        // 7 (Resume Builder removed)
-    'Notifications',       // 8
-    'Learning History',    // 9
+    'Dashboard', // 0
+    'Explore Courses', // 1
+    'Placement Prep', // 2
+    'Exams', // 3
+    'My Results', // 4
+    'Jobs', // 5
+    'Internships', // 6
+    'AI Assistant', // 7 (Resume Builder removed)
+    'Notifications', // 8
+    'Learning History', // 9
     'Transaction History', // 10
-    'Start Payment',       // 11
-    'Settings',            // 12
-    'Help & Support',      // 13
-    'Profile',             // 14
+    'Start Payment', // 11
+    'Settings', // 12
+    'Help & Support', // 13
+    'Profile', // 14
   ];
 
   @override
@@ -112,6 +178,31 @@ class _StudentHomePageState extends State<StudentHomePage>
     _loadUserData();
     _loadDashboardData();
     _initializePages();
+
+    // Fetch and show announcements after login/app launch
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _showAnnouncementIfAny();
+    });
+  }
+
+  Future<void> _showAnnouncementIfAny() async {
+    try {
+      final notifications = await NotificationService()
+          .getStudentNotifications();
+      final unreadAnnouncements = notifications
+          .where((n) => !n.isRead && n.type.toLowerCase() == 'announcement')
+          .toList();
+      if (unreadAnnouncements.isNotEmpty && mounted) {
+        showDialog(
+          context: context,
+          barrierDismissible: true,
+          builder: (ctx) =>
+              AnnouncementDialog(announcements: unreadAnnouncements),
+        );
+      }
+    } catch (_) {
+      // Ignore errors for now
+    }
   }
 
   Future<void> _initializeCache() async {
@@ -136,10 +227,10 @@ class _StudentHomePageState extends State<StudentHomePage>
     if (forceRefresh) {
       await _cacheService.clearCache();
     }
-    
+
     // First, try to load from cache
     final cachedData = await _cacheService.getAllCachedData();
-    
+
     if (cachedData != null && !forceRefresh) {
       // Cache is valid, use cached data immediately
       if (!mounted) return;
@@ -163,18 +254,25 @@ class _StudentHomePageState extends State<StudentHomePage>
       final auth = AuthService();
       final headers = auth.getAuthHeaders();
       final api = StudentDashboardService();
-      
-      final sidebar = await api.getSidebarCounts(headers);
-      final dash = await api.getDashboard(headers);
-      final prof = await api.getProfile(headers);
-      
+
+      // Fetch all data in parallel
+      final results = await Future.wait([
+        api.getSidebarCounts(headers),
+        api.getDashboard(headers),
+        api.getProfile(headers),
+      ]);
+
+      final sidebar = results[0] as Map<String, dynamic>;
+      final dash = results[1] as Map<String, dynamic>;
+      final prof = results[2] as Map<String, dynamic>;
+
       // Update cache with fresh data
       await _cacheService.setAllData(
         dashboard: dash,
         sidebarCounts: sidebar,
         profile: prof,
       );
-      
+
       if (!mounted) return;
       setState(() {
         _sidebarCounts = sidebar;
@@ -274,10 +372,10 @@ class _StudentHomePageState extends State<StudentHomePage>
               ElevatedButton(
                 onPressed: () async {
                   Navigator.of(context).pop();
-                  
+
                   // Clear cache before logout
                   await _cacheService.clearCache();
-                  
+
                   await _authService.logout();
 
                   // Clear login form fields
@@ -350,19 +448,19 @@ class _StudentHomePageState extends State<StudentHomePage>
                     Expanded(
                       child: AnimatedSwitcher(
                         duration: const Duration(milliseconds: 300),
-                        transitionBuilder: (child, animation) =>
-                            FadeTransition(
+                        transitionBuilder: (child, animation) => FadeTransition(
                           opacity: animation,
                           child: SlideTransition(
-                            position: Tween<Offset>(
-                              begin: const Offset(0.1, 0),
-                              end: Offset.zero,
-                            ).animate(
-                              CurvedAnimation(
-                                parent: animation,
-                                curve: Curves.easeOutCubic,
-                              ),
-                            ),
+                            position:
+                                Tween<Offset>(
+                                  begin: const Offset(0.1, 0),
+                                  end: Offset.zero,
+                                ).animate(
+                                  CurvedAnimation(
+                                    parent: animation,
+                                    curve: Curves.easeOutCubic,
+                                  ),
+                                ),
                             child: child,
                           ),
                         ),
@@ -403,15 +501,16 @@ class _StudentHomePageState extends State<StudentHomePage>
                     transitionBuilder: (child, animation) => FadeTransition(
                       opacity: animation,
                       child: SlideTransition(
-                        position: Tween<Offset>(
-                          begin: const Offset(0.1, 0),
-                          end: Offset.zero,
-                        ).animate(
-                          CurvedAnimation(
-                            parent: animation,
-                            curve: Curves.easeOutCubic,
-                          ),
-                        ),
+                        position:
+                            Tween<Offset>(
+                              begin: const Offset(0.1, 0),
+                              end: Offset.zero,
+                            ).animate(
+                              CurvedAnimation(
+                                parent: animation,
+                                curve: Curves.easeOutCubic,
+                              ),
+                            ),
                         child: child,
                       ),
                     ),
@@ -612,42 +711,42 @@ class _StudentHomePageState extends State<StudentHomePage>
     final headerPadding = isLargeDesktop
         ? const EdgeInsets.fromLTRB(24, 48, 24, 28)
         : isDesktop
-            ? const EdgeInsets.fromLTRB(20, 40, 20, 24)
-            : isTablet
-                ? const EdgeInsets.fromLTRB(18, 36, 18, 20)
-                : const EdgeInsets.fromLTRB(16, 32, 16, 20);
-    
+        ? const EdgeInsets.fromLTRB(20, 40, 20, 24)
+        : isTablet
+        ? const EdgeInsets.fromLTRB(18, 36, 18, 20)
+        : const EdgeInsets.fromLTRB(16, 32, 16, 20);
+
     final avatarRadius = isLargeDesktop
         ? 32.0
         : isDesktop
-            ? 28.0
-            : isTablet
-                ? 26.0
-                : 24.0;
-    
+        ? 28.0
+        : isTablet
+        ? 26.0
+        : 24.0;
+
     final iconSize = isLargeDesktop
         ? 36.0
         : isDesktop
-            ? 32.0
-            : isTablet
-                ? 30.0
-                : 28.0;
-    
+        ? 32.0
+        : isTablet
+        ? 30.0
+        : 28.0;
+
     final nameFontSize = isLargeDesktop
         ? 18.0
         : isDesktop
-            ? 16.0
-            : isTablet
-                ? 15.0
-                : 14.0;
-    
+        ? 16.0
+        : isTablet
+        ? 15.0
+        : 14.0;
+
     final detailFontSize = isLargeDesktop
         ? 13.0
         : isDesktop
-            ? 12.0
-            : isTablet
-                ? 11.5
-                : 11.0;
+        ? 12.0
+        : isTablet
+        ? 11.5
+        : 11.0;
 
     return Container(
       width: double.infinity,
@@ -711,18 +810,18 @@ class _StudentHomePageState extends State<StudentHomePage>
     final fontSize = isLargeDesktop
         ? 13.0
         : isDesktop
-            ? 12.0
-            : isTablet
-                ? 11.5
-                : 11.0;
-    
+        ? 12.0
+        : isTablet
+        ? 11.5
+        : 11.0;
+
     final padding = isLargeDesktop
         ? const EdgeInsets.fromLTRB(16, 20, 16, 10)
         : isDesktop
-            ? const EdgeInsets.fromLTRB(12, 16, 12, 8)
-            : isTablet
-                ? const EdgeInsets.fromLTRB(10, 14, 10, 7)
-                : const EdgeInsets.fromLTRB(8, 12, 8, 6);
+        ? const EdgeInsets.fromLTRB(12, 16, 12, 8)
+        : isTablet
+        ? const EdgeInsets.fromLTRB(10, 14, 10, 7)
+        : const EdgeInsets.fromLTRB(8, 12, 8, 6);
 
     return Padding(
       padding: padding,
@@ -745,47 +844,47 @@ class _StudentHomePageState extends State<StudentHomePage>
     String? badge,
   }) {
     final isSelected = _selectedIndex == index;
-    
+
     // Responsive sizing
     final iconSize = isLargeDesktop
         ? 22.0
         : isDesktop
-            ? 20.0
-            : isTablet
-                ? 19.0
-                : 18.0;
-    
+        ? 20.0
+        : isTablet
+        ? 19.0
+        : 18.0;
+
     final fontSize = isLargeDesktop
         ? 15.0
         : isDesktop
-            ? 14.0
-            : isTablet
-                ? 13.5
-                : 13.0;
-    
+        ? 14.0
+        : isTablet
+        ? 13.5
+        : 13.0;
+
     final padding = isLargeDesktop
         ? const EdgeInsets.symmetric(horizontal: 14, vertical: 12)
         : isDesktop
-            ? const EdgeInsets.symmetric(horizontal: 12, vertical: 10)
-            : isTablet
-                ? const EdgeInsets.symmetric(horizontal: 10, vertical: 9)
-                : const EdgeInsets.symmetric(horizontal: 8, vertical: 8);
-    
+        ? const EdgeInsets.symmetric(horizontal: 12, vertical: 10)
+        : isTablet
+        ? const EdgeInsets.symmetric(horizontal: 10, vertical: 9)
+        : const EdgeInsets.symmetric(horizontal: 8, vertical: 8);
+
     final iconPadding = isLargeDesktop
         ? 7.0
         : isDesktop
-            ? 6.0
-            : isTablet
-                ? 5.5
-                : 5.0;
-    
+        ? 6.0
+        : isTablet
+        ? 5.5
+        : 5.0;
+
     final borderRadius = isLargeDesktop
         ? 14.0
         : isDesktop
-            ? 12.0
-            : isTablet
-                ? 11.0
-                : 10.0;
+        ? 12.0
+        : isTablet
+        ? 11.0
+        : 10.0;
 
     return Material(
       color: isSelected
@@ -886,24 +985,24 @@ class _StudentHomePageState extends State<StudentHomePage>
     final margin = isSmallScreen
         ? const EdgeInsets.all(6)
         : isTablet
-            ? const EdgeInsets.all(10)
-            : const EdgeInsets.all(8);
-    
+        ? const EdgeInsets.all(10)
+        : const EdgeInsets.all(8);
+
     final fontSize = isLargeDesktop
         ? 15.0
         : isDesktop
-            ? 14.0
-            : isTablet
-                ? 13.5
-                : 13.0;
-    
+        ? 14.0
+        : isTablet
+        ? 13.5
+        : 13.0;
+
     final iconSize = isLargeDesktop
         ? 22.0
         : isDesktop
-            ? 20.0
-            : isTablet
-                ? 19.0
-                : 18.0;
+        ? 20.0
+        : isTablet
+        ? 19.0
+        : 18.0;
 
     return Container(
       margin: margin,
@@ -924,11 +1023,7 @@ class _StudentHomePageState extends State<StudentHomePage>
             color: Colors.red.withOpacity(0.1),
             borderRadius: BorderRadius.circular(8),
           ),
-          child: Icon(
-            Icons.logout,
-            color: Colors.red,
-            size: iconSize,
-          ),
+          child: Icon(Icons.logout, color: Colors.red, size: iconSize),
         ),
         title: Text(
           'Logout',
@@ -979,41 +1074,41 @@ class _HomePageContent extends StatelessWidget {
     final horizontalPadding = isLargeDesktop
         ? 32.0
         : isDesktop
-            ? 24.0
-            : isTablet
-                ? 20.0
-                : isSmallScreen
-                    ? 12.0
-                    : 16.0;
-    
+        ? 24.0
+        : isTablet
+        ? 20.0
+        : isSmallScreen
+        ? 12.0
+        : 16.0;
+
     final verticalPadding = isLargeDesktop
         ? 28.0
         : isDesktop
-            ? 24.0
-            : isTablet
-                ? 20.0
-                : isSmallScreen
-                    ? 14.0
-                    : 16.0;
-    
+        ? 24.0
+        : isTablet
+        ? 20.0
+        : isSmallScreen
+        ? 14.0
+        : 16.0;
+
     final spacing = isLargeDesktop
         ? 28.0
         : isDesktop
-            ? 24.0
-            : isTablet
-                ? 20.0
-                : isSmallScreen
-                    ? 14.0
-                    : 18.0;
+        ? 24.0
+        : isTablet
+        ? 20.0
+        : isSmallScreen
+        ? 14.0
+        : 18.0;
 
     return LayoutBuilder(
       builder: (context, constraints) {
         final maxContentWidth = isLargeDesktop
             ? 1600.0
             : isDesktop
-                ? 1400.0
-                : double.infinity;
-        
+            ? 1400.0
+            : double.infinity;
+
         return SingleChildScrollView(
           padding: EdgeInsets.symmetric(
             horizontal: horizontalPadding,
@@ -1045,7 +1140,9 @@ class _HomePageContent extends StatelessWidget {
                     isLargeDesktop: isLargeDesktop,
                     isLandscape: isLandscape,
                     spacing: spacing,
-                    firstChild: RecentActivityWidget(activities: recentActivity),
+                    firstChild: RecentActivityWidget(
+                      activities: recentActivity,
+                    ),
                     secondChild: UpcomingEventsWidget(events: upcomingEvents),
                   ),
                   SizedBox(height: spacing),
@@ -1078,28 +1175,19 @@ class _HomePageContent extends StatelessWidget {
       return Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Expanded(
-            flex: 1,
-            child: firstChild,
-          ),
+          Expanded(flex: 1, child: firstChild),
           SizedBox(width: spacing),
-          Expanded(
-            flex: 1,
-            child: secondChild,
-          ),
+          Expanded(flex: 1, child: secondChild),
         ],
       );
     } else if (isDesktop || (isTablet && isLandscape)) {
       return Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Expanded(
-            child: firstChild,
-          ),
+          Expanded(child: firstChild),
           SizedBox(width: spacing),
-          Expanded(
-            child: secondChild,
-          ),
+          Expanded(child: secondChild),
+
         ],
       );
     } else {

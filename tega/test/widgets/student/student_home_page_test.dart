@@ -17,11 +17,7 @@ void main() {
     });
 
     testWidgets('should build without errors', (WidgetTester tester) async {
-      await tester.pumpWidget(
-        const MaterialApp(
-          home: StudentHomePage(),
-        ),
-      );
+      await tester.pumpWidget(const MaterialApp(home: StudentHomePage()));
 
       await tester.pump();
 
@@ -29,11 +25,7 @@ void main() {
     });
 
     testWidgets('should have bottom navigation', (WidgetTester tester) async {
-      await tester.pumpWidget(
-        const MaterialApp(
-          home: StudentHomePage(),
-        ),
-      );
+      await tester.pumpWidget(const MaterialApp(home: StudentHomePage()));
 
       await tester.pump();
 
@@ -44,4 +36,3 @@ void main() {
     });
   });
 }
-

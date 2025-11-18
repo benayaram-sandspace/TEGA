@@ -15,13 +15,13 @@ void main() {
       test('should complete full registration flow', () async {
         // 1. Check email availability
         expect(authService, isNotNull);
-        
+
         // 2. Send registration OTP
         expect(authService, isNotNull);
-        
+
         // 3. Verify OTP
         expect(authService, isNotNull);
-        
+
         // 4. Complete registration
         expect(authService, isNotNull);
       });
@@ -36,10 +36,10 @@ void main() {
       test('should complete password reset flow', () async {
         // 1. Request password reset
         expect(authService, isNotNull);
-        
+
         // 2. Verify OTP
         expect(authService, isNotNull);
-        
+
         // 3. Reset password
         expect(authService, isNotNull);
       });
@@ -60,10 +60,10 @@ void main() {
       test('should navigate to correct dashboard based on role', () {
         // Student role
         expect(authService.isStudent, isFalse);
-        
+
         // Admin role
         expect(authService.isAdmin, isFalse);
-        
+
         // Principal role
         expect(authService.isPrincipal, isFalse);
       });
@@ -84,4 +84,3 @@ void main() {
     });
   });
 }
-

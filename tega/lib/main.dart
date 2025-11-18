@@ -69,9 +69,7 @@ class MyApp extends StatelessWidget {
 
       // Wrap with KeyboardDismisser to auto-dismiss keyboard on tap outside
       builder: (context, child) {
-        return KeyboardDismisser(
-          child: child ?? const SizedBox.shrink(),
-        );
+        return KeyboardDismisser(child: child ?? const SizedBox.shrink());
       },
 
       // Start with splash screen

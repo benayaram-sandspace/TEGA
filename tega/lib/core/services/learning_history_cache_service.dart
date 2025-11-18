@@ -4,7 +4,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 /// Cache service for learning history data
 /// Provides caching with TTL (Time To Live) for learning stats and enrolled courses
 class LearningHistoryCacheService {
-  static final LearningHistoryCacheService _instance = LearningHistoryCacheService._internal();
+  static final LearningHistoryCacheService _instance =
+      LearningHistoryCacheService._internal();
   factory LearningHistoryCacheService() => _instance;
   LearningHistoryCacheService._internal();
 
@@ -60,7 +61,10 @@ class LearningHistoryCacheService {
   Future<void> setLearningStats(Map<String, dynamic> data) async {
     await _ensurePrefs();
     await _prefs?.setString(_learningStatsKey, json.encode(data));
-    await _prefs?.setString(_cacheTimestampKey, DateTime.now().toIso8601String());
+    await _prefs?.setString(
+      _cacheTimestampKey,
+      DateTime.now().toIso8601String(),
+    );
   }
 
   /// Get cached enrolled courses data if valid
@@ -79,7 +83,9 @@ class LearningHistoryCacheService {
         final map = e as Map<String, dynamic>;
         // Convert enrollmentDate from string to DateTime
         if (map['enrollmentDate'] is String) {
-          map['enrollmentDate'] = DateTime.parse(map['enrollmentDate'] as String);
+          map['enrollmentDate'] = DateTime.parse(
+            map['enrollmentDate'] as String,
+          );
         }
         return map;
       }).toList();
@@ -96,12 +102,16 @@ class LearningHistoryCacheService {
     final serializedData = data.map((course) {
       final courseCopy = Map<String, dynamic>.from(course);
       if (courseCopy['enrollmentDate'] is DateTime) {
-        courseCopy['enrollmentDate'] = (courseCopy['enrollmentDate'] as DateTime).toIso8601String();
+        courseCopy['enrollmentDate'] =
+            (courseCopy['enrollmentDate'] as DateTime).toIso8601String();
       }
       return courseCopy;
     }).toList();
     await _prefs?.setString(_enrolledCoursesKey, json.encode(serializedData));
-    await _prefs?.setString(_cacheTimestampKey, DateTime.now().toIso8601String());
+    await _prefs?.setString(
+      _cacheTimestampKey,
+      DateTime.now().toIso8601String(),
+    );
   }
 
   /// Clear learning stats cache
@@ -124,4 +134,3 @@ class LearningHistoryCacheService {
     await _prefs?.remove(_cacheTimestampKey);
   }
 }
-

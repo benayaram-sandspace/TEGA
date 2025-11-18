@@ -44,7 +44,9 @@ class _CompanySpecificQuestionsPageState
             error.toString().toLowerCase().contains('connection') ||
             error.toString().toLowerCase().contains('internet') ||
             error.toString().toLowerCase().contains('failed host lookup') ||
-            error.toString().toLowerCase().contains('no address associated with hostname'));
+            error.toString().toLowerCase().contains(
+              'no address associated with hostname',
+            ));
   }
 
   String? _getFallbackLogo(String companyName) {
@@ -191,11 +193,14 @@ class _CompanySpecificQuestionsPageState
   double get tabletBreakpoint => 1024;
   double get desktopBreakpoint => 1440;
   bool get isMobile => MediaQuery.of(context).size.width < mobileBreakpoint;
-  bool get isTablet => MediaQuery.of(context).size.width >= mobileBreakpoint &&
+  bool get isTablet =>
+      MediaQuery.of(context).size.width >= mobileBreakpoint &&
       MediaQuery.of(context).size.width < tabletBreakpoint;
-  bool get isDesktop => MediaQuery.of(context).size.width >= tabletBreakpoint &&
+  bool get isDesktop =>
+      MediaQuery.of(context).size.width >= tabletBreakpoint &&
       MediaQuery.of(context).size.width < desktopBreakpoint;
-  bool get isLargeDesktop => MediaQuery.of(context).size.width >= desktopBreakpoint;
+  bool get isLargeDesktop =>
+      MediaQuery.of(context).size.width >= desktopBreakpoint;
   bool get isSmallScreen => MediaQuery.of(context).size.width < 400;
 
   @override
@@ -423,37 +428,114 @@ class _CompanySpecificQuestionsPageState
                       ),
                     )
                   : _errorMessage != null && _companies.isEmpty
-                      ? Center(
-                          child: Padding(
-                            padding: EdgeInsets.all(
-                              isLargeDesktop
-                                  ? 32
+                  ? Center(
+                      child: Padding(
+                        padding: EdgeInsets.all(
+                          isLargeDesktop
+                              ? 32
+                              : isDesktop
+                              ? 28
+                              : isTablet
+                              ? 24
+                              : isSmallScreen
+                              ? 16
+                              : 20,
+                        ),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.cloud_off,
+                              size: isLargeDesktop
+                                  ? 80
                                   : isDesktop
-                                  ? 28
+                                  ? 72
                                   : isTablet
-                                  ? 24
+                                  ? 64
                                   : isSmallScreen
-                                  ? 16
-                                  : 20,
+                                  ? 48
+                                  : 56,
+                              color: Colors.grey[400],
                             ),
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(
-                                  Icons.cloud_off,
-                                  size: isLargeDesktop
-                                      ? 80
+                            SizedBox(
+                              height: isLargeDesktop
+                                  ? 24
+                                  : isDesktop
+                                  ? 20
+                                  : isTablet
+                                  ? 18
+                                  : isSmallScreen
+                                  ? 12
+                                  : 16,
+                            ),
+                            Text(
+                              _errorMessage == 'No internet connection'
+                                  ? 'No internet connection'
+                                  : 'Something went wrong',
+                              style: TextStyle(
+                                color: Colors.grey[700],
+                                fontSize: isLargeDesktop
+                                    ? 18
+                                    : isDesktop
+                                    ? 16
+                                    : isTablet
+                                    ? 15
+                                    : isSmallScreen
+                                    ? 12
+                                    : 14,
+                                fontWeight: FontWeight.bold,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                            if (_errorMessage == 'No internet connection') ...[
+                              SizedBox(
+                                height: isLargeDesktop
+                                    ? 8
+                                    : isDesktop
+                                    ? 6
+                                    : isTablet
+                                    ? 5
+                                    : isSmallScreen
+                                    ? 4
+                                    : 5,
+                              ),
+                              Text(
+                                'Please check your connection and try again',
+                                style: TextStyle(
+                                  color: Colors.grey[600],
+                                  fontSize: isLargeDesktop
+                                      ? 14
                                       : isDesktop
-                                      ? 72
+                                      ? 13
                                       : isTablet
-                                      ? 64
+                                      ? 12
                                       : isSmallScreen
-                                      ? 48
-                                      : 56,
-                                  color: Colors.grey[400],
+                                      ? 10
+                                      : 11,
                                 ),
-                                SizedBox(
-                                  height: isLargeDesktop
+                                textAlign: TextAlign.center,
+                              ),
+                            ],
+                            SizedBox(
+                              height: isLargeDesktop
+                                  ? 24
+                                  : isDesktop
+                                  ? 20
+                                  : isTablet
+                                  ? 18
+                                  : isSmallScreen
+                                  ? 12
+                                  : 16,
+                            ),
+                            ElevatedButton(
+                              onPressed: () => _loadCompaniesAndQuestions(
+                                forceRefresh: true,
+                              ),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFF6B5FFF),
+                                foregroundColor: Colors.white,
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: isLargeDesktop
                                       ? 24
                                       : isDesktop
                                       ? 20
@@ -462,29 +544,47 @@ class _CompanySpecificQuestionsPageState
                                       : isSmallScreen
                                       ? 12
                                       : 16,
+                                  vertical: isLargeDesktop
+                                      ? 14
+                                      : isDesktop
+                                      ? 12
+                                      : isTablet
+                                      ? 11
+                                      : isSmallScreen
+                                      ? 8
+                                      : 10,
                                 ),
-                                Text(
-                                  _errorMessage == 'No internet connection'
-                                      ? 'No internet connection'
-                                      : 'Something went wrong',
-                                  style: TextStyle(
-                                    color: Colors.grey[700],
-                                    fontSize: isLargeDesktop
-                                        ? 18
-                                        : isDesktop
-                                        ? 16
-                                        : isTablet
-                                        ? 15
-                                        : isSmallScreen
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(
+                                    isLargeDesktop
                                         ? 12
-                                        : 14,
-                                    fontWeight: FontWeight.bold,
+                                        : isDesktop
+                                        ? 10
+                                        : isTablet
+                                        ? 9
+                                        : isSmallScreen
+                                        ? 6
+                                        : 8,
                                   ),
-                                  textAlign: TextAlign.center,
                                 ),
-                                if (_errorMessage == 'No internet connection') ...[
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    Icons.refresh,
+                                    size: isLargeDesktop
+                                        ? 22
+                                        : isDesktop
+                                        ? 20
+                                        : isTablet
+                                        ? 19
+                                        : isSmallScreen
+                                        ? 16
+                                        : 18,
+                                  ),
                                   SizedBox(
-                                    height: isLargeDesktop
+                                    width: isLargeDesktop
                                         ? 8
                                         : isDesktop
                                         ? 6
@@ -495,120 +595,27 @@ class _CompanySpecificQuestionsPageState
                                         : 5,
                                   ),
                                   Text(
-                                    'Please check your connection and try again',
+                                    'Retry',
                                     style: TextStyle(
-                                      color: Colors.grey[600],
                                       fontSize: isLargeDesktop
-                                          ? 14
+                                          ? 16
                                           : isDesktop
-                                          ? 13
+                                          ? 15
                                           : isTablet
-                                          ? 12
+                                          ? 14
                                           : isSmallScreen
-                                          ? 10
-                                          : 11,
+                                          ? 12
+                                          : 13,
+                                      fontWeight: FontWeight.w600,
                                     ),
-                                    textAlign: TextAlign.center,
                                   ),
                                 ],
-                                SizedBox(
-                                  height: isLargeDesktop
-                                      ? 24
-                                      : isDesktop
-                                      ? 20
-                                      : isTablet
-                                      ? 18
-                                      : isSmallScreen
-                                      ? 12
-                                      : 16,
-                                ),
-                                ElevatedButton(
-                                  onPressed: () => _loadCompaniesAndQuestions(forceRefresh: true),
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: const Color(0xFF6B5FFF),
-                                    foregroundColor: Colors.white,
-                                    padding: EdgeInsets.symmetric(
-                                      horizontal: isLargeDesktop
-                                          ? 24
-                                          : isDesktop
-                                          ? 20
-                                          : isTablet
-                                          ? 18
-                                          : isSmallScreen
-                                          ? 12
-                                          : 16,
-                                      vertical: isLargeDesktop
-                                          ? 14
-                                          : isDesktop
-                                          ? 12
-                                          : isTablet
-                                          ? 11
-                                          : isSmallScreen
-                                          ? 8
-                                          : 10,
-                                    ),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(
-                                        isLargeDesktop
-                                            ? 12
-                                            : isDesktop
-                                            ? 10
-                                            : isTablet
-                                            ? 9
-                                            : isSmallScreen
-                                            ? 6
-                                            : 8,
-                                      ),
-                                    ),
-                                  ),
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Icon(
-                                        Icons.refresh,
-                                        size: isLargeDesktop
-                                            ? 22
-                                            : isDesktop
-                                            ? 20
-                                            : isTablet
-                                            ? 19
-                                            : isSmallScreen
-                                            ? 16
-                                            : 18,
-                                      ),
-                                      SizedBox(
-                                        width: isLargeDesktop
-                                            ? 8
-                                            : isDesktop
-                                            ? 6
-                                            : isTablet
-                                            ? 5
-                                            : isSmallScreen
-                                            ? 4
-                                            : 5,
-                                      ),
-                                      Text(
-                                        'Retry',
-                                        style: TextStyle(
-                                          fontSize: isLargeDesktop
-                                              ? 16
-                                              : isDesktop
-                                              ? 15
-                                              : isTablet
-                                              ? 14
-                                              : isSmallScreen
-                                              ? 12
-                                              : 13,
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
+                              ),
                             ),
-                          ),
-                        )
+                          ],
+                        ),
+                      ),
+                    )
                   : Padding(
                       padding: EdgeInsets.all(
                         isLargeDesktop
@@ -1146,10 +1153,8 @@ class _CompanyLogo extends StatelessWidget {
           ),
         ),
       ),
-      errorWidget: (context, url, error) => const Icon(
-        Icons.apartment_rounded,
-        color: Color(0xFF6B5FFF),
-      ),
+      errorWidget: (context, url, error) =>
+          const Icon(Icons.apartment_rounded, color: Color(0xFF6B5FFF)),
     );
   }
 

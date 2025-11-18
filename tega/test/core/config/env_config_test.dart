@@ -27,14 +27,18 @@ void main() {
     });
 
     test('getString should return default value when key not found', () {
-      expect(EnvConfig.getString('NON_EXISTENT_KEY', defaultValue: 'default'),
-          equals('default'));
+      expect(
+        EnvConfig.getString('NON_EXISTENT_KEY', defaultValue: 'default'),
+        equals('default'),
+      );
     });
 
     test('getBool should return true for "true" string', () {
       // Assuming we set a test value
-      expect(EnvConfig.getBool('ENABLE_DEBUG_LOGS', defaultValue: false),
-          isA<bool>());
+      expect(
+        EnvConfig.getBool('ENABLE_DEBUG_LOGS', defaultValue: false),
+        isA<bool>(),
+      );
     });
 
     test('getInt should parse integer values', () {
@@ -42,8 +46,10 @@ void main() {
     });
 
     test('getDouble should parse double values', () {
-      expect(EnvConfig.getDouble('TEST_DOUBLE', defaultValue: 3.14),
-          equals(3.14));
+      expect(
+        EnvConfig.getDouble('TEST_DOUBLE', defaultValue: 3.14),
+        equals(3.14),
+      );
     });
 
     test('hasKey should check if key exists', () {
@@ -74,4 +80,3 @@ void main() {
     });
   });
 }
-

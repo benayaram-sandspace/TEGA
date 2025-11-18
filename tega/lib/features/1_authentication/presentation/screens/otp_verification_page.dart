@@ -148,7 +148,6 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
 
   /// Handle registration OTP verification and account creation
   Future<void> _handleRegistrationVerification(String otp) async {
-
     // Verify OTP and create account in one step
     final verifyResult = await _authService.verifyRegistrationOTP(
       widget.email,
@@ -158,7 +157,6 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
     if (!mounted) return;
 
     if (verifyResult['success'] == true && verifyResult['verified'] == true) {
-
       // Show success message
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -194,13 +192,11 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
 
   /// Handle password reset OTP verification
   Future<void> _handlePasswordResetVerification(String otp) async {
-
     final result = await _authService.verifyOTP(widget.email, otp);
 
     if (!mounted) return;
 
     if (result['success'] == true && result['verified'] == true) {
-
       // Navigate to reset password page
       if (!mounted) return;
       Navigator.of(context).push(
@@ -220,7 +216,6 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
   Future<void> _resendOTP() async {
     if (!_canResend) return;
 
-
     try {
       final result = widget.isRegistration
           ? await _authService.sendRegistrationOTP(widget.email)
@@ -229,7 +224,6 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
       if (!mounted) return;
 
       if (result['success'] == true) {
-
         setState(() {
           _resendCountdown = 30;
         });
@@ -299,9 +293,7 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
       body: Container(
         width: double.infinity,
         height: double.infinity,
-        decoration: const BoxDecoration(
-          color: AppColors.background,
-        ),
+        decoration: const BoxDecoration(color: AppColors.background),
         child: SafeArea(
           child: SingleChildScrollView(
             padding: const EdgeInsets.all(20),
@@ -403,10 +395,7 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
       children: [
         Text(
           _tr('subtitle'),
-          style: const TextStyle(
-            fontSize: 16,
-            color: AppColors.textSecondary,
-          ),
+          style: const TextStyle(fontSize: 16, color: AppColors.textSecondary),
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: 16),
@@ -491,7 +480,11 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
           : Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Icon(Icons.access_time, size: 16, color: AppColors.textSecondary),
+                const Icon(
+                  Icons.access_time,
+                  size: 16,
+                  color: AppColors.textSecondary,
+                ),
                 const SizedBox(width: 8),
                 Text(
                   '${_tr('resend_in')} ${_resendCountdown.toString().padLeft(2, '0')}',
@@ -527,7 +520,9 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
                 height: 20,
                 child: CircularProgressIndicator(
                   strokeWidth: 2,
-                  valueColor: AlwaysStoppedAnimation<Color>(AppColors.pureWhite),
+                  valueColor: AlwaysStoppedAnimation<Color>(
+                    AppColors.pureWhite,
+                  ),
                 ),
               )
             : Text(
@@ -576,7 +571,11 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
         child: DropdownButton<String>(
           value: _selectedLanguage,
           underline: const SizedBox(),
-          icon: const Icon(Icons.language_rounded, size: 18, color: AppColors.textSecondary),
+          icon: const Icon(
+            Icons.language_rounded,
+            size: 18,
+            color: AppColors.textSecondary,
+          ),
           style: const TextStyle(
             color: AppColors.textPrimary,
             fontSize: 14,

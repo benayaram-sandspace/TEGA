@@ -43,9 +43,15 @@ void main() {
       expect(authService.getSessionDuration(), isNull);
     });
 
-    test('should return correct formatted session duration when not logged in', () {
-      expect(authService.getFormattedSessionDuration(), equals('Not logged in'));
-    });
+    test(
+      'should return correct formatted session duration when not logged in',
+      () {
+        expect(
+          authService.getFormattedSessionDuration(),
+          equals('Not logged in'),
+        );
+      },
+    );
 
     test('should handle role checks when not logged in', () {
       expect(authService.isAdmin, isFalse);
@@ -55,4 +61,3 @@ void main() {
     });
   });
 }
-

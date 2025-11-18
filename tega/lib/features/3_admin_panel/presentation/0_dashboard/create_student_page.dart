@@ -66,7 +66,7 @@ class _CreateStudentPageState extends State<CreateStudentPage> {
   Future<void> _initializeCache() async {
     // Initialize cache service (for consistency with other pages)
     await _cacheService.initialize();
-    
+
     // Try to load institutes from cache if available
     final cachedInstitutes = await _cacheService.getAvailableInstitutes();
     if (cachedInstitutes != null && cachedInstitutes.isNotEmpty) {
@@ -137,7 +137,11 @@ class _CreateStudentPageState extends State<CreateStudentPage> {
             // Custom AppBar
             Container(
               padding: EdgeInsets.symmetric(
-                horizontal: isMobile ? 16 : isTablet ? 20 : 24,
+                horizontal: isMobile
+                    ? 16
+                    : isTablet
+                    ? 20
+                    : 24,
                 vertical: isMobile ? 12 : 16,
               ),
               decoration: BoxDecoration(
@@ -178,14 +182,20 @@ class _CreateStudentPageState extends State<CreateStudentPage> {
                     child: Text(
                       'Create New Student',
                       style: TextStyle(
-                        fontSize: isMobile ? 18 : isTablet ? 20 : 22,
+                        fontSize: isMobile
+                            ? 18
+                            : isTablet
+                            ? 20
+                            : 22,
                         fontWeight: FontWeight.bold,
                         color: const Color(0xFF2D3748),
                       ),
                       textAlign: TextAlign.center,
                     ),
                   ),
-                  SizedBox(width: isMobile ? 48 : 56), // Balance the back button
+                  SizedBox(
+                    width: isMobile ? 48 : 56,
+                  ), // Balance the back button
                 ],
               ),
             ),
@@ -198,7 +208,9 @@ class _CreateStudentPageState extends State<CreateStudentPage> {
                     // Progress Indicator
                     _buildProgressIndicator(isMobile, isTablet, isDesktop),
                     // Form Content
-                    Expanded(child: _buildStepperForm(isMobile, isTablet, isDesktop)),
+                    Expanded(
+                      child: _buildStepperForm(isMobile, isTablet, isDesktop),
+                    ),
                     // Action Buttons
                     _buildFloatingActions(isMobile, isTablet, isDesktop),
                   ],
@@ -214,7 +226,11 @@ class _CreateStudentPageState extends State<CreateStudentPage> {
   Widget _buildProgressIndicator(bool isMobile, bool isTablet, bool isDesktop) {
     return Container(
       padding: EdgeInsets.symmetric(
-        horizontal: isMobile ? 16 : isTablet ? 20 : 24,
+        horizontal: isMobile
+            ? 16
+            : isTablet
+            ? 20
+            : 24,
         vertical: isMobile ? 12 : 16,
       ),
       child: Row(
@@ -226,8 +242,16 @@ class _CreateStudentPageState extends State<CreateStudentPage> {
             child: Row(
               children: [
                 Container(
-                  width: isMobile ? 28 : isTablet ? 30 : 32,
-                  height: isMobile ? 28 : isTablet ? 30 : 32,
+                  width: isMobile
+                      ? 28
+                      : isTablet
+                      ? 30
+                      : 32,
+                  height: isMobile
+                      ? 28
+                      : isTablet
+                      ? 30
+                      : 32,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     gradient: isActive
@@ -269,7 +293,9 @@ class _CreateStudentPageState extends State<CreateStudentPage> {
                   Expanded(
                     child: Container(
                       height: 2,
-                      margin: EdgeInsets.symmetric(horizontal: isMobile ? 6 : 8),
+                      margin: EdgeInsets.symmetric(
+                        horizontal: isMobile ? 6 : 8,
+                      ),
                       decoration: BoxDecoration(
                         gradient: isCompleted
                             ? LinearGradient(
@@ -310,88 +336,105 @@ class _CreateStudentPageState extends State<CreateStudentPage> {
 
   Widget _buildStep1PersonalInfo(bool isMobile, bool isTablet, bool isDesktop) {
     return SingleChildScrollView(
-      padding: EdgeInsets.all(isMobile ? 16 : isTablet ? 20 : 24),
+      padding: EdgeInsets.all(
+        isMobile
+            ? 16
+            : isTablet
+            ? 20
+            : 24,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildStepTitle('Personal Information', 'Tell us about the student', isMobile, isTablet, isDesktop),
+          _buildStepTitle(
+            'Personal Information',
+            'Tell us about the student',
+            isMobile,
+            isTablet,
+            isDesktop,
+          ),
           SizedBox(height: isMobile ? 20 : 24),
-          _buildFloatingCard([
-            _buildHolographicField(
-              controller: _firstNameController,
-              label: 'First Name',
-              icon: Icons.badge_rounded,
-              isRequired: true,
-              isMobile: isMobile,
-              isTablet: isTablet,
-              isDesktop: isDesktop,
-            ),
-            SizedBox(height: isMobile ? 16 : 20),
-            _buildHolographicField(
-              controller: _lastNameController,
-              label: 'Last Name',
-              icon: Icons.family_restroom_rounded,
-              isRequired: true,
-              isMobile: isMobile,
-              isTablet: isTablet,
-              isDesktop: isDesktop,
-            ),
-            SizedBox(height: isMobile ? 16 : 20),
-            _buildHolographicField(
-              controller: _usernameController,
-              label: 'Username',
-              icon: Icons.person_rounded,
-              isRequired: true,
-              isMobile: isMobile,
-              isTablet: isTablet,
-              isDesktop: isDesktop,
-            ),
-            SizedBox(height: isMobile ? 16 : 20),
-            _buildHolographicField(
-              controller: _studentNameController,
-              label: 'Student Name',
-              icon: Icons.badge_outlined,
-              isRequired: true,
-              isMobile: isMobile,
-              isTablet: isTablet,
-              isDesktop: isDesktop,
-            ),
-            SizedBox(height: isMobile ? 16 : 20),
-            _buildHolographicField(
-              controller: _emailController,
-              label: 'Email Address',
-              icon: Icons.email_rounded,
-              keyboardType: TextInputType.emailAddress,
-              isRequired: true,
-              isMobile: isMobile,
-              isTablet: isTablet,
-              isDesktop: isDesktop,
-            ),
-            SizedBox(height: isMobile ? 16 : 20),
-            _buildHolographicField(
-              controller: _phoneController,
-              label: 'Phone Number',
-              icon: Icons.phone_rounded,
-              keyboardType: TextInputType.phone,
-              isRequired: true,
-              isMobile: isMobile,
-              isTablet: isTablet,
-              isDesktop: isDesktop,
-            ),
-            SizedBox(height: isMobile ? 16 : 20),
-            _buildHolographicDateField(isMobile, isTablet, isDesktop),
-            SizedBox(height: isMobile ? 16 : 20),
-            _buildHolographicField(
-              controller: _passwordController,
-              label: 'Password',
-              icon: Icons.lock_rounded,
-              isPassword: true,
-              isRequired: true,
-              isMobile: isMobile,
-              isTablet: isTablet,
-              isDesktop: isDesktop,
-            ),
-          ], isMobile, isTablet, isDesktop),
+          _buildFloatingCard(
+            [
+              _buildHolographicField(
+                controller: _firstNameController,
+                label: 'First Name',
+                icon: Icons.badge_rounded,
+                isRequired: true,
+                isMobile: isMobile,
+                isTablet: isTablet,
+                isDesktop: isDesktop,
+              ),
+              SizedBox(height: isMobile ? 16 : 20),
+              _buildHolographicField(
+                controller: _lastNameController,
+                label: 'Last Name',
+                icon: Icons.family_restroom_rounded,
+                isRequired: true,
+                isMobile: isMobile,
+                isTablet: isTablet,
+                isDesktop: isDesktop,
+              ),
+              SizedBox(height: isMobile ? 16 : 20),
+              _buildHolographicField(
+                controller: _usernameController,
+                label: 'Username',
+                icon: Icons.person_rounded,
+                isRequired: true,
+                isMobile: isMobile,
+                isTablet: isTablet,
+                isDesktop: isDesktop,
+              ),
+              SizedBox(height: isMobile ? 16 : 20),
+              _buildHolographicField(
+                controller: _studentNameController,
+                label: 'Student Name',
+                icon: Icons.badge_outlined,
+                isRequired: true,
+                isMobile: isMobile,
+                isTablet: isTablet,
+                isDesktop: isDesktop,
+              ),
+              SizedBox(height: isMobile ? 16 : 20),
+              _buildHolographicField(
+                controller: _emailController,
+                label: 'Email Address',
+                icon: Icons.email_rounded,
+                keyboardType: TextInputType.emailAddress,
+                isRequired: true,
+                isMobile: isMobile,
+                isTablet: isTablet,
+                isDesktop: isDesktop,
+              ),
+              SizedBox(height: isMobile ? 16 : 20),
+              _buildHolographicField(
+                controller: _phoneController,
+                label: 'Phone Number',
+                icon: Icons.phone_rounded,
+                keyboardType: TextInputType.phone,
+                isRequired: true,
+                isMobile: isMobile,
+                isTablet: isTablet,
+                isDesktop: isDesktop,
+              ),
+              SizedBox(height: isMobile ? 16 : 20),
+              _buildHolographicDateField(isMobile, isTablet, isDesktop),
+              SizedBox(height: isMobile ? 16 : 20),
+              _buildHolographicField(
+                controller: _passwordController,
+                label: 'Password',
+                icon: Icons.lock_rounded,
+                isPassword: true,
+                isRequired: true,
+                isMobile: isMobile,
+                isTablet: isTablet,
+                isDesktop: isDesktop,
+              ),
+            ],
+            isMobile,
+            isTablet,
+            isDesktop,
+          ),
         ],
       ),
     );
@@ -399,7 +442,13 @@ class _CreateStudentPageState extends State<CreateStudentPage> {
 
   Widget _buildStep2AcademicInfo(bool isMobile, bool isTablet, bool isDesktop) {
     return SingleChildScrollView(
-      padding: EdgeInsets.all(isMobile ? 16 : isTablet ? 20 : 24),
+      padding: EdgeInsets.all(
+        isMobile
+            ? 16
+            : isTablet
+            ? 20
+            : 24,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -411,51 +460,56 @@ class _CreateStudentPageState extends State<CreateStudentPage> {
             isDesktop,
           ),
           SizedBox(height: isMobile ? 20 : 24),
-          _buildFloatingCard([
-            _buildSearchableInstituteField(isMobile, isTablet, isDesktop),
-            SizedBox(height: isMobile ? 16 : 20),
-            _buildHolographicField(
-              controller: _courseController,
-              label: 'Course',
-              icon: Icons.school_rounded,
-              isRequired: true,
-              isMobile: isMobile,
-              isTablet: isTablet,
-              isDesktop: isDesktop,
-            ),
-            SizedBox(height: isMobile ? 16 : 20),
-            _buildHolographicField(
-              controller: _majorController,
-              label: 'Major',
-              icon: Icons.engineering_rounded,
-              isRequired: true,
-              isMobile: isMobile,
-              isTablet: isTablet,
-              isDesktop: isDesktop,
-            ),
-            SizedBox(height: isMobile ? 16 : 20),
-            _buildHolographicField(
-              controller: _yearOfStudyController,
-              label: 'Year of Study',
-              icon: Icons.calendar_today_rounded,
-              keyboardType: TextInputType.number,
-              isRequired: true,
-              isMobile: isMobile,
-              isTablet: isTablet,
-              isDesktop: isDesktop,
-            ),
-            SizedBox(height: isMobile ? 16 : 20),
-            _buildHolographicDropdownField(
-              label: 'Gender',
-              icon: Icons.person_rounded,
-              value: _selectedGender,
-              items: _genders,
-              onChanged: (value) => setState(() => _selectedGender = value),
-              isMobile: isMobile,
-              isTablet: isTablet,
-              isDesktop: isDesktop,
-            ),
-          ], isMobile, isTablet, isDesktop),
+          _buildFloatingCard(
+            [
+              _buildSearchableInstituteField(isMobile, isTablet, isDesktop),
+              SizedBox(height: isMobile ? 16 : 20),
+              _buildHolographicField(
+                controller: _courseController,
+                label: 'Course',
+                icon: Icons.school_rounded,
+                isRequired: true,
+                isMobile: isMobile,
+                isTablet: isTablet,
+                isDesktop: isDesktop,
+              ),
+              SizedBox(height: isMobile ? 16 : 20),
+              _buildHolographicField(
+                controller: _majorController,
+                label: 'Major',
+                icon: Icons.engineering_rounded,
+                isRequired: true,
+                isMobile: isMobile,
+                isTablet: isTablet,
+                isDesktop: isDesktop,
+              ),
+              SizedBox(height: isMobile ? 16 : 20),
+              _buildHolographicField(
+                controller: _yearOfStudyController,
+                label: 'Year of Study',
+                icon: Icons.calendar_today_rounded,
+                keyboardType: TextInputType.number,
+                isRequired: true,
+                isMobile: isMobile,
+                isTablet: isTablet,
+                isDesktop: isDesktop,
+              ),
+              SizedBox(height: isMobile ? 16 : 20),
+              _buildHolographicDropdownField(
+                label: 'Gender',
+                icon: Icons.person_rounded,
+                value: _selectedGender,
+                items: _genders,
+                onChanged: (value) => setState(() => _selectedGender = value),
+                isMobile: isMobile,
+                isTablet: isTablet,
+                isDesktop: isDesktop,
+              ),
+            ],
+            isMobile,
+            isTablet,
+            isDesktop,
+          ),
         ],
       ),
     );
@@ -463,63 +517,51 @@ class _CreateStudentPageState extends State<CreateStudentPage> {
 
   Widget _buildStep3AddressInfo(bool isMobile, bool isTablet, bool isDesktop) {
     return SingleChildScrollView(
-      padding: EdgeInsets.all(isMobile ? 16 : isTablet ? 20 : 24),
+      padding: EdgeInsets.all(
+        isMobile
+            ? 16
+            : isTablet
+            ? 20
+            : 24,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildStepTitle('Address Information', 'Student location details', isMobile, isTablet, isDesktop),
+          _buildStepTitle(
+            'Address Information',
+            'Student location details',
+            isMobile,
+            isTablet,
+            isDesktop,
+          ),
           SizedBox(height: isMobile ? 20 : 24),
-          _buildFloatingCard([
-            _buildHolographicField(
-              controller: _addressController,
-              label: 'Address',
-              icon: Icons.home_rounded,
-              maxLines: 3,
-              isRequired: true,
-              isMobile: isMobile,
-              isTablet: isTablet,
-              isDesktop: isDesktop,
-            ),
-            SizedBox(height: isMobile ? 16 : 20),
-            _buildHolographicField(
-              controller: _landmarkController,
-              label: 'Landmark',
-              icon: Icons.location_on_rounded,
-              isRequired: true,
-              isMobile: isMobile,
-              isTablet: isTablet,
-              isDesktop: isDesktop,
-            ),
-            SizedBox(height: isMobile ? 16 : 20),
-            isMobile
-                ? Column(
-                    children: [
-                      _buildHolographicField(
-                        controller: _zipcodeController,
-                        label: 'Zipcode',
-                        icon: Icons.pin_drop_rounded,
-                        keyboardType: TextInputType.number,
-                        isRequired: true,
-                        isMobile: isMobile,
-                        isTablet: isTablet,
-                        isDesktop: isDesktop,
-                      ),
-                      SizedBox(height: isMobile ? 16 : 20),
-                      _buildHolographicField(
-                        controller: _cityController,
-                        label: 'City',
-                        icon: Icons.location_city_rounded,
-                        isRequired: true,
-                        isMobile: isMobile,
-                        isTablet: isTablet,
-                        isDesktop: isDesktop,
-                      ),
-                    ],
-                  )
-                : Row(
-                    children: [
-                      Expanded(
-                        child: _buildHolographicField(
+          _buildFloatingCard(
+            [
+              _buildHolographicField(
+                controller: _addressController,
+                label: 'Address',
+                icon: Icons.home_rounded,
+                maxLines: 3,
+                isRequired: true,
+                isMobile: isMobile,
+                isTablet: isTablet,
+                isDesktop: isDesktop,
+              ),
+              SizedBox(height: isMobile ? 16 : 20),
+              _buildHolographicField(
+                controller: _landmarkController,
+                label: 'Landmark',
+                icon: Icons.location_on_rounded,
+                isRequired: true,
+                isMobile: isMobile,
+                isTablet: isTablet,
+                isDesktop: isDesktop,
+              ),
+              SizedBox(height: isMobile ? 16 : 20),
+              isMobile
+                  ? Column(
+                      children: [
+                        _buildHolographicField(
                           controller: _zipcodeController,
                           label: 'Zipcode',
                           icon: Icons.pin_drop_rounded,
@@ -529,10 +571,8 @@ class _CreateStudentPageState extends State<CreateStudentPage> {
                           isTablet: isTablet,
                           isDesktop: isDesktop,
                         ),
-                      ),
-                      SizedBox(width: isTablet ? 12 : 16),
-                      Expanded(
-                        child: _buildHolographicField(
+                        SizedBox(height: isMobile ? 16 : 20),
+                        _buildHolographicField(
                           controller: _cityController,
                           label: 'City',
                           icon: Icons.location_city_rounded,
@@ -541,48 +581,95 @@ class _CreateStudentPageState extends State<CreateStudentPage> {
                           isTablet: isTablet,
                           isDesktop: isDesktop,
                         ),
-                      ),
-                    ],
-                  ),
-            SizedBox(height: isMobile ? 16 : 20),
-            _buildHolographicField(
-              controller: _districtController,
-              label: 'District',
-              icon: Icons.map_rounded,
-              isRequired: true,
-              isMobile: isMobile,
-              isTablet: isTablet,
-              isDesktop: isDesktop,
-            ),
-            SizedBox(height: isMobile ? 16 : 20),
-            Container(
-              padding: EdgeInsets.all(isMobile ? 12 : isTablet ? 14 : 16),
-              decoration: BoxDecoration(
-                color: const Color(0xFFF7FAFC),
-                borderRadius: BorderRadius.circular(isMobile ? 10 : isTablet ? 11 : 12),
-                border: Border.all(color: const Color(0xFFE2E8F0), width: 1),
+                      ],
+                    )
+                  : Row(
+                      children: [
+                        Expanded(
+                          child: _buildHolographicField(
+                            controller: _zipcodeController,
+                            label: 'Zipcode',
+                            icon: Icons.pin_drop_rounded,
+                            keyboardType: TextInputType.number,
+                            isRequired: true,
+                            isMobile: isMobile,
+                            isTablet: isTablet,
+                            isDesktop: isDesktop,
+                          ),
+                        ),
+                        SizedBox(width: isTablet ? 12 : 16),
+                        Expanded(
+                          child: _buildHolographicField(
+                            controller: _cityController,
+                            label: 'City',
+                            icon: Icons.location_city_rounded,
+                            isRequired: true,
+                            isMobile: isMobile,
+                            isTablet: isTablet,
+                            isDesktop: isDesktop,
+                          ),
+                        ),
+                      ],
+                    ),
+              SizedBox(height: isMobile ? 16 : 20),
+              _buildHolographicField(
+                controller: _districtController,
+                label: 'District',
+                icon: Icons.map_rounded,
+                isRequired: true,
+                isMobile: isMobile,
+                isTablet: isTablet,
+                isDesktop: isDesktop,
               ),
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.info_outline_rounded,
-                    color: const Color(0xFF4299E1),
-                    size: isMobile ? 18 : 20,
+              SizedBox(height: isMobile ? 16 : 20),
+              Container(
+                padding: EdgeInsets.all(
+                  isMobile
+                      ? 12
+                      : isTablet
+                      ? 14
+                      : 16,
+                ),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF7FAFC),
+                  borderRadius: BorderRadius.circular(
+                    isMobile
+                        ? 10
+                        : isTablet
+                        ? 11
+                        : 12,
                   ),
-                  SizedBox(width: isMobile ? 10 : 12),
-                  Expanded(
-                    child: Text(
-                      'Student ID will be automatically generated. All information will be securely stored.',
-                      style: TextStyle(
-                        fontSize: isMobile ? 12 : isTablet ? 13 : 14,
-                        color: const Color(0xFF718096),
+                  border: Border.all(color: const Color(0xFFE2E8F0), width: 1),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.info_outline_rounded,
+                      color: const Color(0xFF4299E1),
+                      size: isMobile ? 18 : 20,
+                    ),
+                    SizedBox(width: isMobile ? 10 : 12),
+                    Expanded(
+                      child: Text(
+                        'Student ID will be automatically generated. All information will be securely stored.',
+                        style: TextStyle(
+                          fontSize: isMobile
+                              ? 12
+                              : isTablet
+                              ? 13
+                              : 14,
+                          color: const Color(0xFF718096),
+                        ),
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-          ], isMobile, isTablet, isDesktop),
+            ],
+            isMobile,
+            isTablet,
+            isDesktop,
+          ),
         ],
       ),
     );
@@ -590,7 +677,13 @@ class _CreateStudentPageState extends State<CreateStudentPage> {
 
   Widget _buildFloatingActions(bool isMobile, bool isTablet, bool isDesktop) {
     return Container(
-      padding: EdgeInsets.all(isMobile ? 16 : isTablet ? 18 : 20),
+      padding: EdgeInsets.all(
+        isMobile
+            ? 16
+            : isTablet
+            ? 18
+            : 20,
+      ),
       decoration: BoxDecoration(
         color: Colors.white,
         boxShadow: [
@@ -628,9 +721,13 @@ class _CreateStudentPageState extends State<CreateStudentPage> {
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.transparent,
                         shadowColor: Colors.transparent,
-                        padding: EdgeInsets.symmetric(vertical: isMobile ? 14 : 16),
+                        padding: EdgeInsets.symmetric(
+                          vertical: isMobile ? 14 : 16,
+                        ),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(isMobile ? 12 : 14),
+                          borderRadius: BorderRadius.circular(
+                            isMobile ? 12 : 14,
+                          ),
                         ),
                       ),
                       child: _isLoading
@@ -674,7 +771,10 @@ class _CreateStudentPageState extends State<CreateStudentPage> {
                   Container(
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(isMobile ? 12 : 14),
-                      border: Border.all(color: const Color(0xFFE2E8F0), width: 2),
+                      border: Border.all(
+                        color: const Color(0xFFE2E8F0),
+                        width: 2,
+                      ),
                     ),
                     child: SizedBox(
                       width: double.infinity,
@@ -686,16 +786,23 @@ class _CreateStudentPageState extends State<CreateStudentPage> {
                           );
                         },
                         style: TextButton.styleFrom(
-                          padding: EdgeInsets.symmetric(vertical: isMobile ? 14 : 16),
+                          padding: EdgeInsets.symmetric(
+                            vertical: isMobile ? 14 : 16,
+                          ),
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(isMobile ? 12 : 14),
+                            borderRadius: BorderRadius.circular(
+                              isMobile ? 12 : 14,
+                            ),
                           ),
                         ),
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Icon(Icons.arrow_back_rounded, size: isMobile ? 16 : 18),
+                            Icon(
+                              Icons.arrow_back_rounded,
+                              size: isMobile ? 16 : 18,
+                            ),
                             SizedBox(width: isMobile ? 5 : 6),
                             Text(
                               'Previous',
@@ -719,7 +826,10 @@ class _CreateStudentPageState extends State<CreateStudentPage> {
                     child: Container(
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(isTablet ? 12 : 14),
-                        border: Border.all(color: const Color(0xFFE2E8F0), width: 2),
+                        border: Border.all(
+                          color: const Color(0xFFE2E8F0),
+                          width: 2,
+                        ),
                       ),
                       child: TextButton(
                         onPressed: () {
@@ -729,16 +839,23 @@ class _CreateStudentPageState extends State<CreateStudentPage> {
                           );
                         },
                         style: TextButton.styleFrom(
-                          padding: EdgeInsets.symmetric(vertical: isTablet ? 14 : 16),
+                          padding: EdgeInsets.symmetric(
+                            vertical: isTablet ? 14 : 16,
+                          ),
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(isTablet ? 12 : 14),
+                            borderRadius: BorderRadius.circular(
+                              isTablet ? 12 : 14,
+                            ),
                           ),
                         ),
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Icon(Icons.arrow_back_rounded, size: isTablet ? 16 : 18),
+                            Icon(
+                              Icons.arrow_back_rounded,
+                              size: isTablet ? 16 : 18,
+                            ),
                             SizedBox(width: isTablet ? 5 : 6),
                             Text(
                               'Previous',
@@ -776,9 +893,13 @@ class _CreateStudentPageState extends State<CreateStudentPage> {
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.transparent,
                         shadowColor: Colors.transparent,
-                        padding: EdgeInsets.symmetric(vertical: isTablet ? 14 : 16),
+                        padding: EdgeInsets.symmetric(
+                          vertical: isTablet ? 14 : 16,
+                        ),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(isTablet ? 12 : 14),
+                          borderRadius: BorderRadius.circular(
+                            isTablet ? 12 : 14,
+                          ),
                         ),
                       ),
                       child: _isLoading
@@ -822,7 +943,13 @@ class _CreateStudentPageState extends State<CreateStudentPage> {
     );
   }
 
-  Widget _buildStepTitle(String title, String subtitle, bool isMobile, bool isTablet, bool isDesktop) {
+  Widget _buildStepTitle(
+    String title,
+    String subtitle,
+    bool isMobile,
+    bool isTablet,
+    bool isDesktop,
+  ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
@@ -830,7 +957,11 @@ class _CreateStudentPageState extends State<CreateStudentPage> {
         Text(
           title,
           style: TextStyle(
-            fontSize: isMobile ? 22 : isTablet ? 24 : 28,
+            fontSize: isMobile
+                ? 22
+                : isTablet
+                ? 24
+                : 28,
             fontWeight: FontWeight.bold,
             color: const Color(0xFF2D3748),
             letterSpacing: -0.5,
@@ -842,7 +973,11 @@ class _CreateStudentPageState extends State<CreateStudentPage> {
         Text(
           subtitle,
           style: TextStyle(
-            fontSize: isMobile ? 14 : isTablet ? 15 : 16,
+            fontSize: isMobile
+                ? 14
+                : isTablet
+                ? 15
+                : 16,
             color: const Color(0xFF718096),
             fontWeight: FontWeight.w500,
           ),
@@ -853,12 +988,29 @@ class _CreateStudentPageState extends State<CreateStudentPage> {
     );
   }
 
-  Widget _buildFloatingCard(List<Widget> children, bool isMobile, bool isTablet, bool isDesktop) {
+  Widget _buildFloatingCard(
+    List<Widget> children,
+    bool isMobile,
+    bool isTablet,
+    bool isDesktop,
+  ) {
     return Container(
-      padding: EdgeInsets.all(isMobile ? 16 : isTablet ? 20 : 24),
+      padding: EdgeInsets.all(
+        isMobile
+            ? 16
+            : isTablet
+            ? 20
+            : 24,
+      ),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(isMobile ? 16 : isTablet ? 18 : 20),
+        borderRadius: BorderRadius.circular(
+          isMobile
+              ? 16
+              : isTablet
+              ? 18
+              : 20,
+        ),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.05),
@@ -897,7 +1049,11 @@ class _CreateStudentPageState extends State<CreateStudentPage> {
         Text(
           label + (isRequired ? ' *' : ''),
           style: TextStyle(
-            fontSize: isMobile ? 13 : isTablet ? 13.5 : 14,
+            fontSize: isMobile
+                ? 13
+                : isTablet
+                ? 13.5
+                : 14,
             fontWeight: FontWeight.w600,
             color: const Color(0xFF2D3748),
           ),
@@ -905,7 +1061,13 @@ class _CreateStudentPageState extends State<CreateStudentPage> {
         SizedBox(height: isMobile ? 6 : 8),
         Container(
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(isMobile ? 12 : isTablet ? 14 : 16),
+            borderRadius: BorderRadius.circular(
+              isMobile
+                  ? 12
+                  : isTablet
+                  ? 14
+                  : 16,
+            ),
             gradient: LinearGradient(
               colors: [Colors.white, const Color(0xFFFAFAFA)],
             ),
@@ -956,19 +1118,37 @@ class _CreateStudentPageState extends State<CreateStudentPage> {
                 ),
               ),
               border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(isMobile ? 12 : isTablet ? 14 : 16),
+                borderRadius: BorderRadius.circular(
+                  isMobile
+                      ? 12
+                      : isTablet
+                      ? 14
+                      : 16,
+                ),
                 borderSide: BorderSide.none,
               ),
               filled: true,
               fillColor: Colors.transparent,
               contentPadding: EdgeInsets.symmetric(
-                horizontal: isMobile ? 16 : isTablet ? 18 : 20,
-                vertical: isMobile ? 14 : isTablet ? 16 : 18,
+                horizontal: isMobile
+                    ? 16
+                    : isTablet
+                    ? 18
+                    : 20,
+                vertical: isMobile
+                    ? 14
+                    : isTablet
+                    ? 16
+                    : 18,
               ),
               hintText: 'Enter ${label.toLowerCase()}',
               hintStyle: TextStyle(
                 color: const Color(0xFFA0AEC0),
-                fontSize: isMobile ? 13 : isTablet ? 13.5 : 14,
+                fontSize: isMobile
+                    ? 13
+                    : isTablet
+                    ? 13.5
+                    : 14,
                 fontWeight: FontWeight.w400,
               ),
               counterText: label == 'Phone Number' ? '' : null,
@@ -1076,7 +1256,11 @@ class _CreateStudentPageState extends State<CreateStudentPage> {
         Text(
           label + ' *',
           style: TextStyle(
-            fontSize: isMobile ? 13 : isTablet ? 13.5 : 14,
+            fontSize: isMobile
+                ? 13
+                : isTablet
+                ? 13.5
+                : 14,
             fontWeight: FontWeight.w600,
             color: const Color(0xFF2D3748),
           ),
@@ -1084,7 +1268,13 @@ class _CreateStudentPageState extends State<CreateStudentPage> {
         SizedBox(height: isMobile ? 6 : 8),
         Container(
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(isMobile ? 12 : isTablet ? 14 : 16),
+            borderRadius: BorderRadius.circular(
+              isMobile
+                  ? 12
+                  : isTablet
+                  ? 14
+                  : 16,
+            ),
             gradient: LinearGradient(
               colors: [Colors.white, const Color(0xFFFAFAFA)],
             ),
@@ -1109,7 +1299,13 @@ class _CreateStudentPageState extends State<CreateStudentPage> {
                 value: item,
                 child: Text(
                   item,
-                  style: TextStyle(fontSize: isMobile ? 13 : isTablet ? 13.5 : 14),
+                  style: TextStyle(
+                    fontSize: isMobile
+                        ? 13
+                        : isTablet
+                        ? 13.5
+                        : 14,
+                  ),
                 ),
               );
             }).toList(),
@@ -1138,25 +1334,47 @@ class _CreateStudentPageState extends State<CreateStudentPage> {
                 ),
               ),
               border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(isMobile ? 12 : isTablet ? 14 : 16),
+                borderRadius: BorderRadius.circular(
+                  isMobile
+                      ? 12
+                      : isTablet
+                      ? 14
+                      : 16,
+                ),
                 borderSide: BorderSide.none,
               ),
               filled: true,
               fillColor: Colors.transparent,
               contentPadding: EdgeInsets.symmetric(
-                horizontal: isMobile ? 16 : isTablet ? 18 : 20,
-                vertical: isMobile ? 14 : isTablet ? 16 : 18,
+                horizontal: isMobile
+                    ? 16
+                    : isTablet
+                    ? 18
+                    : 20,
+                vertical: isMobile
+                    ? 14
+                    : isTablet
+                    ? 16
+                    : 18,
               ),
               hintText: 'Select ${label.toLowerCase()}',
               hintStyle: TextStyle(
                 color: const Color(0xFFA0AEC0),
-                fontSize: isMobile ? 13 : isTablet ? 13.5 : 14,
+                fontSize: isMobile
+                    ? 13
+                    : isTablet
+                    ? 13.5
+                    : 14,
                 fontWeight: FontWeight.w400,
               ),
               suffixIcon: Icon(
                 Icons.keyboard_arrow_down_rounded,
                 color: const Color(0xFF718096),
-                size: isMobile ? 20 : isTablet ? 22 : 24,
+                size: isMobile
+                    ? 20
+                    : isTablet
+                    ? 22
+                    : 24,
               ),
             ),
             validator: (value) {
@@ -1171,14 +1389,22 @@ class _CreateStudentPageState extends State<CreateStudentPage> {
     );
   }
 
-  Widget _buildHolographicDateField(bool isMobile, bool isTablet, bool isDesktop) {
+  Widget _buildHolographicDateField(
+    bool isMobile,
+    bool isTablet,
+    bool isDesktop,
+  ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           'Date of Birth *',
           style: TextStyle(
-            fontSize: isMobile ? 13 : isTablet ? 13.5 : 14,
+            fontSize: isMobile
+                ? 13
+                : isTablet
+                ? 13.5
+                : 14,
             fontWeight: FontWeight.w600,
             color: const Color(0xFF2D3748),
           ),
@@ -1186,7 +1412,13 @@ class _CreateStudentPageState extends State<CreateStudentPage> {
         SizedBox(height: isMobile ? 6 : 8),
         Container(
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(isMobile ? 12 : isTablet ? 14 : 16),
+            borderRadius: BorderRadius.circular(
+              isMobile
+                  ? 12
+                  : isTablet
+                  ? 14
+                  : 16,
+            ),
             gradient: LinearGradient(
               colors: [Colors.white, const Color(0xFFFAFAFA)],
             ),
@@ -1220,11 +1452,25 @@ class _CreateStudentPageState extends State<CreateStudentPage> {
                 setState(() => _selectedDateOfBirth = date);
               }
             },
-            borderRadius: BorderRadius.circular(isMobile ? 12 : isTablet ? 14 : 16),
+            borderRadius: BorderRadius.circular(
+              isMobile
+                  ? 12
+                  : isTablet
+                  ? 14
+                  : 16,
+            ),
             child: Container(
               padding: EdgeInsets.symmetric(
-                horizontal: isMobile ? 16 : isTablet ? 18 : 20,
-                vertical: isMobile ? 14 : isTablet ? 16 : 18,
+                horizontal: isMobile
+                    ? 16
+                    : isTablet
+                    ? 18
+                    : 20,
+                vertical: isMobile
+                    ? 14
+                    : isTablet
+                    ? 16
+                    : 18,
               ),
               child: Row(
                 children: [
@@ -1259,7 +1505,11 @@ class _CreateStudentPageState extends State<CreateStudentPage> {
                         color: _selectedDateOfBirth != null
                             ? const Color(0xFF2D3748)
                             : const Color(0xFFA0AEC0),
-                        fontSize: isMobile ? 13 : isTablet ? 13.5 : 14,
+                        fontSize: isMobile
+                            ? 13
+                            : isTablet
+                            ? 13.5
+                            : 14,
                         fontWeight: FontWeight.w400,
                       ),
                     ),
@@ -1280,10 +1530,7 @@ class _CreateStudentPageState extends State<CreateStudentPage> {
             padding: EdgeInsets.only(top: isMobile ? 3 : 4),
             child: Text(
               'Date of birth is required',
-              style: TextStyle(
-                color: Colors.red,
-                fontSize: isMobile ? 11 : 12,
-              ),
+              style: TextStyle(color: Colors.red, fontSize: isMobile ? 11 : 12),
             ),
           ),
       ],
@@ -1416,14 +1663,24 @@ class _CreateStudentPageState extends State<CreateStudentPage> {
     }
   }
 
-  Widget _buildSearchableInstituteField(bool isMobile, bool isTablet, bool isDesktop) {
+  Widget _buildSearchableInstituteField(
+    bool isMobile,
+    bool isTablet,
+    bool isDesktop,
+  ) {
     return GestureDetector(
       onTap: () {
         // This will be handled by the inner GestureDetector
       },
       child: Container(
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(isMobile ? 12 : isTablet ? 14 : 16),
+          borderRadius: BorderRadius.circular(
+            isMobile
+                ? 12
+                : isTablet
+                ? 14
+                : 16,
+          ),
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
@@ -1486,19 +1743,37 @@ class _CreateStudentPageState extends State<CreateStudentPage> {
                     ),
                   ),
                   border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(isMobile ? 12 : isTablet ? 14 : 16),
+                    borderRadius: BorderRadius.circular(
+                      isMobile
+                          ? 12
+                          : isTablet
+                          ? 14
+                          : 16,
+                    ),
                     borderSide: BorderSide.none,
                   ),
                   filled: true,
                   fillColor: Colors.transparent,
                   contentPadding: EdgeInsets.symmetric(
-                    horizontal: isMobile ? 16 : isTablet ? 18 : 20,
-                    vertical: isMobile ? 14 : isTablet ? 16 : 18,
+                    horizontal: isMobile
+                        ? 16
+                        : isTablet
+                        ? 18
+                        : 20,
+                    vertical: isMobile
+                        ? 14
+                        : isTablet
+                        ? 16
+                        : 18,
                   ),
                   hintText: _selectedInstitute ?? 'Search and select institute',
                   hintStyle: TextStyle(
                     color: const Color(0xFFA0AEC0),
-                    fontSize: isMobile ? 13 : isTablet ? 13.5 : 14,
+                    fontSize: isMobile
+                        ? 13
+                        : isTablet
+                        ? 13.5
+                        : 14,
                     fontWeight: FontWeight.w400,
                   ),
                   suffixIcon: _selectedInstitute != null
@@ -1535,7 +1810,13 @@ class _CreateStudentPageState extends State<CreateStudentPage> {
                 margin: EdgeInsets.only(top: isMobile ? 3 : 4),
                 decoration: BoxDecoration(
                   color: Colors.white,
-                  borderRadius: BorderRadius.circular(isMobile ? 10 : isTablet ? 11 : 12),
+                  borderRadius: BorderRadius.circular(
+                    isMobile
+                        ? 10
+                        : isTablet
+                        ? 11
+                        : 12,
+                  ),
                   boxShadow: [
                     BoxShadow(
                       color: Colors.black.withOpacity(0.1),

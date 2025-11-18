@@ -40,7 +40,9 @@ class ExamRepository {
     if (response.statusCode == 200) {
       final data = json.decode(response.body);
       if (data['success'] == true) {
-        return List<Map<String, dynamic>>.from(data['data'] ?? data['exams'] ?? []);
+        return List<Map<String, dynamic>>.from(
+          data['data'] ?? data['exams'] ?? [],
+        );
       }
     }
 
@@ -154,7 +156,8 @@ class ExamRepository {
       final data = json.decode(response.body);
       if (data['success'] == true) {
         // backend could return { registrations: [] } or { data: [] }
-        final list = (data['registrations'] ?? data['data'] ?? []) as List<dynamic>;
+        final list =
+            (data['registrations'] ?? data['data'] ?? []) as List<dynamic>;
         return List<Map<String, dynamic>>.from(list);
       } else {
         throw Exception(data['message'] ?? 'Failed to fetch registrations');
@@ -168,10 +171,9 @@ class ExamRepository {
   Future<List<Map<String, dynamic>>> getAdminExamResults(String examId) async {
     final headers = await _authService.getAuthHeaders();
     // Build URL with query params
-    final url = ApiEndpoints.buildUrlWithParams(
-      ApiEndpoints.adminExamResults,
-      {'examId': examId},
-    );
+    final url = ApiEndpoints.buildUrlWithParams(ApiEndpoints.adminExamResults, {
+      'examId': examId,
+    });
     final response = await http.get(Uri.parse(url), headers: headers);
     if (response.statusCode == 200) {
       final data = json.decode(response.body);
@@ -214,8 +216,8 @@ class ExamRepository {
 
     final errorData = json.decode(response.body);
     throw Exception(
-      errorData['message'] ?? 'Failed to publish exam results: ${response.statusCode}',
+      errorData['message'] ??
+          'Failed to publish exam results: ${response.statusCode}',
     );
   }
 }
-

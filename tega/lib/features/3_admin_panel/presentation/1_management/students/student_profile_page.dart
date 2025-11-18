@@ -336,7 +336,6 @@ class _StudentProfilePageState extends State<StudentProfilePage>
     );
   }
 
-
   Widget _buildStatItem(
     IconData icon,
     String title,

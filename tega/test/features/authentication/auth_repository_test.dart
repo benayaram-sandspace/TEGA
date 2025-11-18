@@ -111,10 +111,14 @@ void main() {
     group('AuthService Role Checks', () {
       test('getRoleDisplayName should return correct names', () {
         expect(authService.getRoleDisplayName(UserRole.admin), equals('Admin'));
-        expect(authService.getRoleDisplayName(UserRole.principal),
-            equals('Principal'));
-        expect(authService.getRoleDisplayName(UserRole.student),
-            equals('Student'));
+        expect(
+          authService.getRoleDisplayName(UserRole.principal),
+          equals('Principal'),
+        );
+        expect(
+          authService.getRoleDisplayName(UserRole.student),
+          equals('Student'),
+        );
       });
 
       test('getRoleColor should return colors for each role', () {
@@ -134,13 +138,11 @@ void main() {
       });
 
       test('hasAnyPermission should return false when no permissions', () {
-        expect(
-            authService.hasAnyPermission(['perm1', 'perm2']), isFalse);
+        expect(authService.hasAnyPermission(['perm1', 'perm2']), isFalse);
       });
 
       test('hasAllPermissions should return false when no permissions', () {
-        expect(
-            authService.hasAllPermissions(['perm1', 'perm2']), isFalse);
+        expect(authService.hasAllPermissions(['perm1', 'perm2']), isFalse);
       });
     });
 
@@ -169,8 +171,11 @@ void main() {
       });
 
       test('should create exception with error code', () {
-        final exception =
-            AuthException('Error', statusCode: 401, errorCode: 'UNAUTHORIZED');
+        final exception = AuthException(
+          'Error',
+          statusCode: 401,
+          errorCode: 'UNAUTHORIZED',
+        );
         expect(exception.errorCode, equals('UNAUTHORIZED'));
       });
     });
@@ -213,4 +218,3 @@ void main() {
     });
   });
 }
-

@@ -75,8 +75,7 @@ class TransactionHistoryService {
     try {
       // Note: This would require backend endpoints to clear dummy data
       // For now, we'll just ensure only real data is shown
-    } catch (e) {
-    }
+    } catch (e) {}
   }
 }
 
@@ -114,49 +113,53 @@ class Transaction {
     // Handle courseId which might be an object (populated) or string
     String courseId = '';
     String courseName = 'Unknown Course';
-    
+
     if (json['courseId'] != null) {
       if (json['courseId'] is Map) {
         // Populated course object
-        courseId = json['courseId']['_id']?.toString() ?? 
-                   json['courseId']['id']?.toString() ?? '';
-        courseName = json['courseId']['title']?.toString() ?? 
-                    json['courseId']['name']?.toString() ?? 
-                    json['courseId']['courseName']?.toString() ?? 
-                    'Unknown Course';
+        courseId =
+            json['courseId']['_id']?.toString() ??
+            json['courseId']['id']?.toString() ??
+            '';
+        courseName =
+            json['courseId']['title']?.toString() ??
+            json['courseId']['name']?.toString() ??
+            json['courseId']['courseName']?.toString() ??
+            'Unknown Course';
       } else {
         // String ID
         courseId = json['courseId'].toString();
         courseName = json['courseName']?.toString() ?? 'Unknown Course';
       }
     }
-    
+
     // Handle amount - might be in paise (cents) or rupees
     double amount = 0.0;
     if (json['amount'] != null) {
       final amountValue = json['amount'];
       if (amountValue is num) {
         // If amount is very large (> 10000), it's likely in paise, convert to rupees
-        amount = amountValue > 10000 
-            ? amountValue.toDouble() / 100 
+        amount = amountValue > 10000
+            ? amountValue.toDouble() / 100
             : amountValue.toDouble();
       }
     }
-    
+
     // Handle payment method
     String paymentMethod = json['paymentMethod']?.toString() ?? 'Unknown';
     if (paymentMethod == 'Unknown' && json['source'] == 'razorpay_payment') {
       paymentMethod = 'Razorpay';
     }
-    
+
     // Handle transaction ID - could be in different fields
-    String? transactionId = json['transactionId']?.toString() ?? 
-                           json['razorpayPaymentId']?.toString() ?? 
-                           json['razorpayOrderId']?.toString();
-    
+    String? transactionId =
+        json['transactionId']?.toString() ??
+        json['razorpayPaymentId']?.toString() ??
+        json['razorpayOrderId']?.toString();
+
     // Handle status - normalize to lowercase for consistency
     String status = (json['status']?.toString() ?? 'pending').toLowerCase();
-    
+
     // Handle dates
     DateTime createdAt = DateTime.now();
     if (json['createdAt'] != null) {
@@ -166,7 +169,7 @@ class Transaction {
         createdAt = DateTime.now();
       }
     }
-    
+
     DateTime? paymentDate;
     if (json['paymentDate'] != null) {
       try {
@@ -175,7 +178,7 @@ class Transaction {
         paymentDate = null;
       }
     }
-    
+
     return Transaction(
       id: json['_id']?.toString() ?? json['id']?.toString() ?? '',
       courseId: courseId,

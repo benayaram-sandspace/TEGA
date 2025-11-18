@@ -23,11 +23,14 @@ class _NotificationPageState extends State<NotificationPage> {
   double get tabletBreakpoint => 1024;
   double get desktopBreakpoint => 1440;
   bool get isMobile => MediaQuery.of(context).size.width < mobileBreakpoint;
-  bool get isTablet => MediaQuery.of(context).size.width >= mobileBreakpoint &&
+  bool get isTablet =>
+      MediaQuery.of(context).size.width >= mobileBreakpoint &&
       MediaQuery.of(context).size.width < tabletBreakpoint;
-  bool get isDesktop => MediaQuery.of(context).size.width >= tabletBreakpoint &&
+  bool get isDesktop =>
+      MediaQuery.of(context).size.width >= tabletBreakpoint &&
       MediaQuery.of(context).size.width < desktopBreakpoint;
-  bool get isLargeDesktop => MediaQuery.of(context).size.width >= desktopBreakpoint;
+  bool get isLargeDesktop =>
+      MediaQuery.of(context).size.width >= desktopBreakpoint;
   bool get isSmallScreen => MediaQuery.of(context).size.width < 400;
 
   @override
@@ -48,7 +51,9 @@ class _NotificationPageState extends State<NotificationPage> {
             error.toString().toLowerCase().contains('connection') ||
             error.toString().toLowerCase().contains('internet') ||
             error.toString().toLowerCase().contains('failed host lookup') ||
-            error.toString().toLowerCase().contains('no address associated with hostname'));
+            error.toString().toLowerCase().contains(
+              'no address associated with hostname',
+            ));
   }
 
   Future<void> _loadNotifications({bool forceRefresh = false}) async {
@@ -57,7 +62,9 @@ class _NotificationPageState extends State<NotificationPage> {
     // Try to load from cache first (unless force refresh)
     if (!forceRefresh) {
       final cachedNotifications = await _cacheService.getNotificationsData();
-      if (cachedNotifications != null && cachedNotifications.isNotEmpty && mounted) {
+      if (cachedNotifications != null &&
+          cachedNotifications.isNotEmpty &&
+          mounted) {
         setState(() {
           notifications = cachedNotifications
               .map((json) => NotificationModel.fromJson(json))
@@ -103,7 +110,8 @@ class _NotificationPageState extends State<NotificationPage> {
         // Check if it's a network/internet error
         if (_isNoInternetError(e)) {
           // Try to load from cache if available
-          final cachedNotifications = await _cacheService.getNotificationsData();
+          final cachedNotifications = await _cacheService
+              .getNotificationsData();
           if (cachedNotifications != null && cachedNotifications.isNotEmpty) {
             setState(() {
               notifications = cachedNotifications
@@ -134,7 +142,9 @@ class _NotificationPageState extends State<NotificationPage> {
 
     try {
       // Mark individual notification as read (placeholder for future backend)
-      final success = await _notificationService.markNotificationAsRead(notification.id);
+      final success = await _notificationService.markNotificationAsRead(
+        notification.id,
+      );
 
       if (success) {
         setState(() {
@@ -157,9 +167,7 @@ class _NotificationPageState extends State<NotificationPage> {
         });
 
         // Update cache
-        final notificationsData = notifications
-            .map((n) => n.toJson())
-            .toList();
+        final notificationsData = notifications.map((n) => n.toJson()).toList();
         await _cacheService.setNotificationsData(notificationsData);
 
         if (mounted) {
@@ -202,9 +210,7 @@ class _NotificationPageState extends State<NotificationPage> {
         });
 
         // Update cache
-        final notificationsData = notifications
-            .map((n) => n.toJson())
-            .toList();
+        final notificationsData = notifications.map((n) => n.toJson()).toList();
         await _cacheService.setNotificationsData(notificationsData);
 
         if (mounted) {
@@ -234,7 +240,9 @@ class _NotificationPageState extends State<NotificationPage> {
   Future<void> _deleteNotification(NotificationModel notification) async {
     try {
       // Delete notification (placeholder for future backend)
-      final success = await _notificationService.deleteNotification(notification.id);
+      final success = await _notificationService.deleteNotification(
+        notification.id,
+      );
 
       if (success) {
         setState(() {
@@ -242,9 +250,7 @@ class _NotificationPageState extends State<NotificationPage> {
         });
 
         // Update cache
-        final notificationsData = notifications
-            .map((n) => n.toJson())
-            .toList();
+        final notificationsData = notifications.map((n) => n.toJson()).toList();
         await _cacheService.setNotificationsData(notificationsData);
 
         if (mounted) {
@@ -635,7 +641,7 @@ class _NotificationPageState extends State<NotificationPage> {
 
   Widget _buildErrorState() {
     final isNoInternet = errorMessage == 'No internet connection';
-    
+
     return Center(
       child: Padding(
         padding: EdgeInsets.all(
@@ -677,7 +683,9 @@ class _NotificationPageState extends State<NotificationPage> {
                   : 20,
             ),
             Text(
-              isNoInternet ? 'No internet connection' : 'Error loading notifications',
+              isNoInternet
+                  ? 'No internet connection'
+                  : 'Error loading notifications',
               style: TextStyle(
                 fontSize: isLargeDesktop
                     ? 24
@@ -1126,7 +1134,10 @@ class _NotificationPageState extends State<NotificationPage> {
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   gradient: LinearGradient(
-                    colors: [notification.color, notification.color.withOpacity(0.7)],
+                    colors: [
+                      notification.color,
+                      notification.color.withOpacity(0.7),
+                    ],
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                   ),

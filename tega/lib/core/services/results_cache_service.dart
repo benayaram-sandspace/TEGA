@@ -61,7 +61,10 @@ class ResultsCacheService {
   Future<void> setResultsData(List<Map<String, dynamic>> data) async {
     await _ensurePrefs();
     await _prefs?.setString(_resultsDataKey, json.encode(data));
-    await _prefs?.setString(_cacheTimestampKey, DateTime.now().toIso8601String());
+    await _prefs?.setString(
+      _cacheTimestampKey,
+      DateTime.now().toIso8601String(),
+    );
   }
 
   /// Clear all cached data
@@ -71,4 +74,3 @@ class ResultsCacheService {
     await _prefs?.remove(_cacheTimestampKey);
   }
 }
-

@@ -85,7 +85,7 @@ class NotificationService {
       //   return data['success'] == true;
       // }
       // return false;
-      
+
       // For now, simulate success
       await Future.delayed(const Duration(milliseconds: 300));
       return true;
@@ -110,7 +110,7 @@ class NotificationService {
       //   return data['success'] == true;
       // }
       // return false;
-      
+
       // For now, simulate success
       await Future.delayed(const Duration(milliseconds: 300));
       return true;

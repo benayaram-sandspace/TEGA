@@ -45,7 +45,9 @@ class _CoursesPageState extends State<CoursesPage>
             error.toString().toLowerCase().contains('connection') ||
             error.toString().toLowerCase().contains('internet') ||
             error.toString().toLowerCase().contains('failed host lookup') ||
-            error.toString().toLowerCase().contains('no address associated with hostname'));
+            error.toString().toLowerCase().contains(
+              'no address associated with hostname',
+            ));
   }
 
   @override
@@ -142,14 +144,18 @@ class _CoursesPageState extends State<CoursesPage>
     }
   }
 
-  void _processCoursesData(List<dynamic> allCourses, List<dynamic> enrolledCourses) {
-
+  void _processCoursesData(
+    List<dynamic> allCourses,
+    List<dynamic> enrolledCourses,
+  ) {
     // Create a set of enrolled course IDs for quick lookup
     final enrolledCourseIds = <String>{};
     for (var enrolledCourse in enrolledCourses) {
-      final courseId = enrolledCourse['id']?.toString() ?? 
-                      enrolledCourse['courseId']?.toString() ?? 
-                      enrolledCourse['_id']?.toString() ?? '';
+      final courseId =
+          enrolledCourse['id']?.toString() ??
+          enrolledCourse['courseId']?.toString() ??
+          enrolledCourse['_id']?.toString() ??
+          '';
       if (courseId.isNotEmpty) {
         enrolledCourseIds.add(courseId);
       }
@@ -160,55 +166,55 @@ class _CoursesPageState extends State<CoursesPage>
     // Transform all courses and mark which ones are enrolled
     // Backend provides: Real-time course structure with modules and lectures
     _courses = allCourses.map<Map<String, dynamic>>((course) {
-        final courseId = course['_id']?.toString() ?? course['id']?.toString() ?? '';
-        final isEnrolled = enrolledCourseIds.contains(courseId);
+      final courseId =
+          course['_id']?.toString() ?? course['id']?.toString() ?? '';
+      final isEnrolled = enrolledCourseIds.contains(courseId);
 
-        // Get the first video URL from the first lecture of the first module
-        String firstVideoUrl = '';
-        if (course['modules'] != null && course['modules'] is List) {
-          final modules = course['modules'] as List;
-          if (modules.isNotEmpty) {
-            final firstModule = modules[0];
-            if (firstModule['lectures'] != null &&
-                firstModule['lectures'] is List) {
-              final lectures = firstModule['lectures'] as List;
-              if (lectures.isNotEmpty) {
-                final firstLecture = lectures[0];
-                if (firstLecture['videoContent'] != null &&
-                    firstLecture['videoContent']['r2Url'] != null) {
-                  firstVideoUrl = firstLecture['videoContent']['r2Url']
-                      .toString();
-                }
+      // Get the first video URL from the first lecture of the first module
+      String firstVideoUrl = '';
+      if (course['modules'] != null && course['modules'] is List) {
+        final modules = course['modules'] as List;
+        if (modules.isNotEmpty) {
+          final firstModule = modules[0];
+          if (firstModule['lectures'] != null &&
+              firstModule['lectures'] is List) {
+            final lectures = firstModule['lectures'] as List;
+            if (lectures.isNotEmpty) {
+              final firstLecture = lectures[0];
+              if (firstLecture['videoContent'] != null &&
+                  firstLecture['videoContent']['r2Url'] != null) {
+                firstVideoUrl = firstLecture['videoContent']['r2Url']
+                    .toString();
               }
             }
           }
         }
+      }
 
-        return {
-          'id': courseId,
-          'title': course['title']?.toString() ?? 'Untitled Course',
-          'thumbnail': course['thumbnail']?.toString() ?? '',
-          'createdBy':
-              course['instructor'], // Real-time courses have instructor object
-          'students': course['enrollmentCount'] ?? 0,
-          'difficulty': course['level']?.toString() ?? 'Beginner',
-          'duration': _formatRealTimeDuration(course['estimatedDuration']),
-          'progress': 0, // Will be updated if progress data is available
-          'category': course['category']?.toString() ?? 'General',
-          'isStarted': isEnrolled, // Mark as started if enrolled
-          'price': course['price'] ?? 0,
-          'isFree': course['isFree'] ?? false,
-          'description': course['description']?.toString() ?? '',
-          'shortDescription': course['shortDescription']?.toString() ?? '',
-          'hasVideoContent': firstVideoUrl.isNotEmpty,
-          'videoUrl': firstVideoUrl, // First video from modules
-          'videoLink': firstVideoUrl, // Same as videoUrl for compatibility
-          'previewVideo': course['previewVideo']?.toString() ?? '',
-          'modules':
-              course['modules'] ??
-              [], // Store full modules for video navigation
-      'isEnrolled': isEnrolled, // Add enrollment status
-    };
+      return {
+        'id': courseId,
+        'title': course['title']?.toString() ?? 'Untitled Course',
+        'thumbnail': course['thumbnail']?.toString() ?? '',
+        'createdBy':
+            course['instructor'], // Real-time courses have instructor object
+        'students': course['enrollmentCount'] ?? 0,
+        'difficulty': course['level']?.toString() ?? 'Beginner',
+        'duration': _formatRealTimeDuration(course['estimatedDuration']),
+        'progress': 0, // Will be updated if progress data is available
+        'category': course['category']?.toString() ?? 'General',
+        'isStarted': isEnrolled, // Mark as started if enrolled
+        'price': course['price'] ?? 0,
+        'isFree': course['isFree'] ?? false,
+        'description': course['description']?.toString() ?? '',
+        'shortDescription': course['shortDescription']?.toString() ?? '',
+        'hasVideoContent': firstVideoUrl.isNotEmpty,
+        'videoUrl': firstVideoUrl, // First video from modules
+        'videoLink': firstVideoUrl, // Same as videoUrl for compatibility
+        'previewVideo': course['previewVideo']?.toString() ?? '',
+        'modules':
+            course['modules'] ?? [], // Store full modules for video navigation
+        'isEnrolled': isEnrolled, // Add enrollment status
+      };
     }).toList();
 
     if (mounted) {
@@ -437,10 +443,7 @@ class _CoursesPageState extends State<CoursesPage>
     } else if (isDesktop || (isTablet && isLandscape)) {
       return RepaintBoundary(
         child: GridView.builder(
-          padding: EdgeInsets.symmetric(
-            horizontal: 24,
-            vertical: 12,
-          ),
+          padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
           gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: 2,
             crossAxisSpacing: 20,
@@ -462,7 +465,11 @@ class _CoursesPageState extends State<CoursesPage>
       return RepaintBoundary(
         child: ListView.builder(
           padding: EdgeInsets.symmetric(
-            horizontal: isTablet ? 20 : isSmallScreen ? 12 : 16,
+            horizontal: isTablet
+                ? 20
+                : isSmallScreen
+                ? 12
+                : 16,
             vertical: isTablet ? 12 : 8,
           ),
           itemCount: _filteredCourses.length,
@@ -479,10 +486,7 @@ class _CoursesPageState extends State<CoursesPage>
     }
   }
 
-  Widget _buildCourseCard(
-    Map<String, dynamic> course,
-    int index,
-  ) {
+  Widget _buildCourseCard(Map<String, dynamic> course, int index) {
     return RepaintBoundary(
       child: TweenAnimationBuilder<double>(
         tween: Tween(begin: 0.0, end: 1.0),
@@ -494,82 +498,19 @@ class _CoursesPageState extends State<CoursesPage>
             child: Opacity(
               opacity: value,
               child: Container(
-              margin: EdgeInsets.only(
-                bottom: isLargeDesktop
-                    ? 24
-                    : isDesktop
-                    ? 20
-                    : isTablet
-                    ? 18
-                    : 16,
-                left: (isLargeDesktop || isDesktop) ? 4 : 0,
-                right: (isLargeDesktop || isDesktop) ? 4 : 0,
-              ),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(
-                  isLargeDesktop
+                margin: EdgeInsets.only(
+                  bottom: isLargeDesktop
                       ? 24
                       : isDesktop
                       ? 20
                       : isTablet
                       ? 18
                       : 16,
+                  left: (isLargeDesktop || isDesktop) ? 4 : 0,
+                  right: (isLargeDesktop || isDesktop) ? 4 : 0,
                 ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.08),
-                    blurRadius: isLargeDesktop
-                        ? 24
-                        : isDesktop
-                        ? 20
-                        : isTablet
-                        ? 18
-                        : 15,
-                    offset: Offset(
-                      0,
-                      isLargeDesktop
-                          ? 10
-                          : isDesktop
-                          ? 8
-                          : isTablet
-                          ? 7
-                          : 6,
-                    ),
-                    spreadRadius: 0,
-                  ),
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.04),
-                    blurRadius: isLargeDesktop
-                        ? 48
-                        : isDesktop
-                        ? 40
-                        : isTablet
-                        ? 35
-                        : 30,
-                    offset: Offset(
-                      0,
-                      isLargeDesktop
-                          ? 20
-                          : isDesktop
-                          ? 16
-                          : isTablet
-                          ? 14
-                          : 12,
-                    ),
-                    spreadRadius: 0,
-                  ),
-                ],
-              ),
-              child: Material(
-                color: Colors.transparent,
-                child: InkWell(
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => CourseContentPage(course: course),
-                    ),
-                  ),
+                decoration: BoxDecoration(
+                  color: Colors.white,
                   borderRadius: BorderRadius.circular(
                     isLargeDesktop
                         ? 24
@@ -579,260 +520,77 @@ class _CoursesPageState extends State<CoursesPage>
                         ? 18
                         : 16,
                   ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Course Thumbnail
-                      ClipRRect(
-                        borderRadius: BorderRadius.only(
-                          topLeft: Radius.circular(
-                            isLargeDesktop
-                                ? 24
-                                : isDesktop
-                                ? 20
-                                : isTablet
-                                ? 18
-                                : 16,
-                          ),
-                          topRight: Radius.circular(
-                            isLargeDesktop
-                                ? 24
-                                : isDesktop
-                                ? 20
-                                : isTablet
-                                ? 18
-                                : 16,
-                          ),
-                        ),
-                        child: Container(
-                          height: isLargeDesktop
-                              ? 240
-                              : isDesktop
-                              ? 200
-                              : isTablet
-                              ? 180
-                              : isSmallScreen
-                              ? 140
-                              : 160,
-                          width: double.infinity,
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                              colors: [
-                                const Color(0xFF6B5FFF).withOpacity(0.1),
-                                const Color(0xFF6B5FFF).withOpacity(0.05),
-                              ],
-                            ),
-                          ),
-                          child: Stack(
-                            children: [
-                              // Course Image
-                              if (course['thumbnail'] != null &&
-                                  course['thumbnail'].toString().isNotEmpty)
-                                CachedNetworkImage(
-                                  imageUrl: course['thumbnail'].toString(),
-                                  fit: BoxFit.cover,
-                                  width: double.infinity,
-                                  height: double.infinity,
-                                  placeholder: (context, url) => _buildThumbnailPlaceholder(),
-                                  errorWidget: (context, url, error) =>
-                                      _buildThumbnailPlaceholder(),
-                                )
-                              else
-                                _buildThumbnailPlaceholder(),
-
-                              // Play Button Overlay
-                              Positioned.fill(
-                                child: Container(
-                                  decoration: BoxDecoration(
-                                    color: Colors.black.withOpacity(0.3),
-                                  ),
-                                  child: Center(
-                                    child: Container(
-                                      padding: EdgeInsets.all(
-                                        isLargeDesktop
-                                            ? 20
-                                            : isDesktop
-                                            ? 16
-                                            : isTablet
-                                            ? 15
-                                            : 14,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        color: Colors.white.withOpacity(0.9),
-                                        shape: BoxShape.circle,
-                                        boxShadow: [
-                                          BoxShadow(
-                                            color: Colors.black.withOpacity(
-                                              0.2,
-                                            ),
-                                            blurRadius: isLargeDesktop
-                                                ? 16
-                                                : isDesktop
-                                                ? 12
-                                                : 10,
-                                            offset: Offset(
-                                              0,
-                                              isLargeDesktop
-                                                  ? 6
-                                                  : isDesktop
-                                                  ? 4
-                                                  : 3,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                      child: Icon(
-                                        Icons.play_arrow_rounded,
-                                        color: const Color(0xFF6B5FFF),
-                                        size: isLargeDesktop
-                                            ? 40
-                                            : isDesktop
-                                            ? 32
-                                            : isTablet
-                                            ? 30
-                                            : 28,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.08),
+                      blurRadius: isLargeDesktop
+                          ? 24
+                          : isDesktop
+                          ? 20
+                          : isTablet
+                          ? 18
+                          : 15,
+                      offset: Offset(
+                        0,
+                        isLargeDesktop
+                            ? 10
+                            : isDesktop
+                            ? 8
+                            : isTablet
+                            ? 7
+                            : 6,
                       ),
-
-                      // Course Details
-                      Padding(
-                        padding: EdgeInsets.all(
-                          isLargeDesktop
-                              ? 24
-                              : isDesktop
-                              ? 20
-                              : isTablet
-                              ? 18
-                              : isSmallScreen
-                              ? 12
-                              : 16,
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            // Course Title
-                            Text(
-                              course['title']?.toString() ?? 'Untitled Course',
-                              style: TextStyle(
-                                fontSize: isLargeDesktop
-                                    ? 24
-                                    : isDesktop
-                                    ? 22
-                                    : isTablet
-                                    ? 20
-                                    : isSmallScreen
-                                    ? 16
-                                    : 18,
-                                fontWeight: FontWeight.w700,
-                                color: const Color(0xFF1A1A1A),
-                                height: 1.3,
-                              ),
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                            SizedBox(
-                              height: isLargeDesktop
-                                  ? 14
-                                  : isDesktop
-                                  ? 12
-                                  : isTablet
-                                  ? 11
-                                  : 10,
-                            ),
-
-                            // Lecturer Name
-                            Row(
-                              children: [
-                                Container(
-                                  padding: const EdgeInsets.all(6),
-                                  decoration: BoxDecoration(
-                                    color: const Color(
-                                      0xFF6B5FFF,
-                                    ).withOpacity(0.1),
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  child: const Icon(
-                                    Icons.person_outline_rounded,
-                                    size: 16,
-                                    color: Color(0xFF6B5FFF),
-                                  ),
-                                ),
-                                const SizedBox(width: 8),
-                                Expanded(
-                                  child: Text(
-                                    _getInstructorName(course),
-                                    style: TextStyle(
-                                      fontSize: isLargeDesktop
-                                          ? 16
-                                          : isDesktop
-                                          ? 15
-                                          : isTablet
-                                          ? 14.5
-                                          : isSmallScreen
-                                          ? 12
-                                          : 14,
-                                      color: Colors.grey[600],
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            SizedBox(
-                              height: isLargeDesktop
-                                  ? 18
-                                  : isDesktop
-                                  ? 16
-                                  : isTablet
-                                  ? 15
-                                  : 14,
-                            ),
-
-                            // Course Info Row
-                            Row(
-                              children: [
-                                // Hours
-                                Expanded(
-                                  child: _buildModernInfoChip(
-                                    Icons.access_time_rounded,
-                                    course['duration']?.toString() ?? '0 hours',
-                                    const Color(0xFF2196F3),
-                                  ),
-                                ),
-                                const SizedBox(width: 12),
-                                // Difficulty
-                                Expanded(
-                                  child: _buildModernInfoChip(
-                                    Icons.signal_cellular_alt_rounded,
-                                    course['difficulty']?.toString() ??
-                                        'Beginner',
-                                    const Color(0xFFFF9800),
-                                  ),
-                                ),
-                                const SizedBox(width: 12),
-                                // Students
-                                Expanded(
-                                  child: _buildModernInfoChip(
-                                    Icons.people_outline_rounded,
-                                    _formatStudentCount(course['students']),
-                                    const Color(0xFF4CAF50),
-                                  ),
-                                ),
-                              ],
-                            ),
-                            SizedBox(
-                              height: isLargeDesktop
+                      spreadRadius: 0,
+                    ),
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.04),
+                      blurRadius: isLargeDesktop
+                          ? 48
+                          : isDesktop
+                          ? 40
+                          : isTablet
+                          ? 35
+                          : 30,
+                      offset: Offset(
+                        0,
+                        isLargeDesktop
+                            ? 20
+                            : isDesktop
+                            ? 16
+                            : isTablet
+                            ? 14
+                            : 12,
+                      ),
+                      spreadRadius: 0,
+                    ),
+                  ],
+                ),
+                child: Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => CourseContentPage(course: course),
+                      ),
+                    ),
+                    borderRadius: BorderRadius.circular(
+                      isLargeDesktop
+                          ? 24
+                          : isDesktop
+                          ? 20
+                          : isTablet
+                          ? 18
+                          : 16,
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Course Thumbnail
+                        ClipRRect(
+                          borderRadius: BorderRadius.only(
+                            topLeft: Radius.circular(
+                              isLargeDesktop
                                   ? 24
                                   : isDesktop
                                   ? 20
@@ -840,20 +598,269 @@ class _CoursesPageState extends State<CoursesPage>
                                   ? 18
                                   : 16,
                             ),
+                            topRight: Radius.circular(
+                              isLargeDesktop
+                                  ? 24
+                                  : isDesktop
+                                  ? 20
+                                  : isTablet
+                                  ? 18
+                                  : 16,
+                            ),
+                          ),
+                          child: Container(
+                            height: isLargeDesktop
+                                ? 240
+                                : isDesktop
+                                ? 200
+                                : isTablet
+                                ? 180
+                                : isSmallScreen
+                                ? 140
+                                : 160,
+                            width: double.infinity,
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                                colors: [
+                                  const Color(0xFF6B5FFF).withOpacity(0.1),
+                                  const Color(0xFF6B5FFF).withOpacity(0.05),
+                                ],
+                              ),
+                            ),
+                            child: Stack(
+                              children: [
+                                // Course Image
+                                if (course['thumbnail'] != null &&
+                                    course['thumbnail'].toString().isNotEmpty)
+                                  CachedNetworkImage(
+                                    imageUrl: course['thumbnail'].toString(),
+                                    fit: BoxFit.cover,
+                                    width: double.infinity,
+                                    height: double.infinity,
+                                    placeholder: (context, url) =>
+                                        _buildThumbnailPlaceholder(),
+                                    errorWidget: (context, url, error) =>
+                                        _buildThumbnailPlaceholder(),
+                                  )
+                                else
+                                  _buildThumbnailPlaceholder(),
 
-                            // Enroll Button
-                            _buildModernEnrollButton(course),
-                          ],
+                                // Play Button Overlay
+                                Positioned.fill(
+                                  child: Container(
+                                    decoration: BoxDecoration(
+                                      color: Colors.black.withOpacity(0.3),
+                                    ),
+                                    child: Center(
+                                      child: Container(
+                                        padding: EdgeInsets.all(
+                                          isLargeDesktop
+                                              ? 20
+                                              : isDesktop
+                                              ? 16
+                                              : isTablet
+                                              ? 15
+                                              : 14,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: Colors.white.withOpacity(0.9),
+                                          shape: BoxShape.circle,
+                                          boxShadow: [
+                                            BoxShadow(
+                                              color: Colors.black.withOpacity(
+                                                0.2,
+                                              ),
+                                              blurRadius: isLargeDesktop
+                                                  ? 16
+                                                  : isDesktop
+                                                  ? 12
+                                                  : 10,
+                                              offset: Offset(
+                                                0,
+                                                isLargeDesktop
+                                                    ? 6
+                                                    : isDesktop
+                                                    ? 4
+                                                    : 3,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                        child: Icon(
+                                          Icons.play_arrow_rounded,
+                                          color: const Color(0xFF6B5FFF),
+                                          size: isLargeDesktop
+                                              ? 40
+                                              : isDesktop
+                                              ? 32
+                                              : isTablet
+                                              ? 30
+                                              : 28,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
                         ),
-                      ),
-                    ],
+
+                        // Course Details
+                        Padding(
+                          padding: EdgeInsets.all(
+                            isLargeDesktop
+                                ? 24
+                                : isDesktop
+                                ? 20
+                                : isTablet
+                                ? 18
+                                : isSmallScreen
+                                ? 12
+                                : 16,
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              // Course Title
+                              Text(
+                                course['title']?.toString() ??
+                                    'Untitled Course',
+                                style: TextStyle(
+                                  fontSize: isLargeDesktop
+                                      ? 24
+                                      : isDesktop
+                                      ? 22
+                                      : isTablet
+                                      ? 20
+                                      : isSmallScreen
+                                      ? 16
+                                      : 18,
+                                  fontWeight: FontWeight.w700,
+                                  color: const Color(0xFF1A1A1A),
+                                  height: 1.3,
+                                ),
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              SizedBox(
+                                height: isLargeDesktop
+                                    ? 14
+                                    : isDesktop
+                                    ? 12
+                                    : isTablet
+                                    ? 11
+                                    : 10,
+                              ),
+
+                              // Lecturer Name
+                              Row(
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.all(6),
+                                    decoration: BoxDecoration(
+                                      color: const Color(
+                                        0xFF6B5FFF,
+                                      ).withOpacity(0.1),
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: const Icon(
+                                      Icons.person_outline_rounded,
+                                      size: 16,
+                                      color: Color(0xFF6B5FFF),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: Text(
+                                      _getInstructorName(course),
+                                      style: TextStyle(
+                                        fontSize: isLargeDesktop
+                                            ? 16
+                                            : isDesktop
+                                            ? 15
+                                            : isTablet
+                                            ? 14.5
+                                            : isSmallScreen
+                                            ? 12
+                                            : 14,
+                                        color: Colors.grey[600],
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              SizedBox(
+                                height: isLargeDesktop
+                                    ? 18
+                                    : isDesktop
+                                    ? 16
+                                    : isTablet
+                                    ? 15
+                                    : 14,
+                              ),
+
+                              // Course Info Row
+                              Row(
+                                children: [
+                                  // Hours
+                                  Expanded(
+                                    child: _buildModernInfoChip(
+                                      Icons.access_time_rounded,
+                                      course['duration']?.toString() ??
+                                          '0 hours',
+                                      const Color(0xFF2196F3),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  // Difficulty
+                                  Expanded(
+                                    child: _buildModernInfoChip(
+                                      Icons.signal_cellular_alt_rounded,
+                                      course['difficulty']?.toString() ??
+                                          'Beginner',
+                                      const Color(0xFFFF9800),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  // Students
+                                  Expanded(
+                                    child: _buildModernInfoChip(
+                                      Icons.people_outline_rounded,
+                                      _formatStudentCount(course['students']),
+                                      const Color(0xFF4CAF50),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              SizedBox(
+                                height: isLargeDesktop
+                                    ? 24
+                                    : isDesktop
+                                    ? 20
+                                    : isTablet
+                                    ? 18
+                                    : 16,
+                              ),
+
+                              // Enroll Button
+                              _buildModernEnrollButton(course),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),
             ),
-          ),
-        );
-      },
+          );
+        },
       ),
     );
   }
@@ -969,7 +976,8 @@ class _CoursesPageState extends State<CoursesPage>
 
   Widget _buildModernEnrollButton(Map<String, dynamic> course) {
     final hasPrice = course['price'] != null && course['price'] > 0;
-    final isEnrolled = course['isEnrolled'] == true || course['isStarted'] == true;
+    final isEnrolled =
+        course['isEnrolled'] == true || course['isStarted'] == true;
 
     String buttonText;
     Color buttonColor;
@@ -1144,7 +1152,11 @@ class _CoursesPageState extends State<CoursesPage>
         children: [
           CircularProgressIndicator(
             valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF6B5FFF)),
-            strokeWidth: isLargeDesktop ? 4 : isDesktop ? 3.5 : 3,
+            strokeWidth: isLargeDesktop
+                ? 4
+                : isDesktop
+                ? 3.5
+                : 3,
           ),
           SizedBox(
             height: isLargeDesktop
@@ -1178,7 +1190,7 @@ class _CoursesPageState extends State<CoursesPage>
 
   Widget _buildErrorState() {
     final isNoInternet = _errorMessage == 'No internet connection';
-    
+
     return Center(
       child: SingleChildScrollView(
         padding: EdgeInsets.all(
@@ -1217,7 +1229,9 @@ class _CoursesPageState extends State<CoursesPage>
                   : 16,
             ),
             Text(
-              isNoInternet ? 'No internet connection' : 'Oops! Something went wrong',
+              isNoInternet
+                  ? 'No internet connection'
+                  : 'Oops! Something went wrong',
               style: TextStyle(
                 fontSize: isLargeDesktop
                     ? 22
@@ -1243,7 +1257,7 @@ class _CoursesPageState extends State<CoursesPage>
                   : 8,
             ),
             Text(
-              isNoInternet 
+              isNoInternet
                   ? 'Please check your connection and try again'
                   : (_errorMessage ?? 'Unable to load courses'),
               style: TextStyle(
@@ -1620,5 +1634,3 @@ class _CoursesPageState extends State<CoursesPage>
     );
   }
 }
-
-

@@ -73,11 +73,14 @@ class _AddQuestionPageState extends State<AddQuestionPage>
     _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(parent: _animationController, curve: Curves.easeOutCubic),
     );
-    _slideAnimation = Tween<Offset>(
-      begin: const Offset(0, 0.3),
-      end: Offset.zero,
-    ).animate(CurvedAnimation(parent: _animationController, curve: Curves.easeOutCubic));
-    
+    _slideAnimation =
+        Tween<Offset>(begin: const Offset(0, 0.3), end: Offset.zero).animate(
+          CurvedAnimation(
+            parent: _animationController,
+            curve: Curves.easeOutCubic,
+          ),
+        );
+
     _animationController.forward();
   }
 
@@ -139,272 +142,295 @@ class _AddQuestionPageState extends State<AddQuestionPage>
                 children: [
                   // Question field
                   const Text(
-                'Question',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: AdminDashboardStyles.textDark,
-                ),
-              ).animate().fade(duration: 500.ms).slideY(begin: 0.3, delay: 100.ms),
-              const SizedBox(height: 8),
-              TextFormField(
-                controller: _questionController,
-                maxLines: 3,
-                decoration: InputDecoration(
-                  hintText: 'What is the Capital of France?',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: AdminDashboardStyles.textLight.withValues(alpha: 0.3)),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: AdminDashboardStyles.textLight.withValues(alpha: 0.3)),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: AdminDashboardStyles.primary, width: 2),
-                  ),
-                  filled: true,
-                  fillColor: AdminDashboardStyles.cardBackground,
-                ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter a question';
-                  }
-                  return null;
-                },
-              ).animate().fade(duration: 500.ms).slideY(begin: 0.3, delay: 200.ms),
+                        'Question',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: AdminDashboardStyles.textDark,
+                        ),
+                      )
+                      .animate()
+                      .fade(duration: 500.ms)
+                      .slideY(begin: 0.3, delay: 100.ms),
+                  const SizedBox(height: 8),
+                  TextFormField(
+                        controller: _questionController,
+                        maxLines: 3,
+                        decoration: InputDecoration(
+                          hintText: 'What is the Capital of France?',
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(
+                              color: AdminDashboardStyles.textLight.withValues(
+                                alpha: 0.3,
+                              ),
+                            ),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(
+                              color: AdminDashboardStyles.textLight.withValues(
+                                alpha: 0.3,
+                              ),
+                            ),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(
+                              color: AdminDashboardStyles.primary,
+                              width: 2,
+                            ),
+                          ),
+                          filled: true,
+                          fillColor: AdminDashboardStyles.cardBackground,
+                        ),
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Please enter a question';
+                          }
+                          return null;
+                        },
+                      )
+                      .animate()
+                      .fade(duration: 500.ms)
+                      .slideY(begin: 0.3, delay: 200.ms),
 
-              const SizedBox(height: 24),
+                  const SizedBox(height: 24),
 
-              // Options
-              const Text(
-                'Options',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.textPrimary,
-                ),
-              ),
-              const SizedBox(height: 8),
-
-              _buildOptionField('Option 1', _option1Controller, 0),
-              const SizedBox(height: 12),
-              _buildOptionField('Option 2', _option2Controller, 1),
-              const SizedBox(height: 12),
-              _buildOptionField('Option 3', _option3Controller, 2),
-              const SizedBox(height: 12),
-              _buildOptionField('Option 4', _option4Controller, 3),
-
-              const SizedBox(height: 24),
-
-              // Correct Answer dropdown
-              const Text(
-                'Correct Answer',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.textPrimary,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 4,
-                ),
-                decoration: BoxDecoration(
-                  color: AppColors.success,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: DropdownButtonHideUnderline(
-                  child: DropdownButton<int>(
-                    value: _correctAnswer,
-                    isExpanded: true,
-                    style: const TextStyle(
-                      color: AppColors.pureWhite,
-                      fontWeight: FontWeight.w600,
+                  // Options
+                  const Text(
+                    'Options',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.textPrimary,
                     ),
-                    icon: const Icon(
-                      Icons.keyboard_arrow_up,
-                      color: AppColors.pureWhite,
+                  ),
+                  const SizedBox(height: 8),
+
+                  _buildOptionField('Option 1', _option1Controller, 0),
+                  const SizedBox(height: 12),
+                  _buildOptionField('Option 2', _option2Controller, 1),
+                  const SizedBox(height: 12),
+                  _buildOptionField('Option 3', _option3Controller, 2),
+                  const SizedBox(height: 12),
+                  _buildOptionField('Option 4', _option4Controller, 3),
+
+                  const SizedBox(height: 24),
+
+                  // Correct Answer dropdown
+                  const Text(
+                    'Correct Answer',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.textPrimary,
                     ),
-                    items: [
-                      DropdownMenuItem(
-                        value: 0,
-                        child: Text(
-                          'Option 1${_option1Controller.text.isNotEmpty ? ': ${_option1Controller.text}' : ''}',
+                  ),
+                  const SizedBox(height: 8),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppColors.success,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: DropdownButtonHideUnderline(
+                      child: DropdownButton<int>(
+                        value: _correctAnswer,
+                        isExpanded: true,
+                        style: const TextStyle(
+                          color: AppColors.pureWhite,
+                          fontWeight: FontWeight.w600,
+                        ),
+                        icon: const Icon(
+                          Icons.keyboard_arrow_up,
+                          color: AppColors.pureWhite,
+                        ),
+                        items: [
+                          DropdownMenuItem(
+                            value: 0,
+                            child: Text(
+                              'Option 1${_option1Controller.text.isNotEmpty ? ': ${_option1Controller.text}' : ''}',
+                            ),
+                          ),
+                          DropdownMenuItem(
+                            value: 1,
+                            child: Text(
+                              'Option 2${_option2Controller.text.isNotEmpty ? ': ${_option2Controller.text}' : ''}',
+                            ),
+                          ),
+                          DropdownMenuItem(
+                            value: 2,
+                            child: Text(
+                              'Option 3${_option3Controller.text.isNotEmpty ? ': ${_option3Controller.text}' : ''}',
+                            ),
+                          ),
+                          DropdownMenuItem(
+                            value: 3,
+                            child: Text(
+                              'Option 4${_option4Controller.text.isNotEmpty ? ': ${_option4Controller.text}' : ''}',
+                            ),
+                          ),
+                        ],
+                        onChanged: (value) {
+                          setState(() {
+                            _correctAnswer = value ?? 0;
+                          });
+                        },
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 24),
+
+                  // Category fields
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _buildDropdownField(
+                          'Subject',
+                          _selectedSubject,
+                          _subjects,
+                          (value) => setState(() => _selectedSubject = value!),
                         ),
                       ),
-                      DropdownMenuItem(
-                        value: 1,
-                        child: Text(
-                          'Option 2${_option2Controller.text.isNotEmpty ? ': ${_option2Controller.text}' : ''}',
-                        ),
-                      ),
-                      DropdownMenuItem(
-                        value: 2,
-                        child: Text(
-                          'Option 3${_option3Controller.text.isNotEmpty ? ': ${_option3Controller.text}' : ''}',
-                        ),
-                      ),
-                      DropdownMenuItem(
-                        value: 3,
-                        child: Text(
-                          'Option 4${_option4Controller.text.isNotEmpty ? ': ${_option4Controller.text}' : ''}',
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: _buildDropdownField(
+                          'Skill',
+                          _selectedSkill,
+                          _skills,
+                          (value) => setState(() => _selectedSkill = value!),
                         ),
                       ),
                     ],
-                    onChanged: (value) {
-                      setState(() {
-                        _correctAnswer = value ?? 0;
-                      });
-                    },
                   ),
-                ),
-              ),
 
-              const SizedBox(height: 24),
+                  const SizedBox(height: 16),
 
-              // Category fields
-              Row(
-                children: [
-                  Expanded(
-                    child: _buildDropdownField(
-                      'Subject',
-                      _selectedSubject,
-                      _subjects,
-                      (value) => setState(() => _selectedSubject = value!),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _buildDropdownField(
+                          'Difficulty',
+                          _selectedDifficulty,
+                          _difficulties,
+                          (value) =>
+                              setState(() => _selectedDifficulty = value!),
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: _buildDropdownField(
+                          'Type',
+                          _selectedQuestionType,
+                          _questionTypes,
+                          (value) =>
+                              setState(() => _selectedQuestionType = value!),
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 24),
+
+                  // Explanation field
+                  const Text(
+                    'Explanation (Optional)',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.textPrimary,
                     ),
                   ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: _buildDropdownField(
-                      'Skill',
-                      _selectedSkill,
-                      _skills,
-                      (value) => setState(() => _selectedSkill = value!),
+                  const SizedBox(height: 8),
+                  TextFormField(
+                    controller: _explanationController,
+                    maxLines: 2,
+                    decoration: InputDecoration(
+                      hintText: 'Explain why this is the correct answer...',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(
+                          color: AppColors.lightGray,
+                        ),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(
+                          color: AppColors.lightGray,
+                        ),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(color: AppColors.primary),
+                      ),
+                      filled: true,
+                      fillColor: AppColors.lightGray.withValues(alpha: 0.1),
                     ),
+                  ),
+
+                  const SizedBox(height: 40),
+
+                  // Action buttons
+                  Row(
+                    children: [
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed: () => Navigator.pop(context),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.warning,
+                            foregroundColor: AppColors.pureWhite,
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            elevation: 0,
+                          ),
+                          child: const Text(
+                            'Cancel',
+                            style: TextStyle(
+                              fontWeight: FontWeight.w600,
+                              fontSize: 16,
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed: _saveQuestion,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.primary,
+                            foregroundColor: AppColors.pureWhite,
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            elevation: 0,
+                          ),
+                          child: const Text(
+                            'Save',
+                            style: TextStyle(
+                              fontWeight: FontWeight.w600,
+                              fontSize: 16,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
-
-              const SizedBox(height: 16),
-
-              Row(
-                children: [
-                  Expanded(
-                    child: _buildDropdownField(
-                      'Difficulty',
-                      _selectedDifficulty,
-                      _difficulties,
-                      (value) => setState(() => _selectedDifficulty = value!),
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: _buildDropdownField(
-                      'Type',
-                      _selectedQuestionType,
-                      _questionTypes,
-                      (value) => setState(() => _selectedQuestionType = value!),
-                    ),
-                  ),
-                ],
-              ),
-
-              const SizedBox(height: 24),
-
-              // Explanation field
-              const Text(
-                'Explanation (Optional)',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.textPrimary,
-                ),
-              ),
-              const SizedBox(height: 8),
-              TextFormField(
-                controller: _explanationController,
-                maxLines: 2,
-                decoration: InputDecoration(
-                  hintText: 'Explain why this is the correct answer...',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: AppColors.lightGray),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: AppColors.lightGray),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: AppColors.primary),
-                  ),
-                  filled: true,
-                  fillColor: AppColors.lightGray.withValues(alpha: 0.1),
-                ),
-              ),
-
-              const SizedBox(height: 40),
-
-              // Action buttons
-              Row(
-                children: [
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: () => Navigator.pop(context),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.warning,
-                        foregroundColor: AppColors.pureWhite,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        elevation: 0,
-                      ),
-                      child: const Text(
-                        'Cancel',
-                        style: TextStyle(
-                          fontWeight: FontWeight.w600,
-                          fontSize: 16,
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: _saveQuestion,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primary,
-                        foregroundColor: AppColors.pureWhite,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        elevation: 0,
-                      ),
-                      child: const Text(
-                        'Save',
-                        style: TextStyle(
-                          fontWeight: FontWeight.w600,
-                          fontSize: 16,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ],
+            ),
           ),
         ),
       ),
-    ),
-    ),
-  );
+    );
   }
 
   Widget _buildOptionField(
@@ -507,7 +533,7 @@ class _AddQuestionPageState extends State<AddQuestionPage>
         correctAnswers: [_correctAnswer],
         explanations: [_explanationController.text],
         imageUrls: [
-            'https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=400'
+          'https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=400',
         ],
         isActive: true,
         createdAt: DateTime.now(),

@@ -4,7 +4,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 /// Cache service for settings data
 /// Provides caching with TTL (Time To Live) for account settings
 class SettingsCacheService {
-  static final SettingsCacheService _instance = SettingsCacheService._internal();
+  static final SettingsCacheService _instance =
+      SettingsCacheService._internal();
   factory SettingsCacheService() => _instance;
   SettingsCacheService._internal();
 
@@ -60,7 +61,10 @@ class SettingsCacheService {
   Future<void> setAccountData(Map<String, dynamic> data) async {
     await _ensurePrefs();
     await _prefs?.setString(_accountDataKey, json.encode(data));
-    await _prefs?.setString(_cacheTimestampKey, DateTime.now().toIso8601String());
+    await _prefs?.setString(
+      _cacheTimestampKey,
+      DateTime.now().toIso8601String(),
+    );
   }
 
   /// Clear account data cache
@@ -75,4 +79,3 @@ class SettingsCacheService {
     await clearAccountData();
   }
 }
-

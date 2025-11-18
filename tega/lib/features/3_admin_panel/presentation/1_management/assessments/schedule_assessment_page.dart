@@ -57,9 +57,7 @@ class _ScheduleAssessmentPageState extends State<ScheduleAssessmentPage> {
       body: Column(
         children: [
           _buildNavigationMenu(isMobile, isTablet, isDesktop),
-          Expanded(
-            child: _buildContent(),
-          ),
+          Expanded(child: _buildContent()),
         ],
       ),
     );
@@ -67,14 +65,34 @@ class _ScheduleAssessmentPageState extends State<ScheduleAssessmentPage> {
 
   Widget _buildNavigationMenu(bool isMobile, bool isTablet, bool isDesktop) {
     return Container(
-      margin: EdgeInsets.all(isMobile ? 12 : isTablet ? 16 : 20),
+      margin: EdgeInsets.all(
+        isMobile
+            ? 12
+            : isTablet
+            ? 16
+            : 20,
+      ),
       padding: EdgeInsets.symmetric(
-        horizontal: isMobile ? 12 : isTablet ? 14 : 16,
-        vertical: isMobile ? 10 : isTablet ? 11 : 12,
+        horizontal: isMobile
+            ? 12
+            : isTablet
+            ? 14
+            : 16,
+        vertical: isMobile
+            ? 10
+            : isTablet
+            ? 11
+            : 12,
       ),
       decoration: BoxDecoration(
         color: Colors.grey[100],
-        borderRadius: BorderRadius.circular(isMobile ? 10 : isTablet ? 11 : 12),
+        borderRadius: BorderRadius.circular(
+          isMobile
+              ? 10
+              : isTablet
+              ? 11
+              : 12,
+        ),
       ),
       child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,
@@ -83,10 +101,23 @@ class _ScheduleAssessmentPageState extends State<ScheduleAssessmentPage> {
             final index = entry.key;
             final item = entry.value;
             final isSelected = _selectedNavIndex == index;
-            
+
             return Padding(
-              padding: EdgeInsets.only(right: isMobile ? 6 : isTablet ? 7 : 8),
-              child: _buildNavButton(item, isSelected, index, isMobile, isTablet, isDesktop),
+              padding: EdgeInsets.only(
+                right: isMobile
+                    ? 6
+                    : isTablet
+                    ? 7
+                    : 8,
+              ),
+              child: _buildNavButton(
+                item,
+                isSelected,
+                index,
+                isMobile,
+                isTablet,
+                isDesktop,
+              ),
             );
           }).toList(),
         ),
@@ -109,7 +140,11 @@ class _ScheduleAssessmentPageState extends State<ScheduleAssessmentPage> {
         },
         icon: Icon(
           item.icon,
-          size: isMobile ? 16 : isTablet ? 17 : 18,
+          size: isMobile
+              ? 16
+              : isTablet
+              ? 17
+              : 18,
           color: Colors.white,
         ),
         label: Text(
@@ -117,18 +152,36 @@ class _ScheduleAssessmentPageState extends State<ScheduleAssessmentPage> {
           style: TextStyle(
             color: Colors.white,
             fontWeight: FontWeight.w600,
-            fontSize: isMobile ? 12 : isTablet ? 13 : 14,
+            fontSize: isMobile
+                ? 12
+                : isTablet
+                ? 13
+                : 14,
           ),
         ),
         style: ElevatedButton.styleFrom(
           backgroundColor: AdminDashboardStyles.primary,
           foregroundColor: Colors.white,
           padding: EdgeInsets.symmetric(
-            horizontal: isMobile ? 12 : isTablet ? 14 : 16,
-            vertical: isMobile ? 10 : isTablet ? 11 : 12,
+            horizontal: isMobile
+                ? 12
+                : isTablet
+                ? 14
+                : 16,
+            vertical: isMobile
+                ? 10
+                : isTablet
+                ? 11
+                : 12,
           ),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(isMobile ? 6 : isTablet ? 7 : 8),
+            borderRadius: BorderRadius.circular(
+              isMobile
+                  ? 6
+                  : isTablet
+                  ? 7
+                  : 8,
+            ),
           ),
           elevation: 0,
         ),
@@ -140,7 +193,11 @@ class _ScheduleAssessmentPageState extends State<ScheduleAssessmentPage> {
         },
         icon: Icon(
           item.icon,
-          size: isMobile ? 16 : isTablet ? 17 : 18,
+          size: isMobile
+              ? 16
+              : isTablet
+              ? 17
+              : 18,
           color: AdminDashboardStyles.primary.withOpacity(0.6),
         ),
         label: Text(
@@ -148,16 +205,34 @@ class _ScheduleAssessmentPageState extends State<ScheduleAssessmentPage> {
           style: TextStyle(
             color: AdminDashboardStyles.primary.withOpacity(0.7),
             fontWeight: FontWeight.w500,
-            fontSize: isMobile ? 12 : isTablet ? 13 : 14,
+            fontSize: isMobile
+                ? 12
+                : isTablet
+                ? 13
+                : 14,
           ),
         ),
         style: TextButton.styleFrom(
           padding: EdgeInsets.symmetric(
-            horizontal: isMobile ? 12 : isTablet ? 14 : 16,
-            vertical: isMobile ? 10 : isTablet ? 11 : 12,
+            horizontal: isMobile
+                ? 12
+                : isTablet
+                ? 14
+                : 16,
+            vertical: isMobile
+                ? 10
+                : isTablet
+                ? 11
+                : 12,
           ),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(isMobile ? 6 : isTablet ? 7 : 8),
+            borderRadius: BorderRadius.circular(
+              isMobile
+                  ? 6
+                  : isTablet
+                  ? 7
+                  : 8,
+            ),
           ),
         ),
       );
@@ -207,10 +282,5 @@ class NavItem {
   final String label;
   final bool isActive;
 
-  NavItem({
-    required this.icon,
-    required this.label,
-    required this.isActive,
-  });
+  NavItem({required this.icon, required this.label, required this.isActive});
 }
-

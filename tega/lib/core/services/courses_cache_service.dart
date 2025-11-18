@@ -116,7 +116,10 @@ class CoursesCacheService {
     try {
       final dataJson = json.encode(courses);
       await _prefs?.setString(_allCoursesKey, dataJson);
-      await _prefs?.setString(_cacheTimestampKey, DateTime.now().toIso8601String());
+      await _prefs?.setString(
+        _cacheTimestampKey,
+        DateTime.now().toIso8601String(),
+      );
     } catch (e) {
       // Silently handle errors
     }
@@ -128,7 +131,10 @@ class CoursesCacheService {
     try {
       final dataJson = json.encode(enrolledCourses);
       await _prefs?.setString(_enrolledCoursesKey, dataJson);
-      await _prefs?.setString(_cacheTimestampKey, DateTime.now().toIso8601String());
+      await _prefs?.setString(
+        _cacheTimestampKey,
+        DateTime.now().toIso8601String(),
+      );
     } catch (e) {
       // Silently handle errors
     }
@@ -142,8 +148,14 @@ class CoursesCacheService {
     await _ensurePrefs();
     try {
       await _prefs?.setString(_allCoursesKey, json.encode(allCourses));
-      await _prefs?.setString(_enrolledCoursesKey, json.encode(enrolledCourses));
-      await _prefs?.setString(_cacheTimestampKey, DateTime.now().toIso8601String());
+      await _prefs?.setString(
+        _enrolledCoursesKey,
+        json.encode(enrolledCourses),
+      );
+      await _prefs?.setString(
+        _cacheTimestampKey,
+        DateTime.now().toIso8601String(),
+      );
     } catch (e) {
       // Silently handle errors
     }
@@ -177,4 +189,3 @@ class CoursesCacheService {
     }
   }
 }
-

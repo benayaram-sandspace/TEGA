@@ -27,7 +27,8 @@ class ResponsiveSize {
   double hp(double percentage) => _height * percentage / 100;
 
   /// Responsive font size based on width
-  double sp(double size) => size * _width / 375; // 375 is base width (iPhone SE)
+  double sp(double size) =>
+      size * _width / 375; // 375 is base width (iPhone SE)
 
   /// Responsive spacing
   double space(double size) => size * _diagonal / 375;
@@ -40,11 +41,7 @@ class ResponsiveSize {
   bool get isLargeMobile => _width >= 360 && _width < 600;
 
   /// Responsive value based on device type
-  T responsiveValue<T>({
-    required T mobile,
-    T? tablet,
-    T? desktop,
-  }) {
+  T responsiveValue<T>({required T mobile, T? tablet, T? desktop}) {
     if (isDesktop && desktop != null) return desktop;
     if (isTablet && tablet != null) return tablet;
     return mobile;
@@ -141,4 +138,3 @@ class ResponsiveSpacing {
   static double xl(BuildContext context) => ResponsiveSize(context).space(32);
   static double xxl(BuildContext context) => ResponsiveSize(context).space(48);
 }
-

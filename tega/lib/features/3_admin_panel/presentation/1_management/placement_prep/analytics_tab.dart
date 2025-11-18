@@ -32,10 +32,10 @@ class _AnalyticsTabState extends State<AnalyticsTab> {
   Future<void> _initializeCacheAndLoadData() async {
     // Initialize cache service
     await _cacheService.initialize();
-    
+
     // Try to load from cache first
     await _loadFromCache();
-    
+
     // Then load fresh data
     await _loadStats();
   }
@@ -43,7 +43,7 @@ class _AnalyticsTabState extends State<AnalyticsTab> {
   Future<void> _loadFromCache() async {
     try {
       setState(() => _isLoadingFromCache = true);
-      
+
       final cachedStats = await _cacheService.getPlacementPrepStatsData();
       if (cachedStats != null && cachedStats.isNotEmpty) {
         setState(() {
@@ -65,7 +65,9 @@ class _AnalyticsTabState extends State<AnalyticsTab> {
             error.toString().toLowerCase().contains('connection') ||
             error.toString().toLowerCase().contains('internet') ||
             error.toString().toLowerCase().contains('failed host lookup') ||
-            error.toString().toLowerCase().contains('no address associated with hostname'));
+            error.toString().toLowerCase().contains(
+              'no address associated with hostname',
+            ));
   }
 
   Future<void> _loadStats({bool forceRefresh = false}) async {
@@ -95,10 +97,10 @@ class _AnalyticsTabState extends State<AnalyticsTab> {
               _stats = data['stats'] ?? {};
               _isLoading = false;
             });
-            
+
             // Cache the data
             await _cacheService.setPlacementPrepStatsData(_stats!);
-            
+
             // Reset toast flag on successful load (internet is back)
             _cacheService.resetNoInternetToastFlag();
             // Show "back online" toast if we were offline
@@ -109,7 +111,9 @@ class _AnalyticsTabState extends State<AnalyticsTab> {
         }
       } else {
         final errorData = json.decode(res.body);
-        throw Exception(errorData['message'] ?? 'Failed to fetch stats: ${res.statusCode}');
+        throw Exception(
+          errorData['message'] ?? 'Failed to fetch stats: ${res.statusCode}',
+        );
       }
     } catch (e) {
       // Check if it's a network/internet error
@@ -129,7 +133,7 @@ class _AnalyticsTabState extends State<AnalyticsTab> {
           }
           return;
         }
-        
+
         // No cache available, show error
         if (mounted) {
           setState(() {
@@ -165,10 +169,10 @@ class _AnalyticsTabState extends State<AnalyticsTab> {
           setState(() {
             _stats = data['stats'] ?? {};
           });
-          
+
           // Cache the data
           await _cacheService.setPlacementPrepStatsData(_stats!);
-          
+
           // Reset toast flag on successful load (internet is back)
           _cacheService.resetNoInternetToastFlag();
           // Show "back online" toast if we were offline
@@ -198,16 +202,30 @@ class _AnalyticsTabState extends State<AnalyticsTab> {
     if (_isLoading && !_isLoadingFromCache) {
       return Center(
         child: Padding(
-          padding: EdgeInsets.all(isMobile ? 24 : isTablet ? 28 : 32),
+          padding: EdgeInsets.all(
+            isMobile
+                ? 24
+                : isTablet
+                ? 28
+                : 32,
+          ),
           child: CircularProgressIndicator(
-            valueColor: AlwaysStoppedAnimation<Color>(AdminDashboardStyles.primary),
+            valueColor: AlwaysStoppedAnimation<Color>(
+              AdminDashboardStyles.primary,
+            ),
           ),
         ),
       );
     }
 
     return SingleChildScrollView(
-      padding: EdgeInsets.all(isMobile ? 12 : isTablet ? 16 : 20),
+      padding: EdgeInsets.all(
+        isMobile
+            ? 12
+            : isTablet
+            ? 16
+            : 20,
+      ),
       child: _errorMessage != null && !_isLoadingFromCache
           ? _buildErrorState(isMobile, isTablet, isDesktop)
           : _stats == null
@@ -216,9 +234,21 @@ class _AnalyticsTabState extends State<AnalyticsTab> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 _buildSummaryCards(isMobile, isTablet, isDesktop),
-                SizedBox(height: isMobile ? 16 : isTablet ? 18 : 20),
+                SizedBox(
+                  height: isMobile
+                      ? 16
+                      : isTablet
+                      ? 18
+                      : 20,
+                ),
                 _buildPerformanceCard(isMobile, isTablet, isDesktop),
-                SizedBox(height: isMobile ? 16 : isTablet ? 18 : 20),
+                SizedBox(
+                  height: isMobile
+                      ? 16
+                      : isTablet
+                      ? 18
+                      : 20,
+                ),
                 _buildDetailedAnalytics(isMobile, isTablet, isDesktop),
               ],
             ),
@@ -228,35 +258,71 @@ class _AnalyticsTabState extends State<AnalyticsTab> {
   Widget _buildErrorState(bool isMobile, bool isTablet, bool isDesktop) {
     return Container(
       width: double.infinity,
-      padding: EdgeInsets.all(isMobile ? 24 : isTablet ? 28 : 32),
+      padding: EdgeInsets.all(
+        isMobile
+            ? 24
+            : isTablet
+            ? 28
+            : 32,
+      ),
       child: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
               Icons.cloud_off,
-              size: isMobile ? 56 : isTablet ? 64 : 72,
+              size: isMobile
+                  ? 56
+                  : isTablet
+                  ? 64
+                  : 72,
               color: Colors.grey[400],
             ),
-            SizedBox(height: isMobile ? 16 : isTablet ? 18 : 20),
+            SizedBox(
+              height: isMobile
+                  ? 16
+                  : isTablet
+                  ? 18
+                  : 20,
+            ),
             Text(
               'Failed to load analytics',
               style: TextStyle(
-                fontSize: isMobile ? 18 : isTablet ? 19 : 20,
+                fontSize: isMobile
+                    ? 18
+                    : isTablet
+                    ? 19
+                    : 20,
                 fontWeight: FontWeight.w600,
                 color: Colors.grey[700],
               ),
             ),
-            SizedBox(height: isMobile ? 8 : isTablet ? 9 : 10),
+            SizedBox(
+              height: isMobile
+                  ? 8
+                  : isTablet
+                  ? 9
+                  : 10,
+            ),
             Text(
               _errorMessage!,
               textAlign: TextAlign.center,
               style: TextStyle(
-                fontSize: isMobile ? 14 : isTablet ? 15 : 16,
+                fontSize: isMobile
+                    ? 14
+                    : isTablet
+                    ? 15
+                    : 16,
                 color: Colors.grey[600],
               ),
             ),
-            SizedBox(height: isMobile ? 20 : isTablet ? 24 : 28),
+            SizedBox(
+              height: isMobile
+                  ? 20
+                  : isTablet
+                  ? 24
+                  : 28,
+            ),
             ElevatedButton.icon(
               onPressed: () {
                 setState(() {
@@ -264,20 +330,47 @@ class _AnalyticsTabState extends State<AnalyticsTab> {
                 });
                 _loadStats(forceRefresh: true);
               },
-              icon: Icon(Icons.refresh, size: isMobile ? 18 : isTablet ? 20 : 22),
+              icon: Icon(
+                Icons.refresh,
+                size: isMobile
+                    ? 18
+                    : isTablet
+                    ? 20
+                    : 22,
+              ),
               label: Text(
                 'Retry',
-                style: TextStyle(fontSize: isMobile ? 14 : isTablet ? 15 : 16),
+                style: TextStyle(
+                  fontSize: isMobile
+                      ? 14
+                      : isTablet
+                      ? 15
+                      : 16,
+                ),
               ),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AdminDashboardStyles.primary,
                 foregroundColor: Colors.white,
                 padding: EdgeInsets.symmetric(
-                  horizontal: isMobile ? 20 : isTablet ? 24 : 28,
-                  vertical: isMobile ? 12 : isTablet ? 14 : 16,
+                  horizontal: isMobile
+                      ? 20
+                      : isTablet
+                      ? 24
+                      : 28,
+                  vertical: isMobile
+                      ? 12
+                      : isTablet
+                      ? 14
+                      : 16,
                 ),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(isMobile ? 8 : isTablet ? 9 : 10),
+                  borderRadius: BorderRadius.circular(
+                    isMobile
+                        ? 8
+                        : isTablet
+                        ? 9
+                        : 10,
+                  ),
                 ),
               ),
             ),
@@ -290,11 +383,25 @@ class _AnalyticsTabState extends State<AnalyticsTab> {
   Widget _buildEmptyState(bool isMobile, bool isTablet, bool isDesktop) {
     return Container(
       width: double.infinity,
-      padding: EdgeInsets.all(isMobile ? 24 : isTablet ? 28 : 32),
+      padding: EdgeInsets.all(
+        isMobile
+            ? 24
+            : isTablet
+            ? 28
+            : 32,
+      ),
       decoration: BoxDecoration(
         color: AdminDashboardStyles.primary.withOpacity(0.03),
-        borderRadius: BorderRadius.circular(isMobile ? 10 : isTablet ? 11 : 12),
-        border: Border.all(color: AdminDashboardStyles.primary.withOpacity(0.15)),
+        borderRadius: BorderRadius.circular(
+          isMobile
+              ? 10
+              : isTablet
+              ? 11
+              : 12,
+        ),
+        border: Border.all(
+          color: AdminDashboardStyles.primary.withOpacity(0.15),
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.center,
@@ -302,15 +409,29 @@ class _AnalyticsTabState extends State<AnalyticsTab> {
           Icon(
             Icons.analytics_outlined,
             color: AdminDashboardStyles.primary,
-            size: isMobile ? 32 : isTablet ? 36 : 40,
+            size: isMobile
+                ? 32
+                : isTablet
+                ? 36
+                : 40,
           ),
-          SizedBox(height: isMobile ? 8 : isTablet ? 9 : 10),
+          SizedBox(
+            height: isMobile
+                ? 8
+                : isTablet
+                ? 9
+                : 10,
+          ),
           Text(
             'No analytics data available',
             style: TextStyle(
               fontWeight: FontWeight.w700,
               color: AdminDashboardStyles.textDark,
-              fontSize: isMobile ? 14 : isTablet ? 15 : 16,
+              fontSize: isMobile
+                  ? 14
+                  : isTablet
+                  ? 15
+                  : 16,
             ),
           ),
         ],
@@ -322,7 +443,13 @@ class _AnalyticsTabState extends State<AnalyticsTab> {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(isMobile ? 10 : isTablet ? 11 : 12),
+        borderRadius: BorderRadius.circular(
+          isMobile
+              ? 10
+              : isTablet
+              ? 11
+              : 12,
+        ),
         border: Border.all(color: AdminDashboardStyles.borderLight),
         boxShadow: [
           BoxShadow(
@@ -332,14 +459,32 @@ class _AnalyticsTabState extends State<AnalyticsTab> {
           ),
         ],
       ),
-      padding: EdgeInsets.all(isMobile ? 12 : isTablet ? 14 : 16),
+      padding: EdgeInsets.all(
+        isMobile
+            ? 12
+            : isTablet
+            ? 14
+            : 16,
+      ),
       child: GridView.count(
         shrinkWrap: true,
         physics: const NeverScrollableScrollPhysics(),
         crossAxisCount: 2,
-        crossAxisSpacing: isMobile ? 10 : isTablet ? 11 : 12,
-        mainAxisSpacing: isMobile ? 10 : isTablet ? 11 : 12,
-        childAspectRatio: isMobile ? 2.3 : isTablet ? 2.4 : 2.5,
+        crossAxisSpacing: isMobile
+            ? 10
+            : isTablet
+            ? 11
+            : 12,
+        mainAxisSpacing: isMobile
+            ? 10
+            : isTablet
+            ? 11
+            : 12,
+        childAspectRatio: isMobile
+            ? 2.3
+            : isTablet
+            ? 2.4
+            : 2.5,
         children: [
           _buildStatItem(
             title: 'Total Questions',
@@ -394,15 +539,43 @@ class _AnalyticsTabState extends State<AnalyticsTab> {
     return Row(
       children: [
         Container(
-          width: isMobile ? 36 : isTablet ? 38 : 40,
-          height: isMobile ? 36 : isTablet ? 38 : 40,
+          width: isMobile
+              ? 36
+              : isTablet
+              ? 38
+              : 40,
+          height: isMobile
+              ? 36
+              : isTablet
+              ? 38
+              : 40,
           decoration: BoxDecoration(
             color: color.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(isMobile ? 6 : isTablet ? 7 : 8),
+            borderRadius: BorderRadius.circular(
+              isMobile
+                  ? 6
+                  : isTablet
+                  ? 7
+                  : 8,
+            ),
           ),
-          child: Icon(icon, color: color, size: isMobile ? 16 : isTablet ? 17 : 18),
+          child: Icon(
+            icon,
+            color: color,
+            size: isMobile
+                ? 16
+                : isTablet
+                ? 17
+                : 18,
+          ),
         ),
-        SizedBox(width: isMobile ? 8 : isTablet ? 9 : 10),
+        SizedBox(
+          width: isMobile
+              ? 8
+              : isTablet
+              ? 9
+              : 10,
+        ),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -411,16 +584,30 @@ class _AnalyticsTabState extends State<AnalyticsTab> {
               Text(
                 title,
                 style: TextStyle(
-                  fontSize: isMobile ? 10 : isTablet ? 10.5 : 11,
+                  fontSize: isMobile
+                      ? 10
+                      : isTablet
+                      ? 10.5
+                      : 11,
                   color: AdminDashboardStyles.textLight,
                   fontWeight: FontWeight.w500,
                 ),
               ),
-              SizedBox(height: isMobile ? 2 : isTablet ? 2.5 : 3),
+              SizedBox(
+                height: isMobile
+                    ? 2
+                    : isTablet
+                    ? 2.5
+                    : 3,
+              ),
               Text(
                 value,
                 style: TextStyle(
-                  fontSize: isMobile ? 14 : isTablet ? 15 : 16,
+                  fontSize: isMobile
+                      ? 14
+                      : isTablet
+                      ? 15
+                      : 16,
                   fontWeight: FontWeight.w700,
                   color: AdminDashboardStyles.textDark,
                 ),
@@ -437,7 +624,13 @@ class _AnalyticsTabState extends State<AnalyticsTab> {
       width: double.infinity,
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(isMobile ? 10 : isTablet ? 11 : 12),
+        borderRadius: BorderRadius.circular(
+          isMobile
+              ? 10
+              : isTablet
+              ? 11
+              : 12,
+        ),
         border: Border.all(color: AdminDashboardStyles.borderLight),
         boxShadow: [
           BoxShadow(
@@ -447,70 +640,126 @@ class _AnalyticsTabState extends State<AnalyticsTab> {
           ),
         ],
       ),
-      padding: EdgeInsets.all(isMobile ? 12 : isTablet ? 16 : 20),
+      padding: EdgeInsets.all(
+        isMobile
+            ? 12
+            : isTablet
+            ? 16
+            : 20,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
               Container(
-                padding: EdgeInsets.all(isMobile ? 6 : isTablet ? 7 : 8),
+                padding: EdgeInsets.all(
+                  isMobile
+                      ? 6
+                      : isTablet
+                      ? 7
+                      : 8,
+                ),
                 decoration: BoxDecoration(
                   color: const Color(0xFF10B981).withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(isMobile ? 6 : isTablet ? 7 : 8),
+                  borderRadius: BorderRadius.circular(
+                    isMobile
+                        ? 6
+                        : isTablet
+                        ? 7
+                        : 8,
+                  ),
                 ),
                 child: Icon(
                   Icons.show_chart_rounded,
                   color: const Color(0xFF10B981),
-                  size: isMobile ? 18 : isTablet ? 19 : 20,
+                  size: isMobile
+                      ? 18
+                      : isTablet
+                      ? 19
+                      : 20,
                 ),
               ),
-              SizedBox(width: isMobile ? 10 : isTablet ? 11 : 12),
+              SizedBox(
+                width: isMobile
+                    ? 10
+                    : isTablet
+                    ? 11
+                    : 12,
+              ),
               Text(
                 'Performance Analytics',
                 style: TextStyle(
-                  fontSize: isMobile ? 16 : isTablet ? 17 : 18,
+                  fontSize: isMobile
+                      ? 16
+                      : isTablet
+                      ? 17
+                      : 18,
                   fontWeight: FontWeight.w700,
                   color: Colors.black87,
                 ),
               ),
             ],
           ),
-          SizedBox(height: isMobile ? 16 : isTablet ? 18 : 20),
+          SizedBox(
+            height: isMobile
+                ? 16
+                : isTablet
+                ? 18
+                : 20,
+          ),
           LayoutBuilder(
             builder: (context, constraints) {
               if (constraints.maxWidth > 600) {
                 return Row(
                   children: [
-                    Expanded(child: _buildPerformanceMetric(
-                      icon: Icons.flag_rounded,
-                      value: '${_stats!['completionRate'] ?? 0}%',
-                      label: 'Students completing modules',
-                      color: const Color(0xFF3B82F6),
-                      isMobile: isMobile,
-                      isTablet: isTablet,
-                      isDesktop: isDesktop,
-                    )),
-                    SizedBox(width: isMobile ? 16 : isTablet ? 18 : 20),
-                    Expanded(child: _buildPerformanceMetric(
-                      icon: Icons.emoji_events_rounded,
-                      value: '${_stats!['topScore'] ?? 0}%',
-                      label: 'Highest score achieved',
-                      color: const Color(0xFFF59E0B),
-                      isMobile: isMobile,
-                      isTablet: isTablet,
-                      isDesktop: isDesktop,
-                    )),
-                    SizedBox(width: isMobile ? 16 : isTablet ? 18 : 20),
-                    Expanded(child: _buildPerformanceMetric(
-                      icon: Icons.access_time_rounded,
-                      value: _formatTime(_stats!['averageTime']),
-                      label: 'Time per assessment',
-                      color: const Color(0xFF8B5CF6),
-                      isMobile: isMobile,
-                      isTablet: isTablet,
-                      isDesktop: isDesktop,
-                    )),
+                    Expanded(
+                      child: _buildPerformanceMetric(
+                        icon: Icons.flag_rounded,
+                        value: '${_stats!['completionRate'] ?? 0}%',
+                        label: 'Students completing modules',
+                        color: const Color(0xFF3B82F6),
+                        isMobile: isMobile,
+                        isTablet: isTablet,
+                        isDesktop: isDesktop,
+                      ),
+                    ),
+                    SizedBox(
+                      width: isMobile
+                          ? 16
+                          : isTablet
+                          ? 18
+                          : 20,
+                    ),
+                    Expanded(
+                      child: _buildPerformanceMetric(
+                        icon: Icons.emoji_events_rounded,
+                        value: '${_stats!['topScore'] ?? 0}%',
+                        label: 'Highest score achieved',
+                        color: const Color(0xFFF59E0B),
+                        isMobile: isMobile,
+                        isTablet: isTablet,
+                        isDesktop: isDesktop,
+                      ),
+                    ),
+                    SizedBox(
+                      width: isMobile
+                          ? 16
+                          : isTablet
+                          ? 18
+                          : 20,
+                    ),
+                    Expanded(
+                      child: _buildPerformanceMetric(
+                        icon: Icons.access_time_rounded,
+                        value: _formatTime(_stats!['averageTime']),
+                        label: 'Time per assessment',
+                        color: const Color(0xFF8B5CF6),
+                        isMobile: isMobile,
+                        isTablet: isTablet,
+                        isDesktop: isDesktop,
+                      ),
+                    ),
                   ],
                 );
               } else {
@@ -525,7 +774,13 @@ class _AnalyticsTabState extends State<AnalyticsTab> {
                       isTablet: isTablet,
                       isDesktop: isDesktop,
                     ),
-                    SizedBox(height: isMobile ? 12 : isTablet ? 14 : 16),
+                    SizedBox(
+                      height: isMobile
+                          ? 12
+                          : isTablet
+                          ? 14
+                          : 16,
+                    ),
                     _buildPerformanceMetric(
                       icon: Icons.emoji_events_rounded,
                       value: '${_stats!['topScore'] ?? 0}%',
@@ -535,7 +790,13 @@ class _AnalyticsTabState extends State<AnalyticsTab> {
                       isTablet: isTablet,
                       isDesktop: isDesktop,
                     ),
-                    SizedBox(height: isMobile ? 12 : isTablet ? 14 : 16),
+                    SizedBox(
+                      height: isMobile
+                          ? 12
+                          : isTablet
+                          ? 14
+                          : 16,
+                    ),
                     _buildPerformanceMetric(
                       icon: Icons.access_time_rounded,
                       value: _formatTime(_stats!['averageTime']),
@@ -567,14 +828,40 @@ class _AnalyticsTabState extends State<AnalyticsTab> {
     return Row(
       children: [
         Container(
-          padding: EdgeInsets.all(isMobile ? 8 : isTablet ? 9 : 10),
+          padding: EdgeInsets.all(
+            isMobile
+                ? 8
+                : isTablet
+                ? 9
+                : 10,
+          ),
           decoration: BoxDecoration(
             color: color.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(isMobile ? 8 : isTablet ? 9 : 10),
+            borderRadius: BorderRadius.circular(
+              isMobile
+                  ? 8
+                  : isTablet
+                  ? 9
+                  : 10,
+            ),
           ),
-          child: Icon(icon, color: color, size: isMobile ? 20 : isTablet ? 22 : 24),
+          child: Icon(
+            icon,
+            color: color,
+            size: isMobile
+                ? 20
+                : isTablet
+                ? 22
+                : 24,
+          ),
         ),
-        SizedBox(width: isMobile ? 10 : isTablet ? 11 : 12),
+        SizedBox(
+          width: isMobile
+              ? 10
+              : isTablet
+              ? 11
+              : 12,
+        ),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -582,16 +869,30 @@ class _AnalyticsTabState extends State<AnalyticsTab> {
               Text(
                 value,
                 style: TextStyle(
-                  fontSize: isMobile ? 18 : isTablet ? 19 : 20,
+                  fontSize: isMobile
+                      ? 18
+                      : isTablet
+                      ? 19
+                      : 20,
                   fontWeight: FontWeight.w700,
                   color: Colors.black87,
                 ),
               ),
-              SizedBox(height: isMobile ? 3 : isTablet ? 3.5 : 4),
+              SizedBox(
+                height: isMobile
+                    ? 3
+                    : isTablet
+                    ? 3.5
+                    : 4,
+              ),
               Text(
                 label,
                 style: TextStyle(
-                  fontSize: isMobile ? 11 : isTablet ? 11.5 : 12,
+                  fontSize: isMobile
+                      ? 11
+                      : isTablet
+                      ? 11.5
+                      : 12,
                   color: AdminDashboardStyles.textLight,
                 ),
               ),
@@ -609,16 +910,32 @@ class _AnalyticsTabState extends State<AnalyticsTab> {
           return Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Expanded(child: _buildCategoryCard(isMobile, isTablet, isDesktop)),
-              SizedBox(width: isMobile ? 12 : isTablet ? 14 : 16),
-              Expanded(child: _buildDifficultyCard(isMobile, isTablet, isDesktop)),
+              Expanded(
+                child: _buildCategoryCard(isMobile, isTablet, isDesktop),
+              ),
+              SizedBox(
+                width: isMobile
+                    ? 12
+                    : isTablet
+                    ? 14
+                    : 16,
+              ),
+              Expanded(
+                child: _buildDifficultyCard(isMobile, isTablet, isDesktop),
+              ),
             ],
           );
         } else {
           return Column(
             children: [
               _buildCategoryCard(isMobile, isTablet, isDesktop),
-              SizedBox(height: isMobile ? 12 : isTablet ? 14 : 16),
+              SizedBox(
+                height: isMobile
+                    ? 12
+                    : isTablet
+                    ? 14
+                    : 16,
+              ),
               _buildDifficultyCard(isMobile, isTablet, isDesktop),
             ],
           );
@@ -628,14 +945,21 @@ class _AnalyticsTabState extends State<AnalyticsTab> {
   }
 
   Widget _buildCategoryCard(bool isMobile, bool isTablet, bool isDesktop) {
-    final categories = _stats!['questionsByCategory'] as Map<String, dynamic>? ?? {};
+    final categories =
+        _stats!['questionsByCategory'] as Map<String, dynamic>? ?? {};
     final categoryList = categories.entries.toList()
       ..sort((a, b) => (b.value as num).compareTo(a.value as num));
 
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(isMobile ? 10 : isTablet ? 11 : 12),
+        borderRadius: BorderRadius.circular(
+          isMobile
+              ? 10
+              : isTablet
+              ? 11
+              : 12,
+        ),
         border: Border.all(color: AdminDashboardStyles.borderLight),
         boxShadow: [
           BoxShadow(
@@ -645,89 +969,168 @@ class _AnalyticsTabState extends State<AnalyticsTab> {
           ),
         ],
       ),
-      padding: EdgeInsets.all(isMobile ? 12 : isTablet ? 16 : 20),
+      padding: EdgeInsets.all(
+        isMobile
+            ? 12
+            : isTablet
+            ? 16
+            : 20,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
               Container(
-                padding: EdgeInsets.all(isMobile ? 6 : isTablet ? 7 : 8),
+                padding: EdgeInsets.all(
+                  isMobile
+                      ? 6
+                      : isTablet
+                      ? 7
+                      : 8,
+                ),
                 decoration: BoxDecoration(
                   color: const Color(0xFF3B82F6).withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(isMobile ? 6 : isTablet ? 7 : 8),
+                  borderRadius: BorderRadius.circular(
+                    isMobile
+                        ? 6
+                        : isTablet
+                        ? 7
+                        : 8,
+                  ),
                 ),
                 child: Icon(
                   Icons.category_rounded,
                   color: const Color(0xFF3B82F6),
-                  size: isMobile ? 18 : isTablet ? 19 : 20,
+                  size: isMobile
+                      ? 18
+                      : isTablet
+                      ? 19
+                      : 20,
                 ),
               ),
-              SizedBox(width: isMobile ? 10 : isTablet ? 11 : 12),
+              SizedBox(
+                width: isMobile
+                    ? 10
+                    : isTablet
+                    ? 11
+                    : 12,
+              ),
               Text(
                 'Questions by Category',
                 style: TextStyle(
-                  fontSize: isMobile ? 16 : isTablet ? 17 : 18,
+                  fontSize: isMobile
+                      ? 16
+                      : isTablet
+                      ? 17
+                      : 18,
                   fontWeight: FontWeight.w700,
                   color: Colors.black87,
                 ),
               ),
             ],
           ),
-          SizedBox(height: isMobile ? 16 : isTablet ? 18 : 20),
+          SizedBox(
+            height: isMobile
+                ? 16
+                : isTablet
+                ? 18
+                : 20,
+          ),
           if (categoryList.isEmpty)
             Padding(
-              padding: EdgeInsets.all(isMobile ? 12 : isTablet ? 14 : 16),
+              padding: EdgeInsets.all(
+                isMobile
+                    ? 12
+                    : isTablet
+                    ? 14
+                    : 16,
+              ),
               child: Text(
                 'No categories available',
                 style: TextStyle(
                   color: AdminDashboardStyles.textLight,
-                  fontSize: isMobile ? 12 : isTablet ? 12.5 : 13,
+                  fontSize: isMobile
+                      ? 12
+                      : isTablet
+                      ? 12.5
+                      : 13,
                 ),
               ),
             )
           else
-            ...categoryList.map((entry) => Padding(
-                  padding: EdgeInsets.only(bottom: isMobile ? 10 : isTablet ? 11 : 12),
-                  child: Row(
-                    children: [
-                      Container(
-                        width: isMobile ? 6 : isTablet ? 7 : 8,
-                        height: isMobile ? 6 : isTablet ? 7 : 8,
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF3B82F6),
-                          shape: BoxShape.circle,
-                        ),
+            ...categoryList.map(
+              (entry) => Padding(
+                padding: EdgeInsets.only(
+                  bottom: isMobile
+                      ? 10
+                      : isTablet
+                      ? 11
+                      : 12,
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      width: isMobile
+                          ? 6
+                          : isTablet
+                          ? 7
+                          : 8,
+                      height: isMobile
+                          ? 6
+                          : isTablet
+                          ? 7
+                          : 8,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF3B82F6),
+                        shape: BoxShape.circle,
                       ),
-                      SizedBox(width: isMobile ? 10 : isTablet ? 11 : 12),
-                      Expanded(
-                        child: Text(
-                          _capitalizeFirst(entry.key),
-                          style: TextStyle(
-                            fontSize: isMobile ? 13 : isTablet ? 13.5 : 14,
-                            fontWeight: FontWeight.w500,
-                            color: Colors.black87,
-                          ),
-                        ),
-                      ),
-                      Text(
-                        '${entry.value}',
+                    ),
+                    SizedBox(
+                      width: isMobile
+                          ? 10
+                          : isTablet
+                          ? 11
+                          : 12,
+                    ),
+                    Expanded(
+                      child: Text(
+                        _capitalizeFirst(entry.key),
                         style: TextStyle(
-                          fontSize: isMobile ? 13 : isTablet ? 13.5 : 14,
-                          fontWeight: FontWeight.w700,
-                          color: AdminDashboardStyles.textDark,
+                          fontSize: isMobile
+                              ? 13
+                              : isTablet
+                              ? 13.5
+                              : 14,
+                          fontWeight: FontWeight.w500,
+                          color: Colors.black87,
                         ),
                       ),
-                    ],
-                  ),
-                )),
+                    ),
+                    Text(
+                      '${entry.value}',
+                      style: TextStyle(
+                        fontSize: isMobile
+                            ? 13
+                            : isTablet
+                            ? 13.5
+                            : 14,
+                        fontWeight: FontWeight.w700,
+                        color: AdminDashboardStyles.textDark,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
         ],
       ),
     );
   }
 
   Widget _buildDifficultyCard(bool isMobile, bool isTablet, bool isDesktop) {
-    final difficulties = _stats!['questionsByDifficulty'] as Map<String, dynamic>? ?? {};
+    final difficulties =
+        _stats!['questionsByDifficulty'] as Map<String, dynamic>? ?? {};
     final difficultyList = difficulties.entries.toList()
       ..sort((a, b) => (b.value as num).compareTo(a.value as num));
 
@@ -747,7 +1150,13 @@ class _AnalyticsTabState extends State<AnalyticsTab> {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(isMobile ? 10 : isTablet ? 11 : 12),
+        borderRadius: BorderRadius.circular(
+          isMobile
+              ? 10
+              : isTablet
+              ? 11
+              : 12,
+        ),
         border: Border.all(color: AdminDashboardStyles.borderLight),
         boxShadow: [
           BoxShadow(
@@ -757,44 +1166,92 @@ class _AnalyticsTabState extends State<AnalyticsTab> {
           ),
         ],
       ),
-      padding: EdgeInsets.all(isMobile ? 12 : isTablet ? 16 : 20),
+      padding: EdgeInsets.all(
+        isMobile
+            ? 12
+            : isTablet
+            ? 16
+            : 20,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
               Container(
-                padding: EdgeInsets.all(isMobile ? 6 : isTablet ? 7 : 8),
+                padding: EdgeInsets.all(
+                  isMobile
+                      ? 6
+                      : isTablet
+                      ? 7
+                      : 8,
+                ),
                 decoration: BoxDecoration(
                   color: const Color(0xFF10B981).withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(isMobile ? 6 : isTablet ? 7 : 8),
+                  borderRadius: BorderRadius.circular(
+                    isMobile
+                        ? 6
+                        : isTablet
+                        ? 7
+                        : 8,
+                  ),
                 ),
                 child: Icon(
                   Icons.person_rounded,
                   color: const Color(0xFF10B981),
-                  size: isMobile ? 18 : isTablet ? 19 : 20,
+                  size: isMobile
+                      ? 18
+                      : isTablet
+                      ? 19
+                      : 20,
                 ),
               ),
-              SizedBox(width: isMobile ? 10 : isTablet ? 11 : 12),
+              SizedBox(
+                width: isMobile
+                    ? 10
+                    : isTablet
+                    ? 11
+                    : 12,
+              ),
               Text(
                 'Questions by Difficulty',
                 style: TextStyle(
-                  fontSize: isMobile ? 16 : isTablet ? 17 : 18,
+                  fontSize: isMobile
+                      ? 16
+                      : isTablet
+                      ? 17
+                      : 18,
                   fontWeight: FontWeight.w700,
                   color: Colors.black87,
                 ),
               ),
             ],
           ),
-          SizedBox(height: isMobile ? 16 : isTablet ? 18 : 20),
+          SizedBox(
+            height: isMobile
+                ? 16
+                : isTablet
+                ? 18
+                : 20,
+          ),
           if (difficultyList.isEmpty)
             Padding(
-              padding: EdgeInsets.all(isMobile ? 12 : isTablet ? 14 : 16),
+              padding: EdgeInsets.all(
+                isMobile
+                    ? 12
+                    : isTablet
+                    ? 14
+                    : 16,
+              ),
               child: Text(
                 'No difficulty data available',
                 style: TextStyle(
                   color: AdminDashboardStyles.textLight,
-                  fontSize: isMobile ? 12 : isTablet ? 12.5 : 13,
+                  fontSize: isMobile
+                      ? 12
+                      : isTablet
+                      ? 12.5
+                      : 13,
                 ),
               ),
             )
@@ -802,23 +1259,47 @@ class _AnalyticsTabState extends State<AnalyticsTab> {
             ...difficultyList.map((entry) {
               final color = getDifficultyColor(entry.key);
               return Padding(
-                padding: EdgeInsets.only(bottom: isMobile ? 10 : isTablet ? 11 : 12),
+                padding: EdgeInsets.only(
+                  bottom: isMobile
+                      ? 10
+                      : isTablet
+                      ? 11
+                      : 12,
+                ),
                 child: Row(
                   children: [
                     Container(
-                      width: isMobile ? 6 : isTablet ? 7 : 8,
-                      height: isMobile ? 6 : isTablet ? 7 : 8,
+                      width: isMobile
+                          ? 6
+                          : isTablet
+                          ? 7
+                          : 8,
+                      height: isMobile
+                          ? 6
+                          : isTablet
+                          ? 7
+                          : 8,
                       decoration: BoxDecoration(
                         color: color,
                         shape: BoxShape.circle,
                       ),
                     ),
-                    SizedBox(width: isMobile ? 10 : isTablet ? 11 : 12),
+                    SizedBox(
+                      width: isMobile
+                          ? 10
+                          : isTablet
+                          ? 11
+                          : 12,
+                    ),
                     Expanded(
                       child: Text(
                         _capitalizeFirst(entry.key),
                         style: TextStyle(
-                          fontSize: isMobile ? 13 : isTablet ? 13.5 : 14,
+                          fontSize: isMobile
+                              ? 13
+                              : isTablet
+                              ? 13.5
+                              : 14,
                           fontWeight: FontWeight.w500,
                           color: Colors.black87,
                         ),
@@ -827,7 +1308,11 @@ class _AnalyticsTabState extends State<AnalyticsTab> {
                     Text(
                       '${entry.value}',
                       style: TextStyle(
-                        fontSize: isMobile ? 13 : isTablet ? 13.5 : 14,
+                        fontSize: isMobile
+                            ? 13
+                            : isTablet
+                            ? 13.5
+                            : 14,
                         fontWeight: FontWeight.w700,
                         color: AdminDashboardStyles.textDark,
                       ),

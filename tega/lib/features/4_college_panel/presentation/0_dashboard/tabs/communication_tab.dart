@@ -18,10 +18,7 @@ class CommunicationPage extends StatelessWidget {
               color: DashboardStyles.primary.withOpacity(0.5),
             ),
             const SizedBox(height: 16),
-            Text(
-              'Communication',
-              style: DashboardStyles.sectionTitle,
-            ),
+            Text('Communication', style: DashboardStyles.sectionTitle),
             const SizedBox(height: 8),
             Text(
               'Communication dashboard coming soon',
@@ -33,4 +30,3 @@ class CommunicationPage extends StatelessWidget {
     );
   }
 }
-

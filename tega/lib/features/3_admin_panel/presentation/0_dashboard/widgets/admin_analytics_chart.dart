@@ -89,7 +89,9 @@ class _AdminAnalyticsChartState extends State<AdminAnalyticsChart>
             decoration: BoxDecoration(
               color: const Color(0xFFFFF3E0),
               borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: const Color(0xFFFFA726).withOpacity(0.5)),
+              border: Border.all(
+                color: const Color(0xFFFFA726).withOpacity(0.5),
+              ),
               boxShadow: [
                 BoxShadow(
                   color: Colors.black.withOpacity(0.05),
@@ -173,10 +175,7 @@ class _AdminAnalyticsChartState extends State<AdminAnalyticsChart>
             final data = _weekData[group.x.toInt()];
             return BarTooltipItem(
               '${data.day}\n',
-              const TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-              ),
+              const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
               children: <TextSpan>[
                 TextSpan(
                   text: (rod.toY).round().toString(),

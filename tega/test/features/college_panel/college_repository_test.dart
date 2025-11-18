@@ -23,10 +23,7 @@ void main() {
 
     group('CollegeInfo', () {
       test('should parse college info from JSON', () {
-        final json = {
-          '_id': 'college-123',
-          'name': 'Test College',
-        };
+        final json = {'_id': 'college-123', 'name': 'Test College'};
 
         final collegeInfo = CollegeInfo.fromJson(json);
         expect(collegeInfo.id, equals('college-123'));
@@ -34,9 +31,7 @@ void main() {
       });
 
       test('should handle missing id field', () {
-        final json = {
-          'name': 'Test College',
-        };
+        final json = {'name': 'Test College'};
 
         final collegeInfo = CollegeInfo.fromJson(json);
         // When id is missing, it returns empty string as per implementation
@@ -99,4 +94,3 @@ void main() {
     });
   });
 }
-

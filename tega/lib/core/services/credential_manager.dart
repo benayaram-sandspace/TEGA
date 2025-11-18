@@ -112,7 +112,7 @@ class CredentialManager {
         _savedAccounts = accountsList
             .map((json) => SavedAccount.fromJson(json as Map<String, dynamic>))
             .toList();
-        
+
         // Sort by last used date (most recent first)
         _savedAccounts.sort((a, b) => b.lastUsed.compareTo(a.lastUsed));
       }
@@ -139,10 +139,12 @@ class CredentialManager {
   /// Get accounts matching a partial email
   List<SavedAccount> getAccountsForEmail(String partialEmail) {
     if (partialEmail.isEmpty) return [];
-    
+
     return _savedAccounts
-        .where((account) => 
-            account.email.toLowerCase().contains(partialEmail.toLowerCase()))
+        .where(
+          (account) =>
+              account.email.toLowerCase().contains(partialEmail.toLowerCase()),
+        )
         .take(3) // Limit suggestions to 3
         .toList();
   }
@@ -155,15 +157,15 @@ class CredentialManager {
   }) async {
     try {
       final normalizedEmail = email.toLowerCase().trim();
-      
+
       // Check if account already exists
       final existingIndex = _savedAccounts.indexWhere(
         (account) => account.email.toLowerCase() == normalizedEmail,
       );
 
       final now = DateTime.now();
-      final accountId = existingIndex >= 0 
-          ? _savedAccounts[existingIndex].id 
+      final accountId = existingIndex >= 0
+          ? _savedAccounts[existingIndex].id
           : DateTime.now().millisecondsSinceEpoch.toString();
 
       final savedAccount = SavedAccount(
@@ -171,8 +173,8 @@ class CredentialManager {
         email: normalizedEmail,
         password: password,
         accountName: accountName?.trim(),
-        savedAt: existingIndex >= 0 
-            ? _savedAccounts[existingIndex].savedAt 
+        savedAt: existingIndex >= 0
+            ? _savedAccounts[existingIndex].savedAt
             : now,
         lastUsed: now,
       );
@@ -183,7 +185,7 @@ class CredentialManager {
       } else {
         // Add new account
         _savedAccounts.insert(0, savedAccount);
-        
+
         // Remove oldest account if we exceed the limit
         if (_savedAccounts.length > _maxSavedAccounts) {
           _savedAccounts.removeLast();
@@ -192,7 +194,7 @@ class CredentialManager {
 
       // Sort by last used date
       _savedAccounts.sort((a, b) => b.lastUsed.compareTo(a.lastUsed));
-      
+
       await _saveAccounts();
       return true;
     } catch (e) {
@@ -206,12 +208,12 @@ class CredentialManager {
       final accountIndex = _savedAccounts.indexWhere(
         (account) => account.email.toLowerCase() == email.toLowerCase(),
       );
-      
+
       if (accountIndex >= 0) {
         _savedAccounts[accountIndex] = _savedAccounts[accountIndex].copyWith(
           lastUsed: DateTime.now(),
         );
-        
+
         // Sort by last used date
         _savedAccounts.sort((a, b) => b.lastUsed.compareTo(a.lastUsed));
         await _saveAccounts();
@@ -228,7 +230,7 @@ class CredentialManager {
       _savedAccounts.removeWhere(
         (account) => account.email.toLowerCase() == email.toLowerCase(),
       );
-      
+
       if (_savedAccounts.length < initialLength) {
         await _saveAccounts();
         return true;
@@ -245,13 +247,13 @@ class CredentialManager {
       final accountIndex = _savedAccounts.indexWhere(
         (account) => account.email.toLowerCase() == email.toLowerCase(),
       );
-      
+
       if (accountIndex >= 0) {
         _savedAccounts[accountIndex] = _savedAccounts[accountIndex].copyWith(
           password: newPassword,
           lastUsed: DateTime.now(),
         );
-        
+
         // Sort by last used date
         _savedAccounts.sort((a, b) => b.lastUsed.compareTo(a.lastUsed));
         await _saveAccounts();
@@ -269,12 +271,12 @@ class CredentialManager {
       final accountIndex = _savedAccounts.indexWhere(
         (account) => account.email.toLowerCase() == email.toLowerCase(),
       );
-      
+
       if (accountIndex >= 0) {
         _savedAccounts[accountIndex] = _savedAccounts[accountIndex].copyWith(
           accountName: newName.trim(),
         );
-        
+
         await _saveAccounts();
         return true;
       }

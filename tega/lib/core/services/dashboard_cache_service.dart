@@ -3,7 +3,8 @@ import 'package:tega/core/services/sqlite_cache_service.dart';
 /// Cache service for student dashboard data
 /// Provides caching with TTL (Time To Live) for dashboard, sidebar counts, and profile data
 class DashboardCacheService {
-  static final DashboardCacheService _instance = DashboardCacheService._internal();
+  static final DashboardCacheService _instance =
+      DashboardCacheService._internal();
   factory DashboardCacheService() => _instance;
   DashboardCacheService._internal();
 
@@ -26,7 +27,10 @@ class DashboardCacheService {
   /// Get cached dashboard data
   Future<Map<String, dynamic>?> getDashboardData() async {
     try {
-      final data = await _cache.get(key: _dashboardDataKey, category: _category);
+      final data = await _cache.get(
+        key: _dashboardDataKey,
+        category: _category,
+      );
       return data as Map<String, dynamic>?;
     } catch (e) {
       return null;
@@ -36,7 +40,10 @@ class DashboardCacheService {
   /// Get cached sidebar counts
   Future<Map<String, dynamic>?> getSidebarCounts() async {
     try {
-      final data = await _cache.get(key: _sidebarCountsKey, category: _category);
+      final data = await _cache.get(
+        key: _sidebarCountsKey,
+        category: _category,
+      );
       return data as Map<String, dynamic>?;
     } catch (e) {
       return null;
@@ -155,4 +162,3 @@ class DashboardCacheService {
     return null;
   }
 }
-

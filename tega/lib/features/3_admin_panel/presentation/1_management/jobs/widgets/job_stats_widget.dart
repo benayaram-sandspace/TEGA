@@ -28,15 +28,43 @@ class JobStatsWidget extends StatelessWidget {
             opacity: value.clamp(0.0, 1.0),
             child: Container(
               margin: EdgeInsets.fromLTRB(
-                isMobile ? 12 : isTablet ? 14 : 16,
-                isMobile ? 12 : isTablet ? 14 : 16,
-                isMobile ? 12 : isTablet ? 14 : 16,
-                isMobile ? 6 : isTablet ? 7 : 8,
+                isMobile
+                    ? 12
+                    : isTablet
+                    ? 14
+                    : 16,
+                isMobile
+                    ? 12
+                    : isTablet
+                    ? 14
+                    : 16,
+                isMobile
+                    ? 12
+                    : isTablet
+                    ? 14
+                    : 16,
+                isMobile
+                    ? 6
+                    : isTablet
+                    ? 7
+                    : 8,
               ),
-              padding: EdgeInsets.all(isMobile ? 16 : isTablet ? 18 : 20),
+              padding: EdgeInsets.all(
+                isMobile
+                    ? 16
+                    : isTablet
+                    ? 18
+                    : 20,
+              ),
               decoration: BoxDecoration(
                 color: Colors.white,
-                borderRadius: BorderRadius.circular(isMobile ? 10 : isTablet ? 11 : 12),
+                borderRadius: BorderRadius.circular(
+                  isMobile
+                      ? 10
+                      : isTablet
+                      ? 11
+                      : 12,
+                ),
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black.withValues(alpha: 0.05),
@@ -52,7 +80,11 @@ class JobStatsWidget extends StatelessWidget {
                   Text(
                     'Total Jobs',
                     style: TextStyle(
-                      fontSize: isMobile ? 14 : isTablet ? 15 : 16,
+                      fontSize: isMobile
+                          ? 14
+                          : isTablet
+                          ? 15
+                          : 16,
                       fontWeight: FontWeight.w600,
                       color: const Color(0xFF718096),
                     ),
@@ -66,16 +98,32 @@ class JobStatsWidget extends StatelessWidget {
                       return Text(
                         animatedValue.toString(),
                         style: TextStyle(
-                          fontSize: isMobile ? 26 : isTablet ? 29 : 32,
+                          fontSize: isMobile
+                              ? 26
+                              : isTablet
+                              ? 29
+                              : 32,
                           fontWeight: FontWeight.bold,
                           color: AdminDashboardStyles.primary,
                         ),
                       );
                     },
                   ),
-                  SizedBox(height: isMobile ? 12 : isTablet ? 14 : 16),
+                  SizedBox(
+                    height: isMobile
+                        ? 12
+                        : isTablet
+                        ? 14
+                        : 16,
+                  ),
                   const Divider(color: Color(0xFFE2E8F0)),
-                  SizedBox(height: isMobile ? 12 : isTablet ? 14 : 16),
+                  SizedBox(
+                    height: isMobile
+                        ? 12
+                        : isTablet
+                        ? 14
+                        : 16,
+                  ),
 
                   // 2. Secondary Stats with staggered animation
                   _buildAnimatedStatRow(
@@ -85,7 +133,13 @@ class JobStatsWidget extends StatelessWidget {
                     Icons.check_circle,
                     0,
                   ),
-                  SizedBox(height: isMobile ? 10 : isTablet ? 11 : 12),
+                  SizedBox(
+                    height: isMobile
+                        ? 10
+                        : isTablet
+                        ? 11
+                        : 12,
+                  ),
                   _buildAnimatedStatRow(
                     'Expired',
                     stats['expired'] ?? 0,
@@ -93,7 +147,13 @@ class JobStatsWidget extends StatelessWidget {
                     Icons.cancel,
                     100,
                   ),
-                  SizedBox(height: isMobile ? 10 : isTablet ? 11 : 12),
+                  SizedBox(
+                    height: isMobile
+                        ? 10
+                        : isTablet
+                        ? 11
+                        : 12,
+                  ),
                   _buildAnimatedStatRow(
                     'Jobs',
                     stats['jobs'] ?? 0,
@@ -101,7 +161,13 @@ class JobStatsWidget extends StatelessWidget {
                     Icons.business,
                     200,
                   ),
-                  SizedBox(height: isMobile ? 10 : isTablet ? 11 : 12),
+                  SizedBox(
+                    height: isMobile
+                        ? 10
+                        : isTablet
+                        ? 11
+                        : 12,
+                  ),
                   _buildAnimatedStatRow(
                     'Internships',
                     stats['internships'] ?? 0,
@@ -146,16 +212,30 @@ class JobStatsWidget extends StatelessWidget {
                       child: Icon(
                         icon,
                         color: color,
-                        size: isMobile ? 18 : isTablet ? 19 : 20,
+                        size: isMobile
+                            ? 18
+                            : isTablet
+                            ? 19
+                            : 20,
                       ),
                     );
                   },
                 ),
-                SizedBox(width: isMobile ? 10 : isTablet ? 11 : 12),
+                SizedBox(
+                  width: isMobile
+                      ? 10
+                      : isTablet
+                      ? 11
+                      : 12,
+                ),
                 Text(
                   label,
                   style: TextStyle(
-                    fontSize: isMobile ? 13 : isTablet ? 13.5 : 14,
+                    fontSize: isMobile
+                        ? 13
+                        : isTablet
+                        ? 13.5
+                        : 14,
                     fontWeight: FontWeight.w500,
                     color: const Color(0xFF4A5568),
                   ),
@@ -169,7 +249,11 @@ class JobStatsWidget extends StatelessWidget {
                     return Text(
                       animatedValue.toString(),
                       style: TextStyle(
-                        fontSize: isMobile ? 14 : isTablet ? 15 : 16,
+                        fontSize: isMobile
+                            ? 14
+                            : isTablet
+                            ? 15
+                            : 16,
                         fontWeight: FontWeight.bold,
                         color: const Color(0xFF1A202C),
                       ),

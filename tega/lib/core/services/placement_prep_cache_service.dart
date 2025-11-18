@@ -62,7 +62,10 @@ class PlacementPrepCacheService {
   Future<void> setPlacementPrepData(Map<String, dynamic> data) async {
     await _ensurePrefs();
     await _prefs?.setString(_placementPrepDataKey, json.encode(data));
-    await _prefs?.setString(_cacheTimestampKey, DateTime.now().toIso8601String());
+    await _prefs?.setString(
+      _cacheTimestampKey,
+      DateTime.now().toIso8601String(),
+    );
   }
 
   /// Get cached companies data if valid
@@ -88,7 +91,10 @@ class PlacementPrepCacheService {
   Future<void> setCompaniesData(List<Map<String, dynamic>> data) async {
     await _ensurePrefs();
     await _prefs?.setString(_companiesDataKey, json.encode(data));
-    await _prefs?.setString(_cacheTimestampKey, DateTime.now().toIso8601String());
+    await _prefs?.setString(
+      _cacheTimestampKey,
+      DateTime.now().toIso8601String(),
+    );
   }
 
   /// Get cached skill assessments data if valid
@@ -112,7 +118,10 @@ class PlacementPrepCacheService {
   Future<void> setSkillAssessmentsData(Map<String, dynamic> data) async {
     await _ensurePrefs();
     await _prefs?.setString(_skillAssessmentsDataKey, json.encode(data));
-    await _prefs?.setString(_cacheTimestampKey, DateTime.now().toIso8601String());
+    await _prefs?.setString(
+      _cacheTimestampKey,
+      DateTime.now().toIso8601String(),
+    );
   }
 
   /// Clear placement prep cache
@@ -142,4 +151,3 @@ class PlacementPrepCacheService {
     await _prefs?.remove(_cacheTimestampKey);
   }
 }
-

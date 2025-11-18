@@ -4,7 +4,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 /// Cache service for notifications data
 /// Provides caching with TTL (Time To Live) for notifications
 class NotificationsCacheService {
-  static final NotificationsCacheService _instance = NotificationsCacheService._internal();
+  static final NotificationsCacheService _instance =
+      NotificationsCacheService._internal();
   factory NotificationsCacheService() => _instance;
   NotificationsCacheService._internal();
 
@@ -61,7 +62,10 @@ class NotificationsCacheService {
   Future<void> setNotificationsData(List<Map<String, dynamic>> data) async {
     await _ensurePrefs();
     await _prefs?.setString(_notificationsDataKey, json.encode(data));
-    await _prefs?.setString(_cacheTimestampKey, DateTime.now().toIso8601String());
+    await _prefs?.setString(
+      _cacheTimestampKey,
+      DateTime.now().toIso8601String(),
+    );
   }
 
   /// Clear all cached data
@@ -71,4 +75,3 @@ class NotificationsCacheService {
     await _prefs?.remove(_cacheTimestampKey);
   }
 }
-

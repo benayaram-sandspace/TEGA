@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 
 /// Business Logic Tests for Offers and Discounts
-/// 
+///
 /// These tests validate offer and discount business rules:
 /// - Offer eligibility
 /// - Discount calculation
@@ -17,11 +17,12 @@ void main() {
           'validUntil': DateTime.now().add(const Duration(days: 1)),
         };
         final now = DateTime.now();
-        
+
         // Business rule: Offer must be active and within validity period
-        final isEligible = offer['isActive'] == true &&
-                         (offer['validFrom'] as DateTime).isBefore(now) &&
-                         (offer['validUntil'] as DateTime).isAfter(now);
+        final isEligible =
+            offer['isActive'] == true &&
+            (offer['validFrom'] as DateTime).isBefore(now) &&
+            (offer['validUntil'] as DateTime).isAfter(now);
         expect(isEligible, isTrue);
       });
 
@@ -31,10 +32,11 @@ void main() {
           'validUntil': DateTime.now().subtract(const Duration(days: 1)),
         };
         final now = DateTime.now();
-        
+
         // Business rule: Expired offers are not eligible
-        final isEligible = offer['isActive'] == true &&
-                         (offer['validUntil'] as DateTime).isAfter(now);
+        final isEligible =
+            offer['isActive'] == true &&
+            (offer['validUntil'] as DateTime).isAfter(now);
         expect(isEligible, isFalse);
       });
 
@@ -43,10 +45,11 @@ void main() {
         final offer = {
           'applicableInstitutes': ['MIT', 'Harvard'],
         };
-        
+
         // Business rule: Offer applies to specific institutes
-        final isEligible = (offer['applicableInstitutes'] as List)
-            .contains(studentInstitute);
+        final isEligible = (offer['applicableInstitutes'] as List).contains(
+          studentInstitute,
+        );
         expect(isEligible, isTrue);
       });
 
@@ -55,10 +58,11 @@ void main() {
         final offer = {
           'applicableCourses': ['course-123', 'course-456'],
         };
-        
+
         // Business rule: Offer applies to specific courses
-        final isEligible = (offer['applicableCourses'] as List)
-            .contains(courseId);
+        final isEligible = (offer['applicableCourses'] as List).contains(
+          courseId,
+        );
         expect(isEligible, isTrue);
       });
     });
@@ -67,11 +71,11 @@ void main() {
       test('should calculate percentage discount', () {
         const originalPrice = 1000;
         const discountPercent = 25;
-        
+
         // Business rule: Percentage discount
         final discountAmount = originalPrice * (discountPercent / 100);
         final finalPrice = originalPrice - discountAmount;
-        
+
         expect(discountAmount, equals(250));
         expect(finalPrice, equals(750));
       });
@@ -79,7 +83,7 @@ void main() {
       test('should calculate fixed amount discount', () {
         const originalPrice = 1000;
         const discountAmount = 200;
-        
+
         // Business rule: Fixed discount
         final finalPrice = originalPrice - discountAmount;
         expect(finalPrice, equals(800));
@@ -88,9 +92,12 @@ void main() {
       test('should not allow negative prices', () {
         const originalPrice = 100;
         const discountAmount = 200;
-        
+
         // Business rule: Price cannot go below 0
-        final finalPrice = (originalPrice - discountAmount).clamp(0, double.infinity);
+        final finalPrice = (originalPrice - discountAmount).clamp(
+          0,
+          double.infinity,
+        );
         expect(finalPrice, equals(0));
       });
 
@@ -98,12 +105,14 @@ void main() {
         const originalPrice = 1000;
         const discountPercent = 50;
         const maxDiscount = 300;
-        
+
         // Business rule: Discount capped at maximum
-        final discountAmount = (originalPrice * (discountPercent / 100))
-            .clamp(0, maxDiscount);
+        final discountAmount = (originalPrice * (discountPercent / 100)).clamp(
+          0,
+          maxDiscount,
+        );
         final finalPrice = originalPrice - discountAmount;
-        
+
         expect(discountAmount, equals(300));
         expect(finalPrice, equals(700));
       });
@@ -113,14 +122,15 @@ void main() {
       test('should calculate package savings', () {
         final individualPrices = [1000, 800, 600]; // Total: 2400
         const packagePrice = 2000;
-        
+
         // Business rule: Package should offer savings
         final individualTotal = individualPrices.fold<int>(
-          0, (sum, price) => sum + price as int,
+          0,
+          (sum, price) => sum + price as int,
         );
         final savings = individualTotal - packagePrice;
         final savingsPercent = (savings / individualTotal) * 100;
-        
+
         expect(savings, equals(400));
         expect(savingsPercent, greaterThan(0));
       });
@@ -129,7 +139,7 @@ void main() {
         final package = {
           'includedCourses': ['course-1', 'course-2', 'course-3'],
         };
-        
+
         // Business rule: Package purchase enrolls in all included courses
         final coursesToEnroll = (package['includedCourses'] as List).length;
         expect(coursesToEnroll, equals(3));
@@ -140,7 +150,7 @@ void main() {
         final package = {
           'validUntil': DateTime.now().add(const Duration(days: 365)),
         };
-        
+
         // Business rule: Package access expires on validUntil date
         final expiryDate = package['validUntil'] as DateTime;
         expect(expiryDate.isAfter(purchaseDate), isTrue);
@@ -153,10 +163,11 @@ void main() {
         };
         const newPackageId = 'package-123';
         final now = DateTime.now();
-        
+
         // Business rule: Cannot purchase active package again
-        final isActive = existingTransaction['packageId'] == newPackageId &&
-                        (existingTransaction['expiryDate'] as DateTime).isAfter(now);
+        final isActive =
+            existingTransaction['packageId'] == newPackageId &&
+            (existingTransaction['expiryDate'] as DateTime).isAfter(now);
         expect(isActive, isTrue);
       });
     });
@@ -169,7 +180,7 @@ void main() {
           {'discount': 15, 'type': 'percentage'},
         ];
         const originalPrice = 1000;
-        
+
         // Business rule: Apply best offer (highest discount)
         double bestDiscount = 0;
         for (final offer in offers) {
@@ -183,7 +194,7 @@ void main() {
             bestDiscount = discount;
           }
         }
-        
+
         expect(bestDiscount, equals(200.0)); // Fixed discount of 200 is best
       });
 
@@ -195,14 +206,14 @@ void main() {
         };
         const purchaseAmount = 1000;
         final now = DateTime.now();
-        
+
         // Business rule: Offer must be valid and meet minimum purchase
-        final canApply = offer['isActive'] == true &&
-                        (offer['validUntil'] as DateTime).isAfter(now) &&
-                        purchaseAmount >= (offer['minPurchaseAmount'] as int);
+        final canApply =
+            offer['isActive'] == true &&
+            (offer['validUntil'] as DateTime).isAfter(now) &&
+            purchaseAmount >= (offer['minPurchaseAmount'] as int);
         expect(canApply, isTrue);
       });
     });
   });
 }
-

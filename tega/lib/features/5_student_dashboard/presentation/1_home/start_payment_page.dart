@@ -34,11 +34,14 @@ class _StartPaymentPageState extends State<StartPaymentPage> {
   double get tabletBreakpoint => 1024;
   double get desktopBreakpoint => 1440;
   bool get isMobile => MediaQuery.of(context).size.width < mobileBreakpoint;
-  bool get isTablet => MediaQuery.of(context).size.width >= mobileBreakpoint &&
+  bool get isTablet =>
+      MediaQuery.of(context).size.width >= mobileBreakpoint &&
       MediaQuery.of(context).size.width < tabletBreakpoint;
-  bool get isDesktop => MediaQuery.of(context).size.width >= tabletBreakpoint &&
+  bool get isDesktop =>
+      MediaQuery.of(context).size.width >= tabletBreakpoint &&
       MediaQuery.of(context).size.width < desktopBreakpoint;
-  bool get isLargeDesktop => MediaQuery.of(context).size.width >= desktopBreakpoint;
+  bool get isLargeDesktop =>
+      MediaQuery.of(context).size.width >= desktopBreakpoint;
   bool get isSmallScreen => MediaQuery.of(context).size.width < 400;
 
   @override
@@ -111,7 +114,7 @@ class _StartPaymentPageState extends State<StartPaymentPage> {
     if (!forceRefresh) {
       final cachedCourses = await _cacheService.getCoursesData();
       final cachedExams = await _cacheService.getExamsData();
-      
+
       if (cachedCourses != null && cachedExams != null && mounted) {
         setState(() {
           _courses = cachedCourses;
@@ -135,14 +138,17 @@ class _StartPaymentPageState extends State<StartPaymentPage> {
       final service = StudentDashboardService();
       final all = await service.getAllCourses(headers);
       final enrolled = await service.getEnrolledCourses(headers);
-      
+
       // Fetch exams
       final auth = AuthService();
       final studentId = auth.currentUser?.id;
       List<Map<String, dynamic>> exams = [];
       if (studentId != null) {
         try {
-          final backendExams = await service.getAvailableExams(studentId, headers);
+          final backendExams = await service.getAvailableExams(
+            studentId,
+            headers,
+          );
           exams = _processExamsData(backendExams);
         } catch (e) {
           // If exam fetch fails, continue with courses only
@@ -343,24 +349,25 @@ class _StartPaymentPageState extends State<StartPaymentPage> {
   List<Map<String, dynamic>> _processExamsData(List<dynamic> backendExams) {
     return backendExams.map<Map<String, dynamic>>((exam) {
       final examData = exam as Map<String, dynamic>;
-      
+
       final id = (examData['_id'] ?? examData['id'] ?? '').toString();
       final title = (examData['title'] ?? 'Exam').toString();
       final description = (examData['description'] ?? 'TEGA Exam').toString();
-      
+
       // Get price - check if payment is required
       final requiresPayment = examData['requiresPayment'] == true;
       final price = requiresPayment ? (examData['price'] ?? 0) : 0;
-      
+
       // Check if user has paid (from registration data)
       final registration = examData['registration'];
-      final hasPaid = registration != null && 
-          (registration['paymentStatus'] == 'paid' || 
-           registration['paymentStatus'] == 'completed');
-      
+      final hasPaid =
+          registration != null &&
+          (registration['paymentStatus'] == 'paid' ||
+              registration['paymentStatus'] == 'completed');
+
       // Get duration in minutes
       final durationMinutes = examData['duration'] ?? 120;
-      
+
       return {
         'id': id,
         'title': title,
@@ -658,7 +665,8 @@ class _StartPaymentPageState extends State<StartPaymentPage> {
                   final durationMinutes = item['durationMinutes'] is num
                       ? (item['durationMinutes'] as num).toInt()
                       : 0;
-                  final videoDurationSeconds = item['videoDurationSeconds'] is num
+                  final videoDurationSeconds =
+                      item['videoDurationSeconds'] is num
                       ? (item['videoDurationSeconds'] as num).toInt()
                       : 0;
                   final isExam = item['type'] == 'exam';
@@ -687,7 +695,10 @@ class _StartPaymentPageState extends State<StartPaymentPage> {
                           : () {
                               _courseIdController.text = item['id'] as String;
                               _notesController.text =
-                                  item['title'] ?? (isExam ? 'Exam Payment' : 'Course Enrollment');
+                                  item['title'] ??
+                                  (isExam
+                                      ? 'Exam Payment'
+                                      : 'Course Enrollment');
                               _startPayment();
                             },
                     ),
@@ -736,12 +747,16 @@ class _CourseCard extends StatelessWidget {
   }
 
   // Responsive breakpoints helper
-  bool _isLargeDesktop(BuildContext context) => MediaQuery.of(context).size.width >= 1440;
-  bool _isDesktop(BuildContext context) => MediaQuery.of(context).size.width >= 1024 &&
+  bool _isLargeDesktop(BuildContext context) =>
+      MediaQuery.of(context).size.width >= 1440;
+  bool _isDesktop(BuildContext context) =>
+      MediaQuery.of(context).size.width >= 1024 &&
       MediaQuery.of(context).size.width < 1440;
-  bool _isTablet(BuildContext context) => MediaQuery.of(context).size.width >= 600 &&
+  bool _isTablet(BuildContext context) =>
+      MediaQuery.of(context).size.width >= 600 &&
       MediaQuery.of(context).size.width < 1024;
-  bool _isSmallScreen(BuildContext context) => MediaQuery.of(context).size.width < 400;
+  bool _isSmallScreen(BuildContext context) =>
+      MediaQuery.of(context).size.width < 400;
 
   @override
   Widget build(BuildContext context) {
@@ -749,7 +764,7 @@ class _CourseCard extends StatelessWidget {
     final isDesktop = _isDesktop(context);
     final isTablet = _isTablet(context);
     final isSmallScreen = _isSmallScreen(context);
-    
+
     return InkWell(
       onTap: owned ? null : onPay,
       borderRadius: BorderRadius.circular(
@@ -781,19 +796,19 @@ class _CourseCard extends StatelessWidget {
             color: owned ? const Color(0xFF4CAF50) : const Color(0xFFE5E7EB),
             width: owned
                 ? (isLargeDesktop || isDesktop
-                    ? 2.5
-                    : isTablet
-                    ? 2
-                    : isSmallScreen
-                    ? 1.5
-                    : 2)
+                      ? 2.5
+                      : isTablet
+                      ? 2
+                      : isSmallScreen
+                      ? 1.5
+                      : 2)
                 : (isLargeDesktop || isDesktop
-                    ? 1.5
-                    : isTablet
-                    ? 1.2
-                    : isSmallScreen
-                    ? 0.8
-                    : 1),
+                      ? 1.5
+                      : isTablet
+                      ? 1.2
+                      : isSmallScreen
+                      ? 0.8
+                      : 1),
           ),
           boxShadow: [
             BoxShadow(

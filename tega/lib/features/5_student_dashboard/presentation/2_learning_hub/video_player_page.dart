@@ -41,16 +41,16 @@ class _VideoPlayerPageState extends State<VideoPlayerPage>
   double _savedVolume = 1.0;
   double _currentBrightness = 1.0;
   double _seekPosition = 0;
-  
+
   // Progress bar dragging
   bool _isDraggingProgress = false;
   double? _dragProgressPosition;
   bool _isHoveringProgress = false;
   bool _isSeeking = false;
-  
+
   // Volume control
   bool _showVolumeSlider = false;
-  
+
   // Settings menu
   bool _showSettingsMenu = false;
 
@@ -113,8 +113,10 @@ class _VideoPlayerPageState extends State<VideoPlayerPage>
 
   void _initializeVideo() async {
     // Check cache first - if cached, use local file, otherwise use network URL
-    String? cachedVideoPath = await _videoCacheService.getCachedVideoPath(widget.videoUrl);
-    
+    String? cachedVideoPath = await _videoCacheService.getCachedVideoPath(
+      widget.videoUrl,
+    );
+
     if (cachedVideoPath != null && await File(cachedVideoPath).exists()) {
       // Use cached video file
       _controller = VideoPlayerController.file(
@@ -133,7 +135,7 @@ class _VideoPlayerPageState extends State<VideoPlayerPage>
           allowBackgroundPlayback: false,
         ),
       );
-      
+
       // Start caching video in background (don't await)
       _videoCacheService.cacheVideo(widget.videoUrl).catchError((_) {
         // Silently handle cache errors - video will still play from network
@@ -264,7 +266,7 @@ class _VideoPlayerPageState extends State<VideoPlayerPage>
       final clampedPosition = position < Duration.zero
           ? Duration.zero
           : (position > duration ? duration : position);
-      
+
       // Don't seek if position is the same (within 1 second)
       final currentPos = _controller.value.position;
       if ((clampedPosition - currentPos).abs().inSeconds < 1) {
@@ -276,10 +278,10 @@ class _VideoPlayerPageState extends State<VideoPlayerPage>
       });
 
       await _controller.seekTo(clampedPosition);
-      
+
       // Wait a bit for seek to complete
       await Future.delayed(const Duration(milliseconds: 300));
-      
+
       if (mounted) {
         setState(() {
           _isSeeking = false;
@@ -479,7 +481,7 @@ class _VideoPlayerPageState extends State<VideoPlayerPage>
         ? Duration(milliseconds: _dragProgressPosition!.round())
         : _controller.value.position;
     final buffered = _controller.value.buffered;
-    
+
     final progress = duration.inMilliseconds > 0
         ? position.inMilliseconds / duration.inMilliseconds
         : 0.0;
@@ -511,40 +513,46 @@ class _VideoPlayerPageState extends State<VideoPlayerPage>
             },
             onHorizontalDragUpdate: (details) {
               final localPosition = details.localPosition.dx;
-              final newProgress = (localPosition / constraints.maxWidth).clamp(0.0, 1.0);
-              
+              final newProgress = (localPosition / constraints.maxWidth).clamp(
+                0.0,
+                1.0,
+              );
+
               setState(() {
                 _dragProgressPosition = duration.inMilliseconds * newProgress;
               });
             },
-          onHorizontalDragEnd: (details) async {
-            if (_dragProgressPosition != null && duration.inMilliseconds > 0) {
-              final seekPosition = Duration(
-                milliseconds: _dragProgressPosition!.round().clamp(
-                  0,
-                  duration.inMilliseconds,
-                ),
+            onHorizontalDragEnd: (details) async {
+              if (_dragProgressPosition != null &&
+                  duration.inMilliseconds > 0) {
+                final seekPosition = Duration(
+                  milliseconds: _dragProgressPosition!.round().clamp(
+                    0,
+                    duration.inMilliseconds,
+                  ),
+                );
+                await _safeSeekTo(seekPosition);
+              }
+              setState(() {
+                _isDraggingProgress = false;
+                _dragProgressPosition = null;
+              });
+              _showControlsAndResetTimer();
+            },
+            onTapDown: (details) async {
+              final localPosition = details.localPosition.dx;
+              final newProgress = (localPosition / constraints.maxWidth).clamp(
+                0.0,
+                1.0,
               );
-              await _safeSeekTo(seekPosition);
-            }
-            setState(() {
-              _isDraggingProgress = false;
-              _dragProgressPosition = null;
-            });
-            _showControlsAndResetTimer();
-          },
-          onTapDown: (details) async {
-            final localPosition = details.localPosition.dx;
-            final newProgress = (localPosition / constraints.maxWidth).clamp(0.0, 1.0);
-            final newPosition = Duration(
-              milliseconds: (duration.inMilliseconds * newProgress).round().clamp(
-                0,
-                duration.inMilliseconds,
-              ),
-            );
-            await _safeSeekTo(newPosition);
-            _showControlsAndResetTimer();
-          },
+              final newPosition = Duration(
+                milliseconds: (duration.inMilliseconds * newProgress)
+                    .round()
+                    .clamp(0, duration.inMilliseconds),
+              );
+              await _safeSeekTo(newPosition);
+              _showControlsAndResetTimer();
+            },
             child: Container(
               height: _isHoveringProgress || _isDraggingProgress ? 8 : 4,
               padding: EdgeInsets.symmetric(
@@ -565,13 +573,19 @@ class _VideoPlayerPageState extends State<VideoPlayerPage>
                   // Buffered progress - YouTube style
                   if (buffered.isNotEmpty && duration.inMilliseconds > 0)
                     ...buffered.map((range) {
-                      final bufferedStart = range.start.inMilliseconds / duration.inMilliseconds;
-                      final bufferedEnd = range.end.inMilliseconds / duration.inMilliseconds;
+                      final bufferedStart =
+                          range.start.inMilliseconds / duration.inMilliseconds;
+                      final bufferedEnd =
+                          range.end.inMilliseconds / duration.inMilliseconds;
                       return Positioned(
                         left: constraints.maxWidth * bufferedStart,
                         child: Container(
-                          height: _isHoveringProgress || _isDraggingProgress ? 4 : 3,
-                          width: constraints.maxWidth * (bufferedEnd - bufferedStart),
+                          height: _isHoveringProgress || _isDraggingProgress
+                              ? 4
+                              : 3,
+                          width:
+                              constraints.maxWidth *
+                              (bufferedEnd - bufferedStart),
                           decoration: BoxDecoration(
                             color: Colors.white.withValues(alpha: 0.5),
                             borderRadius: BorderRadius.circular(1.5),
@@ -590,11 +604,15 @@ class _VideoPlayerPageState extends State<VideoPlayerPage>
                     ),
                   ),
                   // Thumb - YouTube style (hidden by default, shows on hover/drag)
-                  if (_isHoveringProgress || _isDraggingProgress || _showControls)
+                  if (_isHoveringProgress ||
+                      _isDraggingProgress ||
+                      _showControls)
                     AnimatedPositioned(
                       duration: const Duration(milliseconds: 50),
                       curve: Curves.easeOut,
-                      left: (constraints.maxWidth * progress.clamp(0.0, 1.0)) - (_isDraggingProgress ? 10 : 8),
+                      left:
+                          (constraints.maxWidth * progress.clamp(0.0, 1.0)) -
+                          (_isDraggingProgress ? 10 : 8),
                       child: AnimatedScale(
                         scale: _isDraggingProgress ? 1.4 : 1.0,
                         duration: const Duration(milliseconds: 150),
@@ -796,7 +814,9 @@ class _VideoPlayerPageState extends State<VideoPlayerPage>
                                   Container(
                                     padding: const EdgeInsets.all(12),
                                     decoration: BoxDecoration(
-                                      color: _gestureColor.withValues(alpha: 0.2),
+                                      color: _gestureColor.withValues(
+                                        alpha: 0.2,
+                                      ),
                                       shape: BoxShape.circle,
                                     ),
                                     child: Icon(
@@ -846,7 +866,9 @@ class _VideoPlayerPageState extends State<VideoPlayerPage>
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     const CircularProgressIndicator(
-                      valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF6B5FFF)),
+                      valueColor: AlwaysStoppedAnimation<Color>(
+                        Color(0xFF6B5FFF),
+                      ),
                       strokeWidth: 3,
                     ),
                     const SizedBox(height: 24),
@@ -912,7 +934,10 @@ class _VideoPlayerPageState extends State<VideoPlayerPage>
                     ),
                     // Controls Row
                     Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 8,
+                      ),
                       child: Row(
                         children: [
                           // Play/Pause Button
@@ -939,8 +964,8 @@ class _VideoPlayerPageState extends State<VideoPlayerPage>
                               _isMuted || _currentVolume == 0
                                   ? Icons.volume_off
                                   : _currentVolume < 0.5
-                                      ? Icons.volume_down
-                                      : Icons.volume_up,
+                                  ? Icons.volume_down
+                                  : Icons.volume_up,
                               color: Colors.white,
                               size: 20,
                             ),
@@ -954,7 +979,9 @@ class _VideoPlayerPageState extends State<VideoPlayerPage>
                                 value: _currentVolume,
                                 onChanged: _changeVolume,
                                 activeColor: Colors.white,
-                                inactiveColor: Colors.white.withValues(alpha: 0.3),
+                                inactiveColor: Colors.white.withValues(
+                                  alpha: 0.3,
+                                ),
                                 min: 0.0,
                                 max: 1.0,
                               ),
@@ -975,7 +1002,9 @@ class _VideoPlayerPageState extends State<VideoPlayerPage>
                           TextButton(
                             onPressed: _changePlaybackSpeed,
                             style: TextButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(horizontal: 8),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                              ),
                               minimumSize: Size.zero,
                               tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                             ),
@@ -1003,7 +1032,9 @@ class _VideoPlayerPageState extends State<VideoPlayerPage>
                           // Fullscreen Button
                           IconButton(
                             icon: Icon(
-                              _isFullscreen ? Icons.fullscreen_exit : Icons.fullscreen,
+                              _isFullscreen
+                                  ? Icons.fullscreen_exit
+                                  : Icons.fullscreen,
                               color: Colors.white,
                               size: 20,
                             ),
@@ -1038,4 +1069,3 @@ class _VideoPlayerPageState extends State<VideoPlayerPage>
     );
   }
 }
-

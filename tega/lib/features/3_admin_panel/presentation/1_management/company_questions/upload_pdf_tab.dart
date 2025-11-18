@@ -43,7 +43,10 @@ class _UploadPdfTabState extends State<UploadPdfTab> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error picking file: $e'), backgroundColor: Colors.red),
+          SnackBar(
+            content: Text('Error picking file: $e'),
+            backgroundColor: Colors.red,
+          ),
         );
       }
     }
@@ -102,7 +105,10 @@ class _UploadPdfTabState extends State<UploadPdfTab> {
         }
       } else {
         final errorData = json.decode(response.body);
-        throw Exception(errorData['message'] ?? 'Failed to upload PDF: ${response.statusCode}');
+        throw Exception(
+          errorData['message'] ??
+              'Failed to upload PDF: ${response.statusCode}',
+        );
       }
     } catch (e) {
       if (mounted) {
@@ -163,7 +169,11 @@ class _UploadPdfTabState extends State<UploadPdfTab> {
                   color: const Color(0xFF3B82F6).withOpacity(0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: const Icon(Icons.description_rounded, color: Color(0xFF3B82F6), size: 20),
+                child: const Icon(
+                  Icons.description_rounded,
+                  color: Color(0xFF3B82F6),
+                  size: 20,
+                ),
               ),
               const SizedBox(width: 12),
               const Text(
@@ -189,7 +199,10 @@ class _UploadPdfTabState extends State<UploadPdfTab> {
               hintStyle: TextStyle(color: AdminDashboardStyles.textLight),
               filled: true,
               fillColor: Colors.white,
-              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 14,
+              ),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(8),
                 borderSide: BorderSide(color: AdminDashboardStyles.borderLight),
@@ -200,7 +213,10 @@ class _UploadPdfTabState extends State<UploadPdfTab> {
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(8),
-                borderSide: BorderSide(color: AdminDashboardStyles.primary, width: 2),
+                borderSide: BorderSide(
+                  color: AdminDashboardStyles.primary,
+                  width: 2,
+                ),
               ),
             ),
             validator: (value) {
@@ -241,7 +257,11 @@ class _UploadPdfTabState extends State<UploadPdfTab> {
                   color: const Color(0xFF10B981).withOpacity(0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: const Icon(Icons.upload_rounded, color: Color(0xFF10B981), size: 20),
+                child: const Icon(
+                  Icons.upload_rounded,
+                  color: Color(0xFF10B981),
+                  size: 20,
+                ),
               ),
               const SizedBox(width: 12),
               const Text(
@@ -308,7 +328,7 @@ class _UploadPdfTabState extends State<UploadPdfTab> {
 
   Widget _buildUploadButton() {
     final isDisabled = _selectedFile == null || _isUploading;
-    
+
     return SizedBox(
       width: double.infinity,
       child: ElevatedButton(
@@ -319,9 +339,7 @@ class _UploadPdfTabState extends State<UploadPdfTab> {
           disabledBackgroundColor: AdminDashboardStyles.borderLight,
           disabledForegroundColor: AdminDashboardStyles.textLight,
           padding: const EdgeInsets.symmetric(vertical: 16),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
-          ),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
           elevation: 0,
         ),
         child: _isUploading
@@ -340,10 +358,7 @@ class _UploadPdfTabState extends State<UploadPdfTab> {
                   SizedBox(width: 8),
                   Text(
                     'Upload & Extract Questions',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                    ),
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                   ),
                 ],
               ),

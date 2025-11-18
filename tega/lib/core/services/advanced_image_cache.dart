@@ -30,11 +30,11 @@ class AdvancedImageCache {
 
   /// Get cache statistics
   Map<String, dynamic> get stats => {
-        'memorySize': _memoryCache.length,
-        'memoryHits': _memoryHits,
-        'diskHits': _diskHits,
-        'networkHits': _networkHits,
-      };
+    'memorySize': _memoryCache.length,
+    'memoryHits': _memoryHits,
+    'diskHits': _diskHits,
+    'networkHits': _networkHits,
+  };
 
   /// Get cached directory
   Future<Directory> get _cacheDir async {
@@ -122,9 +122,9 @@ class AdvancedImageCache {
   /// Download image from network
   Future<Uint8List?> _downloadImage(String url) async {
     try {
-      final response = await http.get(Uri.parse(url)).timeout(
-        const Duration(seconds: 30),
-      );
+      final response = await http
+          .get(Uri.parse(url))
+          .timeout(const Duration(seconds: 30));
 
       if (response.statusCode == 200) {
         _networkHits++;
@@ -310,7 +310,10 @@ class _CachedNetworkImageState extends State<CachedNetworkImage> {
     }
 
     return CustomPaint(
-      size: Size(widget.width ?? double.infinity, widget.height ?? double.infinity),
+      size: Size(
+        widget.width ?? double.infinity,
+        widget.height ?? double.infinity,
+      ),
       painter: _ImagePainter(_image!, widget.fit),
     );
   }
@@ -330,11 +333,19 @@ class _ImagePainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final src = Rect.fromLTWH(0, 0, image.width.toDouble(), image.height.toDouble());
+    final src = Rect.fromLTWH(
+      0,
+      0,
+      image.width.toDouble(),
+      image.height.toDouble(),
+    );
     final dst = Rect.fromLTWH(0, 0, size.width, size.height);
 
     final FittedSizes fittedSizes = applyBoxFit(fit, src.size, dst.size);
-    final Rect targetRect = Alignment.center.inscribe(fittedSizes.destination, dst);
+    final Rect targetRect = Alignment.center.inscribe(
+      fittedSizes.destination,
+      dst,
+    );
 
     canvas.drawImageRect(image, src, targetRect, Paint());
   }
@@ -342,4 +353,3 @@ class _ImagePainter extends CustomPainter {
   @override
   bool shouldRepaint(_ImagePainter oldDelegate) => oldDelegate.image != image;
 }
-

@@ -17,7 +17,8 @@ class AccountManagementDialog extends StatefulWidget {
   });
 
   @override
-  State<AccountManagementDialog> createState() => _AccountManagementDialogState();
+  State<AccountManagementDialog> createState() =>
+      _AccountManagementDialogState();
 }
 
 class _AccountManagementDialogState extends State<AccountManagementDialog> {
@@ -33,7 +34,7 @@ class _AccountManagementDialogState extends State<AccountManagementDialog> {
 
   Future<void> _loadAccounts() async {
     setState(() => _isLoading = true);
-    
+
     await _credentialManager.initialize();
     setState(() {
       _accounts = _credentialManager.savedAccounts;
@@ -51,7 +52,7 @@ class _AccountManagementDialogState extends State<AccountManagementDialog> {
         _accounts.removeWhere((a) => a.id == account.id);
       });
       HapticFeedback.lightImpact();
-      
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Account "${account.displayName}" deleted'),
@@ -69,54 +70,55 @@ class _AccountManagementDialogState extends State<AccountManagementDialog> {
 
   Future<bool> _showDeleteConfirmation(SavedAccount account) async {
     return await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
-        title: const Text(
-          'Delete Account',
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.w700,
-            color: AppColors.textPrimary,
-          ),
-        ),
-        content: Text(
-          'Are you sure you want to delete "${account.displayName}"?\n\nThis action cannot be undone.',
-          style: const TextStyle(
-            fontSize: 14,
-            color: AppColors.textSecondary,
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text(
-              'Cancel',
+          context: context,
+          builder: (context) => AlertDialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            title: const Text(
+              'Delete Account',
               style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w700,
+                color: AppColors.textPrimary,
+              ),
+            ),
+            content: Text(
+              'Are you sure you want to delete "${account.displayName}"?\n\nThis action cannot be undone.',
+              style: const TextStyle(
+                fontSize: 14,
                 color: AppColors.textSecondary,
-                fontWeight: FontWeight.w600,
               ),
             ),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            style: TextButton.styleFrom(
-              backgroundColor: AppColors.error,
-              foregroundColor: AppColors.pureWhite,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(false),
+                child: const Text(
+                  'Cancel',
+                  style: TextStyle(
+                    color: AppColors.textSecondary,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
               ),
-            ),
-            child: const Text(
-              'Delete',
-              style: TextStyle(fontWeight: FontWeight.w600),
-            ),
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(true),
+                style: TextButton.styleFrom(
+                  backgroundColor: AppColors.error,
+                  foregroundColor: AppColors.pureWhite,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                child: const Text(
+                  'Delete',
+                  style: TextStyle(fontWeight: FontWeight.w600),
+                ),
+              ),
+            ],
           ),
-        ],
-      ),
-    ) ?? false;
+        ) ??
+        false;
   }
 
   Future<void> _editAccountName(SavedAccount account) async {
@@ -126,7 +128,7 @@ class _AccountManagementDialogState extends State<AccountManagementDialog> {
         account.email,
         newName.trim(),
       );
-      
+
       if (success && mounted) {
         setState(() {
           final index = _accounts.indexWhere((a) => a.id == account.id);
@@ -143,13 +145,11 @@ class _AccountManagementDialogState extends State<AccountManagementDialog> {
 
   Future<String?> _showEditNameDialog(SavedAccount account) async {
     final controller = TextEditingController(text: account.accountName ?? '');
-    
+
     return await showDialog<String>(
       context: context,
       builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: const Text(
           'Edit Account Name',
           style: TextStyle(
@@ -247,10 +247,7 @@ class _AccountManagementDialogState extends State<AccountManagementDialog> {
         ),
         subtitle: Text(
           account.email,
-          style: const TextStyle(
-            fontSize: 13,
-            color: AppColors.textSecondary,
-          ),
+          style: const TextStyle(fontSize: 13, color: AppColors.textSecondary),
         ),
         trailing: PopupMenuButton<String>(
           onSelected: (value) {
@@ -328,18 +325,18 @@ class _AccountManagementDialogState extends State<AccountManagementDialog> {
   void _selectAccount(SavedAccount account) {
     // Update last used timestamp
     _credentialManager.updateLastUsed(account.email);
-    
+
     // Call the callback to fill the form
     if (widget.onAccountSelected != null) {
       widget.onAccountSelected!(account.email, account.password);
     }
-    
+
     // Close the dialog
     Navigator.of(context).pop();
-    
+
     // Haptic feedback
     HapticFeedback.lightImpact();
-    
+
     // Show success message
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -408,13 +405,18 @@ class _AccountManagementDialogState extends State<AccountManagementDialog> {
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
-                    borderSide: const BorderSide(color: AppColors.primary, width: 2),
+                    borderSide: const BorderSide(
+                      color: AppColors.primary,
+                      width: 2,
+                    ),
                   ),
                   filled: true,
                   fillColor: AppColors.surface,
                   suffixIcon: IconButton(
                     icon: Icon(
-                      isPasswordVisible ? Icons.visibility_off : Icons.visibility,
+                      isPasswordVisible
+                          ? Icons.visibility_off
+                          : Icons.visibility,
                       color: AppColors.textDisabled,
                     ),
                     onPressed: () {
@@ -451,13 +453,18 @@ class _AccountManagementDialogState extends State<AccountManagementDialog> {
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
-                    borderSide: const BorderSide(color: AppColors.primary, width: 2),
+                    borderSide: const BorderSide(
+                      color: AppColors.primary,
+                      width: 2,
+                    ),
                   ),
                   filled: true,
                   fillColor: AppColors.surface,
                   suffixIcon: IconButton(
                     icon: Icon(
-                      isConfirmPasswordVisible ? Icons.visibility_off : Icons.visibility,
+                      isConfirmPasswordVisible
+                          ? Icons.visibility_off
+                          : Icons.visibility,
                       color: AppColors.textDisabled,
                     ),
                     onPressed: () {
@@ -496,7 +503,9 @@ class _AccountManagementDialogState extends State<AccountManagementDialog> {
                       content: const Text('Please enter a new password'),
                       backgroundColor: AppColors.error,
                       behavior: SnackBarBehavior.floating,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
                     ),
                   );
                   return;
@@ -508,7 +517,9 @@ class _AccountManagementDialogState extends State<AccountManagementDialog> {
                       content: const Text('Passwords do not match'),
                       backgroundColor: AppColors.error,
                       behavior: SnackBarBehavior.floating,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
                     ),
                   );
                   return;
@@ -517,10 +528,14 @@ class _AccountManagementDialogState extends State<AccountManagementDialog> {
                 if (newPassword.length < 6) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                      content: const Text('Password must be at least 6 characters'),
+                      content: const Text(
+                        'Password must be at least 6 characters',
+                      ),
                       backgroundColor: AppColors.error,
                       behavior: SnackBarBehavior.floating,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
                     ),
                   );
                   return;
@@ -542,7 +557,9 @@ class _AccountManagementDialogState extends State<AccountManagementDialog> {
                       content: const Text('Password updated successfully!'),
                       backgroundColor: AppColors.success,
                       behavior: SnackBarBehavior.floating,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
                     ),
                   );
                   // Refresh the account list
@@ -550,10 +567,14 @@ class _AccountManagementDialogState extends State<AccountManagementDialog> {
                 } else {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                      content: const Text('Failed to update password. Please try again.'),
+                      content: const Text(
+                        'Failed to update password. Please try again.',
+                      ),
                       backgroundColor: AppColors.error,
                       behavior: SnackBarBehavior.floating,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
                     ),
                   );
                 }
@@ -583,22 +604,19 @@ class _AccountManagementDialogState extends State<AccountManagementDialog> {
     );
   }
 
-
   @override
   Widget build(BuildContext context) {
     return Dialog(
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       elevation: 0,
       child: Container(
         width: widget.isMobile ? double.infinity : 400,
         height: 500,
         padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: AppColors.pureWhite,
-        borderRadius: BorderRadius.circular(12),
-      ),
+        decoration: BoxDecoration(
+          color: AppColors.pureWhite,
+          borderRadius: BorderRadius.circular(12),
+        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -634,45 +652,47 @@ class _AccountManagementDialogState extends State<AccountManagementDialog> {
               child: _isLoading
                   ? const Center(
                       child: CircularProgressIndicator(
-                        valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          AppColors.primary,
+                        ),
                       ),
                     )
                   : _accounts.isEmpty
-                      ? Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              const Icon(
-                                Icons.account_circle_outlined,
-                                size: 64,
-                                color: AppColors.textDisabled,
-                              ),
-                              const SizedBox(height: 16),
-                              const Text(
-                                'No saved accounts',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w600,
-                                  color: AppColors.textSecondary,
-                                ),
-                              ),
-                              const SizedBox(height: 8),
-                              const Text(
-                                'Your saved accounts will appear here',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  color: AppColors.textDisabled,
-                                ),
-                              ),
-                            ],
+                  ? Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(
+                            Icons.account_circle_outlined,
+                            size: 64,
+                            color: AppColors.textDisabled,
                           ),
-                        )
-                      : ListView.builder(
-                          itemCount: _accounts.length,
-                          itemBuilder: (context, index) {
-                            return _buildAccountItem(_accounts[index]);
-                          },
-                        ),
+                          const SizedBox(height: 16),
+                          const Text(
+                            'No saved accounts',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.textSecondary,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          const Text(
+                            'Your saved accounts will appear here',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: AppColors.textDisabled,
+                            ),
+                          ),
+                        ],
+                      ),
+                    )
+                  : ListView.builder(
+                      itemCount: _accounts.length,
+                      itemBuilder: (context, index) {
+                        return _buildAccountItem(_accounts[index]);
+                      },
+                    ),
             ),
 
             // Footer
@@ -715,7 +735,7 @@ class _AccountManagementDialogState extends State<AccountManagementDialog> {
                         ],
                       ),
                     );
-                    
+
                     if (confirmed == true) {
                       await _credentialManager.clearAllAccounts();
                       if (mounted) {

@@ -51,10 +51,10 @@ class _StudentManagementPageState extends State<StudentManagementPage>
   Future<void> _initializeCacheAndLoadData() async {
     // Initialize cache service
     await _cacheService.initialize();
-    
+
     // Try to load from cache first
     await _loadFromCache();
-    
+
     // Then load fresh data
     await _fetchStudentsFromAPI();
   }
@@ -62,10 +62,12 @@ class _StudentManagementPageState extends State<StudentManagementPage>
   Future<void> _loadFromCache() async {
     try {
       setState(() => _isLoadingFromCache = true);
-      
+
       Map<String, dynamic>? cachedData;
       if (_selectedCollege != 'All') {
-        cachedData = await _cacheService.getStudentsDataByCollege(_selectedCollege);
+        cachedData = await _cacheService.getStudentsDataByCollege(
+          _selectedCollege,
+        );
       } else {
         cachedData = await _cacheService.getStudentsData();
       }
@@ -172,7 +174,9 @@ class _StudentManagementPageState extends State<StudentManagementPage>
             error.toString().toLowerCase().contains('connection') ||
             error.toString().toLowerCase().contains('internet') ||
             error.toString().toLowerCase().contains('failed host lookup') ||
-            error.toString().toLowerCase().contains('no address associated with hostname'));
+            error.toString().toLowerCase().contains(
+              'no address associated with hostname',
+            ));
   }
 
   Future<void> _fetchStudentsFromAPI({bool forceRefresh = false}) async {
@@ -237,11 +241,13 @@ class _StudentManagementPageState extends State<StudentManagementPage>
         // Try to load from cache if available
         Map<String, dynamic>? cachedData;
         if (_selectedCollege != 'All') {
-          cachedData = await _cacheService.getStudentsDataByCollege(_selectedCollege);
+          cachedData = await _cacheService.getStudentsDataByCollege(
+            _selectedCollege,
+          );
         } else {
           cachedData = await _cacheService.getStudentsData();
         }
-        
+
         if (cachedData != null && cachedData['success'] == true) {
           final List<dynamic> studentsJson = cachedData['students'] ?? [];
           if (studentsJson.isNotEmpty) {
@@ -253,9 +259,12 @@ class _StudentManagementPageState extends State<StudentManagementPage>
                   name: '${json['firstName'] ?? ''} ${json['lastName'] ?? ''}'
                       .trim(),
                   email: json['email'] ?? '',
-                  college: json['institute'] ?? json['college'] ?? 'No Institute',
+                  college:
+                      json['institute'] ?? json['college'] ?? 'No Institute',
                   branch: json['branch'] ?? 'Not specified',
-                  year: json['yearOfStudy']?.toString() ?? json['year']?.toString(),
+                  year:
+                      json['yearOfStudy']?.toString() ??
+                      json['year']?.toString(),
                   studentId: json['studentId'] ?? json['id'],
                   status: json['status'] ?? 'Active',
                   cgpa: json['cgpa']?.toDouble(),
@@ -271,7 +280,7 @@ class _StudentManagementPageState extends State<StudentManagementPage>
             return;
           }
         }
-        
+
         // No cache available, show error
         setState(() {
           _errorMessage = 'No internet connection';
@@ -1351,11 +1360,29 @@ class _StudentManagementPageState extends State<StudentManagementPage>
 
     return Center(
       child: Container(
-        margin: EdgeInsets.symmetric(horizontal: isSmallScreen ? 20 : isTablet ? 40 : 60),
-        padding: EdgeInsets.all(isSmallScreen ? 24 : isTablet ? 28 : 32),
+        margin: EdgeInsets.symmetric(
+          horizontal: isSmallScreen
+              ? 20
+              : isTablet
+              ? 40
+              : 60,
+        ),
+        padding: EdgeInsets.all(
+          isSmallScreen
+              ? 24
+              : isTablet
+              ? 28
+              : 32,
+        ),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(isSmallScreen ? 16 : isTablet ? 18 : 20),
+          borderRadius: BorderRadius.circular(
+            isSmallScreen
+                ? 16
+                : isTablet
+                ? 18
+                : 20,
+          ),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withOpacity(0.03),
@@ -1369,24 +1396,48 @@ class _StudentManagementPageState extends State<StudentManagementPage>
           children: [
             Icon(
               Icons.cloud_off,
-              size: isSmallScreen ? 56 : isTablet ? 64 : 72,
+              size: isSmallScreen
+                  ? 56
+                  : isTablet
+                  ? 64
+                  : 72,
               color: Colors.grey[400],
             ),
-            SizedBox(height: isSmallScreen ? 16 : isTablet ? 18 : 20),
+            SizedBox(
+              height: isSmallScreen
+                  ? 16
+                  : isTablet
+                  ? 18
+                  : 20,
+            ),
             Text(
               'Failed to load students',
               style: TextStyle(
-                fontSize: isSmallScreen ? 18 : isTablet ? 19 : 20,
+                fontSize: isSmallScreen
+                    ? 18
+                    : isTablet
+                    ? 19
+                    : 20,
                 fontWeight: FontWeight.w600,
                 color: Colors.grey[700],
               ),
               textAlign: TextAlign.center,
             ),
-            SizedBox(height: isSmallScreen ? 8 : isTablet ? 9 : 10),
+            SizedBox(
+              height: isSmallScreen
+                  ? 8
+                  : isTablet
+                  ? 9
+                  : 10,
+            ),
             Text(
               _errorMessage ?? 'An unexpected error occurred',
               style: TextStyle(
-                fontSize: isSmallScreen ? 14 : isTablet ? 15 : 16,
+                fontSize: isSmallScreen
+                    ? 14
+                    : isTablet
+                    ? 15
+                    : 16,
                 color: Colors.grey[600],
                 height: 1.5,
               ),
@@ -1394,17 +1445,38 @@ class _StudentManagementPageState extends State<StudentManagementPage>
               maxLines: 3,
               overflow: TextOverflow.ellipsis,
             ),
-            SizedBox(height: isSmallScreen ? 24 : isTablet ? 28 : 32),
+            SizedBox(
+              height: isSmallScreen
+                  ? 24
+                  : isTablet
+                  ? 28
+                  : 32,
+            ),
             ElevatedButton.icon(
               onPressed: () => _fetchStudentsFromAPI(forceRefresh: true),
-              icon: Icon(Icons.refresh_rounded, size: isSmallScreen ? 16 : isTablet ? 17 : 18),
+              icon: Icon(
+                Icons.refresh_rounded,
+                size: isSmallScreen
+                    ? 16
+                    : isTablet
+                    ? 17
+                    : 18,
+              ),
               label: Text('Retry'),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AdminDashboardStyles.primary,
                 foregroundColor: Colors.white,
                 padding: EdgeInsets.symmetric(
-                  horizontal: isSmallScreen ? 20 : isTablet ? 24 : 28,
-                  vertical: isSmallScreen ? 12 : isTablet ? 13 : 14,
+                  horizontal: isSmallScreen
+                      ? 20
+                      : isTablet
+                      ? 24
+                      : 28,
+                  vertical: isSmallScreen
+                      ? 12
+                      : isTablet
+                      ? 13
+                      : 14,
                 ),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),

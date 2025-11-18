@@ -34,10 +34,10 @@ class _ManageExamsPageState extends State<ManageExamsPage> {
   Future<void> _initializeCacheAndLoadData() async {
     // Initialize cache service
     await _cacheService.initialize();
-    
+
     // Try to load from cache first
     await _loadFromCache();
-    
+
     // Then load fresh data
     await _loadExams();
   }
@@ -62,7 +62,9 @@ class _ManageExamsPageState extends State<ManageExamsPage> {
             error.toString().toLowerCase().contains('connection') ||
             error.toString().toLowerCase().contains('internet') ||
             error.toString().toLowerCase().contains('failed host lookup') ||
-            error.toString().toLowerCase().contains('no address associated with hostname'));
+            error.toString().toLowerCase().contains(
+              'no address associated with hostname',
+            ));
   }
 
   Future<void> _loadExams({bool forceRefresh = false}) async {
@@ -76,7 +78,10 @@ class _ManageExamsPageState extends State<ManageExamsPage> {
     try {
       // Some backends return { success, exams: [] }, others { success, data: [] }
       final headers = await _authService.getAuthHeaders();
-      final res = await http.get(Uri.parse(ApiEndpoints.adminExamsAll), headers: headers);
+      final res = await http.get(
+        Uri.parse(ApiEndpoints.adminExamsAll),
+        headers: headers,
+      );
       if (res.statusCode == 200) {
         final data = json.decode(res.body);
         if (data['success'] == true) {
@@ -85,7 +90,7 @@ class _ManageExamsPageState extends State<ManageExamsPage> {
             _exams = List<Map<String, dynamic>>.from(list);
             _isLoading = false;
           });
-          
+
           // Cache the data
           await _cacheService.setExamsData(_exams);
           // Reset toast flag on successful load (internet is back)
@@ -109,7 +114,7 @@ class _ManageExamsPageState extends State<ManageExamsPage> {
           });
           return;
         }
-        
+
         // No cache available
         setState(() => _isLoading = false);
       } else {
@@ -117,7 +122,10 @@ class _ManageExamsPageState extends State<ManageExamsPage> {
         if (mounted) {
           setState(() => _isLoading = false);
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Error loading exams: $e'), backgroundColor: Colors.red),
+            SnackBar(
+              content: Text('Error loading exams: $e'),
+              backgroundColor: Colors.red,
+            ),
           );
         }
       }
@@ -127,7 +135,10 @@ class _ManageExamsPageState extends State<ManageExamsPage> {
   Future<void> _loadExamsInBackground() async {
     try {
       final headers = await _authService.getAuthHeaders();
-      final res = await http.get(Uri.parse(ApiEndpoints.adminExamsAll), headers: headers);
+      final res = await http.get(
+        Uri.parse(ApiEndpoints.adminExamsAll),
+        headers: headers,
+      );
       if (res.statusCode == 200 && mounted) {
         final data = json.decode(res.body);
         if (data['success'] == true) {
@@ -135,7 +146,7 @@ class _ManageExamsPageState extends State<ManageExamsPage> {
           setState(() {
             _exams = List<Map<String, dynamic>>.from(list);
           });
-          
+
           // Cache the data
           await _cacheService.setExamsData(_exams);
           // Reset toast flag on successful load (internet is back)
@@ -153,12 +164,20 @@ class _ManageExamsPageState extends State<ManageExamsPage> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Delete Exam'),
-        content: const Text('Are you sure you want to delete this exam? This action cannot be undone.'),
+        content: const Text(
+          'Are you sure you want to delete this exam? This action cannot be undone.',
+        ),
         actions: [
-          TextButton(onPressed: () => Navigator.of(context).pop(false), child: const Text('Cancel')),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel'),
+          ),
           ElevatedButton(
             onPressed: () => Navigator.of(context).pop(true),
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+            ),
             child: const Text('Delete'),
           ),
         ],
@@ -170,14 +189,20 @@ class _ManageExamsPageState extends State<ManageExamsPage> {
       await _examRepository.deleteExam(examId);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Exam deleted'), backgroundColor: Colors.green),
+          const SnackBar(
+            content: Text('Exam deleted'),
+            backgroundColor: Colors.green,
+          ),
         );
       }
       _loadExams(forceRefresh: true);
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to delete: $e'), backgroundColor: Colors.red),
+          SnackBar(
+            content: Text('Failed to delete: $e'),
+            backgroundColor: Colors.red,
+          ),
         );
       }
     }
@@ -189,21 +214,47 @@ class _ManageExamsPageState extends State<ManageExamsPage> {
     final isMobile = screenWidth < 600;
     final isTablet = screenWidth >= 600 && screenWidth < 1024;
     final isDesktop = screenWidth >= 1024;
-    
+
     return SingleChildScrollView(
-      padding: EdgeInsets.all(isMobile ? 16 : isTablet ? 18 : 20),
+      padding: EdgeInsets.all(
+        isMobile
+            ? 16
+            : isTablet
+            ? 18
+            : 20,
+      ),
       child: Column(
         children: [
           _buildHeader(isMobile, isTablet, isDesktop),
-          SizedBox(height: isMobile ? 12 : isTablet ? 14 : 16),
+          SizedBox(
+            height: isMobile
+                ? 12
+                : isTablet
+                ? 14
+                : 16,
+          ),
           _buildTableHeader(isMobile, isTablet, isDesktop),
-          SizedBox(height: isMobile ? 6 : isTablet ? 7 : 8),
+          SizedBox(
+            height: isMobile
+                ? 6
+                : isTablet
+                ? 7
+                : 8,
+          ),
           if (_isLoading)
             Padding(
-              padding: EdgeInsets.all(isMobile ? 32 : isTablet ? 36 : 40),
+              padding: EdgeInsets.all(
+                isMobile
+                    ? 32
+                    : isTablet
+                    ? 36
+                    : 40,
+              ),
               child: Center(
                 child: CircularProgressIndicator(
-                  valueColor: AlwaysStoppedAnimation<Color>(AdminDashboardStyles.primary),
+                  valueColor: AlwaysStoppedAnimation<Color>(
+                    AdminDashboardStyles.primary,
+                  ),
                 ),
               ),
             )
@@ -214,7 +265,13 @@ class _ManageExamsPageState extends State<ManageExamsPage> {
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
               itemCount: _exams.length,
-              separatorBuilder: (_, __) => SizedBox(height: isMobile ? 8 : isTablet ? 10 : 12),
+              separatorBuilder: (_, __) => SizedBox(
+                height: isMobile
+                    ? 8
+                    : isTablet
+                    ? 10
+                    : 12,
+              ),
               itemBuilder: (context, index) {
                 final exam = _exams[index];
                 return _buildExamRow(exam, isMobile, isTablet, isDesktop);
@@ -229,18 +286,40 @@ class _ManageExamsPageState extends State<ManageExamsPage> {
     return Row(
       children: [
         Container(
-          padding: EdgeInsets.all(isMobile ? 10 : isTablet ? 11 : 12),
+          padding: EdgeInsets.all(
+            isMobile
+                ? 10
+                : isTablet
+                ? 11
+                : 12,
+          ),
           decoration: BoxDecoration(
             color: AdminDashboardStyles.primary.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(isMobile ? 10 : isTablet ? 11 : 12),
+            borderRadius: BorderRadius.circular(
+              isMobile
+                  ? 10
+                  : isTablet
+                  ? 11
+                  : 12,
+            ),
           ),
           child: Icon(
             Icons.description_rounded,
             color: AdminDashboardStyles.primary,
-            size: isMobile ? 20 : isTablet ? 22 : 24,
+            size: isMobile
+                ? 20
+                : isTablet
+                ? 22
+                : 24,
           ),
         ),
-        SizedBox(width: isMobile ? 10 : isTablet ? 11 : 12),
+        SizedBox(
+          width: isMobile
+              ? 10
+              : isTablet
+              ? 11
+              : 12,
+        ),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -248,7 +327,11 @@ class _ManageExamsPageState extends State<ManageExamsPage> {
               Text(
                 'Manage Assessments',
                 style: AdminDashboardStyles.welcomeHeader.copyWith(
-                  fontSize: isMobile ? 18 : isTablet ? 20 : 22,
+                  fontSize: isMobile
+                      ? 18
+                      : isTablet
+                      ? 20
+                      : 22,
                 ),
               ),
             ],
@@ -261,17 +344,35 @@ class _ManageExamsPageState extends State<ManageExamsPage> {
   Widget _buildTableHeader(bool isMobile, bool isTablet, bool isDesktop) {
     final style = TextStyle(
       fontWeight: FontWeight.w600,
-      fontSize: isMobile ? 10 : isTablet ? 11 : 12,
+      fontSize: isMobile
+          ? 10
+          : isTablet
+          ? 11
+          : 12,
       color: AdminDashboardStyles.textLight,
     );
     return Container(
       padding: EdgeInsets.symmetric(
-        horizontal: isMobile ? 12 : isTablet ? 14 : 16,
-        vertical: isMobile ? 12 : isTablet ? 13 : 14,
+        horizontal: isMobile
+            ? 12
+            : isTablet
+            ? 14
+            : 16,
+        vertical: isMobile
+            ? 12
+            : isTablet
+            ? 13
+            : 14,
       ),
       decoration: BoxDecoration(
         color: Colors.grey[100],
-        borderRadius: BorderRadius.circular(isMobile ? 8 : isTablet ? 9 : 10),
+        borderRadius: BorderRadius.circular(
+          isMobile
+              ? 8
+              : isTablet
+              ? 9
+              : 10,
+        ),
         border: Border.all(color: AdminDashboardStyles.borderLight),
       ),
       child: Row(
@@ -290,26 +391,54 @@ class _ManageExamsPageState extends State<ManageExamsPage> {
   Widget _buildEmptyState(bool isMobile, bool isTablet, bool isDesktop) {
     return Container(
       width: double.infinity,
-      padding: EdgeInsets.all(isMobile ? 24 : isTablet ? 28 : 32),
+      padding: EdgeInsets.all(
+        isMobile
+            ? 24
+            : isTablet
+            ? 28
+            : 32,
+      ),
       decoration: BoxDecoration(
         color: AdminDashboardStyles.primary.withOpacity(0.05),
-        borderRadius: BorderRadius.circular(isMobile ? 10 : isTablet ? 11 : 12),
-        border: Border.all(color: AdminDashboardStyles.primary.withOpacity(0.2)),
+        borderRadius: BorderRadius.circular(
+          isMobile
+              ? 10
+              : isTablet
+              ? 11
+              : 12,
+        ),
+        border: Border.all(
+          color: AdminDashboardStyles.primary.withOpacity(0.2),
+        ),
       ),
       child: Column(
         children: [
           Icon(
             Icons.assignment_rounded,
-            size: isMobile ? 40 : isTablet ? 44 : 48,
+            size: isMobile
+                ? 40
+                : isTablet
+                ? 44
+                : 48,
             color: AdminDashboardStyles.primary.withOpacity(0.6),
           ),
-          SizedBox(height: isMobile ? 6 : isTablet ? 7 : 8),
+          SizedBox(
+            height: isMobile
+                ? 6
+                : isTablet
+                ? 7
+                : 8,
+          ),
           Text(
             'No exams found',
             style: TextStyle(
               color: AdminDashboardStyles.textDark,
               fontWeight: FontWeight.w600,
-              fontSize: isMobile ? 16 : isTablet ? 17 : 18,
+              fontSize: isMobile
+                  ? 16
+                  : isTablet
+                  ? 17
+                  : 18,
             ),
           ),
         ],
@@ -317,10 +446,16 @@ class _ManageExamsPageState extends State<ManageExamsPage> {
     );
   }
 
-  Widget _buildExamRow(Map<String, dynamic> exam, bool isMobile, bool isTablet, bool isDesktop) {
+  Widget _buildExamRow(
+    Map<String, dynamic> exam,
+    bool isMobile,
+    bool isTablet,
+    bool isDesktop,
+  ) {
     // Extract title
-    final String title = (exam['title'] ?? exam['name'] ?? 'Untitled').toString();
-    
+    final String title = (exam['title'] ?? exam['name'] ?? 'Untitled')
+        .toString();
+
     // Extract course name (can be null for TEGA exams)
     final dynamic course = exam['courseId'] ?? exam['course'];
     String courseName = '';
@@ -335,18 +470,19 @@ class _ManageExamsPageState extends State<ManageExamsPage> {
     if (courseName.isEmpty && exam['isTegaExam'] == true) {
       courseName = 'TEGA Exam';
     }
-    
+
     // Extract slots
-    final List<dynamic> slots = (exam['slots'] ?? exam['timeSlots'] ?? []) as List<dynamic>;
+    final List<dynamic> slots =
+        (exam['slots'] ?? exam['timeSlots'] ?? []) as List<dynamic>;
     final int slotsCount = slots.length;
-    
+
     // Extract exam date
     DateTime? examDate;
     if (exam['examDate'] != null) {
       examDate = _tryParseDateTime(exam['examDate']);
     }
     final String dateStr = examDate != null ? _formatDate(examDate) : '-';
-    
+
     // Extract first slot time range and seats
     String slotRange = '';
     String seatsInfo = '';
@@ -357,32 +493,48 @@ class _ManageExamsPageState extends State<ManageExamsPage> {
       if (startTime.isNotEmpty && endTime.isNotEmpty) {
         slotRange = '$startTime - $endTime';
       }
-      
+
       // Calculate seats left for first slot
       final maxParticipants = (firstSlot['maxParticipants'] ?? 30) as int;
-      final registeredStudents = (firstSlot['registeredStudents'] ?? []) as List<dynamic>;
+      final registeredStudents =
+          (firstSlot['registeredStudents'] ?? []) as List<dynamic>;
       final seatsLeft = maxParticipants - registeredStudents.length;
       seatsInfo = '($seatsLeft seats left)';
     }
-    
+
     // Extract questions count from questionPaperId
     int questions = 0;
     final questionPaper = exam['questionPaperId'] ?? exam['questionPaper'];
     if (questionPaper is Map) {
       questions = (questionPaper['totalQuestions'] ?? 0) as int;
     }
-    
+
     // Extract duration
-    final int duration = (exam['duration'] ?? exam['durationMinutes'] ?? 0) as int;
+    final int duration =
+        (exam['duration'] ?? exam['durationMinutes'] ?? 0) as int;
 
     return Container(
       padding: EdgeInsets.symmetric(
-        horizontal: isMobile ? 16 : isTablet ? 18 : 20,
-        vertical: isMobile ? 16 : isTablet ? 18 : 20,
+        horizontal: isMobile
+            ? 16
+            : isTablet
+            ? 18
+            : 20,
+        vertical: isMobile
+            ? 16
+            : isTablet
+            ? 18
+            : 20,
       ),
       decoration: BoxDecoration(
         color: AdminDashboardStyles.cardBackground,
-        borderRadius: BorderRadius.circular(isMobile ? 14 : isTablet ? 16 : 18),
+        borderRadius: BorderRadius.circular(
+          isMobile
+              ? 14
+              : isTablet
+              ? 16
+              : 18,
+        ),
         border: Border.all(color: AdminDashboardStyles.borderLight),
         boxShadow: [
           BoxShadow(
@@ -392,8 +544,20 @@ class _ManageExamsPageState extends State<ManageExamsPage> {
           ),
         ],
       ),
-      margin: EdgeInsets.only(bottom: isMobile ? 12 : isTablet ? 14 : 16),
-      constraints: BoxConstraints(minHeight: isMobile ? 100 : isTablet ? 110 : 120),
+      margin: EdgeInsets.only(
+        bottom: isMobile
+            ? 12
+            : isTablet
+            ? 14
+            : 16,
+      ),
+      constraints: BoxConstraints(
+        minHeight: isMobile
+            ? 100
+            : isTablet
+            ? 110
+            : 120,
+      ),
       child: isMobile
           // Stacked layout on small screens to avoid any overflow
           ? Column(
@@ -403,20 +567,46 @@ class _ManageExamsPageState extends State<ManageExamsPage> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Container(
-                      width: isMobile ? 40 : isTablet ? 42 : 44,
-                      height: isMobile ? 40 : isTablet ? 42 : 44,
+                      width: isMobile
+                          ? 40
+                          : isTablet
+                          ? 42
+                          : 44,
+                      height: isMobile
+                          ? 40
+                          : isTablet
+                          ? 42
+                          : 44,
                       decoration: BoxDecoration(
                         color: AdminDashboardStyles.primary.withOpacity(0.12),
-                        borderRadius: BorderRadius.circular(isMobile ? 10 : isTablet ? 11 : 12),
-                        border: Border.all(color: AdminDashboardStyles.primary.withOpacity(0.2)),
+                        borderRadius: BorderRadius.circular(
+                          isMobile
+                              ? 10
+                              : isTablet
+                              ? 11
+                              : 12,
+                        ),
+                        border: Border.all(
+                          color: AdminDashboardStyles.primary.withOpacity(0.2),
+                        ),
                       ),
                       child: Icon(
                         Icons.assignment_rounded,
-                        size: isMobile ? 20 : isTablet ? 21 : 22,
+                        size: isMobile
+                            ? 20
+                            : isTablet
+                            ? 21
+                            : 22,
                         color: AdminDashboardStyles.primary,
                       ),
                     ),
-                    SizedBox(width: isMobile ? 12 : isTablet ? 13 : 14),
+                    SizedBox(
+                      width: isMobile
+                          ? 12
+                          : isTablet
+                          ? 13
+                          : 14,
+                    ),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -424,19 +614,51 @@ class _ManageExamsPageState extends State<ManageExamsPage> {
                           Text(
                             title,
                             style: TextStyle(
-                              fontSize: isMobile ? 14 : isTablet ? 15 : 16,
+                              fontSize: isMobile
+                                  ? 14
+                                  : isTablet
+                                  ? 15
+                                  : 16,
                               fontWeight: FontWeight.w700,
                               color: AdminDashboardStyles.textDark,
                             ),
                             overflow: TextOverflow.ellipsis,
                           ),
-                          SizedBox(height: isMobile ? 6 : isTablet ? 7 : 8),
+                          SizedBox(
+                            height: isMobile
+                                ? 6
+                                : isTablet
+                                ? 7
+                                : 8,
+                          ),
                           Wrap(
-                            spacing: isMobile ? 6 : isTablet ? 7 : 8,
-                            runSpacing: isMobile ? 4 : isTablet ? 5 : 6,
+                            spacing: isMobile
+                                ? 6
+                                : isTablet
+                                ? 7
+                                : 8,
+                            runSpacing: isMobile
+                                ? 4
+                                : isTablet
+                                ? 5
+                                : 6,
                             children: [
-                              if (exam['isTegaExam'] == true) _badge('TEGA', AdminDashboardStyles.accentBlue, isMobile, isTablet, isDesktop),
-                              if (courseName.isNotEmpty) _badge(courseName, AdminDashboardStyles.primary, isMobile, isTablet, isDesktop),
+                              if (exam['isTegaExam'] == true)
+                                _badge(
+                                  'TEGA',
+                                  AdminDashboardStyles.accentBlue,
+                                  isMobile,
+                                  isTablet,
+                                  isDesktop,
+                                ),
+                              if (courseName.isNotEmpty)
+                                _badge(
+                                  courseName,
+                                  AdminDashboardStyles.primary,
+                                  isMobile,
+                                  isTablet,
+                                  isDesktop,
+                                ),
                             ],
                           ),
                         ],
@@ -444,37 +666,111 @@ class _ManageExamsPageState extends State<ManageExamsPage> {
                     ),
                   ],
                 ),
-                SizedBox(height: isMobile ? 10 : isTablet ? 11 : 12),
+                SizedBox(
+                  height: isMobile
+                      ? 10
+                      : isTablet
+                      ? 11
+                      : 12,
+                ),
                 Row(
                   children: [
                     Icon(
                       Icons.event_rounded,
-                      size: isMobile ? 16 : isTablet ? 17 : 18,
+                      size: isMobile
+                          ? 16
+                          : isTablet
+                          ? 17
+                          : 18,
                       color: AdminDashboardStyles.textLight,
                     ),
-                    SizedBox(width: isMobile ? 6 : isTablet ? 7 : 8),
+                    SizedBox(
+                      width: isMobile
+                          ? 6
+                          : isTablet
+                          ? 7
+                          : 8,
+                    ),
                     Text(
                       dateStr,
                       style: TextStyle(
                         fontWeight: FontWeight.w700,
-                        fontSize: isMobile ? 13 : isTablet ? 13.5 : 14,
+                        fontSize: isMobile
+                            ? 13
+                            : isTablet
+                            ? 13.5
+                            : 14,
                       ),
                     ),
                   ],
                 ),
-                SizedBox(height: isMobile ? 8 : isTablet ? 9 : 10),
+                SizedBox(
+                  height: isMobile
+                      ? 8
+                      : isTablet
+                      ? 9
+                      : 10,
+                ),
                 Wrap(
-                  spacing: isMobile ? 6 : isTablet ? 7 : 8,
-                  runSpacing: isMobile ? 6 : isTablet ? 7 : 8,
+                  spacing: isMobile
+                      ? 6
+                      : isTablet
+                      ? 7
+                      : 8,
+                  runSpacing: isMobile
+                      ? 6
+                      : isTablet
+                      ? 7
+                      : 8,
                   children: [
-                    _chip(icon: Icons.schedule_rounded, label: '${slotsCount} slots', isMobile: isMobile, isTablet: isTablet, isDesktop: isDesktop),
-                    if (slotRange.isNotEmpty) _chip(icon: Icons.access_time_rounded, label: slotRange, isMobile: isMobile, isTablet: isTablet, isDesktop: isDesktop),
-                    if (seatsInfo.isNotEmpty) _chip(icon: Icons.event_seat_rounded, label: seatsInfo, isMobile: isMobile, isTablet: isTablet, isDesktop: isDesktop),
-                    if (questions > 0) _chip(icon: Icons.quiz_rounded, label: '$questions questions', isMobile: isMobile, isTablet: isTablet, isDesktop: isDesktop),
-                    if (duration > 0) _chip(icon: Icons.timer_rounded, label: '$duration min', isMobile: isMobile, isTablet: isTablet, isDesktop: isDesktop),
+                    _chip(
+                      icon: Icons.schedule_rounded,
+                      label: '${slotsCount} slots',
+                      isMobile: isMobile,
+                      isTablet: isTablet,
+                      isDesktop: isDesktop,
+                    ),
+                    if (slotRange.isNotEmpty)
+                      _chip(
+                        icon: Icons.access_time_rounded,
+                        label: slotRange,
+                        isMobile: isMobile,
+                        isTablet: isTablet,
+                        isDesktop: isDesktop,
+                      ),
+                    if (seatsInfo.isNotEmpty)
+                      _chip(
+                        icon: Icons.event_seat_rounded,
+                        label: seatsInfo,
+                        isMobile: isMobile,
+                        isTablet: isTablet,
+                        isDesktop: isDesktop,
+                      ),
+                    if (questions > 0)
+                      _chip(
+                        icon: Icons.quiz_rounded,
+                        label: '$questions questions',
+                        isMobile: isMobile,
+                        isTablet: isTablet,
+                        isDesktop: isDesktop,
+                      ),
+                    if (duration > 0)
+                      _chip(
+                        icon: Icons.timer_rounded,
+                        label: '$duration min',
+                        isMobile: isMobile,
+                        isTablet: isTablet,
+                        isDesktop: isDesktop,
+                      ),
                   ],
                 ),
-                SizedBox(height: isMobile ? 10 : isTablet ? 11 : 12),
+                SizedBox(
+                  height: isMobile
+                      ? 10
+                      : isTablet
+                      ? 11
+                      : 12,
+                ),
                 Align(
                   alignment: Alignment.centerRight,
                   child: Row(
@@ -490,18 +786,27 @@ class _ManageExamsPageState extends State<ManageExamsPage> {
                             ),
                           );
                           if (result == true) {
-                            _loadExams(forceRefresh: true); // Reload exams after successful update
+                            _loadExams(
+                              forceRefresh: true,
+                            ); // Reload exams after successful update
                           }
                         },
                         isMobile: isMobile,
                         isTablet: isTablet,
                         isDesktop: isDesktop,
                       ),
-                      SizedBox(width: isMobile ? 6 : isTablet ? 7 : 8),
+                      SizedBox(
+                        width: isMobile
+                            ? 6
+                            : isTablet
+                            ? 7
+                            : 8,
+                      ),
                       _iconButton(
                         icon: Icons.delete_rounded,
                         color: AdminDashboardStyles.statusError,
-                        onTap: () => _deleteExam((exam['_id'] ?? exam['id']).toString()),
+                        onTap: () =>
+                            _deleteExam((exam['_id'] ?? exam['id']).toString()),
                         isMobile: isMobile,
                         isTablet: isTablet,
                         isDesktop: isDesktop,
@@ -519,13 +824,19 @@ class _ManageExamsPageState extends State<ManageExamsPage> {
                 _cell(
                   Row(
                     children: [
-                        Container(
+                      Container(
                         width: isTablet ? 42 : 44,
                         height: isTablet ? 42 : 44,
                         decoration: BoxDecoration(
                           color: AdminDashboardStyles.primary.withOpacity(0.12),
-                          borderRadius: BorderRadius.circular(isTablet ? 11 : 12),
-                          border: Border.all(color: AdminDashboardStyles.primary.withOpacity(0.2)),
+                          borderRadius: BorderRadius.circular(
+                            isTablet ? 11 : 12,
+                          ),
+                          border: Border.all(
+                            color: AdminDashboardStyles.primary.withOpacity(
+                              0.2,
+                            ),
+                          ),
                         ),
                         child: Icon(
                           Icons.assignment_rounded,
@@ -553,9 +864,21 @@ class _ManageExamsPageState extends State<ManageExamsPage> {
                               runSpacing: isTablet ? 5 : 6,
                               children: [
                                 if (exam['isTegaExam'] == true)
-                                  _badge('TEGA', AdminDashboardStyles.accentBlue, isMobile, isTablet, isDesktop),
+                                  _badge(
+                                    'TEGA',
+                                    AdminDashboardStyles.accentBlue,
+                                    isMobile,
+                                    isTablet,
+                                    isDesktop,
+                                  ),
                                 if (courseName.isNotEmpty)
-                                  _badge(courseName, AdminDashboardStyles.primary, isMobile, isTablet, isDesktop),
+                                  _badge(
+                                    courseName,
+                                    AdminDashboardStyles.primary,
+                                    isMobile,
+                                    isTablet,
+                                    isDesktop,
+                                  ),
                               ],
                             ),
                           ],
@@ -567,10 +890,7 @@ class _ManageExamsPageState extends State<ManageExamsPage> {
                 ),
 
                 // Course (separate column on wide screens)
-                _cell(
-                  courseName.isEmpty ? '-' : courseName,
-                  flex: 2,
-                ),
+                _cell(courseName.isEmpty ? '-' : courseName, flex: 2),
 
                 // Date & Slots
                 _cell(
@@ -599,11 +919,45 @@ class _ManageExamsPageState extends State<ManageExamsPage> {
                         spacing: isTablet ? 7 : 8,
                         runSpacing: isTablet ? 7 : 8,
                         children: [
-                          _chip(icon: Icons.schedule_rounded, label: '${slotsCount} slots', isMobile: isMobile, isTablet: isTablet, isDesktop: isDesktop),
-                          if (slotRange.isNotEmpty) _chip(icon: Icons.access_time_rounded, label: slotRange, isMobile: isMobile, isTablet: isTablet, isDesktop: isDesktop),
-                          if (seatsInfo.isNotEmpty) _chip(icon: Icons.event_seat_rounded, label: seatsInfo, isMobile: isMobile, isTablet: isTablet, isDesktop: isDesktop),
-                          if (questions > 0) _chip(icon: Icons.quiz_rounded, label: '$questions questions', isMobile: isMobile, isTablet: isTablet, isDesktop: isDesktop),
-                          if (duration > 0) _chip(icon: Icons.timer_rounded, label: '$duration min', isMobile: isMobile, isTablet: isTablet, isDesktop: isDesktop),
+                          _chip(
+                            icon: Icons.schedule_rounded,
+                            label: '${slotsCount} slots',
+                            isMobile: isMobile,
+                            isTablet: isTablet,
+                            isDesktop: isDesktop,
+                          ),
+                          if (slotRange.isNotEmpty)
+                            _chip(
+                              icon: Icons.access_time_rounded,
+                              label: slotRange,
+                              isMobile: isMobile,
+                              isTablet: isTablet,
+                              isDesktop: isDesktop,
+                            ),
+                          if (seatsInfo.isNotEmpty)
+                            _chip(
+                              icon: Icons.event_seat_rounded,
+                              label: seatsInfo,
+                              isMobile: isMobile,
+                              isTablet: isTablet,
+                              isDesktop: isDesktop,
+                            ),
+                          if (questions > 0)
+                            _chip(
+                              icon: Icons.quiz_rounded,
+                              label: '$questions questions',
+                              isMobile: isMobile,
+                              isTablet: isTablet,
+                              isDesktop: isDesktop,
+                            ),
+                          if (duration > 0)
+                            _chip(
+                              icon: Icons.timer_rounded,
+                              label: '$duration min',
+                              isMobile: isMobile,
+                              isTablet: isTablet,
+                              isDesktop: isDesktop,
+                            ),
                         ],
                       ),
                     ],
@@ -612,16 +966,10 @@ class _ManageExamsPageState extends State<ManageExamsPage> {
                 ),
 
                 // Questions
-                _cell(
-                  questions > 0 ? '$questions questions' : '-',
-                  flex: 2,
-                ),
+                _cell(questions > 0 ? '$questions questions' : '-', flex: 2),
 
                 // Duration
-                _cell(
-                  '${duration > 0 ? duration : '-'} minutes',
-                  flex: 2,
-                ),
+                _cell('${duration > 0 ? duration : '-'} minutes', flex: 2),
 
                 // Actions
                 _cell(
@@ -637,7 +985,9 @@ class _ManageExamsPageState extends State<ManageExamsPage> {
                           color: AdminDashboardStyles.accentBlue,
                           onTap: () {
                             ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Edit exam not implemented yet')),
+                              const SnackBar(
+                                content: Text('Edit exam not implemented yet'),
+                              ),
                             );
                           },
                           isMobile: isMobile,
@@ -648,7 +998,9 @@ class _ManageExamsPageState extends State<ManageExamsPage> {
                         _iconButton(
                           icon: Icons.delete_rounded,
                           color: AdminDashboardStyles.statusError,
-                          onTap: () => _deleteExam((exam['_id'] ?? exam['id']).toString()),
+                          onTap: () => _deleteExam(
+                            (exam['_id'] ?? exam['id']).toString(),
+                          ),
                           isMobile: isMobile,
                           isTablet: isTablet,
                           isDesktop: isDesktop,
@@ -691,12 +1043,13 @@ class _ManageExamsPageState extends State<ManageExamsPage> {
     if (child is String) {
       content = Text(
         child,
-        style: (style ??
-                TextStyle(
-                  color: AdminDashboardStyles.textDark,
-                  fontWeight: strong ? FontWeight.w600 : FontWeight.w500,
-                  fontSize: 13,
-                )),
+        style:
+            (style ??
+            TextStyle(
+              color: AdminDashboardStyles.textDark,
+              fontWeight: strong ? FontWeight.w600 : FontWeight.w500,
+              fontSize: 13,
+            )),
         overflow: TextOverflow.ellipsis,
         maxLines: 2,
       );
@@ -724,19 +1077,41 @@ class _ManageExamsPageState extends State<ManageExamsPage> {
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(isMobile ? 6 : isTablet ? 7 : 8),
+        borderRadius: BorderRadius.circular(
+          isMobile
+              ? 6
+              : isTablet
+              ? 7
+              : 8,
+        ),
         splashColor: color.withOpacity(0.2),
         highlightColor: color.withOpacity(0.1),
         child: Container(
-          padding: EdgeInsets.all(isMobile ? 6 : isTablet ? 7 : 8),
+          padding: EdgeInsets.all(
+            isMobile
+                ? 6
+                : isTablet
+                ? 7
+                : 8,
+          ),
           decoration: BoxDecoration(
             color: color.withOpacity(0.08),
-            borderRadius: BorderRadius.circular(isMobile ? 6 : isTablet ? 7 : 8),
+            borderRadius: BorderRadius.circular(
+              isMobile
+                  ? 6
+                  : isTablet
+                  ? 7
+                  : 8,
+            ),
             border: Border.all(color: color.withOpacity(0.25)),
           ),
           child: Icon(
             icon,
-            size: isMobile ? 16 : isTablet ? 17 : 18,
+            size: isMobile
+                ? 16
+                : isTablet
+                ? 17
+                : 18,
             color: color,
           ),
         ),
@@ -745,15 +1120,35 @@ class _ManageExamsPageState extends State<ManageExamsPage> {
   }
 
   // UI helpers
-  Widget _badge(String text, Color color, bool isMobile, bool isTablet, bool isDesktop) {
+  Widget _badge(
+    String text,
+    Color color,
+    bool isMobile,
+    bool isTablet,
+    bool isDesktop,
+  ) {
     return Container(
       padding: EdgeInsets.symmetric(
-        horizontal: isMobile ? 6 : isTablet ? 7 : 8,
-        vertical: isMobile ? 3 : isTablet ? 3.5 : 4,
+        horizontal: isMobile
+            ? 6
+            : isTablet
+            ? 7
+            : 8,
+        vertical: isMobile
+            ? 3
+            : isTablet
+            ? 3.5
+            : 4,
       ),
       decoration: BoxDecoration(
         color: color.withOpacity(0.08),
-        borderRadius: BorderRadius.circular(isMobile ? 4 : isTablet ? 5 : 6),
+        borderRadius: BorderRadius.circular(
+          isMobile
+              ? 4
+              : isTablet
+              ? 5
+              : 6,
+        ),
         border: Border.all(color: color.withOpacity(0.25)),
       ),
       child: Text(
@@ -761,7 +1156,11 @@ class _ManageExamsPageState extends State<ManageExamsPage> {
         style: TextStyle(
           color: color,
           fontWeight: FontWeight.w700,
-          fontSize: isMobile ? 9 : isTablet ? 9.5 : 10,
+          fontSize: isMobile
+              ? 9
+              : isTablet
+              ? 9.5
+              : 10,
           letterSpacing: 0.2,
         ),
         overflow: TextOverflow.ellipsis,
@@ -778,12 +1177,26 @@ class _ManageExamsPageState extends State<ManageExamsPage> {
   }) {
     return Container(
       padding: EdgeInsets.symmetric(
-        horizontal: isMobile ? 8 : isTablet ? 9 : 10,
-        vertical: isMobile ? 4 : isTablet ? 5 : 6,
+        horizontal: isMobile
+            ? 8
+            : isTablet
+            ? 9
+            : 10,
+        vertical: isMobile
+            ? 4
+            : isTablet
+            ? 5
+            : 6,
       ),
       decoration: BoxDecoration(
         color: Colors.grey[100],
-        borderRadius: BorderRadius.circular(isMobile ? 16 : isTablet ? 18 : 20),
+        borderRadius: BorderRadius.circular(
+          isMobile
+              ? 16
+              : isTablet
+              ? 18
+              : 20,
+        ),
         border: Border.all(color: AdminDashboardStyles.borderLight),
       ),
       child: Row(
@@ -791,14 +1204,28 @@ class _ManageExamsPageState extends State<ManageExamsPage> {
         children: [
           Icon(
             icon,
-            size: isMobile ? 12 : isTablet ? 13 : 14,
+            size: isMobile
+                ? 12
+                : isTablet
+                ? 13
+                : 14,
             color: AdminDashboardStyles.textLight,
           ),
-          SizedBox(width: isMobile ? 4 : isTablet ? 5 : 6),
+          SizedBox(
+            width: isMobile
+                ? 4
+                : isTablet
+                ? 5
+                : 6,
+          ),
           Text(
             label,
             style: AdminDashboardStyles.statTitle.copyWith(
-              fontSize: isMobile ? 11 : isTablet ? 11.5 : 12,
+              fontSize: isMobile
+                  ? 11
+                  : isTablet
+                  ? 11.5
+                  : 12,
             ),
           ),
         ],
@@ -806,5 +1233,3 @@ class _ManageExamsPageState extends State<ManageExamsPage> {
     );
   }
 }
-
-

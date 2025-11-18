@@ -56,11 +56,11 @@ class _StudentStatsGridState extends State<StudentStatsGrid>
       final headers = auth.getAuthHeaders();
       final api = StudentDashboardService();
       final dashData = await api.getDashboard(headers);
-      
+
       // Fetch enrolled courses count
       final enrolledCourses = await api.getEnrolledCourses(headers);
       final enrolledCount = enrolledCourses.length;
-      
+
       if (!mounted) return;
 
       final userProgress = dashData['userProgress'] ?? {};
@@ -413,7 +413,15 @@ class _StudentStatsGridState extends State<StudentStatsGrid>
                                     ),
                                   ),
                                 ),
-                                SizedBox(height: isLargeDesktop ? 12 : isDesktop ? 10 : isTablet ? 8 : 6),
+                                SizedBox(
+                                  height: isLargeDesktop
+                                      ? 12
+                                      : isDesktop
+                                      ? 10
+                                      : isTablet
+                                      ? 8
+                                      : 6,
+                                ),
                                 Center(
                                   child: FittedBox(
                                     fit: BoxFit.scaleDown,
@@ -586,7 +594,7 @@ class _StudentStatsGridState extends State<StudentStatsGrid>
             : isSmallScreen
             ? 8.0
             : 12.0;
-        
+
         final horizontalPadding = isLargeDesktop
             ? 0.0
             : isDesktop
@@ -596,12 +604,13 @@ class _StudentStatsGridState extends State<StudentStatsGrid>
             : isSmallScreen
             ? 8.0
             : 10.0;
-            
+
         final availableWidth = constraints.maxWidth - (horizontalPadding * 2);
         final cardWidth = (availableWidth - spacing) / 2;
-        
+
         // Responsive card height with better aspect ratio
-        final cardHeight = cardWidth *
+        final cardHeight =
+            cardWidth *
             (isLargeDesktop
                 ? 0.8
                 : isDesktop

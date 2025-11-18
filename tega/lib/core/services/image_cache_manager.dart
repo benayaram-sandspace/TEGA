@@ -21,4 +21,3 @@ class CustomImageCacheManager {
     return _instance!;
   }
 }
-

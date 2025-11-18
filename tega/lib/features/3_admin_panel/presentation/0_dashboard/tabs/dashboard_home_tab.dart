@@ -43,10 +43,10 @@ class _DashboardHomeTabState extends State<DashboardHomeTab> {
   Future<void> _initializeCacheAndLoadData() async {
     // Initialize cache service
     await _cacheService.initialize();
-    
+
     // Try to load from cache first
     await _loadFromCache();
-    
+
     // Then load fresh data
     await _loadDashboardData();
   }
@@ -65,8 +65,10 @@ class _DashboardHomeTabState extends State<DashboardHomeTab> {
         final recentStudents = cachedData['recentStudents'] as List<dynamic>?;
 
         double totalRevenue = 0.0;
-        if (cachedPaymentStats != null && cachedPaymentStats['success'] == true) {
-          final paymentStatsData = cachedPaymentStats['data'] as Map<String, dynamic>?;
+        if (cachedPaymentStats != null &&
+            cachedPaymentStats['success'] == true) {
+          final paymentStatsData =
+              cachedPaymentStats['data'] as Map<String, dynamic>?;
           totalRevenue = (paymentStatsData?['totalRevenue'] ?? 0).toDouble();
         }
 
@@ -98,7 +100,9 @@ class _DashboardHomeTabState extends State<DashboardHomeTab> {
             error.toString().toLowerCase().contains('connection') ||
             error.toString().toLowerCase().contains('internet') ||
             error.toString().toLowerCase().contains('failed host lookup') ||
-            error.toString().toLowerCase().contains('no address associated with hostname'));
+            error.toString().toLowerCase().contains(
+              'no address associated with hostname',
+            ));
   }
 
   Future<void> _loadDashboardData({bool forceRefresh = false}) async {
@@ -114,10 +118,10 @@ class _DashboardHomeTabState extends State<DashboardHomeTab> {
       }
 
       if (!_isLoadingFromCache) {
-      setState(() {
-        _isLoading = true;
-        _errorMessage = null;
-      });
+        setState(() {
+          _isLoading = true;
+          _errorMessage = null;
+        });
       }
 
       // Load dashboard data
@@ -135,9 +139,10 @@ class _DashboardHomeTabState extends State<DashboardHomeTab> {
         try {
           final paymentData = await _dashboardService.getPaymentStats();
           if (paymentData['success'] == true) {
-            final paymentStatsData = paymentData['data'] as Map<String, dynamic>;
+            final paymentStatsData =
+                paymentData['data'] as Map<String, dynamic>;
             totalRevenue = (paymentStatsData['totalRevenue'] ?? 0).toDouble();
-            
+
             // Cache payment stats
             await _cacheService.setPaymentStats(paymentData);
           }
@@ -166,14 +171,16 @@ class _DashboardHomeTabState extends State<DashboardHomeTab> {
         // Try to load from cache if available
         final cachedData = await _cacheService.getDashboardData();
         final cachedPaymentStats = await _cacheService.getPaymentStats();
-        
+
         if (cachedData != null) {
           final stats = cachedData['stats'] as Map<String, dynamic>?;
           final recentStudents = cachedData['recentStudents'] as List<dynamic>?;
 
           double totalRevenue = 0.0;
-          if (cachedPaymentStats != null && cachedPaymentStats['success'] == true) {
-            final paymentStatsData = cachedPaymentStats['data'] as Map<String, dynamic>?;
+          if (cachedPaymentStats != null &&
+              cachedPaymentStats['success'] == true) {
+            final paymentStatsData =
+                cachedPaymentStats['data'] as Map<String, dynamic>?;
             totalRevenue = (paymentStatsData?['totalRevenue'] ?? 0).toDouble();
           }
 
@@ -195,7 +202,7 @@ class _DashboardHomeTabState extends State<DashboardHomeTab> {
             return;
           }
         }
-        
+
         // No cache available, show error
         setState(() {
           _errorMessage = 'No internet connection';
@@ -206,11 +213,11 @@ class _DashboardHomeTabState extends State<DashboardHomeTab> {
         _cacheService.handleOfflineState(context);
       } else {
         // Other errors
-      setState(() {
-        _errorMessage = e.toString();
-        _isLoading = false;
+        setState(() {
+          _errorMessage = e.toString();
+          _isLoading = false;
           _isLoadingFromCache = false;
-      });
+        });
       }
     }
   }
@@ -220,7 +227,7 @@ class _DashboardHomeTabState extends State<DashboardHomeTab> {
       final data = await _dashboardService.getDashboardData();
       if (data['success'] == true) {
         await _cacheService.setDashboardData(data);
-        
+
         final stats = data['stats'] as Map<String, dynamic>;
         final recentStudents = data['recentStudents'] as List<dynamic>;
 
@@ -228,7 +235,8 @@ class _DashboardHomeTabState extends State<DashboardHomeTab> {
         try {
           final paymentData = await _dashboardService.getPaymentStats();
           if (paymentData['success'] == true) {
-            final paymentStatsData = paymentData['data'] as Map<String, dynamic>;
+            final paymentStatsData =
+                paymentData['data'] as Map<String, dynamic>;
             totalRevenue = (paymentStatsData['totalRevenue'] ?? 0).toDouble();
             await _cacheService.setPaymentStats(paymentData);
           }
@@ -275,45 +283,86 @@ class _DashboardHomeTabState extends State<DashboardHomeTab> {
       return Center(
         child: Padding(
           padding: EdgeInsets.symmetric(
-            horizontal: isMobile ? 20 : isTablet ? 40 : 60,
+            horizontal: isMobile
+                ? 20
+                : isTablet
+                ? 40
+                : 60,
           ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
               Icon(
                 Icons.cloud_off,
-                size: isMobile ? 56 : isTablet ? 64 : 72,
+                size: isMobile
+                    ? 56
+                    : isTablet
+                    ? 64
+                    : 72,
                 color: Colors.grey[400],
               ),
-              SizedBox(height: isMobile ? 16 : isTablet ? 18 : 20),
-            Text(
-              'Failed to Load Dashboard',
+              SizedBox(
+                height: isMobile
+                    ? 16
+                    : isTablet
+                    ? 18
+                    : 20,
+              ),
+              Text(
+                'Failed to Load Dashboard',
                 style: TextStyle(
-                  fontSize: isMobile ? 18 : isTablet ? 19 : 20,
-                fontWeight: FontWeight.w600,
+                  fontSize: isMobile
+                      ? 18
+                      : isTablet
+                      ? 19
+                      : 20,
+                  fontWeight: FontWeight.w600,
                   color: Colors.grey[700],
+                ),
               ),
-            ),
-              SizedBox(height: isMobile ? 8 : isTablet ? 9 : 10),
-            Text(
-              _errorMessage!,
-              textAlign: TextAlign.center,
+              SizedBox(
+                height: isMobile
+                    ? 8
+                    : isTablet
+                    ? 9
+                    : 10,
+              ),
+              Text(
+                _errorMessage!,
+                textAlign: TextAlign.center,
                 style: TextStyle(
-                  fontSize: isMobile ? 14 : isTablet ? 15 : 16,
+                  fontSize: isMobile
+                      ? 14
+                      : isTablet
+                      ? 15
+                      : 16,
                   color: Colors.grey[600],
-            ),
+                ),
               ),
-              SizedBox(height: isMobile ? 24 : isTablet ? 28 : 32),
-            ElevatedButton.icon(
+              SizedBox(
+                height: isMobile
+                    ? 24
+                    : isTablet
+                    ? 28
+                    : 32,
+              ),
+              ElevatedButton.icon(
                 onPressed: () => _loadDashboardData(forceRefresh: true),
-                icon: Icon(Icons.refresh, size: isMobile ? 16 : isTablet ? 17 : 18),
+                icon: Icon(
+                  Icons.refresh,
+                  size: isMobile
+                      ? 16
+                      : isTablet
+                      ? 17
+                      : 18,
+                ),
                 label: Text('Retry'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AdminDashboardStyles.primary,
-                foregroundColor: Colors.white,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AdminDashboardStyles.primary,
+                  foregroundColor: Colors.white,
+                ),
               ),
-            ),
-          ],
+            ],
           ),
         ),
       );
@@ -338,7 +387,11 @@ class _DashboardHomeTabState extends State<DashboardHomeTab> {
           slivers: [
             SliverPadding(
               padding: EdgeInsets.all(
-                isMobile ? 16 : isTablet ? 20 : 24,
+                isMobile
+                    ? 16
+                    : isTablet
+                    ? 20
+                    : 24,
               ),
               sliver: SliverList(
                 delegate: SliverChildListDelegate([
@@ -360,16 +413,20 @@ class _DashboardHomeTabState extends State<DashboardHomeTab> {
     );
   }
 
-  Widget _buildCreativeHeader(
-    bool isMobile,
-    bool isTablet,
-    bool isDesktop,
-  ) {
+  Widget _buildCreativeHeader(bool isMobile, bool isTablet, bool isDesktop) {
     String adminName = widget.authService.currentUser?.name ?? 'Admin';
     return Container(
       constraints: BoxConstraints(
-        minHeight: isMobile ? 160 : isTablet ? 180 : 200,
-        maxHeight: isMobile ? 220 : isTablet ? 240 : 260,
+        minHeight: isMobile
+            ? 160
+            : isTablet
+            ? 180
+            : 200,
+        maxHeight: isMobile
+            ? 220
+            : isTablet
+            ? 240
+            : 260,
       ),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(isMobile ? 20 : 24),
@@ -420,7 +477,13 @@ class _DashboardHomeTabState extends State<DashboardHomeTab> {
           ),
           // Main content
           Padding(
-            padding: EdgeInsets.all(isMobile ? 16 : isTablet ? 20 : 24),
+            padding: EdgeInsets.all(
+              isMobile
+                  ? 16
+                  : isTablet
+                  ? 20
+                  : 24,
+            ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
@@ -452,7 +515,11 @@ class _DashboardHomeTabState extends State<DashboardHomeTab> {
                           Text(
                             'Welcome back, $adminName!',
                             style: TextStyle(
-                              fontSize: isMobile ? 20 : isTablet ? 22 : 24,
+                              fontSize: isMobile
+                                  ? 20
+                                  : isTablet
+                                  ? 22
+                                  : 24,
                               fontWeight: FontWeight.bold,
                               color: Colors.white,
                               letterSpacing: -0.5,
@@ -563,7 +630,13 @@ class _DashboardHomeTabState extends State<DashboardHomeTab> {
     bool isDesktop,
   ) {
     return Container(
-      padding: EdgeInsets.all(isMobile ? 16 : isTablet ? 20 : 24),
+      padding: EdgeInsets.all(
+        isMobile
+            ? 16
+            : isTablet
+            ? 20
+            : 24,
+      ),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [Colors.white, const Color(0xFFFAFAFA)],
@@ -586,7 +659,11 @@ class _DashboardHomeTabState extends State<DashboardHomeTab> {
               Text(
                 'Platform Overview',
                 style: TextStyle(
-                  fontSize: isMobile ? 14 : isTablet ? 15 : 16,
+                  fontSize: isMobile
+                      ? 14
+                      : isTablet
+                      ? 15
+                      : 16,
                   fontWeight: FontWeight.w600,
                   color: const Color(0xFF2D3748),
                 ),
@@ -615,8 +692,8 @@ class _DashboardHomeTabState extends State<DashboardHomeTab> {
           isDesktop
               ? _buildDesktopStatsGrid()
               : isTablet
-                  ? _buildTabletStatsGrid()
-                  : _buildMobileStatsGrid(),
+              ? _buildTabletStatsGrid()
+              : _buildMobileStatsGrid(),
         ],
       ),
     ).animate().fadeIn(duration: 600.ms).slideY(begin: 0.3);
@@ -624,55 +701,55 @@ class _DashboardHomeTabState extends State<DashboardHomeTab> {
 
   Widget _buildMobileStatsGrid() {
     return Column(
-            children: [
-              Row(
-                children: [
-                  Expanded(
-                    child: _buildCompactStatItem(
-                      icon: Icons.people_outline,
-                      title: 'Principals',
-                      value: _totalPrincipals.toString(),
-                      color: const Color(0xFF4299E1),
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: _buildCompactStatItem(
+                icon: Icons.people_outline,
+                title: 'Principals',
+                value: _totalPrincipals.toString(),
+                color: const Color(0xFF4299E1),
                 isMobile: true,
-                    ),
-                  ),
-            const SizedBox(width: 12),
-                  Expanded(
-                    child: _buildCompactStatItem(
-                      icon: Icons.school_outlined,
-                      title: 'Students',
-                      value: _totalStudents.toString(),
-                      color: const Color(0xFF9F7AEA),
-                isMobile: true,
-                    ),
-                  ),
-                ],
               ),
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  Expanded(
-                    child: _buildCompactStatItem(
-                      icon: Icons.admin_panel_settings_outlined,
-                      title: 'Admins',
-                      value: _totalAdmins.toString(),
-                      color: const Color(0xFFF56565),
-                isMobile: true,
-                    ),
-                  ),
+            ),
             const SizedBox(width: 12),
-                  Expanded(
-                    child: _buildCompactStatItem(
-                      icon: Icons.access_time_outlined,
-                      title: 'Recent',
-                      value: _recentRegistrations.toString(),
-                      color: const Color(0xFF48BB78),
+            Expanded(
+              child: _buildCompactStatItem(
+                icon: Icons.school_outlined,
+                title: 'Students',
+                value: _totalStudents.toString(),
+                color: const Color(0xFF9F7AEA),
                 isMobile: true,
-                    ),
-                  ),
-                ],
               ),
-              const SizedBox(height: 12),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Expanded(
+              child: _buildCompactStatItem(
+                icon: Icons.admin_panel_settings_outlined,
+                title: 'Admins',
+                value: _totalAdmins.toString(),
+                color: const Color(0xFFF56565),
+                isMobile: true,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _buildCompactStatItem(
+                icon: Icons.access_time_outlined,
+                title: 'Recent',
+                value: _recentRegistrations.toString(),
+                color: const Color(0xFF48BB78),
+                isMobile: true,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
         _buildCompactStatItem(
           icon: Icons.currency_rupee_rounded,
           title: 'Total Revenue',
@@ -687,8 +764,8 @@ class _DashboardHomeTabState extends State<DashboardHomeTab> {
   Widget _buildTabletStatsGrid() {
     return Column(
       children: [
-              Row(
-                children: [
+        Row(
+          children: [
             Expanded(
               child: _buildCompactStatItem(
                 icon: Icons.people_outline,
@@ -733,18 +810,19 @@ class _DashboardHomeTabState extends State<DashboardHomeTab> {
               ),
             ),
             const SizedBox(width: 16),
-                  Expanded(
-                    child: _buildCompactStatItem(
-                      icon: Icons.currency_rupee_rounded,
-                      title: 'Total Revenue',
-                      value: '₹${NumberFormat('#,##,###').format(_totalRevenue.toInt())}',
-                      color: const Color(0xFFF6AD55),
+            Expanded(
+              child: _buildCompactStatItem(
+                icon: Icons.currency_rupee_rounded,
+                title: 'Total Revenue',
+                value:
+                    '₹${NumberFormat('#,##,###').format(_totalRevenue.toInt())}',
+                color: const Color(0xFFF6AD55),
                 isMobile: false,
-                    ),
-                  ),
-                ],
               ),
-            ],
+            ),
+          ],
+        ),
+      ],
     );
   }
 
@@ -860,7 +938,13 @@ class _DashboardHomeTabState extends State<DashboardHomeTab> {
     bool isDesktop,
   ) {
     return Container(
-      padding: EdgeInsets.all(isMobile ? 16 : isTablet ? 20 : 24),
+      padding: EdgeInsets.all(
+        isMobile
+            ? 16
+            : isTablet
+            ? 20
+            : 24,
+      ),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [Colors.white, const Color(0xFFFAFAFA)],
@@ -883,7 +967,11 @@ class _DashboardHomeTabState extends State<DashboardHomeTab> {
               Text(
                 'Latest Registrations',
                 style: TextStyle(
-                  fontSize: isMobile ? 14 : isTablet ? 15 : 16,
+                  fontSize: isMobile
+                      ? 14
+                      : isTablet
+                      ? 15
+                      : 16,
                   fontWeight: FontWeight.w600,
                   color: const Color(0xFF2D3748),
                 ),
@@ -951,7 +1039,11 @@ class _DashboardHomeTabState extends State<DashboardHomeTab> {
           else
             Container(
               constraints: BoxConstraints(
-                maxHeight: isMobile ? 400 : isTablet ? 500 : 550,
+                maxHeight: isMobile
+                    ? 400
+                    : isTablet
+                    ? 500
+                    : 550,
               ),
               child: ListView.separated(
                 shrinkWrap: true,
@@ -1114,8 +1206,9 @@ class _DashboardHomeTabState extends State<DashboardHomeTab> {
                                   ),
                                   boxShadow: [
                                     BoxShadow(
-                                      color: const Color(0xFF38B2AC)
-                                          .withOpacity(0.15),
+                                      color: const Color(
+                                        0xFF38B2AC,
+                                      ).withOpacity(0.15),
                                       blurRadius: 4,
                                       offset: const Offset(0, 1),
                                     ),

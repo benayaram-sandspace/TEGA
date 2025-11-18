@@ -19,7 +19,9 @@ class VideoCacheService {
 
   // Cache configuration
   static const int _maxCacheSizeMB = 2048; // 2GB max cache
-  static const Duration _cacheExpiryDays = Duration(days: 30); // Videos expire after 30 days
+  static const Duration _cacheExpiryDays = Duration(
+    days: 30,
+  ); // Videos expire after 30 days
 
   // Track active downloads
   final Map<String, Future<String?>> _activeDownloads = {};
@@ -28,11 +30,11 @@ class VideoCacheService {
   Future<void> initialize() async {
     try {
       _prefs ??= await SharedPreferences.getInstance();
-      
+
       // Get app-specific directory (not accessible to users)
       final appDir = await getApplicationDocumentsDirectory();
       _cacheDirectory = Directory('${appDir.path}/video_cache');
-      
+
       // Create cache directory if it doesn't exist
       if (!await _cacheDirectory!.exists()) {
         await _cacheDirectory!.create(recursive: true);
@@ -40,7 +42,7 @@ class VideoCacheService {
 
       // Clean up expired videos on startup
       await _cleanupExpiredVideos();
-      
+
       // Manage cache size
       await _manageCacheSize();
     } catch (e) {
@@ -69,30 +71,30 @@ class VideoCacheService {
       final cacheKey = _generateCacheKey(videoUrl);
       final cacheDir = await _getCacheDirectory();
       final videoFile = File('${cacheDir.path}/$cacheKey.mp4');
-      
+
       if (await videoFile.exists()) {
         // Check if video is expired
         final metadata = await _getVideoMetadata(cacheKey);
         if (metadata != null) {
           final cachedDate = DateTime.parse(metadata['cachedDate'] as String);
           final now = DateTime.now();
-          
+
           if (now.difference(cachedDate) > _cacheExpiryDays) {
             // Video expired, delete it
             await videoFile.delete();
             await _removeVideoMetadata(cacheKey);
             return null;
           }
-          
+
           // Update last accessed date
           await _updateVideoMetadata(cacheKey, {
             'lastAccessed': now.toIso8601String(),
           });
-          
+
           return videoFile.path;
         }
       }
-      
+
       return null;
     } catch (e) {
       return null;
@@ -100,11 +102,12 @@ class VideoCacheService {
   }
 
   /// Download and cache video
-  Future<String?> cacheVideo(String videoUrl, {
+  Future<String?> cacheVideo(
+    String videoUrl, {
     Function(int downloaded, int total)? onProgress,
   }) async {
     final cacheKey = _generateCacheKey(videoUrl);
-    
+
     // Check if already cached
     final cachedPath = await getCachedVideoPath(videoUrl);
     if (cachedPath != null) {
@@ -138,24 +141,27 @@ class VideoCacheService {
     try {
       final cacheDir = await _getCacheDirectory();
       final videoFile = File('${cacheDir.path}/$cacheKey.mp4');
-      
+
       // Create temporary file for download
       tempFile = File('${cacheDir.path}/$cacheKey.tmp');
-      
+
       final client = http.Client();
       final request = http.Request('GET', Uri.parse(videoUrl));
-      
+
       // Set headers for video download
       request.headers.addAll({
         'Accept': 'video/*',
         'Range': 'bytes=0-', // Support resumable downloads
       });
-      
-      final streamedResponse = await client.send(request).timeout(
-        const Duration(minutes: 30), // 30 minute timeout for large videos
-      );
-      
-      if (streamedResponse.statusCode != 200 && streamedResponse.statusCode != 206) {
+
+      final streamedResponse = await client
+          .send(request)
+          .timeout(
+            const Duration(minutes: 30), // 30 minute timeout for large videos
+          );
+
+      if (streamedResponse.statusCode != 200 &&
+          streamedResponse.statusCode != 206) {
         client.close();
         return null;
       }
@@ -169,7 +175,7 @@ class VideoCacheService {
         await for (final chunk in streamedResponse.stream) {
           sink.add(chunk);
           downloaded += chunk.length;
-          
+
           if (onProgress != null && contentLength > 0) {
             onProgress(downloaded, contentLength);
           }
@@ -182,11 +188,11 @@ class VideoCacheService {
       // Move temp file to final location
       if (await tempFile.exists()) {
         final fileSize = await tempFile.length();
-        
+
         // Only cache if file is valid (at least 1KB)
         if (fileSize > 1024) {
           await tempFile.rename(videoFile.path);
-          
+
           // Save metadata
           await _saveVideoMetadata(cacheKey, {
             'videoUrl': videoUrl,
@@ -201,7 +207,7 @@ class VideoCacheService {
           await tempFile.delete();
         }
       }
-      
+
       return null;
     } catch (e) {
       // Clean up temp file on error
@@ -210,7 +216,7 @@ class VideoCacheService {
           await tempFile.delete();
         }
       } catch (_) {}
-      
+
       return null;
     }
   }
@@ -230,16 +236,19 @@ class VideoCacheService {
   }
 
   /// Save video metadata
-  Future<void> _saveVideoMetadata(String cacheKey, Map<String, dynamic> data) async {
+  Future<void> _saveVideoMetadata(
+    String cacheKey,
+    Map<String, dynamic> data,
+  ) async {
     try {
       await _ensurePrefs();
       final metadataJson = _prefs?.getString(_cacheMetadataKey);
       Map<String, dynamic> metadata = {};
-      
+
       if (metadataJson != null) {
         metadata = json.decode(metadataJson) as Map<String, dynamic>;
       }
-      
+
       metadata[cacheKey] = data;
       await _prefs?.setString(_cacheMetadataKey, json.encode(metadata));
     } catch (e) {
@@ -248,7 +257,10 @@ class VideoCacheService {
   }
 
   /// Update video metadata
-  Future<void> _updateVideoMetadata(String cacheKey, Map<String, dynamic> updates) async {
+  Future<void> _updateVideoMetadata(
+    String cacheKey,
+    Map<String, dynamic> updates,
+  ) async {
     try {
       final existing = await _getVideoMetadata(cacheKey);
       if (existing != null) {
@@ -280,13 +292,13 @@ class VideoCacheService {
     try {
       final cacheDir = await _getCacheDirectory();
       int totalSize = 0;
-      
+
       await for (final entity in cacheDir.list(recursive: true)) {
         if (entity is File && entity.path.endsWith('.mp4')) {
           totalSize += await entity.length();
         }
       }
-      
+
       return totalSize;
     } catch (e) {
       return 0;
@@ -298,12 +310,12 @@ class VideoCacheService {
     try {
       final cacheDir = await _getCacheDirectory();
       final now = DateTime.now();
-      
+
       await for (final entity in cacheDir.list()) {
         if (entity is File && entity.path.endsWith('.mp4')) {
           final fileName = entity.path.split('/').last;
           final cacheKey = fileName.replaceAll('.mp4', '');
-          
+
           final metadata = await _getVideoMetadata(cacheKey);
           if (metadata != null) {
             final cachedDate = DateTime.parse(metadata['cachedDate'] as String);
@@ -324,7 +336,7 @@ class VideoCacheService {
     try {
       final cacheSize = await getCacheSize();
       final maxSizeBytes = _maxCacheSizeMB * 1024 * 1024;
-      
+
       if (cacheSize > maxSizeBytes) {
         // Get all videos sorted by last accessed date
         final videos = await _getAllCachedVideos();
@@ -333,18 +345,18 @@ class VideoCacheService {
           final bDate = DateTime.parse(b['lastAccessed'] as String);
           return aDate.compareTo(bDate);
         });
-        
+
         // Delete oldest videos until under limit
         int currentSize = cacheSize;
         for (final video in videos) {
           if (currentSize <= maxSizeBytes) break;
-          
+
           final cacheKey = video['cacheKey'] as String;
           final fileSize = video['fileSize'] as int;
-          
+
           final cacheDir = await _getCacheDirectory();
           final videoFile = File('${cacheDir.path}/$cacheKey.mp4');
-          
+
           if (await videoFile.exists()) {
             await videoFile.delete();
             await _removeVideoMetadata(cacheKey);
@@ -369,10 +381,7 @@ class VideoCacheService {
 
       for (final entry in metadata.entries) {
         final videoData = entry.value as Map<String, dynamic>;
-        videos.add({
-          'cacheKey': entry.key,
-          ...videoData,
-        });
+        videos.add({'cacheKey': entry.key, ...videoData});
       }
 
       return videos;
@@ -385,13 +394,13 @@ class VideoCacheService {
   Future<void> clearAllCache() async {
     try {
       final cacheDir = await _getCacheDirectory();
-      
+
       await for (final entity in cacheDir.list()) {
         if (entity is File) {
           await entity.delete();
         }
       }
-      
+
       await _ensurePrefs();
       await _prefs?.remove(_cacheMetadataKey);
     } catch (e) {
@@ -405,11 +414,11 @@ class VideoCacheService {
       final cacheKey = _generateCacheKey(videoUrl);
       final cacheDir = await _getCacheDirectory();
       final videoFile = File('${cacheDir.path}/$cacheKey.mp4');
-      
+
       if (await videoFile.exists()) {
         await videoFile.delete();
       }
-      
+
       await _removeVideoMetadata(cacheKey);
     } catch (e) {
       // Silently handle errors
@@ -436,4 +445,3 @@ class VideoCacheService {
     return cachedPath != null;
   }
 }
-

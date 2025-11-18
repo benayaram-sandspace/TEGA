@@ -61,6 +61,7 @@ class _AvatarScreenState extends State<AvatarScreen> {
       return _profileData!['studentName'] ?? 'Student';
     }
   }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -76,7 +77,8 @@ class _AvatarScreenState extends State<AvatarScreen> {
                   tag: 'avatarHero',
                   child: ProfilePictureWidget(
                     profilePhotoUrl: _profileData?['profilePhoto'],
-                    username: _profileData?['username'] ?? _profileData?['email'],
+                    username:
+                        _profileData?['username'] ?? _profileData?['email'],
                     firstName: _profileData?['firstName'],
                     lastName: _profileData?['lastName'],
                     radius: 140,
@@ -95,9 +97,7 @@ class _AvatarScreenState extends State<AvatarScreen> {
                     textAlign: TextAlign.center,
                   ),
                 if (_isLoading)
-                  const CircularProgressIndicator(
-                    color: Colors.white,
-                  ),
+                  const CircularProgressIndicator(color: Colors.white),
               ],
             ),
           ),

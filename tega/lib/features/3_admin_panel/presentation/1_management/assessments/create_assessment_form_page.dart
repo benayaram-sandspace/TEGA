@@ -48,10 +48,10 @@ class _CreateAssessmentFormPageState extends State<CreateAssessmentFormPage> {
   Future<void> _initializeCacheAndLoadData() async {
     // Initialize cache service
     await _cacheService.initialize();
-    
+
     // Try to load from cache first
     await _loadFromCache();
-    
+
     // Then load fresh data
     await _loadCourses();
   }
@@ -89,7 +89,9 @@ class _CreateAssessmentFormPageState extends State<CreateAssessmentFormPage> {
             error.toString().toLowerCase().contains('connection') ||
             error.toString().toLowerCase().contains('internet') ||
             error.toString().toLowerCase().contains('failed host lookup') ||
-            error.toString().toLowerCase().contains('no address associated with hostname'));
+            error.toString().toLowerCase().contains(
+              'no address associated with hostname',
+            ));
   }
 
   Future<void> _loadCourses({bool forceRefresh = false}) async {
@@ -106,7 +108,7 @@ class _CreateAssessmentFormPageState extends State<CreateAssessmentFormPage> {
         _availableCourses = courses;
         _isLoadingCourses = false;
       });
-      
+
       // Cache the data
       await _cacheService.setAvailableCourses(courses);
       // Reset toast flag on successful load (internet is back)
@@ -124,7 +126,7 @@ class _CreateAssessmentFormPageState extends State<CreateAssessmentFormPage> {
           });
           return;
         }
-        
+
         // No cache available
         setState(() => _isLoadingCourses = false);
       } else {
@@ -149,7 +151,7 @@ class _CreateAssessmentFormPageState extends State<CreateAssessmentFormPage> {
         setState(() {
           _availableCourses = courses;
         });
-        
+
         // Cache the data
         await _cacheService.setAvailableCourses(courses);
         // Reset toast flag on successful load (internet is back)
@@ -207,9 +209,11 @@ class _CreateAssessmentFormPageState extends State<CreateAssessmentFormPage> {
     if (picked != null) {
       setState(() {
         if (isStartTime) {
-          slot.startTime = '${picked.hour.toString().padLeft(2, '0')}:${picked.minute.toString().padLeft(2, '0')}';
+          slot.startTime =
+              '${picked.hour.toString().padLeft(2, '0')}:${picked.minute.toString().padLeft(2, '0')}';
         } else {
-          slot.endTime = '${picked.hour.toString().padLeft(2, '0')}:${picked.minute.toString().padLeft(2, '0')}';
+          slot.endTime =
+              '${picked.hour.toString().padLeft(2, '0')}:${picked.minute.toString().padLeft(2, '0')}';
         }
       });
     }
@@ -217,12 +221,14 @@ class _CreateAssessmentFormPageState extends State<CreateAssessmentFormPage> {
 
   void _addTimeSlot() {
     setState(() {
-      _timeSlots.add(TimeSlot(
-        slotId: 'Slot-${_timeSlots.length + 1}',
-        startTime: '--:--',
-        endTime: '--:--',
-        maxParticipants: 30,
-      ));
+      _timeSlots.add(
+        TimeSlot(
+          slotId: 'Slot-${_timeSlots.length + 1}',
+          startTime: '--:--',
+          endTime: '--:--',
+          maxParticipants: 30,
+        ),
+      );
     });
   }
 
@@ -286,7 +292,9 @@ class _CreateAssessmentFormPageState extends State<CreateAssessmentFormPage> {
     try {
       final examData = {
         'title': _titleController.text.trim(),
-        'courseId': _selectedCourseId == 'tega-exam' ? 'tega-exam' : _selectedCourseId,
+        'courseId': _selectedCourseId == 'tega-exam'
+            ? 'tega-exam'
+            : _selectedCourseId,
         'isTegaExam': _selectedCourseId == 'tega-exam',
         'description': _descriptionController.text.trim(),
         'duration': int.parse(_durationController.text),
@@ -295,12 +303,16 @@ class _CreateAssessmentFormPageState extends State<CreateAssessmentFormPage> {
         'maxAttempts': int.parse(_maxAttemptsController.text),
         'examDate': _examDate!.toIso8601String(),
         'instructions': _instructionsController.text.trim(),
-        'slots': _timeSlots.map((slot) => {
-          'slotId': slot.slotId,
-          'startTime': slot.startTime,
-          'endTime': slot.endTime,
-          'maxParticipants': slot.maxParticipants,
-        }).toList(),
+        'slots': _timeSlots
+            .map(
+              (slot) => {
+                'slotId': slot.slotId,
+                'startTime': slot.startTime,
+                'endTime': slot.endTime,
+                'maxParticipants': slot.maxParticipants,
+              },
+            )
+            .toList(),
         'requiresPayment': false,
         'price': 0,
       };
@@ -314,7 +326,7 @@ class _CreateAssessmentFormPageState extends State<CreateAssessmentFormPage> {
             backgroundColor: Colors.green,
           ),
         );
-        
+
         // Reset form
         _formKey.currentState!.reset();
         _titleController.clear();
@@ -354,13 +366,18 @@ class _CreateAssessmentFormPageState extends State<CreateAssessmentFormPage> {
           builder: (context, constraints) {
             // Responsive padding based on screen width
             final isSmallScreen = constraints.maxWidth < 600;
-            final isMediumScreen = constraints.maxWidth >= 600 && constraints.maxWidth < 900;
-            
-            final outerPadding = isSmallScreen ? 16.0 : (isMediumScreen ? 20.0 : 24.0);
-            final innerPadding = isSmallScreen ? 16.0 : (isMediumScreen ? 20.0 : 24.0);
+            final isMediumScreen =
+                constraints.maxWidth >= 600 && constraints.maxWidth < 900;
+
+            final outerPadding = isSmallScreen
+                ? 16.0
+                : (isMediumScreen ? 20.0 : 24.0);
+            final innerPadding = isSmallScreen
+                ? 16.0
+                : (isMediumScreen ? 20.0 : 24.0);
             final headerSpacing = isSmallScreen ? 24.0 : 32.0;
             final fieldSpacing = isSmallScreen ? 16.0 : 20.0;
-            
+
             return SingleChildScrollView(
               padding: EdgeInsets.all(outerPadding),
               child: Container(
@@ -393,9 +410,12 @@ class _CreateAssessmentFormPageState extends State<CreateAssessmentFormPage> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Container(
-                                padding: EdgeInsets.all(isSmallScreen ? 10 : 12),
+                                padding: EdgeInsets.all(
+                                  isSmallScreen ? 10 : 12,
+                                ),
                                 decoration: BoxDecoration(
-                                  color: AdminDashboardStyles.primary.withOpacity(0.1),
+                                  color: AdminDashboardStyles.primary
+                                      .withOpacity(0.1),
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 child: Icon(
@@ -407,9 +427,10 @@ class _CreateAssessmentFormPageState extends State<CreateAssessmentFormPage> {
                               SizedBox(height: isSmallScreen ? 12 : 16),
                               Text(
                                 'Create Assessment',
-                                style: AdminDashboardStyles.welcomeHeader.copyWith(
-                                  fontSize: isSmallScreen ? 20 : 24,
-                                ),
+                                style: AdminDashboardStyles.welcomeHeader
+                                    .copyWith(
+                                      fontSize: isSmallScreen ? 20 : 24,
+                                    ),
                               ),
                               SizedBox(height: isSmallScreen ? 4 : 6),
                               Text(
@@ -425,9 +446,12 @@ class _CreateAssessmentFormPageState extends State<CreateAssessmentFormPage> {
                           return Row(
                             children: [
                               Container(
-                                padding: EdgeInsets.all(isSmallScreen ? 10 : 12),
+                                padding: EdgeInsets.all(
+                                  isSmallScreen ? 10 : 12,
+                                ),
                                 decoration: BoxDecoration(
-                                  color: AdminDashboardStyles.primary.withOpacity(0.1),
+                                  color: AdminDashboardStyles.primary
+                                      .withOpacity(0.1),
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 child: Icon(
@@ -443,16 +467,18 @@ class _CreateAssessmentFormPageState extends State<CreateAssessmentFormPage> {
                                   children: [
                                     Text(
                                       'Create Assessment',
-                                      style: AdminDashboardStyles.welcomeHeader.copyWith(
-                                        fontSize: isSmallScreen ? 20 : 24,
-                                      ),
+                                      style: AdminDashboardStyles.welcomeHeader
+                                          .copyWith(
+                                            fontSize: isSmallScreen ? 20 : 24,
+                                          ),
                                     ),
                                     SizedBox(height: isSmallScreen ? 4 : 6),
                                     Text(
                                       'Schedule and create new assessments, exams, and evaluations',
-                                      style: AdminDashboardStyles.statTitle.copyWith(
-                                        fontSize: isSmallScreen ? 12 : 13,
-                                      ),
+                                      style: AdminDashboardStyles.statTitle
+                                          .copyWith(
+                                            fontSize: isSmallScreen ? 12 : 13,
+                                          ),
                                     ),
                                   ],
                                 ),
@@ -463,104 +489,26 @@ class _CreateAssessmentFormPageState extends State<CreateAssessmentFormPage> {
                       },
                     ),
                     SizedBox(height: headerSpacing),
-                // Assessment Title
-                _buildFormField(
-                  label: 'Assessment Title *',
-                  icon: Icons.title_rounded,
-                  child: TextFormField(
-                    controller: _titleController,
-                    decoration: InputDecoration(
-                      hintText: 'Enter assessment title',
-                      hintStyle: TextStyle(color: Colors.grey[400]),
-                      prefixIcon: Container(
-                        margin: const EdgeInsets.all(12),
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: AdminDashboardStyles.primary.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Icon(
-                          Icons.title_rounded,
-                          color: AdminDashboardStyles.primary,
-                          size: 18,
-                        ),
-                      ),
-                      filled: true,
-                      fillColor: Colors.white,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(16),
-                        borderSide: BorderSide(
-                          color: AdminDashboardStyles.borderLight,
-                          width: 1,
-                        ),
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(16),
-                        borderSide: BorderSide(
-                          color: AdminDashboardStyles.borderLight,
-                          width: 1,
-                        ),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(16),
-                        borderSide: BorderSide(
-                          color: AdminDashboardStyles.primary,
-                          width: 2,
-                        ),
-                      ),
-                      errorBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(16),
-                        borderSide: BorderSide(
-                          color: AppColors.error,
-                          width: 1,
-                        ),
-                      ),
-                      focusedErrorBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(16),
-                        borderSide: BorderSide(
-                          color: AppColors.error,
-                          width: 2,
-                        ),
-                      ),
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 16,
-                      ),
-                    ),
-                    validator: (value) {
-                      if (value == null || value.trim().isEmpty) {
-                        return 'Assessment title is required';
-                      }
-                      return null;
-                    },
-                  ),
-                ),
-                    SizedBox(height: fieldSpacing),
-
-                    // Course
-              _buildFormField(
-                label: 'Course *',
-                icon: Icons.school_rounded,
-                child: _isLoadingCourses
-                    ? const SizedBox(
-                        height: 56,
-                        child: Center(child: CircularProgressIndicator()),
-                      )
-                    : DropdownButtonFormField<String>(
-                        value: _selectedCourseId,
-                        isExpanded: true,
+                    // Assessment Title
+                    _buildFormField(
+                      label: 'Assessment Title *',
+                      icon: Icons.title_rounded,
+                      child: TextFormField(
+                        controller: _titleController,
                         decoration: InputDecoration(
-                          hintText: 'Select a course',
+                          hintText: 'Enter assessment title',
                           hintStyle: TextStyle(color: Colors.grey[400]),
                           prefixIcon: Container(
                             margin: const EdgeInsets.all(12),
                             padding: const EdgeInsets.all(8),
                             decoration: BoxDecoration(
-                              color: AdminDashboardStyles.primary.withOpacity(0.1),
+                              color: AdminDashboardStyles.primary.withOpacity(
+                                0.1,
+                              ),
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: Icon(
-                              Icons.school_rounded,
+                              Icons.title_rounded,
                               color: AdminDashboardStyles.primary,
                               size: 18,
                             ),
@@ -607,28 +555,9 @@ class _CreateAssessmentFormPageState extends State<CreateAssessmentFormPage> {
                             vertical: 16,
                           ),
                         ),
-                        items: [
-                          const DropdownMenuItem(
-                            value: 'tega-exam',
-                            child: Text('TEGA Exam'),
-                          ),
-                          ..._availableCourses.map((course) {
-                            final courseId = course['_id']?.toString() ?? course['id']?.toString();
-                            return DropdownMenuItem(
-                              value: courseId,
-                              child: Text(
-                                course['title'] ?? course['courseName'] ?? 'Unknown',
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            );
-                          }),
-                        ],
-                        onChanged: (value) {
-                          setState(() => _selectedCourseId = value);
-                        },
                         validator: (value) {
-                          if (value == null) {
-                            return 'Please select a course';
+                          if (value == null || value.trim().isEmpty) {
+                            return 'Assessment title is required';
                           }
                           return null;
                         },
@@ -636,449 +565,570 @@ class _CreateAssessmentFormPageState extends State<CreateAssessmentFormPage> {
                     ),
                     SizedBox(height: fieldSpacing),
 
+                    // Course
+                    _buildFormField(
+                      label: 'Course *',
+                      icon: Icons.school_rounded,
+                      child: _isLoadingCourses
+                          ? const SizedBox(
+                              height: 56,
+                              child: Center(child: CircularProgressIndicator()),
+                            )
+                          : DropdownButtonFormField<String>(
+                              value: _selectedCourseId,
+                              isExpanded: true,
+                              decoration: InputDecoration(
+                                hintText: 'Select a course',
+                                hintStyle: TextStyle(color: Colors.grey[400]),
+                                prefixIcon: Container(
+                                  margin: const EdgeInsets.all(12),
+                                  padding: const EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                    color: AdminDashboardStyles.primary
+                                        .withOpacity(0.1),
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: Icon(
+                                    Icons.school_rounded,
+                                    color: AdminDashboardStyles.primary,
+                                    size: 18,
+                                  ),
+                                ),
+                                filled: true,
+                                fillColor: Colors.white,
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(16),
+                                  borderSide: BorderSide(
+                                    color: AdminDashboardStyles.borderLight,
+                                    width: 1,
+                                  ),
+                                ),
+                                enabledBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(16),
+                                  borderSide: BorderSide(
+                                    color: AdminDashboardStyles.borderLight,
+                                    width: 1,
+                                  ),
+                                ),
+                                focusedBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(16),
+                                  borderSide: BorderSide(
+                                    color: AdminDashboardStyles.primary,
+                                    width: 2,
+                                  ),
+                                ),
+                                errorBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(16),
+                                  borderSide: BorderSide(
+                                    color: AppColors.error,
+                                    width: 1,
+                                  ),
+                                ),
+                                focusedErrorBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(16),
+                                  borderSide: BorderSide(
+                                    color: AppColors.error,
+                                    width: 2,
+                                  ),
+                                ),
+                                contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 16,
+                                ),
+                              ),
+                              items: [
+                                const DropdownMenuItem(
+                                  value: 'tega-exam',
+                                  child: Text('TEGA Exam'),
+                                ),
+                                ..._availableCourses.map((course) {
+                                  final courseId =
+                                      course['_id']?.toString() ??
+                                      course['id']?.toString();
+                                  return DropdownMenuItem(
+                                    value: courseId,
+                                    child: Text(
+                                      course['title'] ??
+                                          course['courseName'] ??
+                                          'Unknown',
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  );
+                                }),
+                              ],
+                              onChanged: (value) {
+                                setState(() => _selectedCourseId = value);
+                              },
+                              validator: (value) {
+                                if (value == null) {
+                                  return 'Please select a course';
+                                }
+                                return null;
+                              },
+                            ),
+                    ),
+                    SizedBox(height: fieldSpacing),
+
                     // Exam Date
-              _buildFormField(
-                label: 'Exam Date *',
-                icon: Icons.calendar_today_rounded,
-                child: InkWell(
-                  onTap: _selectDate,
-                  child: InputDecorator(
-                    decoration: InputDecoration(
-                      hintText: 'dd-mm-yyyy',
-                      hintStyle: TextStyle(color: Colors.grey[400]),
-                      prefixIcon: Container(
-                        margin: const EdgeInsets.all(12),
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: AdminDashboardStyles.primary.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(8),
+                    _buildFormField(
+                      label: 'Exam Date *',
+                      icon: Icons.calendar_today_rounded,
+                      child: InkWell(
+                        onTap: _selectDate,
+                        child: InputDecorator(
+                          decoration: InputDecoration(
+                            hintText: 'dd-mm-yyyy',
+                            hintStyle: TextStyle(color: Colors.grey[400]),
+                            prefixIcon: Container(
+                              margin: const EdgeInsets.all(12),
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: AdminDashboardStyles.primary.withOpacity(
+                                  0.1,
+                                ),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Icon(
+                                Icons.calendar_today_rounded,
+                                color: AdminDashboardStyles.primary,
+                                size: 18,
+                              ),
+                            ),
+                            suffixIcon: Icon(
+                              Icons.calendar_today,
+                              color: AdminDashboardStyles.primary,
+                            ),
+                            filled: true,
+                            fillColor: Colors.white,
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(16),
+                              borderSide: BorderSide(
+                                color: AdminDashboardStyles.borderLight,
+                                width: 1,
+                              ),
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(16),
+                              borderSide: BorderSide(
+                                color: AdminDashboardStyles.borderLight,
+                                width: 1,
+                              ),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(16),
+                              borderSide: BorderSide(
+                                color: AdminDashboardStyles.primary,
+                                width: 2,
+                              ),
+                            ),
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 16,
+                            ),
+                          ),
+                          child: Text(
+                            _examDate != null
+                                ? DateFormat('dd-MM-yyyy').format(_examDate!)
+                                : 'Select date',
+                            style: TextStyle(
+                              color: _examDate != null
+                                  ? AdminDashboardStyles.textDark
+                                  : Colors.grey[600],
+                              fontSize: 16,
+                            ),
+                          ),
                         ),
-                        child: Icon(
-                          Icons.calendar_today_rounded,
-                          color: AdminDashboardStyles.primary,
-                          size: 18,
-                        ),
                       ),
-                      suffixIcon: Icon(
-                        Icons.calendar_today,
-                        color: AdminDashboardStyles.primary,
-                      ),
-                      filled: true,
-                      fillColor: Colors.white,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(16),
-                        borderSide: BorderSide(
-                          color: AdminDashboardStyles.borderLight,
-                          width: 1,
-                        ),
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(16),
-                        borderSide: BorderSide(
-                          color: AdminDashboardStyles.borderLight,
-                          width: 1,
-                        ),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(16),
-                        borderSide: BorderSide(
-                          color: AdminDashboardStyles.primary,
-                          width: 2,
-                        ),
-                      ),
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 16,
-                      ),
-                    ),
-                    child: Text(
-                      _examDate != null
-                          ? DateFormat('dd-MM-yyyy').format(_examDate!)
-                          : 'Select date',
-                      style: TextStyle(
-                        color: _examDate != null
-                            ? AdminDashboardStyles.textDark
-                            : Colors.grey[600],
-                        fontSize: 16,
-                      ),
-                    ),
-                  ),
-                ),
                     ),
                     SizedBox(height: fieldSpacing),
 
                     // Duration, Total Marks, Passing Marks row
-              LayoutBuilder(
-                builder: (context, constraints) {
-                  if (constraints.maxWidth < 700) {
-                    // Stack vertically on small screens
-                    return Column(
-                      children: [
-                        _buildFormField(
-                          label: 'Duration (minutes) *',
-                          icon: Icons.timer_rounded,
-                          child: TextFormField(
-                            controller: _durationController,
-                            keyboardType: TextInputType.number,
-                            decoration: _buildInputDecoration(
-                              hintText: 'e.g., 120',
-                              prefixIconData: Icons.timer_rounded,
-                            ),
-                            validator: (value) {
-                              if (value == null || value.trim().isEmpty) {
-                                return 'Required';
-                              }
-                              final duration = int.tryParse(value);
-                              if (duration == null || duration <= 0) {
-                                return 'Invalid';
-                              }
-                              return null;
-                            },
-                          ),
-                        ),
-                        const SizedBox(height: 20),
-                        _buildFormField(
-                          label: 'Total Marks *',
-                          icon: Icons.star_rounded,
-                          child: TextFormField(
-                            controller: _totalMarksController,
-                            keyboardType: TextInputType.number,
-                            decoration: _buildInputDecoration(
-                              hintText: 'e.g., 100',
-                              prefixIconData: Icons.star_rounded,
-                            ),
-                            validator: (value) {
-                              if (value == null || value.trim().isEmpty) {
-                                return 'Required';
-                              }
-                              final marks = int.tryParse(value);
-                              if (marks == null || marks <= 0) {
-                                return 'Invalid';
-                              }
-                              return null;
-                            },
-                          ),
-                        ),
-                        const SizedBox(height: 20),
-                        _buildFormField(
-                          label: 'Passing Marks *',
-                          icon: Icons.check_circle_rounded,
-                          child: TextFormField(
-                            controller: _passingMarksController,
-                            keyboardType: TextInputType.number,
-                            decoration: _buildInputDecoration(
-                              hintText: 'e.g., 50',
-                              prefixIconData: Icons.check_circle_rounded,
-                            ),
-                            validator: (value) {
-                              if (value == null || value.trim().isEmpty) {
-                                return 'Required';
-                              }
-                              final marks = int.tryParse(value);
-                              if (marks == null || marks < 0) {
-                                return 'Invalid';
-                              }
-                              return null;
-                            },
-                          ),
-                        ),
-                      ],
-                    );
-                  } else {
-                    // Horizontal layout on larger screens
-                    return Row(
-                      children: [
-                        Expanded(
-                          child: _buildFormField(
-                            label: 'Duration (minutes) *',
-                            icon: Icons.timer_rounded,
-                            child: TextFormField(
-                              controller: _durationController,
-                              keyboardType: TextInputType.number,
-                              decoration: _buildInputDecoration(
-                                hintText: 'e.g., 120',
-                                prefixIconData: Icons.timer_rounded,
+                    LayoutBuilder(
+                      builder: (context, constraints) {
+                        if (constraints.maxWidth < 700) {
+                          // Stack vertically on small screens
+                          return Column(
+                            children: [
+                              _buildFormField(
+                                label: 'Duration (minutes) *',
+                                icon: Icons.timer_rounded,
+                                child: TextFormField(
+                                  controller: _durationController,
+                                  keyboardType: TextInputType.number,
+                                  decoration: _buildInputDecoration(
+                                    hintText: 'e.g., 120',
+                                    prefixIconData: Icons.timer_rounded,
+                                  ),
+                                  validator: (value) {
+                                    if (value == null || value.trim().isEmpty) {
+                                      return 'Required';
+                                    }
+                                    final duration = int.tryParse(value);
+                                    if (duration == null || duration <= 0) {
+                                      return 'Invalid';
+                                    }
+                                    return null;
+                                  },
+                                ),
                               ),
-                              validator: (value) {
-                                if (value == null || value.trim().isEmpty) {
-                                  return 'Required';
-                                }
-                                final duration = int.tryParse(value);
-                                if (duration == null || duration <= 0) {
-                                  return 'Invalid';
-                                }
-                                return null;
-                              },
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: _buildFormField(
-                            label: 'Total Marks *',
-                            icon: Icons.star_rounded,
-                            child: TextFormField(
-                              controller: _totalMarksController,
-                              keyboardType: TextInputType.number,
-                              decoration: _buildInputDecoration(
-                                hintText: 'e.g., 100',
-                                prefixIconData: Icons.star_rounded,
+                              const SizedBox(height: 20),
+                              _buildFormField(
+                                label: 'Total Marks *',
+                                icon: Icons.star_rounded,
+                                child: TextFormField(
+                                  controller: _totalMarksController,
+                                  keyboardType: TextInputType.number,
+                                  decoration: _buildInputDecoration(
+                                    hintText: 'e.g., 100',
+                                    prefixIconData: Icons.star_rounded,
+                                  ),
+                                  validator: (value) {
+                                    if (value == null || value.trim().isEmpty) {
+                                      return 'Required';
+                                    }
+                                    final marks = int.tryParse(value);
+                                    if (marks == null || marks <= 0) {
+                                      return 'Invalid';
+                                    }
+                                    return null;
+                                  },
+                                ),
                               ),
-                              validator: (value) {
-                                if (value == null || value.trim().isEmpty) {
-                                  return 'Required';
-                                }
-                                final marks = int.tryParse(value);
-                                if (marks == null || marks <= 0) {
-                                  return 'Invalid';
-                                }
-                                return null;
-                              },
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: _buildFormField(
-                            label: 'Passing Marks *',
-                            icon: Icons.check_circle_rounded,
-                            child: TextFormField(
-                              controller: _passingMarksController,
-                              keyboardType: TextInputType.number,
-                              decoration: _buildInputDecoration(
-                                hintText: 'e.g., 50',
-                                prefixIconData: Icons.check_circle_rounded,
+                              const SizedBox(height: 20),
+                              _buildFormField(
+                                label: 'Passing Marks *',
+                                icon: Icons.check_circle_rounded,
+                                child: TextFormField(
+                                  controller: _passingMarksController,
+                                  keyboardType: TextInputType.number,
+                                  decoration: _buildInputDecoration(
+                                    hintText: 'e.g., 50',
+                                    prefixIconData: Icons.check_circle_rounded,
+                                  ),
+                                  validator: (value) {
+                                    if (value == null || value.trim().isEmpty) {
+                                      return 'Required';
+                                    }
+                                    final marks = int.tryParse(value);
+                                    if (marks == null || marks < 0) {
+                                      return 'Invalid';
+                                    }
+                                    return null;
+                                  },
+                                ),
                               ),
-                              validator: (value) {
-                                if (value == null || value.trim().isEmpty) {
-                                  return 'Required';
-                                }
-                                final marks = int.tryParse(value);
-                                if (marks == null || marks < 0) {
-                                  return 'Invalid';
-                                }
-                                return null;
-                              },
-                            ),
-                          ),
-                        ),
-                      ],
-                    );
-                  }
-                },
+                            ],
+                          );
+                        } else {
+                          // Horizontal layout on larger screens
+                          return Row(
+                            children: [
+                              Expanded(
+                                child: _buildFormField(
+                                  label: 'Duration (minutes) *',
+                                  icon: Icons.timer_rounded,
+                                  child: TextFormField(
+                                    controller: _durationController,
+                                    keyboardType: TextInputType.number,
+                                    decoration: _buildInputDecoration(
+                                      hintText: 'e.g., 120',
+                                      prefixIconData: Icons.timer_rounded,
+                                    ),
+                                    validator: (value) {
+                                      if (value == null ||
+                                          value.trim().isEmpty) {
+                                        return 'Required';
+                                      }
+                                      final duration = int.tryParse(value);
+                                      if (duration == null || duration <= 0) {
+                                        return 'Invalid';
+                                      }
+                                      return null;
+                                    },
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 16),
+                              Expanded(
+                                child: _buildFormField(
+                                  label: 'Total Marks *',
+                                  icon: Icons.star_rounded,
+                                  child: TextFormField(
+                                    controller: _totalMarksController,
+                                    keyboardType: TextInputType.number,
+                                    decoration: _buildInputDecoration(
+                                      hintText: 'e.g., 100',
+                                      prefixIconData: Icons.star_rounded,
+                                    ),
+                                    validator: (value) {
+                                      if (value == null ||
+                                          value.trim().isEmpty) {
+                                        return 'Required';
+                                      }
+                                      final marks = int.tryParse(value);
+                                      if (marks == null || marks <= 0) {
+                                        return 'Invalid';
+                                      }
+                                      return null;
+                                    },
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 16),
+                              Expanded(
+                                child: _buildFormField(
+                                  label: 'Passing Marks *',
+                                  icon: Icons.check_circle_rounded,
+                                  child: TextFormField(
+                                    controller: _passingMarksController,
+                                    keyboardType: TextInputType.number,
+                                    decoration: _buildInputDecoration(
+                                      hintText: 'e.g., 50',
+                                      prefixIconData:
+                                          Icons.check_circle_rounded,
+                                    ),
+                                    validator: (value) {
+                                      if (value == null ||
+                                          value.trim().isEmpty) {
+                                        return 'Required';
+                                      }
+                                      final marks = int.tryParse(value);
+                                      if (marks == null || marks < 0) {
+                                        return 'Invalid';
+                                      }
+                                      return null;
+                                    },
+                                  ),
+                                ),
+                              ),
+                            ],
+                          );
+                        }
+                      },
                     ),
                     SizedBox(height: fieldSpacing),
 
                     // Max Attempts
-              _buildFormField(
-                label: 'Max Attempts',
-                icon: Icons.repeat_rounded,
-                child: TextFormField(
-                  controller: _maxAttemptsController,
-                  keyboardType: TextInputType.number,
-                  decoration: _buildInputDecoration(
-                    hintText: '1',
-                    prefixIconData: Icons.repeat_rounded,
-                  ),
-                  validator: (value) {
-                    if (value != null && value.trim().isNotEmpty) {
-                      final attempts = int.tryParse(value);
-                      if (attempts == null || attempts < 1) {
-                        return 'Must be at least 1';
-                      }
-                    }
-                    return null;
-                  },
-                ),
+                    _buildFormField(
+                      label: 'Max Attempts',
+                      icon: Icons.repeat_rounded,
+                      child: TextFormField(
+                        controller: _maxAttemptsController,
+                        keyboardType: TextInputType.number,
+                        decoration: _buildInputDecoration(
+                          hintText: '1',
+                          prefixIconData: Icons.repeat_rounded,
+                        ),
+                        validator: (value) {
+                          if (value != null && value.trim().isNotEmpty) {
+                            final attempts = int.tryParse(value);
+                            if (attempts == null || attempts < 1) {
+                              return 'Must be at least 1';
+                            }
+                          }
+                          return null;
+                        },
+                      ),
                     ),
                     SizedBox(height: fieldSpacing),
 
                     // Description
-              _buildFormField(
-                label: 'Description',
-                icon: Icons.description_rounded,
-                child: TextFormField(
-                  controller: _descriptionController,
-                  maxLines: 4,
-                  decoration: _buildInputDecoration(
-                    hintText: 'Enter assessment description...',
-                    prefixIconData: Icons.description_rounded,
-                  ),
-                ),
+                    _buildFormField(
+                      label: 'Description',
+                      icon: Icons.description_rounded,
+                      child: TextFormField(
+                        controller: _descriptionController,
+                        maxLines: 4,
+                        decoration: _buildInputDecoration(
+                          hintText: 'Enter assessment description...',
+                          prefixIconData: Icons.description_rounded,
+                        ),
+                      ),
                     ),
                     SizedBox(height: fieldSpacing),
 
                     // Instructions
-              _buildFormField(
-                label: 'Instructions',
-                icon: Icons.info_rounded,
-                child: TextFormField(
-                  controller: _instructionsController,
-                  maxLines: 5,
-                  decoration: _buildInputDecoration(
-                    hintText: 'Enter exam instructions...',
-                    prefixIconData: Icons.info_rounded,
-                  ),
-                ),
+                    _buildFormField(
+                      label: 'Instructions',
+                      icon: Icons.info_rounded,
+                      child: TextFormField(
+                        controller: _instructionsController,
+                        maxLines: 5,
+                        decoration: _buildInputDecoration(
+                          hintText: 'Enter exam instructions...',
+                          prefixIconData: Icons.info_rounded,
+                        ),
+                      ),
                     ),
                     SizedBox(height: isSmallScreen ? 20 : 24),
 
                     // Time Slots Section
-              LayoutBuilder(
-                builder: (context, constraints) {
-                  if (constraints.maxWidth < 400) {
-                    // Stack vertically on very small screens
-                    return Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Icon(
-                              Icons.access_time_rounded,
-                              size: 18,
-                              color: AdminDashboardStyles.primary,
-                            ),
-                            const SizedBox(width: 8),
-                            Flexible(
-                              child: Text(
-                                'Time Slots *',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w600,
-                                  color: AdminDashboardStyles.textDark,
-                                ),
-                                overflow: TextOverflow.ellipsis,
+                    LayoutBuilder(
+                      builder: (context, constraints) {
+                        if (constraints.maxWidth < 400) {
+                          // Stack vertically on very small screens
+                          return Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Icon(
+                                    Icons.access_time_rounded,
+                                    size: 18,
+                                    color: AdminDashboardStyles.primary,
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Flexible(
+                                    child: Text(
+                                      'Time Slots *',
+                                      style: TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w600,
+                                        color: AdminDashboardStyles.textDark,
+                                      ),
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                ],
                               ),
+                              const SizedBox(height: 12),
+                              SizedBox(
+                                width: double.infinity,
+                                child: ElevatedButton.icon(
+                                  onPressed: _addTimeSlot,
+                                  icon: const Icon(Icons.add, size: 18),
+                                  label: const Text('Add Slot'),
+                                  style:
+                                      AdminDashboardStyles.getPrimaryButtonStyle(),
+                                ),
+                              ),
+                            ],
+                          );
+                        } else {
+                          // Horizontal layout on larger screens
+                          return Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Flexible(
+                                child: Row(
+                                  children: [
+                                    Icon(
+                                      Icons.access_time_rounded,
+                                      size: 18,
+                                      color: AdminDashboardStyles.primary,
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Flexible(
+                                      child: Text(
+                                        'Time Slots *',
+                                        style: TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w600,
+                                          color: AdminDashboardStyles.textDark,
+                                        ),
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              ElevatedButton.icon(
+                                onPressed: _addTimeSlot,
+                                icon: const Icon(Icons.add, size: 18),
+                                label: const Text('Add Slot'),
+                                style:
+                                    AdminDashboardStyles.getPrimaryButtonStyle(),
+                              ),
+                            ],
+                          );
+                        }
+                      },
+                    ),
+                    SizedBox(height: isSmallScreen ? 12 : 16),
+
+                    // Time Slots List
+                    if (_timeSlots.isEmpty)
+                      Container(
+                        padding: const EdgeInsets.all(32),
+                        decoration: BoxDecoration(
+                          color: AdminDashboardStyles.primary.withOpacity(0.05),
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(
+                            color: AdminDashboardStyles.primary.withOpacity(
+                              0.2,
                             ),
-                          ],
-                        ),
-                        const SizedBox(height: 12),
-                        SizedBox(
-                          width: double.infinity,
-                          child: ElevatedButton.icon(
-                            onPressed: _addTimeSlot,
-                            icon: const Icon(Icons.add, size: 18),
-                            label: const Text('Add Slot'),
-                            style: AdminDashboardStyles.getPrimaryButtonStyle(),
+                            width: 1,
                           ),
                         ),
-                      ],
-                    );
-                  } else {
-                    // Horizontal layout on larger screens
-                    return Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Flexible(
-                          child: Row(
+                        child: Center(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
                             children: [
                               Icon(
                                 Icons.access_time_rounded,
-                                size: 18,
-                                color: AdminDashboardStyles.primary,
+                                size: 48,
+                                color: AdminDashboardStyles.primary.withOpacity(
+                                  0.5,
+                                ),
                               ),
-                              const SizedBox(width: 8),
-                              Flexible(
-                                child: Text(
-                                  'Time Slots *',
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w600,
-                                    color: AdminDashboardStyles.textDark,
-                                  ),
-                                  overflow: TextOverflow.ellipsis,
+                              const SizedBox(height: 12),
+                              Text(
+                                'No time slots added',
+                                style: TextStyle(
+                                  color: AdminDashboardStyles.textDark,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                'Click "Add Slot" to add one',
+                                style: TextStyle(
+                                  color: AdminDashboardStyles.textLight,
+                                  fontSize: 14,
                                 ),
                               ),
                             ],
                           ),
                         ),
-                        const SizedBox(width: 12),
-                        ElevatedButton.icon(
-                          onPressed: _addTimeSlot,
-                          icon: const Icon(Icons.add, size: 18),
-                          label: const Text('Add Slot'),
-                          style: AdminDashboardStyles.getPrimaryButtonStyle(),
-                        ),
-                      ],
-                    );
-                  }
-                },
-                    ),
-                    SizedBox(height: isSmallScreen ? 12 : 16),
-
-                    // Time Slots List
-              if (_timeSlots.isEmpty)
-                Container(
-                  padding: const EdgeInsets.all(32),
-                  decoration: BoxDecoration(
-                    color: AdminDashboardStyles.primary.withOpacity(0.05),
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(
-                      color: AdminDashboardStyles.primary.withOpacity(0.2),
-                      width: 1,
-                    ),
-                  ),
-                  child: Center(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          Icons.access_time_rounded,
-                          size: 48,
-                          color: AdminDashboardStyles.primary.withOpacity(0.5),
-                        ),
-                        const SizedBox(height: 12),
-                        Text(
-                          'No time slots added',
-                          style: TextStyle(
-                            color: AdminDashboardStyles.textDark,
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          'Click "Add Slot" to add one',
-                          style: TextStyle(
-                            color: AdminDashboardStyles.textLight,
-                            fontSize: 14,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                )
-              else
-                ..._timeSlots.asMap().entries.map((entry) {
-                  final index = entry.key;
-                  final slot = entry.value;
-                  return _buildTimeSlotRow(slot, index);
-                }),
+                      )
+                    else
+                      ..._timeSlots.asMap().entries.map((entry) {
+                        final index = entry.key;
+                        final slot = entry.value;
+                        return _buildTimeSlotRow(slot, index);
+                      }),
 
                     SizedBox(height: isSmallScreen ? 24 : 32),
 
                     // Create Button
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton.icon(
-                  onPressed: _isLoading ? null : _createAssessment,
-                  icon: _isLoading
-                      ? const SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                          ),
-                        )
-                      : const Icon(Icons.check_rounded),
-                  label: Text(_isLoading ? 'Creating...' : 'Create Assessment'),
-                  style: AdminDashboardStyles.getPrimaryButtonStyle().copyWith(
-                    padding: const MaterialStatePropertyAll(
-                      EdgeInsets.symmetric(vertical: 16),
-                    ),
-                  ),
-                ),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton.icon(
+                        onPressed: _isLoading ? null : _createAssessment,
+                        icon: _isLoading
+                            ? const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  valueColor: AlwaysStoppedAnimation<Color>(
+                                    Colors.white,
+                                  ),
+                                ),
+                              )
+                            : const Icon(Icons.check_rounded),
+                        label: Text(
+                          _isLoading ? 'Creating...' : 'Create Assessment',
+                        ),
+                        style: AdminDashboardStyles.getPrimaryButtonStyle()
+                            .copyWith(
+                              padding: const MaterialStatePropertyAll(
+                                EdgeInsets.symmetric(vertical: 16),
+                              ),
+                            ),
+                      ),
                     ),
                   ],
                 ),
@@ -1132,29 +1182,17 @@ class _CreateAssessmentFormPageState extends State<CreateAssessmentFormPage> {
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(16),
-        borderSide: BorderSide(
-          color: AdminDashboardStyles.primary,
-          width: 2,
-        ),
+        borderSide: BorderSide(color: AdminDashboardStyles.primary, width: 2),
       ),
       errorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(16),
-        borderSide: BorderSide(
-          color: AppColors.error,
-          width: 1,
-        ),
+        borderSide: BorderSide(color: AppColors.error, width: 1),
       ),
       focusedErrorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(16),
-        borderSide: BorderSide(
-          color: AppColors.error,
-          width: 2,
-        ),
+        borderSide: BorderSide(color: AppColors.error, width: 2),
       ),
-      contentPadding: const EdgeInsets.symmetric(
-        horizontal: 16,
-        vertical: 16,
-      ),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
     );
   }
 
@@ -1169,11 +1207,7 @@ class _CreateAssessmentFormPageState extends State<CreateAssessmentFormPage> {
         Row(
           children: [
             if (icon != null) ...[
-              Icon(
-                icon,
-                size: 16,
-                color: AdminDashboardStyles.primary,
-              ),
+              Icon(icon, size: 16, color: AdminDashboardStyles.primary),
               const SizedBox(width: 8),
             ],
             Flexible(
@@ -1202,10 +1236,7 @@ class _CreateAssessmentFormPageState extends State<CreateAssessmentFormPage> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: AdminDashboardStyles.borderLight,
-          width: 1,
-        ),
+        border: Border.all(color: AdminDashboardStyles.borderLight, width: 1),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.05),
@@ -1447,10 +1478,7 @@ class _CreateAssessmentFormPageState extends State<CreateAssessmentFormPage> {
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: IconButton(
-                      icon: Icon(
-                        Icons.delete_outline,
-                        color: AppColors.error,
-                      ),
+                      icon: Icon(Icons.delete_outline, color: AppColors.error),
                       onPressed: () => _removeTimeSlot(index),
                     ),
                   ),
@@ -1477,4 +1505,3 @@ class TimeSlot {
     required this.maxParticipants,
   });
 }
-

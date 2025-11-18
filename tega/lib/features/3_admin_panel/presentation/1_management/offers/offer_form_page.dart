@@ -61,10 +61,10 @@ class _OfferFormPageState extends State<OfferFormPage> {
   Future<void> _initializeCacheAndLoadData() async {
     // Initialize cache service
     await _cacheService.initialize();
-    
+
     // Try to load from cache first
     await _loadFromCache();
-    
+
     // Then load fresh data
     await _loadAvailableOptions();
   }
@@ -72,12 +72,14 @@ class _OfferFormPageState extends State<OfferFormPage> {
   Future<void> _loadFromCache() async {
     try {
       setState(() => _isLoadingFromCache = true);
-      
+
       final cachedCourses = await _cacheService.getAvailableCourses();
       final cachedExams = await _cacheService.getAvailableTegaExams();
       final cachedInstitutes = await _cacheService.getAvailableInstitutes();
 
-      if (cachedCourses != null && cachedExams != null && cachedInstitutes != null) {
+      if (cachedCourses != null &&
+          cachedExams != null &&
+          cachedInstitutes != null) {
         setState(() {
           _availableCourses = List<Map<String, dynamic>>.from(cachedCourses);
           _availableTegaExams = List<Map<String, dynamic>>.from(cachedExams);
@@ -108,8 +110,10 @@ class _OfferFormPageState extends State<OfferFormPage> {
 
   Future<void> _loadAvailableOptions({bool forceRefresh = false}) async {
     // If we have cached data and not forcing refresh, load in background
-    if (!forceRefresh && _availableCourses.isNotEmpty && 
-        _availableTegaExams.isNotEmpty && _availableInstitutes.isNotEmpty) {
+    if (!forceRefresh &&
+        _availableCourses.isNotEmpty &&
+        _availableTegaExams.isNotEmpty &&
+        _availableInstitutes.isNotEmpty) {
       _loadAvailableOptionsInBackground();
       return;
     }
@@ -216,15 +220,33 @@ class _OfferFormPageState extends State<OfferFormPage> {
                 _buildHeader(isMobile, isTablet, isDesktop),
                 Expanded(
                   child: SingleChildScrollView(
-                    padding: EdgeInsets.all(isMobile ? 16 : isTablet ? 20 : 24),
+                    padding: EdgeInsets.all(
+                      isMobile
+                          ? 16
+                          : isTablet
+                          ? 20
+                          : 24,
+                    ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        _buildOfferDetailsSection(isMobile, isTablet, isDesktop),
+                        _buildOfferDetailsSection(
+                          isMobile,
+                          isTablet,
+                          isDesktop,
+                        ),
                         SizedBox(height: isMobile ? 20 : 24),
-                        _buildCourseOffersSection(isMobile, isTablet, isDesktop),
+                        _buildCourseOffersSection(
+                          isMobile,
+                          isTablet,
+                          isDesktop,
+                        ),
                         SizedBox(height: isMobile ? 20 : 24),
-                        _buildTegaExamOffersSection(isMobile, isTablet, isDesktop),
+                        _buildTegaExamOffersSection(
+                          isMobile,
+                          isTablet,
+                          isDesktop,
+                        ),
                         SizedBox(height: isMobile ? 24 : 32),
                         _buildActionButtons(isMobile, isTablet, isDesktop),
                       ],
@@ -242,23 +264,33 @@ class _OfferFormPageState extends State<OfferFormPage> {
   Widget _buildHeader(bool isMobile, bool isTablet, bool isDesktop) {
     return Container(
       padding: EdgeInsets.only(
-        left: isMobile ? 16 : isTablet ? 20 : 24,
-        right: isMobile ? 16 : isTablet ? 20 : 24,
+        left: isMobile
+            ? 16
+            : isTablet
+            ? 20
+            : 24,
+        right: isMobile
+            ? 16
+            : isTablet
+            ? 20
+            : 24,
         top: isMobile ? 12 : 16,
         bottom: isMobile ? 12 : 16,
       ),
       decoration: BoxDecoration(
         color: Colors.white,
-        border: Border(
-          bottom: BorderSide(color: Colors.grey[200]!, width: 1),
-        ),
+        border: Border(bottom: BorderSide(color: Colors.grey[200]!, width: 1)),
       ),
       child: Row(
         children: [
           Text(
             widget.isEdit ? 'Edit Offer' : 'Create Offer',
             style: TextStyle(
-              fontSize: isMobile ? 18 : isTablet ? 20 : 22,
+              fontSize: isMobile
+                  ? 18
+                  : isTablet
+                  ? 20
+                  : 22,
               fontWeight: FontWeight.bold,
               color: AppColors.textPrimary,
             ),
@@ -284,9 +316,19 @@ class _OfferFormPageState extends State<OfferFormPage> {
     );
   }
 
-  Widget _buildOfferDetailsSection(bool isMobile, bool isTablet, bool isDesktop) {
+  Widget _buildOfferDetailsSection(
+    bool isMobile,
+    bool isTablet,
+    bool isDesktop,
+  ) {
     return Container(
-      padding: EdgeInsets.all(isMobile ? 16 : isTablet ? 18 : 20),
+      padding: EdgeInsets.all(
+        isMobile
+            ? 16
+            : isTablet
+            ? 18
+            : 20,
+      ),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(isMobile ? 10 : 12),
@@ -298,7 +340,11 @@ class _OfferFormPageState extends State<OfferFormPage> {
           Text(
             'Offer Details',
             style: TextStyle(
-              fontSize: isMobile ? 16 : isTablet ? 18 : 20,
+              fontSize: isMobile
+                  ? 16
+                  : isTablet
+                  ? 18
+                  : 20,
               fontWeight: FontWeight.bold,
               color: AppColors.textPrimary,
             ),
@@ -323,19 +369,22 @@ class _OfferFormPageState extends State<OfferFormPage> {
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(8),
-                borderSide: const BorderSide(color: AppColors.warmOrange, width: 2),
+                borderSide: const BorderSide(
+                  color: AppColors.warmOrange,
+                  width: 2,
+                ),
               ),
               filled: true,
               fillColor: Colors.grey[50],
-              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 12,
+                vertical: 16,
+              ),
             ),
             items: _availableInstitutes.map((institute) {
               return DropdownMenuItem<String>(
                 value: institute,
-                child: Text(
-                  institute,
-                  overflow: TextOverflow.ellipsis,
-                ),
+                child: Text(institute, overflow: TextOverflow.ellipsis),
               );
             }).toList(),
             onChanged: (value) {
@@ -370,16 +419,28 @@ class _OfferFormPageState extends State<OfferFormPage> {
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
-                  borderSide: const BorderSide(color: AppColors.warmOrange, width: 2),
+                  borderSide: const BorderSide(
+                    color: AppColors.warmOrange,
+                    width: 2,
+                  ),
                 ),
                 filled: true,
                 fillColor: Colors.grey[50],
-                prefixIcon: const Icon(Icons.calendar_today, color: AppColors.textSecondary),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+                prefixIcon: const Icon(
+                  Icons.calendar_today,
+                  color: AppColors.textSecondary,
+                ),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 16,
+                ),
               ),
               child: Text(
                 '${_validUntil.day.toString().padLeft(2, '0')}-${_validUntil.month.toString().padLeft(2, '0')}-${_validUntil.year}',
-                style: const TextStyle(color: AppColors.textPrimary, fontSize: 16),
+                style: const TextStyle(
+                  color: AppColors.textPrimary,
+                  fontSize: 16,
+                ),
               ),
             ),
           ),
@@ -401,7 +462,10 @@ class _OfferFormPageState extends State<OfferFormPage> {
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(8),
-                borderSide: const BorderSide(color: AppColors.warmOrange, width: 2),
+                borderSide: const BorderSide(
+                  color: AppColors.warmOrange,
+                  width: 2,
+                ),
               ),
               filled: true,
               fillColor: Colors.grey[50],
@@ -428,11 +492,17 @@ class _OfferFormPageState extends State<OfferFormPage> {
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(8),
-                borderSide: const BorderSide(color: AppColors.warmOrange, width: 2),
+                borderSide: const BorderSide(
+                  color: AppColors.warmOrange,
+                  width: 2,
+                ),
               ),
               filled: true,
               fillColor: Colors.grey[50],
-              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 12,
+                vertical: 16,
+              ),
             ),
           ),
         ],
@@ -655,9 +725,19 @@ class _OfferFormPageState extends State<OfferFormPage> {
     );
   }
 
-  Widget _buildCourseOffersSection(bool isMobile, bool isTablet, bool isDesktop) {
+  Widget _buildCourseOffersSection(
+    bool isMobile,
+    bool isTablet,
+    bool isDesktop,
+  ) {
     return Container(
-      padding: EdgeInsets.all(isMobile ? 16 : isTablet ? 18 : 20),
+      padding: EdgeInsets.all(
+        isMobile
+            ? 16
+            : isTablet
+            ? 18
+            : 20,
+      ),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(isMobile ? 10 : 12),
@@ -669,7 +749,11 @@ class _OfferFormPageState extends State<OfferFormPage> {
           Text(
             'Course Offers',
             style: TextStyle(
-              fontSize: isMobile ? 16 : isTablet ? 18 : 20,
+              fontSize: isMobile
+                  ? 16
+                  : isTablet
+                  ? 18
+                  : 20,
               fontWeight: FontWeight.bold,
               color: AppColors.textPrimary,
             ),
@@ -688,7 +772,9 @@ class _OfferFormPageState extends State<OfferFormPage> {
                       decoration: InputDecoration(
                         labelText: 'Course',
                         hintText: 'Select Course',
-                        labelStyle: const TextStyle(color: AppColors.textSecondary),
+                        labelStyle: const TextStyle(
+                          color: AppColors.textSecondary,
+                        ),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8),
                           borderSide: BorderSide(color: Colors.grey[300]!),
@@ -699,13 +785,20 @@ class _OfferFormPageState extends State<OfferFormPage> {
                         ),
                         filled: true,
                         fillColor: Colors.grey[50],
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 16,
+                        ),
                       ),
                       items: _availableCourses.map((course) {
                         return DropdownMenuItem<String>(
-                          value: course['_id']?.toString() ?? course['id']?.toString(),
+                          value:
+                              course['_id']?.toString() ??
+                              course['id']?.toString(),
                           child: Text(
-                            course['title'] ?? course['courseName'] ?? 'Unknown',
+                            course['title'] ??
+                                course['courseName'] ??
+                                'Unknown',
                             overflow: TextOverflow.ellipsis,
                           ),
                         );
@@ -716,12 +809,16 @@ class _OfferFormPageState extends State<OfferFormPage> {
                           // Auto-fill original price from course
                           if (value != null) {
                             final course = _availableCourses.firstWhere(
-                              (c) => (c['_id']?.toString() ?? c['id']?.toString()) == value,
+                              (c) =>
+                                  (c['_id']?.toString() ??
+                                      c['id']?.toString()) ==
+                                  value,
                               orElse: () => {},
                             );
                             if (course.isNotEmpty) {
                               final price = course['price'] ?? 0;
-                              _courseOriginalPriceController.text = price.toString();
+                              _courseOriginalPriceController.text = price
+                                  .toString();
                             }
                           } else {
                             _courseOriginalPriceController.clear();
@@ -739,18 +836,27 @@ class _OfferFormPageState extends State<OfferFormPage> {
                             readOnly: true,
                             decoration: InputDecoration(
                               labelText: 'Original Price',
-                              labelStyle: const TextStyle(color: AppColors.textSecondary),
+                              labelStyle: const TextStyle(
+                                color: AppColors.textSecondary,
+                              ),
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(8),
-                                borderSide: BorderSide(color: Colors.grey[300]!),
+                                borderSide: BorderSide(
+                                  color: Colors.grey[300]!,
+                                ),
                               ),
                               enabledBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(8),
-                                borderSide: BorderSide(color: Colors.grey[300]!),
+                                borderSide: BorderSide(
+                                  color: Colors.grey[300]!,
+                                ),
                               ),
                               filled: true,
                               fillColor: Colors.grey[200],
-                              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+                              contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 16,
+                              ),
                             ),
                           ),
                         ),
@@ -761,18 +867,27 @@ class _OfferFormPageState extends State<OfferFormPage> {
                             keyboardType: TextInputType.number,
                             decoration: InputDecoration(
                               labelText: 'Offer Price',
-                              labelStyle: const TextStyle(color: AppColors.textSecondary),
+                              labelStyle: const TextStyle(
+                                color: AppColors.textSecondary,
+                              ),
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(8),
-                                borderSide: BorderSide(color: Colors.grey[300]!),
+                                borderSide: BorderSide(
+                                  color: Colors.grey[300]!,
+                                ),
                               ),
                               enabledBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(8),
-                                borderSide: BorderSide(color: Colors.grey[300]!),
+                                borderSide: BorderSide(
+                                  color: Colors.grey[300]!,
+                                ),
                               ),
                               filled: true,
                               fillColor: Colors.grey[50],
-                              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+                              contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 16,
+                              ),
                             ),
                           ),
                         ),
@@ -786,7 +901,10 @@ class _OfferFormPageState extends State<OfferFormPage> {
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.info,
                           foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 20,
+                            vertical: 16,
+                          ),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(8),
                           ),
@@ -808,7 +926,9 @@ class _OfferFormPageState extends State<OfferFormPage> {
                         decoration: InputDecoration(
                           labelText: 'Course',
                           hintText: 'Select Course',
-                          labelStyle: const TextStyle(color: AppColors.textSecondary),
+                          labelStyle: const TextStyle(
+                            color: AppColors.textSecondary,
+                          ),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(8),
                             borderSide: BorderSide(color: Colors.grey[300]!),
@@ -819,13 +939,20 @@ class _OfferFormPageState extends State<OfferFormPage> {
                           ),
                           filled: true,
                           fillColor: Colors.grey[50],
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 16,
+                          ),
                         ),
                         items: _availableCourses.map((course) {
                           return DropdownMenuItem<String>(
-                            value: course['_id']?.toString() ?? course['id']?.toString(),
+                            value:
+                                course['_id']?.toString() ??
+                                course['id']?.toString(),
                             child: Text(
-                              course['title'] ?? course['courseName'] ?? 'Unknown',
+                              course['title'] ??
+                                  course['courseName'] ??
+                                  'Unknown',
                               overflow: TextOverflow.ellipsis,
                             ),
                           );
@@ -844,7 +971,9 @@ class _OfferFormPageState extends State<OfferFormPage> {
                         keyboardType: TextInputType.number,
                         decoration: InputDecoration(
                           labelText: 'Original Price',
-                          labelStyle: const TextStyle(color: AppColors.textSecondary),
+                          labelStyle: const TextStyle(
+                            color: AppColors.textSecondary,
+                          ),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(8),
                             borderSide: BorderSide(color: Colors.grey[300]!),
@@ -855,7 +984,10 @@ class _OfferFormPageState extends State<OfferFormPage> {
                           ),
                           filled: true,
                           fillColor: Colors.grey[50],
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 16,
+                          ),
                         ),
                       ),
                     ),
@@ -866,7 +998,9 @@ class _OfferFormPageState extends State<OfferFormPage> {
                         keyboardType: TextInputType.number,
                         decoration: InputDecoration(
                           labelText: 'Offer Price',
-                          labelStyle: const TextStyle(color: AppColors.textSecondary),
+                          labelStyle: const TextStyle(
+                            color: AppColors.textSecondary,
+                          ),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(8),
                             borderSide: BorderSide(color: Colors.grey[300]!),
@@ -877,7 +1011,10 @@ class _OfferFormPageState extends State<OfferFormPage> {
                           ),
                           filled: true,
                           fillColor: Colors.grey[50],
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 16,
+                          ),
                         ),
                       ),
                     ),
@@ -887,7 +1024,10 @@ class _OfferFormPageState extends State<OfferFormPage> {
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.info,
                         foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 20,
+                          vertical: 16,
+                        ),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8),
                         ),
@@ -918,7 +1058,13 @@ class _OfferFormPageState extends State<OfferFormPage> {
             ..._selectedCourseOffers.asMap().entries.map((entry) {
               final index = entry.key;
               final offer = entry.value;
-              return _buildCourseOfferItem(offer, index, isMobile, isTablet, isDesktop);
+              return _buildCourseOfferItem(
+                offer,
+                index,
+                isMobile,
+                isTablet,
+                isDesktop,
+              );
             }),
         ],
       ),
@@ -927,13 +1073,14 @@ class _OfferFormPageState extends State<OfferFormPage> {
 
   void _addCourseFromInline() {
     if (_selectedCourseId == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please select a course')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Please select a course')));
       return;
     }
 
-    final originalPrice = double.tryParse(_courseOriginalPriceController.text) ?? 0;
+    final originalPrice =
+        double.tryParse(_courseOriginalPriceController.text) ?? 0;
     final offerPrice = double.tryParse(_courseOfferPriceController.text) ?? 0;
 
     if (originalPrice <= 0 || offerPrice <= 0) {
@@ -952,20 +1099,28 @@ class _OfferFormPageState extends State<OfferFormPage> {
         : 0.0;
 
     setState(() {
-      _selectedCourseOffers.add(CourseOffer(
-        courseId: _selectedCourseId!,
-        courseName: course['title'] ?? course['courseName'] ?? 'Unknown',
-        originalPrice: originalPrice,
-        offerPrice: offerPrice,
-        discountPercentage: discountPercentage,
-      ));
+      _selectedCourseOffers.add(
+        CourseOffer(
+          courseId: _selectedCourseId!,
+          courseName: course['title'] ?? course['courseName'] ?? 'Unknown',
+          originalPrice: originalPrice,
+          offerPrice: offerPrice,
+          discountPercentage: discountPercentage,
+        ),
+      );
       _selectedCourseId = null;
       _courseOriginalPriceController.clear();
       _courseOfferPriceController.clear();
     });
   }
 
-  Widget _buildCourseOfferItem(CourseOffer offer, int index, bool isMobile, bool isTablet, bool isDesktop) {
+  Widget _buildCourseOfferItem(
+    CourseOffer offer,
+    int index,
+    bool isMobile,
+    bool isTablet,
+    bool isDesktop,
+  ) {
     return Container(
       margin: EdgeInsets.only(bottom: isMobile ? 10 : 12),
       padding: EdgeInsets.all(isMobile ? 10 : 12),
@@ -1069,9 +1224,19 @@ class _OfferFormPageState extends State<OfferFormPage> {
     );
   }
 
-  Widget _buildTegaExamOffersSection(bool isMobile, bool isTablet, bool isDesktop) {
+  Widget _buildTegaExamOffersSection(
+    bool isMobile,
+    bool isTablet,
+    bool isDesktop,
+  ) {
     return Container(
-      padding: EdgeInsets.all(isMobile ? 16 : isTablet ? 18 : 20),
+      padding: EdgeInsets.all(
+        isMobile
+            ? 16
+            : isTablet
+            ? 18
+            : 20,
+      ),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(isMobile ? 10 : 12),
@@ -1083,7 +1248,11 @@ class _OfferFormPageState extends State<OfferFormPage> {
           Text(
             'TEGA Exam Offers',
             style: TextStyle(
-              fontSize: isMobile ? 16 : isTablet ? 18 : 20,
+              fontSize: isMobile
+                  ? 16
+                  : isTablet
+                  ? 18
+                  : 20,
               fontWeight: FontWeight.bold,
               color: AppColors.textPrimary,
             ),
@@ -1102,7 +1271,9 @@ class _OfferFormPageState extends State<OfferFormPage> {
                       decoration: InputDecoration(
                         labelText: 'TEGA Exam',
                         hintText: 'Select TEGA Exam',
-                        labelStyle: const TextStyle(color: AppColors.textSecondary),
+                        labelStyle: const TextStyle(
+                          color: AppColors.textSecondary,
+                        ),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8),
                           borderSide: BorderSide(color: Colors.grey[300]!),
@@ -1113,11 +1284,15 @@ class _OfferFormPageState extends State<OfferFormPage> {
                         ),
                         filled: true,
                         fillColor: Colors.grey[50],
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 16,
+                        ),
                       ),
                       items: _availableTegaExams.map((exam) {
                         return DropdownMenuItem<String>(
-                          value: exam['_id']?.toString() ?? exam['id']?.toString(),
+                          value:
+                              exam['_id']?.toString() ?? exam['id']?.toString(),
                           child: Text(
                             exam['title'] ?? exam['examTitle'] ?? 'Unknown',
                             overflow: TextOverflow.ellipsis,
@@ -1131,7 +1306,10 @@ class _OfferFormPageState extends State<OfferFormPage> {
                           // Load slots for selected exam and auto-fill original price
                           if (value != null) {
                             final exam = _availableTegaExams.firstWhere(
-                              (e) => (e['_id']?.toString() ?? e['id']?.toString()) == value,
+                              (e) =>
+                                  (e['_id']?.toString() ??
+                                      e['id']?.toString()) ==
+                                  value,
                               orElse: () => {},
                             );
                             if (exam.isNotEmpty) {
@@ -1140,7 +1318,8 @@ class _OfferFormPageState extends State<OfferFormPage> {
                               );
                               // Auto-fill original price from exam
                               final price = exam['price'] ?? 0;
-                              _examOriginalPriceController.text = price.toString();
+                              _examOriginalPriceController.text = price
+                                  .toString();
                             }
                           } else {
                             _availableSlots = [];
@@ -1156,7 +1335,9 @@ class _OfferFormPageState extends State<OfferFormPage> {
                       decoration: InputDecoration(
                         labelText: 'Slot (Optional)',
                         hintText: 'All Slots',
-                        labelStyle: const TextStyle(color: AppColors.textSecondary),
+                        labelStyle: const TextStyle(
+                          color: AppColors.textSecondary,
+                        ),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8),
                           borderSide: BorderSide(color: Colors.grey[300]!),
@@ -1167,7 +1348,10 @@ class _OfferFormPageState extends State<OfferFormPage> {
                         ),
                         filled: true,
                         fillColor: Colors.grey[50],
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 16,
+                        ),
                       ),
                       items: [
                         const DropdownMenuItem<String>(
@@ -1200,18 +1384,27 @@ class _OfferFormPageState extends State<OfferFormPage> {
                             readOnly: true,
                             decoration: InputDecoration(
                               labelText: 'Original Price',
-                              labelStyle: const TextStyle(color: AppColors.textSecondary),
+                              labelStyle: const TextStyle(
+                                color: AppColors.textSecondary,
+                              ),
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(8),
-                                borderSide: BorderSide(color: Colors.grey[300]!),
+                                borderSide: BorderSide(
+                                  color: Colors.grey[300]!,
+                                ),
                               ),
                               enabledBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(8),
-                                borderSide: BorderSide(color: Colors.grey[300]!),
+                                borderSide: BorderSide(
+                                  color: Colors.grey[300]!,
+                                ),
                               ),
                               filled: true,
                               fillColor: Colors.grey[200],
-                              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+                              contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 16,
+                              ),
                             ),
                           ),
                         ),
@@ -1222,18 +1415,27 @@ class _OfferFormPageState extends State<OfferFormPage> {
                             keyboardType: TextInputType.number,
                             decoration: InputDecoration(
                               labelText: 'Offer Price',
-                              labelStyle: const TextStyle(color: AppColors.textSecondary),
+                              labelStyle: const TextStyle(
+                                color: AppColors.textSecondary,
+                              ),
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(8),
-                                borderSide: BorderSide(color: Colors.grey[300]!),
+                                borderSide: BorderSide(
+                                  color: Colors.grey[300]!,
+                                ),
                               ),
                               enabledBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(8),
-                                borderSide: BorderSide(color: Colors.grey[300]!),
+                                borderSide: BorderSide(
+                                  color: Colors.grey[300]!,
+                                ),
                               ),
                               filled: true,
                               fillColor: Colors.grey[50],
-                              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+                              contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 16,
+                              ),
                             ),
                           ),
                         ),
@@ -1247,7 +1449,10 @@ class _OfferFormPageState extends State<OfferFormPage> {
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.warning,
                           foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 20,
+                            vertical: 16,
+                          ),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(8),
                           ),
@@ -1269,7 +1474,9 @@ class _OfferFormPageState extends State<OfferFormPage> {
                         decoration: InputDecoration(
                           labelText: 'TEGA Exam',
                           hintText: 'Select TEGA Exam',
-                          labelStyle: const TextStyle(color: AppColors.textSecondary),
+                          labelStyle: const TextStyle(
+                            color: AppColors.textSecondary,
+                          ),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(8),
                             borderSide: BorderSide(color: Colors.grey[300]!),
@@ -1280,11 +1487,16 @@ class _OfferFormPageState extends State<OfferFormPage> {
                           ),
                           filled: true,
                           fillColor: Colors.grey[50],
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 16,
+                          ),
                         ),
                         items: _availableTegaExams.map((exam) {
                           return DropdownMenuItem<String>(
-                            value: exam['_id']?.toString() ?? exam['id']?.toString(),
+                            value:
+                                exam['_id']?.toString() ??
+                                exam['id']?.toString(),
                             child: Text(
                               exam['title'] ?? exam['examTitle'] ?? 'Unknown',
                               overflow: TextOverflow.ellipsis,
@@ -1298,7 +1510,10 @@ class _OfferFormPageState extends State<OfferFormPage> {
                             // Load slots for selected exam
                             if (value != null) {
                               final exam = _availableTegaExams.firstWhere(
-                                (e) => (e['_id']?.toString() ?? e['id']?.toString()) == value,
+                                (e) =>
+                                    (e['_id']?.toString() ??
+                                        e['id']?.toString()) ==
+                                    value,
                               );
                               _availableSlots = List<Map<String, dynamic>>.from(
                                 exam['slots'] ?? [],
@@ -1318,7 +1533,9 @@ class _OfferFormPageState extends State<OfferFormPage> {
                         decoration: InputDecoration(
                           labelText: 'Slot (Optional)',
                           hintText: 'All Slots',
-                          labelStyle: const TextStyle(color: AppColors.textSecondary),
+                          labelStyle: const TextStyle(
+                            color: AppColors.textSecondary,
+                          ),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(8),
                             borderSide: BorderSide(color: Colors.grey[300]!),
@@ -1329,7 +1546,10 @@ class _OfferFormPageState extends State<OfferFormPage> {
                           ),
                           filled: true,
                           fillColor: Colors.grey[50],
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 16,
+                          ),
                         ),
                         items: [
                           const DropdownMenuItem<String>(
@@ -1360,7 +1580,9 @@ class _OfferFormPageState extends State<OfferFormPage> {
                         keyboardType: TextInputType.number,
                         decoration: InputDecoration(
                           labelText: 'Original Price',
-                          labelStyle: const TextStyle(color: AppColors.textSecondary),
+                          labelStyle: const TextStyle(
+                            color: AppColors.textSecondary,
+                          ),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(8),
                             borderSide: BorderSide(color: Colors.grey[300]!),
@@ -1371,7 +1593,10 @@ class _OfferFormPageState extends State<OfferFormPage> {
                           ),
                           filled: true,
                           fillColor: Colors.grey[50],
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 16,
+                          ),
                         ),
                       ),
                     ),
@@ -1382,7 +1607,9 @@ class _OfferFormPageState extends State<OfferFormPage> {
                         keyboardType: TextInputType.number,
                         decoration: InputDecoration(
                           labelText: 'Offer Price',
-                          labelStyle: const TextStyle(color: AppColors.textSecondary),
+                          labelStyle: const TextStyle(
+                            color: AppColors.textSecondary,
+                          ),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(8),
                             borderSide: BorderSide(color: Colors.grey[300]!),
@@ -1393,7 +1620,10 @@ class _OfferFormPageState extends State<OfferFormPage> {
                           ),
                           filled: true,
                           fillColor: Colors.grey[50],
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 16,
+                          ),
                         ),
                       ),
                     ),
@@ -1403,7 +1633,10 @@ class _OfferFormPageState extends State<OfferFormPage> {
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.warning,
                         foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 20,
+                          vertical: 16,
+                        ),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8),
                         ),
@@ -1434,7 +1667,13 @@ class _OfferFormPageState extends State<OfferFormPage> {
             ..._selectedTegaExamOffers.asMap().entries.map((entry) {
               final index = entry.key;
               final offer = entry.value;
-              return _buildTegaExamOfferItem(offer, index, isMobile, isTablet, isDesktop);
+              return _buildTegaExamOfferItem(
+                offer,
+                index,
+                isMobile,
+                isTablet,
+                isDesktop,
+              );
             }),
         ],
       ),
@@ -1449,7 +1688,8 @@ class _OfferFormPageState extends State<OfferFormPage> {
       return;
     }
 
-    final originalPrice = double.tryParse(_examOriginalPriceController.text) ?? 0;
+    final originalPrice =
+        double.tryParse(_examOriginalPriceController.text) ?? 0;
     final offerPrice = double.tryParse(_examOfferPriceController.text) ?? 0;
 
     if (originalPrice <= 0 || offerPrice <= 0) {
@@ -1460,7 +1700,8 @@ class _OfferFormPageState extends State<OfferFormPage> {
     }
 
     final exam = _availableTegaExams.firstWhere(
-      (e) => (e['_id']?.toString() ?? e['id']?.toString()) == _selectedTegaExamId,
+      (e) =>
+          (e['_id']?.toString() ?? e['id']?.toString()) == _selectedTegaExamId,
     );
 
     final discountPercentage = originalPrice > 0
@@ -1468,14 +1709,16 @@ class _OfferFormPageState extends State<OfferFormPage> {
         : 0.0;
 
     setState(() {
-      _selectedTegaExamOffers.add(TegaExamOffer(
-        examId: _selectedTegaExamId!,
-        examTitle: exam['title'] ?? exam['examTitle'] ?? 'Unknown',
-        slotId: _selectedSlotId,
-        originalPrice: originalPrice,
-        offerPrice: offerPrice,
-        discountPercentage: discountPercentage,
-      ));
+      _selectedTegaExamOffers.add(
+        TegaExamOffer(
+          examId: _selectedTegaExamId!,
+          examTitle: exam['title'] ?? exam['examTitle'] ?? 'Unknown',
+          slotId: _selectedSlotId,
+          originalPrice: originalPrice,
+          offerPrice: offerPrice,
+          discountPercentage: discountPercentage,
+        ),
+      );
       _selectedTegaExamId = null;
       _selectedSlotId = null;
       _availableSlots = [];
@@ -1484,7 +1727,13 @@ class _OfferFormPageState extends State<OfferFormPage> {
     });
   }
 
-  Widget _buildTegaExamOfferItem(TegaExamOffer offer, int index, bool isMobile, bool isTablet, bool isDesktop) {
+  Widget _buildTegaExamOfferItem(
+    TegaExamOffer offer,
+    int index,
+    bool isMobile,
+    bool isTablet,
+    bool isDesktop,
+  ) {
     return Container(
       margin: EdgeInsets.only(bottom: isMobile ? 10 : 12),
       padding: EdgeInsets.all(isMobile ? 10 : 12),
@@ -1943,9 +2192,7 @@ class _OfferFormPageState extends State<OfferFormPage> {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.warmOrange,
                     foregroundColor: Colors.white,
-                    padding: EdgeInsets.symmetric(
-                      vertical: isMobile ? 14 : 16,
-                    ),
+                    padding: EdgeInsets.symmetric(vertical: isMobile ? 14 : 16),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(isMobile ? 8 : 10),
                     ),
@@ -1956,7 +2203,9 @@ class _OfferFormPageState extends State<OfferFormPage> {
                           height: isMobile ? 18 : 20,
                           child: const CircularProgressIndicator(
                             strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              Colors.white,
+                            ),
                           ),
                         )
                       : Text(
@@ -1974,9 +2223,7 @@ class _OfferFormPageState extends State<OfferFormPage> {
                 child: OutlinedButton(
                   onPressed: () => Navigator.of(context).pop(),
                   style: OutlinedButton.styleFrom(
-                    padding: EdgeInsets.symmetric(
-                      vertical: isMobile ? 14 : 16,
-                    ),
+                    padding: EdgeInsets.symmetric(vertical: isMobile ? 14 : 16),
                     side: BorderSide(color: Colors.grey[300]!),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(isMobile ? 8 : 10),
@@ -2000,9 +2247,7 @@ class _OfferFormPageState extends State<OfferFormPage> {
                 child: OutlinedButton(
                   onPressed: () => Navigator.of(context).pop(),
                   style: OutlinedButton.styleFrom(
-                    padding: EdgeInsets.symmetric(
-                      vertical: isTablet ? 15 : 16,
-                    ),
+                    padding: EdgeInsets.symmetric(vertical: isTablet ? 15 : 16),
                     side: BorderSide(color: Colors.grey[300]!),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(isTablet ? 8 : 10),
@@ -2025,9 +2270,7 @@ class _OfferFormPageState extends State<OfferFormPage> {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.warmOrange,
                     foregroundColor: Colors.white,
-                    padding: EdgeInsets.symmetric(
-                      vertical: isTablet ? 15 : 16,
-                    ),
+                    padding: EdgeInsets.symmetric(vertical: isTablet ? 15 : 16),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(isTablet ? 8 : 10),
                     ),
@@ -2038,7 +2281,9 @@ class _OfferFormPageState extends State<OfferFormPage> {
                           height: isTablet ? 18 : 20,
                           child: const CircularProgressIndicator(
                             strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              Colors.white,
+                            ),
                           ),
                         )
                       : Text(

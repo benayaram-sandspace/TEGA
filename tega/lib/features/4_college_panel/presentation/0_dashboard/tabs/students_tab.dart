@@ -22,7 +22,8 @@ class _StudentsPageState extends State<StudentsPage>
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _searchFocusNode = FocusNode();
   final AuthService _authService = AuthService();
-  final PrincipalDashboardCacheService _cacheService = PrincipalDashboardCacheService();
+  final PrincipalDashboardCacheService _cacheService =
+      PrincipalDashboardCacheService();
 
   List<Student> _allStudents = [];
   List<Student> _filteredStudents = [];
@@ -56,10 +57,10 @@ class _StudentsPageState extends State<StudentsPage>
   Future<void> _initializeCacheAndLoadData() async {
     // Initialize cache service
     await _cacheService.initialize();
-    
+
     // Try to load from cache first
     await _loadFromCache();
-    
+
     // Then load fresh data
     await _loadStudents();
   }
@@ -71,7 +72,7 @@ class _StudentsPageState extends State<StudentsPage>
         setState(() {
           _isLoadingFromCache = true;
         });
-        
+
         final students = _parseStudentsFromData(cachedData);
         if (mounted) {
           setState(() {
@@ -101,19 +102,24 @@ class _StudentsPageState extends State<StudentsPage>
       final name = '$firstName $lastName'.trim();
       final yearOfStudy = student['yearOfStudy'] as int? ?? 12;
       final accountStatus = student['accountStatus'] as String? ?? 'pending';
-      
+
       // Extract student ID from backend (custom studentId)
       final studentIdValue = student['studentId'];
-      final studentId = studentIdValue != null ? studentIdValue.toString().trim() : '';
-      
+      final studentId = studentIdValue != null
+          ? studentIdValue.toString().trim()
+          : '';
+
       // Extract MongoDB _id (ObjectId) - needed for API calls
       final mongoIdValue = student['_id'] ?? student['id'];
-      final mongoId = mongoIdValue != null ? mongoIdValue.toString().trim() : '';
-      
+      final mongoId = mongoIdValue != null
+          ? mongoIdValue.toString().trim()
+          : '';
+
       // Extract email and phone from backend
       final email = student['email'] as String?;
-      final phone = student['phone'] as String? ?? student['contactNumber'] as String?;
-      
+      final phone =
+          student['phone'] as String? ?? student['contactNumber'] as String?;
+
       // Parse registration date
       DateTime? registeredAt;
       try {
@@ -124,13 +130,14 @@ class _StudentsPageState extends State<StudentsPage>
       } catch (e) {
         registeredAt = null;
       }
-      
+
       // Get status color based on accountStatus
       final statusMap = _getStatusFromBackend(accountStatus);
-      
+
       // Generate avatar URL from name
-      final avatarUrl = 'https://ui-avatars.com/api/?name=${Uri.encodeComponent(name)}&size=150&background=8B5CF6&color=fff';
-      
+      final avatarUrl =
+          'https://ui-avatars.com/api/?name=${Uri.encodeComponent(name)}&size=150&background=8B5CF6&color=fff';
+
       return Student(
         name: name,
         grade: yearOfStudy,
@@ -154,7 +161,9 @@ class _StudentsPageState extends State<StudentsPage>
             error.toString().toLowerCase().contains('connection') ||
             error.toString().toLowerCase().contains('internet') ||
             error.toString().toLowerCase().contains('failed host lookup') ||
-            error.toString().toLowerCase().contains('no address associated with hostname'));
+            error.toString().toLowerCase().contains(
+              'no address associated with hostname',
+            ));
   }
 
   @override
@@ -169,7 +178,7 @@ class _StudentsPageState extends State<StudentsPage>
     if (dateValue == null) {
       return DateTime.now();
     }
-    
+
     // Handle MongoDB date objects that might come as Map
     if (dateValue is Map) {
       // MongoDB date might be in format: {"$date": "2024-01-01T00:00:00.000Z"}
@@ -192,7 +201,7 @@ class _StudentsPageState extends State<StudentsPage>
         }
       }
     }
-    
+
     if (dateValue is String) {
       try {
         return DateTime.parse(dateValue);
@@ -205,7 +214,7 @@ class _StudentsPageState extends State<StudentsPage>
         }
       }
     }
-    
+
     if (dateValue is int) {
       // Handle Unix timestamp (milliseconds or seconds)
       if (dateValue > 1000000000000) {
@@ -216,7 +225,7 @@ class _StudentsPageState extends State<StudentsPage>
         return DateTime.fromMillisecondsSinceEpoch(dateValue * 1000);
       }
     }
-    
+
     return DateTime.now();
   }
 
@@ -228,23 +237,22 @@ class _StudentsPageState extends State<StudentsPage>
     }
 
     if (!_isLoadingFromCache) {
-    setState(() {
-      _isLoading = true;
-      _errorMessage = null;
-    });
+      setState(() {
+        _isLoading = true;
+        _errorMessage = null;
+      });
     }
 
     try {
       final headers = await _authService.getAuthHeaders();
-      final response = await http.get(
-        Uri.parse(ApiEndpoints.principalStudents),
-        headers: headers,
-      ).timeout(
-        const Duration(seconds: 30),
-        onTimeout: () {
-          throw Exception('Request timeout');
-        },
-      );
+      final response = await http
+          .get(Uri.parse(ApiEndpoints.principalStudents), headers: headers)
+          .timeout(
+            const Duration(seconds: 30),
+            onTimeout: () {
+              throw Exception('Request timeout');
+            },
+          );
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
@@ -259,12 +267,12 @@ class _StudentsPageState extends State<StudentsPage>
               _isLoading = false;
               _isLoadingFromCache = false;
             });
-            
+
             // Cache the students data
             await _cacheService.setStudentsData(studentsList);
-            
+
             _listAnimationController.forward();
-            
+
             // Handle online state
             _cacheService.handleOnlineState(context);
           }
@@ -285,8 +293,8 @@ class _StudentsPageState extends State<StudentsPage>
             _isLoadingFromCache = false;
           });
         }
-              }
-            } catch (e) {
+      }
+    } catch (e) {
       // Check if it's a network/internet error
       if (_isNoInternetError(e)) {
         // Try to load from cache if available
@@ -301,7 +309,7 @@ class _StudentsPageState extends State<StudentsPage>
             _errorMessage = null;
           });
           _listAnimationController.forward();
-          
+
           // Handle offline state
           _cacheService.handleOfflineState(context);
         } else {
@@ -312,7 +320,7 @@ class _StudentsPageState extends State<StudentsPage>
               _isLoadingFromCache = false;
               _errorMessage = 'No internet connection';
             });
-            
+
             // Handle offline state
             _cacheService.handleOfflineState(context);
           }
@@ -333,15 +341,14 @@ class _StudentsPageState extends State<StudentsPage>
   Future<void> _loadStudentsInBackground() async {
     try {
       final headers = await _authService.getAuthHeaders();
-      final response = await http.get(
-        Uri.parse(ApiEndpoints.principalStudents),
-        headers: headers,
-      ).timeout(
-        const Duration(seconds: 30),
-        onTimeout: () {
-          throw Exception('Request timeout');
-        },
-      );
+      final response = await http
+          .get(Uri.parse(ApiEndpoints.principalStudents), headers: headers)
+          .timeout(
+            const Duration(seconds: 30),
+            onTimeout: () {
+              throw Exception('Request timeout');
+            },
+          );
 
       if (response.statusCode == 200 && mounted) {
         final data = json.decode(response.body);
@@ -350,14 +357,14 @@ class _StudentsPageState extends State<StudentsPage>
           final students = _parseStudentsFromData(studentsList);
 
           if (mounted) {
-        setState(() {
+            setState(() {
               _allStudents = students;
               _filteredStudents = students;
             });
-            
+
             // Cache the students data
             await _cacheService.setStudentsData(studentsList);
-            
+
             // Handle online state
             _cacheService.handleOnlineState(context);
           }
@@ -432,7 +439,7 @@ class _StudentsPageState extends State<StudentsPage>
     final screenWidth = MediaQuery.of(context).size.width;
     final isMobile = screenWidth < 600;
     final isTablet = screenWidth >= 600 && screenWidth < 1024;
-    
+
     if (_isSearching) {
       return AppBar(
         leading: IconButton(
@@ -449,7 +456,11 @@ class _StudentsPageState extends State<StudentsPage>
           ),
           style: TextStyle(
             color: DashboardStyles.textDark,
-            fontSize: isMobile ? 15 : isTablet ? 15.5 : 16,
+            fontSize: isMobile
+                ? 15
+                : isTablet
+                ? 15.5
+                : 16,
           ),
         ),
         backgroundColor: DashboardStyles.cardBackground,
@@ -461,7 +472,11 @@ class _StudentsPageState extends State<StudentsPage>
           'Students',
           style: TextStyle(
             fontWeight: FontWeight.bold,
-            fontSize: isMobile ? 18 : isTablet ? 19 : 20,
+            fontSize: isMobile
+                ? 18
+                : isTablet
+                ? 19
+                : 20,
           ),
         ),
         backgroundColor: DashboardStyles.cardBackground,
@@ -485,40 +500,54 @@ class _StudentsPageState extends State<StudentsPage>
     final screenWidth = MediaQuery.of(context).size.width;
     final isMobile = screenWidth < 600;
     final isTablet = screenWidth >= 600 && screenWidth < 1024;
-    
+
     return Scaffold(
       backgroundColor: DashboardStyles.background,
       appBar: _buildAppBar(),
       body: _isLoading && !_isLoadingFromCache
           ? const Center(child: CircularProgressIndicator())
           : _errorMessage != null && _allStudents.isEmpty
-              ? _buildErrorState(isMobile, isTablet)
-              : AnimatedSwitcher(
-                  duration: const Duration(milliseconds: 300),
-                  child: _filteredStudents.isEmpty
-                      ? _buildEmptyState(isMobile, isTablet)
-                      : _buildStudentList(isMobile, isTablet),
-                ),
+          ? _buildErrorState(isMobile, isTablet)
+          : AnimatedSwitcher(
+              duration: const Duration(milliseconds: 300),
+              child: _filteredStudents.isEmpty
+                  ? _buildEmptyState(isMobile, isTablet)
+                  : _buildStudentList(isMobile, isTablet),
+            ),
     );
   }
 
   Widget _buildErrorState(bool isMobile, bool isTablet) {
     return Center(
       child: Padding(
-        padding: EdgeInsets.all(isMobile ? 24.0 : isTablet ? 32.0 : 40.0),
+        padding: EdgeInsets.all(
+          isMobile
+              ? 24.0
+              : isTablet
+              ? 32.0
+              : 40.0,
+        ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
               Icons.cloud_off,
-              size: isMobile ? 56 : isTablet ? 64 : 72,
+              size: isMobile
+                  ? 56
+                  : isTablet
+                  ? 64
+                  : 72,
               color: Colors.grey[400],
             ),
             SizedBox(height: isMobile ? 16 : 20),
             Text(
               'No internet connection',
               style: TextStyle(
-                fontSize: isMobile ? 18 : isTablet ? 20 : 22,
+                fontSize: isMobile
+                    ? 18
+                    : isTablet
+                    ? 20
+                    : 22,
                 fontWeight: FontWeight.bold,
                 color: Colors.grey[700],
               ),
@@ -528,7 +557,11 @@ class _StudentsPageState extends State<StudentsPage>
             Text(
               'Please check your connection and try again',
               style: TextStyle(
-                fontSize: isMobile ? 14 : isTablet ? 15 : 16,
+                fontSize: isMobile
+                    ? 14
+                    : isTablet
+                    ? 15
+                    : 16,
                 color: Colors.grey[600],
               ),
               textAlign: TextAlign.center,
@@ -536,7 +569,11 @@ class _StudentsPageState extends State<StudentsPage>
             SizedBox(height: isMobile ? 24 : 32),
             ElevatedButton.icon(
               onPressed: () => _loadStudents(forceRefresh: true),
-              icon: Icon(Icons.refresh, size: isMobile ? 18 : 20, color: Colors.white),
+              icon: Icon(
+                Icons.refresh,
+                size: isMobile ? 18 : 20,
+                color: Colors.white,
+              ),
               label: Text(
                 'Retry',
                 style: TextStyle(
@@ -582,7 +619,9 @@ class _StudentsPageState extends State<StudentsPage>
               return PopupMenuItem<String>(
                 value: choice,
                 child: Text(
-                  choice == 'All' ? 'All' : choice[0].toUpperCase() + choice.substring(1),
+                  choice == 'All'
+                      ? 'All'
+                      : choice[0].toUpperCase() + choice.substring(1),
                   style: TextStyle(fontSize: isMobile ? 14 : 16),
                 ),
               );
@@ -607,7 +646,11 @@ class _StudentsPageState extends State<StudentsPage>
   }
 
   Widget _buildStudentList(bool isMobile, bool isTablet) {
-    final padding = isMobile ? 12.0 : isTablet ? 14.0 : 16.0;
+    final padding = isMobile
+        ? 12.0
+        : isTablet
+        ? 14.0
+        : 16.0;
     return ListView.builder(
       key: ValueKey(_filteredStudents.length),
       padding: EdgeInsets.all(padding),
@@ -634,32 +677,50 @@ class _StudentsPageState extends State<StudentsPage>
   Widget _buildEmptyState(bool isMobile, bool isTablet) {
     return Center(
       child: Padding(
-        padding: EdgeInsets.all(isMobile ? 24.0 : isTablet ? 32.0 : 40.0),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
+        padding: EdgeInsets.all(
+          isMobile
+              ? 24.0
+              : isTablet
+              ? 32.0
+              : 40.0,
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
             Icon(
               Icons.search_off_rounded,
-              size: isMobile ? 64 : isTablet ? 72 : 80,
+              size: isMobile
+                  ? 64
+                  : isTablet
+                  ? 72
+                  : 80,
               color: Colors.grey,
             ),
             SizedBox(height: isMobile ? 16 : 20),
             Text(
-            'No Students Found',
+              'No Students Found',
               style: TextStyle(
-                fontSize: isMobile ? 18 : isTablet ? 20 : 22,
+                fontSize: isMobile
+                    ? 18
+                    : isTablet
+                    ? 20
+                    : 22,
                 fontWeight: FontWeight.bold,
               ),
-          ),
+            ),
             SizedBox(height: isMobile ? 8 : 12),
-          Text(
-            'Try adjusting your search or filter.',
+            Text(
+              'Try adjusting your search or filter.',
               style: TextStyle(
-                fontSize: isMobile ? 14 : isTablet ? 15 : 16,
+                fontSize: isMobile
+                    ? 14
+                    : isTablet
+                    ? 15
+                    : 16,
                 color: Colors.grey.shade600,
               ),
-          ),
-        ],
+            ),
+          ],
         ),
       ),
     );
@@ -685,16 +746,52 @@ class _StudentsPageState extends State<StudentsPage>
 
   Widget _buildStudentTile(Student student, bool isMobile, bool isTablet) {
     // Responsive values
-    final margin = isMobile ? 8.0 : isTablet ? 10.0 : 12.0;
-    final borderRadius = isMobile ? 12.0 : isTablet ? 14.0 : 16.0;
-    final avatarRadius = isMobile ? 20.0 : isTablet ? 22.0 : 24.0;
-    final padding = isMobile ? 10.0 : isTablet ? 11.0 : 12.0;
-    final nameFontSize = isMobile ? 14.0 : isTablet ? 14.5 : 15.0;
-    final idFontSize = isMobile ? 12.0 : isTablet ? 12.5 : 13.0;
-    final statusFontSize = isMobile ? 10.0 : isTablet ? 10.5 : 11.0;
-    final statusPadding = isMobile ? 8.0 : isTablet ? 9.0 : 10.0;
-    final statusVerticalPadding = isMobile ? 4.0 : isTablet ? 4.5 : 5.0;
-    
+    final margin = isMobile
+        ? 8.0
+        : isTablet
+        ? 10.0
+        : 12.0;
+    final borderRadius = isMobile
+        ? 12.0
+        : isTablet
+        ? 14.0
+        : 16.0;
+    final avatarRadius = isMobile
+        ? 20.0
+        : isTablet
+        ? 22.0
+        : 24.0;
+    final padding = isMobile
+        ? 10.0
+        : isTablet
+        ? 11.0
+        : 12.0;
+    final nameFontSize = isMobile
+        ? 14.0
+        : isTablet
+        ? 14.5
+        : 15.0;
+    final idFontSize = isMobile
+        ? 12.0
+        : isTablet
+        ? 12.5
+        : 13.0;
+    final statusFontSize = isMobile
+        ? 10.0
+        : isTablet
+        ? 10.5
+        : 11.0;
+    final statusPadding = isMobile
+        ? 8.0
+        : isTablet
+        ? 9.0
+        : 10.0;
+    final statusVerticalPadding = isMobile
+        ? 4.0
+        : isTablet
+        ? 4.5
+        : 5.0;
+
     return Container(
       margin: EdgeInsets.only(bottom: margin),
       decoration: BoxDecoration(
@@ -710,7 +807,11 @@ class _StudentsPageState extends State<StudentsPage>
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.07),
-            blurRadius: isMobile ? 12 : isTablet ? 14 : 15,
+            blurRadius: isMobile
+                ? 12
+                : isTablet
+                ? 14
+                : 15,
             offset: Offset(0, isMobile ? 3 : 4),
           ),
         ],
@@ -762,7 +863,11 @@ class _StudentsPageState extends State<StudentsPage>
                                     style: TextStyle(
                                       color: Colors.white,
                                       fontWeight: FontWeight.bold,
-                                      fontSize: isMobile ? 16 : isTablet ? 18 : 20,
+                                      fontSize: isMobile
+                                          ? 16
+                                          : isTablet
+                                          ? 18
+                                          : 20,
                                     ),
                                   )
                                 : null,

@@ -677,5 +677,4 @@ class AdminRepository {
           (_adminUsers.isNotEmpty ? _adminUsers.length : 1),
     };
   }
-
 }

@@ -36,10 +36,22 @@ class JobCard extends StatelessWidget {
           child: Opacity(
             opacity: value.clamp(0.0, 1.0),
             child: Container(
-              margin: EdgeInsets.only(bottom: isMobile ? 10 : isTablet ? 11 : 12),
+              margin: EdgeInsets.only(
+                bottom: isMobile
+                    ? 10
+                    : isTablet
+                    ? 11
+                    : 12,
+              ),
               decoration: BoxDecoration(
                 color: Colors.white,
-                borderRadius: BorderRadius.circular(isMobile ? 10 : isTablet ? 11 : 12),
+                borderRadius: BorderRadius.circular(
+                  isMobile
+                      ? 10
+                      : isTablet
+                      ? 11
+                      : 12,
+                ),
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black.withOpacity(0.05),
@@ -54,15 +66,29 @@ class JobCard extends StatelessWidget {
                 children: [
                   // Header
                   Container(
-                    padding: EdgeInsets.all(isMobile ? 12 : isTablet ? 14 : 16),
+                    padding: EdgeInsets.all(
+                      isMobile
+                          ? 12
+                          : isTablet
+                          ? 14
+                          : 16,
+                    ),
                     decoration: BoxDecoration(
                       color: _getStatusColor().withOpacity(0.1),
                       borderRadius: BorderRadius.only(
                         topLeft: Radius.circular(
-                          isMobile ? 9 : isTablet ? 10 : 11,
+                          isMobile
+                              ? 9
+                              : isTablet
+                              ? 10
+                              : 11,
                         ), // Account for 1px border
                         topRight: Radius.circular(
-                          isMobile ? 9 : isTablet ? 10 : 11,
+                          isMobile
+                              ? 9
+                              : isTablet
+                              ? 10
+                              : 11,
                         ),
                       ),
                     ),
@@ -75,7 +101,11 @@ class JobCard extends StatelessWidget {
                               Text(
                                 job['title'] ?? 'Untitled Job',
                                 style: TextStyle(
-                                  fontSize: isMobile ? 16 : isTablet ? 17 : 18,
+                                  fontSize: isMobile
+                                      ? 16
+                                      : isTablet
+                                      ? 17
+                                      : 18,
                                   fontWeight: FontWeight.bold,
                                   color: const Color(0xFF2D3748),
                                 ),
@@ -86,7 +116,11 @@ class JobCard extends StatelessWidget {
                               Text(
                                 job['company'] ?? 'Unknown Company',
                                 style: TextStyle(
-                                  fontSize: isMobile ? 13 : isTablet ? 13.5 : 14,
+                                  fontSize: isMobile
+                                      ? 13
+                                      : isTablet
+                                      ? 13.5
+                                      : 14,
                                   color: const Color(0xFF718096),
                                 ),
                                 maxLines: 1, // Prevent company overflow
@@ -101,14 +135,28 @@ class JobCard extends StatelessWidget {
                   ),
                   // Content
                   Padding(
-                    padding: EdgeInsets.all(isMobile ? 12 : isTablet ? 14 : 16),
+                    padding: EdgeInsets.all(
+                      isMobile
+                          ? 12
+                          : isTablet
+                          ? 14
+                          : 16,
+                    ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         // Job Details (Using Wrap for responsiveness)
                         Wrap(
-                          spacing: isMobile ? 6.0 : isTablet ? 7.0 : 8.0,
-                          runSpacing: isMobile ? 6.0 : isTablet ? 7.0 : 8.0,
+                          spacing: isMobile
+                              ? 6.0
+                              : isTablet
+                              ? 7.0
+                              : 8.0,
+                          runSpacing: isMobile
+                              ? 6.0
+                              : isTablet
+                              ? 7.0
+                              : 8.0,
                           children: [
                             _buildInfoChip(
                               Icons.location_on,
@@ -128,19 +176,33 @@ class JobCard extends StatelessWidget {
                           ],
                         ),
                         if (job['salary'] != null) ...[
-                          SizedBox(height: isMobile ? 10 : isTablet ? 11 : 12),
+                          SizedBox(
+                            height: isMobile
+                                ? 10
+                                : isTablet
+                                ? 11
+                                : 12,
+                          ),
                           Row(
                             children: [
                               Icon(
                                 Icons.attach_money,
-                                size: isMobile ? 14 : isTablet ? 15 : 16,
+                                size: isMobile
+                                    ? 14
+                                    : isTablet
+                                    ? 15
+                                    : 16,
                                 color: Colors.grey[600],
                               ),
                               SizedBox(width: isMobile ? 3 : 4),
                               Text(
                                 '₹${NumberFormat('#,##,###').format(job['salary'])}',
                                 style: TextStyle(
-                                  fontSize: isMobile ? 13 : isTablet ? 13.5 : 14,
+                                  fontSize: isMobile
+                                      ? 13
+                                      : isTablet
+                                      ? 13.5
+                                      : 14,
                                   fontWeight: FontWeight.w500,
                                   color: const Color(0xFF2D3748),
                                 ),
@@ -149,11 +211,21 @@ class JobCard extends StatelessWidget {
                           ),
                         ],
                         if (job['description'] != null) ...[
-                          SizedBox(height: isMobile ? 10 : isTablet ? 11 : 12),
+                          SizedBox(
+                            height: isMobile
+                                ? 10
+                                : isTablet
+                                ? 11
+                                : 12,
+                          ),
                           Text(
                             job['description'],
                             style: TextStyle(
-                              fontSize: isMobile ? 13 : isTablet ? 13.5 : 14,
+                              fontSize: isMobile
+                                  ? 13
+                                  : isTablet
+                                  ? 13.5
+                                  : 14,
                               color: const Color(0xFF4A5568),
                             ),
                             maxLines: 2,
@@ -161,26 +233,46 @@ class JobCard extends StatelessWidget {
                           ),
                         ],
                         if (job['deadline'] != null) ...[
-                          SizedBox(height: isMobile ? 10 : isTablet ? 11 : 12),
+                          SizedBox(
+                            height: isMobile
+                                ? 10
+                                : isTablet
+                                ? 11
+                                : 12,
+                          ),
                           Row(
                             children: [
                               Icon(
                                 Icons.schedule,
-                                size: isMobile ? 14 : isTablet ? 15 : 16,
+                                size: isMobile
+                                    ? 14
+                                    : isTablet
+                                    ? 15
+                                    : 16,
                                 color: Colors.grey[600],
                               ),
                               SizedBox(width: isMobile ? 3 : 4),
                               Text(
                                 'Deadline: ${DateFormat('MMM dd, yyyy').format(DateTime.parse(job['deadline']))}',
                                 style: TextStyle(
-                                  fontSize: isMobile ? 11 : isTablet ? 11.5 : 12,
+                                  fontSize: isMobile
+                                      ? 11
+                                      : isTablet
+                                      ? 11.5
+                                      : 12,
                                   color: const Color(0xFF718096),
                                 ),
                               ),
                             ],
                           ),
                         ],
-                        SizedBox(height: isMobile ? 12 : isTablet ? 14 : 16),
+                        SizedBox(
+                          height: isMobile
+                              ? 12
+                              : isTablet
+                              ? 14
+                              : 16,
+                        ),
                         // Action Buttons (Using Row + Expanded for better spacing)
                         Row(
                           children: [
@@ -190,12 +282,20 @@ class JobCard extends StatelessWidget {
                                 onPressed: onView,
                                 icon: Icon(
                                   Icons.visibility,
-                                  size: isMobile ? 14 : isTablet ? 15 : 16,
+                                  size: isMobile
+                                      ? 14
+                                      : isTablet
+                                      ? 15
+                                      : 16,
                                 ),
                                 label: Text(
                                   'View',
                                   style: TextStyle(
-                                    fontSize: isMobile ? 12 : isTablet ? 12.5 : 13,
+                                    fontSize: isMobile
+                                        ? 12
+                                        : isTablet
+                                        ? 12.5
+                                        : 13,
                                   ),
                                 ),
                                 style: OutlinedButton.styleFrom(
@@ -204,25 +304,47 @@ class JobCard extends StatelessWidget {
                                     color: AdminDashboardStyles.primary,
                                   ),
                                   padding: EdgeInsets.symmetric(
-                                    horizontal: isMobile ? 10 : isTablet ? 11 : 12,
-                                    vertical: isMobile ? 6 : isTablet ? 7 : 8,
+                                    horizontal: isMobile
+                                        ? 10
+                                        : isTablet
+                                        ? 11
+                                        : 12,
+                                    vertical: isMobile
+                                        ? 6
+                                        : isTablet
+                                        ? 7
+                                        : 8,
                                   ),
                                 ),
                               ),
                             ),
-                            SizedBox(width: isMobile ? 6 : isTablet ? 7 : 8),
+                            SizedBox(
+                              width: isMobile
+                                  ? 6
+                                  : isTablet
+                                  ? 7
+                                  : 8,
+                            ),
                             Expanded(
                               // Makes Edit button take available space
                               child: OutlinedButton.icon(
                                 onPressed: onEdit,
                                 icon: Icon(
                                   Icons.edit,
-                                  size: isMobile ? 14 : isTablet ? 15 : 16,
+                                  size: isMobile
+                                      ? 14
+                                      : isTablet
+                                      ? 15
+                                      : 16,
                                 ),
                                 label: Text(
                                   'Edit',
                                   style: TextStyle(
-                                    fontSize: isMobile ? 12 : isTablet ? 12.5 : 13,
+                                    fontSize: isMobile
+                                        ? 12
+                                        : isTablet
+                                        ? 12.5
+                                        : 13,
                                   ),
                                 ),
                                 style: OutlinedButton.styleFrom(
@@ -231,13 +353,27 @@ class JobCard extends StatelessWidget {
                                     color: Color(0xFF4299E1),
                                   ),
                                   padding: EdgeInsets.symmetric(
-                                    horizontal: isMobile ? 10 : isTablet ? 11 : 12,
-                                    vertical: isMobile ? 6 : isTablet ? 7 : 8,
+                                    horizontal: isMobile
+                                        ? 10
+                                        : isTablet
+                                        ? 11
+                                        : 12,
+                                    vertical: isMobile
+                                        ? 6
+                                        : isTablet
+                                        ? 7
+                                        : 8,
                                   ),
                                 ),
                               ),
                             ),
-                            SizedBox(width: isMobile ? 6 : isTablet ? 7 : 8),
+                            SizedBox(
+                              width: isMobile
+                                  ? 6
+                                  : isTablet
+                                  ? 7
+                                  : 8,
+                            ),
                             PopupMenuButton<String>(
                               onSelected: (value) {
                                 switch (value) {
@@ -256,13 +392,27 @@ class JobCard extends StatelessWidget {
                                     children: [
                                       Icon(
                                         Icons.update,
-                                        size: isMobile ? 14 : isTablet ? 15 : 16,
+                                        size: isMobile
+                                            ? 14
+                                            : isTablet
+                                            ? 15
+                                            : 16,
                                       ),
-                                      SizedBox(width: isMobile ? 6 : isTablet ? 7 : 8),
+                                      SizedBox(
+                                        width: isMobile
+                                            ? 6
+                                            : isTablet
+                                            ? 7
+                                            : 8,
+                                      ),
                                       Text(
                                         'Update Status',
                                         style: TextStyle(
-                                          fontSize: isMobile ? 13 : isTablet ? 13.5 : 14,
+                                          fontSize: isMobile
+                                              ? 13
+                                              : isTablet
+                                              ? 13.5
+                                              : 14,
                                         ),
                                       ),
                                     ],
@@ -274,15 +424,29 @@ class JobCard extends StatelessWidget {
                                     children: [
                                       Icon(
                                         Icons.delete,
-                                        size: isMobile ? 14 : isTablet ? 15 : 16,
+                                        size: isMobile
+                                            ? 14
+                                            : isTablet
+                                            ? 15
+                                            : 16,
                                         color: Colors.red,
                                       ),
-                                      SizedBox(width: isMobile ? 6 : isTablet ? 7 : 8),
+                                      SizedBox(
+                                        width: isMobile
+                                            ? 6
+                                            : isTablet
+                                            ? 7
+                                            : 8,
+                                      ),
                                       Text(
                                         'Delete',
                                         style: TextStyle(
                                           color: Colors.red,
-                                          fontSize: isMobile ? 13 : isTablet ? 13.5 : 14,
+                                          fontSize: isMobile
+                                              ? 13
+                                              : isTablet
+                                              ? 13.5
+                                              : 14,
                                         ),
                                       ),
                                     ],
@@ -291,7 +455,11 @@ class JobCard extends StatelessWidget {
                               ],
                               icon: Icon(
                                 Icons.more_vert,
-                                size: isMobile ? 18 : isTablet ? 19 : 20,
+                                size: isMobile
+                                    ? 18
+                                    : isTablet
+                                    ? 19
+                                    : 20,
                                 color: const Color(0xFF718096),
                               ),
                             ),
@@ -315,18 +483,36 @@ class JobCard extends StatelessWidget {
 
     return Container(
       padding: EdgeInsets.symmetric(
-        horizontal: isMobile ? 6 : isTablet ? 7 : 8,
-        vertical: isMobile ? 3 : isTablet ? 3.5 : 4,
+        horizontal: isMobile
+            ? 6
+            : isTablet
+            ? 7
+            : 8,
+        vertical: isMobile
+            ? 3
+            : isTablet
+            ? 3.5
+            : 4,
       ),
       decoration: BoxDecoration(
         color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(isMobile ? 10 : isTablet ? 11 : 12),
+        borderRadius: BorderRadius.circular(
+          isMobile
+              ? 10
+              : isTablet
+              ? 11
+              : 12,
+        ),
         border: Border.all(color: color.withOpacity(0.5)),
       ),
       child: Text(
         status.toUpperCase(),
         style: TextStyle(
-          fontSize: isMobile ? 9 : isTablet ? 9.5 : 10,
+          fontSize: isMobile
+              ? 9
+              : isTablet
+              ? 9.5
+              : 10,
           fontWeight: FontWeight.bold,
           color: color,
         ),
@@ -337,26 +523,54 @@ class JobCard extends StatelessWidget {
   Widget _buildInfoChip(IconData icon, String text, Color color) {
     return Container(
       padding: EdgeInsets.symmetric(
-        horizontal: isMobile ? 6 : isTablet ? 7 : 8,
-        vertical: isMobile ? 3 : isTablet ? 3.5 : 4,
+        horizontal: isMobile
+            ? 6
+            : isTablet
+            ? 7
+            : 8,
+        vertical: isMobile
+            ? 3
+            : isTablet
+            ? 3.5
+            : 4,
       ),
       decoration: BoxDecoration(
         color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(isMobile ? 6 : isTablet ? 7 : 8),
+        borderRadius: BorderRadius.circular(
+          isMobile
+              ? 6
+              : isTablet
+              ? 7
+              : 8,
+        ),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(
             icon,
-            size: isMobile ? 11 : isTablet ? 11.5 : 12,
+            size: isMobile
+                ? 11
+                : isTablet
+                ? 11.5
+                : 12,
             color: color,
           ),
-          SizedBox(width: isMobile ? 3 : isTablet ? 3.5 : 4),
+          SizedBox(
+            width: isMobile
+                ? 3
+                : isTablet
+                ? 3.5
+                : 4,
+          ),
           Text(
             text,
             style: TextStyle(
-              fontSize: isMobile ? 11 : isTablet ? 11.5 : 12,
+              fontSize: isMobile
+                  ? 11
+                  : isTablet
+                  ? 11.5
+                  : 12,
               color: color,
               fontWeight: FontWeight.w500,
             ),

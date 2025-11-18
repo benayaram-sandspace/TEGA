@@ -4,12 +4,10 @@ import 'package:tega/features/1_authentication/presentation/screens/forgot_passw
 
 void main() {
   group('ForgetPasswordPage Widget Tests', () {
-    testWidgets('should display forgot password form', (WidgetTester tester) async {
-      await tester.pumpWidget(
-        const MaterialApp(
-          home: ForgetPasswordPage(),
-        ),
-      );
+    testWidgets('should display forgot password form', (
+      WidgetTester tester,
+    ) async {
+      await tester.pumpWidget(const MaterialApp(home: ForgetPasswordPage()));
 
       await tester.pump();
 
@@ -17,11 +15,7 @@ void main() {
     });
 
     testWidgets('should have email input field', (WidgetTester tester) async {
-      await tester.pumpWidget(
-        const MaterialApp(
-          home: ForgetPasswordPage(),
-        ),
-      );
+      await tester.pumpWidget(const MaterialApp(home: ForgetPasswordPage()));
 
       await tester.pump();
 
@@ -30,4 +24,3 @@ void main() {
     });
   });
 }
-

@@ -12,11 +12,7 @@ void main() {
 
     testWidgets('should display splash screen', (WidgetTester tester) async {
       // Build the widget
-      await tester.pumpWidget(
-        const MaterialApp(
-          home: SplashScreen(),
-        ),
-      );
+      await tester.pumpWidget(const MaterialApp(home: SplashScreen()));
 
       // Wait for the widget to build
       await tester.pump();
@@ -27,11 +23,7 @@ void main() {
     });
 
     testWidgets('should have white background', (WidgetTester tester) async {
-      await tester.pumpWidget(
-        const MaterialApp(
-          home: SplashScreen(),
-        ),
-      );
+      await tester.pumpWidget(const MaterialApp(home: SplashScreen()));
 
       await tester.pump();
 
@@ -39,12 +31,10 @@ void main() {
       expect(scaffold.backgroundColor, equals(Colors.white));
     });
 
-    testWidgets('should contain FutureBuilder for video', (WidgetTester tester) async {
-      await tester.pumpWidget(
-        const MaterialApp(
-          home: SplashScreen(),
-        ),
-      );
+    testWidgets('should contain FutureBuilder for video', (
+      WidgetTester tester,
+    ) async {
+      await tester.pumpWidget(const MaterialApp(home: SplashScreen()));
 
       await tester.pump();
 
@@ -56,4 +46,3 @@ void main() {
     });
   });
 }
-

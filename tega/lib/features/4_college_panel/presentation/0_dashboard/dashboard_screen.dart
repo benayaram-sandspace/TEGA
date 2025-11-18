@@ -29,9 +29,10 @@ class _DashboardScreenState extends State<DashboardScreen>
   int _selectedIndex = 0;
   bool _isSidebarOpen = false;
   final AuthService _authService = AuthService();
-  final PrincipalDashboardCacheService _cacheService = PrincipalDashboardCacheService();
+  final PrincipalDashboardCacheService _cacheService =
+      PrincipalDashboardCacheService();
   late AnimationController _sidebarAnimationController;
-  
+
   // Principal data from backend
   Map<String, dynamic>? _principalData;
 
@@ -64,10 +65,10 @@ class _DashboardScreenState extends State<DashboardScreen>
   Future<void> _initializeCacheAndLoadPrincipalData() async {
     // Initialize cache service
     await _cacheService.initialize();
-    
+
     // Try to load from cache first
     await _loadPrincipalDataFromCache();
-    
+
     // Then load fresh data
     await _loadPrincipalData();
   }
@@ -92,21 +93,22 @@ class _DashboardScreenState extends State<DashboardScreen>
             error.toString().toLowerCase().contains('connection') ||
             error.toString().toLowerCase().contains('internet') ||
             error.toString().toLowerCase().contains('failed host lookup') ||
-            error.toString().toLowerCase().contains('no address associated with hostname'));
+            error.toString().toLowerCase().contains(
+              'no address associated with hostname',
+            ));
   }
 
   Future<void> _loadPrincipalData() async {
     try {
       final headers = await _authService.getAuthHeaders();
-      final response = await http.get(
-        Uri.parse(ApiEndpoints.principalDashboard),
-        headers: headers,
-      ).timeout(
-        const Duration(seconds: 30),
-        onTimeout: () {
-          throw Exception('Request timeout');
-        },
-      );
+      final response = await http
+          .get(Uri.parse(ApiEndpoints.principalDashboard), headers: headers)
+          .timeout(
+            const Duration(seconds: 30),
+            onTimeout: () {
+              throw Exception('Request timeout');
+            },
+          );
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
@@ -116,7 +118,7 @@ class _DashboardScreenState extends State<DashboardScreen>
             setState(() {
               _principalData = principalData;
             });
-            
+
             // Cache the principal data
             await _cacheService.setPrincipalData(principalData);
           }
@@ -261,10 +263,10 @@ class _DashboardScreenState extends State<DashboardScreen>
     final screenWidth = MediaQuery.of(context).size.width;
     final isMobile = screenWidth < 600;
     final isTablet = screenWidth >= 600 && screenWidth < 1024;
-    
+
     // Fixed sidebar width for all screen sizes
     final sidebarWidth = 260.0;
-    
+
     return Scaffold(
       backgroundColor: DashboardStyles.background,
       appBar: AppBar(
@@ -290,14 +292,22 @@ class _DashboardScreenState extends State<DashboardScreen>
         title: Text(
           _pageTitles[_selectedIndex],
           style: DashboardStyles.insightTitle.copyWith(
-            fontSize: isMobile ? 18 : isTablet ? 19 : 20,
+            fontSize: isMobile
+                ? 18
+                : isTablet
+                ? 19
+                : 20,
           ),
         ),
         backgroundColor: DashboardStyles.cardBackground,
         elevation: 2,
         iconTheme: const IconThemeData(color: DashboardStyles.textDark),
         titleTextStyle: DashboardStyles.insightTitle.copyWith(
-          fontSize: isMobile ? 18 : isTablet ? 19 : 20,
+          fontSize: isMobile
+              ? 18
+              : isTablet
+              ? 19
+              : 20,
         ),
       ),
       body: Stack(
@@ -412,28 +422,54 @@ class _DashboardScreenState extends State<DashboardScreen>
 
   Widget _buildSidebarHeader(bool isMobile, bool isTablet) {
     // Use backend data if available, otherwise fallback to AuthService
-    final principalName = _principalData?['principalName'] as String? ?? 
-                         _authService.currentUser?.name ?? 
-                         'Principal';
-    final collegeName = _principalData?['university'] as String? ?? 
-                       _authService.currentUser?.university ?? 
-                       'College';
-    
+    final principalName =
+        _principalData?['principalName'] as String? ??
+        _authService.currentUser?.name ??
+        'Principal';
+    final collegeName =
+        _principalData?['university'] as String? ??
+        _authService.currentUser?.university ??
+        'College';
+
     // Get first letter from principal name
-    final firstLetter = principalName.isNotEmpty 
-        ? principalName[0].toUpperCase() 
+    final firstLetter = principalName.isNotEmpty
+        ? principalName[0].toUpperCase()
         : 'P';
-    
+
     // Responsive values
-    final padding = isMobile ? 16.0 : isTablet ? 18.0 : 20.0;
-    final topPadding = isMobile ? 32.0 : isTablet ? 36.0 : 40.0;
-    final avatarRadius = isMobile ? 24.0 : isTablet ? 26.0 : 28.0;
-    final avatarFontSize = isMobile ? 28.0 : isTablet ? 30.0 : 32.0;
-    final nameFontSize = isMobile ? 15.0 : isTablet ? 15.5 : 16.0;
-    final collegeFontSize = isMobile ? 11.0 : isTablet ? 11.5 : 12.0;
+    final padding = isMobile
+        ? 16.0
+        : isTablet
+        ? 18.0
+        : 20.0;
+    final topPadding = isMobile
+        ? 32.0
+        : isTablet
+        ? 36.0
+        : 40.0;
+    final avatarRadius = isMobile
+        ? 24.0
+        : isTablet
+        ? 26.0
+        : 28.0;
+    final avatarFontSize = isMobile
+        ? 28.0
+        : isTablet
+        ? 30.0
+        : 32.0;
+    final nameFontSize = isMobile
+        ? 15.0
+        : isTablet
+        ? 15.5
+        : 16.0;
+    final collegeFontSize = isMobile
+        ? 11.0
+        : isTablet
+        ? 11.5
+        : 12.0;
     final badgePadding = isMobile ? 8.0 : 10.0;
     final badgeFontSize = isMobile ? 11.0 : 12.0;
-    
+
     return Container(
       width: double.infinity,
       padding: EdgeInsets.fromLTRB(padding, topPadding, padding, padding * 1.2),
@@ -486,7 +522,7 @@ class _DashboardScreenState extends State<DashboardScreen>
           SizedBox(height: isMobile ? 3 : 4),
           Text(
             collegeName.length > (isMobile ? 25 : 30)
-                ? '${collegeName.substring(0, isMobile ? 25 : 30)}...' 
+                ? '${collegeName.substring(0, isMobile ? 25 : 30)}...'
                 : collegeName,
             style: TextStyle(
               color: Colors.white.withOpacity(0.8),
@@ -586,16 +622,27 @@ class _DashboardScreenState extends State<DashboardScreen>
 
     // Responsive values
     final margin = isMobile ? 6.0 : 8.0;
-    final iconSize = isMobile ? 18.0 : isTablet ? 19.0 : 20.0;
+    final iconSize = isMobile
+        ? 18.0
+        : isTablet
+        ? 19.0
+        : 20.0;
     final iconPadding = isMobile ? 6.0 : 8.0;
-    final fontSize = isMobile ? 13.0 : isTablet ? 13.5 : 14.0;
+    final fontSize = isMobile
+        ? 13.0
+        : isTablet
+        ? 13.5
+        : 14.0;
     final badgePadding = isMobile ? 6.0 : 8.0;
     final badgeFontSize = isMobile ? 11.0 : 12.0;
     final borderRadius = isMobile ? 10.0 : 12.0;
 
     return AnimatedContainer(
       duration: const Duration(milliseconds: 200),
-      margin: EdgeInsets.symmetric(horizontal: margin, vertical: isMobile ? 0.5 : 1),
+      margin: EdgeInsets.symmetric(
+        horizontal: margin,
+        vertical: isMobile ? 0.5 : 1,
+      ),
       decoration: BoxDecoration(
         color: isSelected
             ? DashboardStyles.primary.withOpacity(0.1)
@@ -661,15 +708,15 @@ class _DashboardScreenState extends State<DashboardScreen>
                 ),
               )
             : isSelected
-                ? Container(
-                    width: 3,
-                    height: isMobile ? 18 : 20,
-                    decoration: BoxDecoration(
-                      color: DashboardStyles.primary,
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  )
-                : null,
+            ? Container(
+                width: 3,
+                height: isMobile ? 18 : 20,
+                decoration: BoxDecoration(
+                  color: DashboardStyles.primary,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              )
+            : null,
         onTap: () {
           HapticFeedback.selectionClick();
           setState(() {
@@ -686,9 +733,17 @@ class _DashboardScreenState extends State<DashboardScreen>
   Widget _buildLogoutTile(bool isMobile, bool isTablet) {
     // Responsive values
     final margin = isMobile ? 6.0 : 8.0;
-    final iconSize = isMobile ? 18.0 : isTablet ? 19.0 : 20.0;
+    final iconSize = isMobile
+        ? 18.0
+        : isTablet
+        ? 19.0
+        : 20.0;
     final iconPadding = isMobile ? 6.0 : 8.0;
-    final fontSize = isMobile ? 13.0 : isTablet ? 13.5 : 14.0;
+    final fontSize = isMobile
+        ? 13.0
+        : isTablet
+        ? 13.5
+        : 14.0;
     final trailingIconSize = isMobile ? 14.0 : 16.0;
     final borderRadius = isMobile ? 10.0 : 12.0;
 

@@ -157,7 +157,10 @@ class _GoogleCredentialPickerFieldState
             // Credentials list
             Expanded(
               child: ListView.builder(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 8,
+                ),
                 itemCount: credentials.length,
                 itemBuilder: (context, index) {
                   final credential = credentials[index];
@@ -165,7 +168,10 @@ class _GoogleCredentialPickerFieldState
                     margin: const EdgeInsets.only(bottom: 12),
                     decoration: BoxDecoration(
                       border: Border(
-                        bottom: BorderSide(color: AppColors.borderLight, width: 1),
+                        bottom: BorderSide(
+                          color: AppColors.borderLight,
+                          width: 1,
+                        ),
                       ),
                     ),
                     child: Material(
@@ -326,7 +332,9 @@ class _GoogleCredentialPickerFieldState
                                 color: const Color(0xFF9C88FF).withOpacity(0.1),
                                 borderRadius: BorderRadius.circular(20),
                                 border: Border.all(
-                                  color: const Color(0xFF9C88FF).withOpacity(0.3),
+                                  color: const Color(
+                                    0xFF9C88FF,
+                                  ).withOpacity(0.3),
                                   width: 1,
                                 ),
                               ),
@@ -364,7 +372,8 @@ class _GoogleCredentialPickerFieldState
             onTap: () {
               // Only show suggestions if user is typing and there are matches
               // Don't auto-trigger credential picker on tap - let user click the button instead
-              if (_suggestions.isNotEmpty && widget.controller.text.isNotEmpty) {
+              if (_suggestions.isNotEmpty &&
+                  widget.controller.text.isNotEmpty) {
                 setState(() => _showSuggestions = true);
               }
             },
@@ -403,7 +412,10 @@ class _GoogleCredentialPickerFieldState
                 child: InkWell(
                   onTap: () => _selectCredential(credential),
                   child: Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                    padding: const EdgeInsets.symmetric(
+                      vertical: 12,
+                      horizontal: 16,
+                    ),
                     child: Row(
                       children: [
                         // Avatar

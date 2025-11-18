@@ -14,7 +14,8 @@ class PrincipalDashboardCacheService {
 
   // Cache keys
   static const String _dashboardDataKey = 'principal_dashboard_data';
-  static const String _cacheTimestampKey = 'principal_dashboard_cache_timestamp';
+  static const String _cacheTimestampKey =
+      'principal_dashboard_cache_timestamp';
 
   // Cache TTL - 5 minutes
   static const Duration _cacheTTL = Duration(minutes: 5);
@@ -59,7 +60,10 @@ class PrincipalDashboardCacheService {
     await _ensurePrefs();
     try {
       await _prefs?.setString(_dashboardDataKey, json.encode(data));
-      await _prefs?.setString(_cacheTimestampKey, DateTime.now().toIso8601String());
+      await _prefs?.setString(
+        _cacheTimestampKey,
+        DateTime.now().toIso8601String(),
+      );
     } catch (e) {
       // Silently handle errors
     }
@@ -123,7 +127,10 @@ class PrincipalDashboardCacheService {
     await _ensurePrefs();
     try {
       await _prefs?.setString('principal_data', json.encode(data));
-      await _prefs?.setString('principal_data_timestamp', DateTime.now().toIso8601String());
+      await _prefs?.setString(
+        'principal_data_timestamp',
+        DateTime.now().toIso8601String(),
+      );
     } catch (e) {
       // Silently handle errors
     }
@@ -160,7 +167,10 @@ class PrincipalDashboardCacheService {
     await _ensurePrefs();
     try {
       await _prefs?.setString('principal_students_data', json.encode(data));
-      await _prefs?.setString('principal_students_timestamp', DateTime.now().toIso8601String());
+      await _prefs?.setString(
+        'principal_students_timestamp',
+        DateTime.now().toIso8601String(),
+      );
     } catch (e) {
       // Silently handle errors
     }
@@ -197,7 +207,10 @@ class PrincipalDashboardCacheService {
     await _ensurePrefs();
     try {
       await _prefs?.setString('principal_analytics_data', json.encode(data));
-      await _prefs?.setString('principal_analytics_timestamp', DateTime.now().toIso8601String());
+      await _prefs?.setString(
+        'principal_analytics_timestamp',
+        DateTime.now().toIso8601String(),
+      );
     } catch (e) {
       // Silently handle errors
     }
@@ -210,7 +223,9 @@ class PrincipalDashboardCacheService {
       final dataJson = _prefs?.getString('principal_reports_insights_data');
       if (dataJson == null) return null;
 
-      final timestamp = _prefs?.getString('principal_reports_insights_timestamp');
+      final timestamp = _prefs?.getString(
+        'principal_reports_insights_timestamp',
+      );
       if (timestamp == null) return null;
 
       final cacheTime = DateTime.parse(timestamp);
@@ -233,8 +248,14 @@ class PrincipalDashboardCacheService {
   Future<void> setReportsInsightsData(Map<String, dynamic> data) async {
     await _ensurePrefs();
     try {
-      await _prefs?.setString('principal_reports_insights_data', json.encode(data));
-      await _prefs?.setString('principal_reports_insights_timestamp', DateTime.now().toIso8601String());
+      await _prefs?.setString(
+        'principal_reports_insights_data',
+        json.encode(data),
+      );
+      await _prefs?.setString(
+        'principal_reports_insights_timestamp',
+        DateTime.now().toIso8601String(),
+      );
     } catch (e) {
       // Silently handle errors
     }
@@ -251,7 +272,7 @@ class PrincipalDashboardCacheService {
       _isCurrentlyOffline = true;
       _hasShownOfflineToast = true;
       _hasShownOnlineToast = false; // Reset online toast flag
-      
+
       if (context != null && context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -278,7 +299,7 @@ class PrincipalDashboardCacheService {
       _isCurrentlyOffline = false;
       _hasShownOnlineToast = true;
       _hasShownOfflineToast = false; // Reset offline toast flag
-      
+
       if (context != null && context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -299,4 +320,3 @@ class PrincipalDashboardCacheService {
     }
   }
 }
-

@@ -47,7 +47,8 @@ class _SkillAssessmentQuizPageState extends State<SkillAssessmentQuizPage> {
       final headers = AuthService().getAuthHeaders();
       final resp = await http.get(
         Uri.parse(
-            ApiEndpoints.studentPlacementModuleQuestions(widget.moduleId)),
+          ApiEndpoints.studentPlacementModuleQuestions(widget.moduleId),
+        ),
         headers: headers,
       );
       if (resp.statusCode == 200) {
@@ -60,20 +61,20 @@ class _SkillAssessmentQuizPageState extends State<SkillAssessmentQuizPage> {
               .where((q) {
                 // Check if it has options (must be a non-empty list)
                 final options = q['options'];
-                final hasOptions = options != null && 
-                    options is List && 
-                    options.isNotEmpty;
-                
+                final hasOptions =
+                    options != null && options is List && options.isNotEmpty;
+
                 // Prefer skill assessment questions, but include any MCQ with options
-                final isMcq = q['type'] == 'mcq' || 
+                final isMcq =
+                    q['type'] == 'mcq' ||
                     q['type'] == null ||
                     q['questionType'] == 'skillAssessment';
-                
+
                 return hasOptions && isMcq;
               })
               .cast<Map<String, dynamic>>()
               .toList();
-          
+
           // If still no questions, show all questions with any options format
           if (_questions.isEmpty && list.isNotEmpty) {
             _questions = list
@@ -86,7 +87,9 @@ class _SkillAssessmentQuizPageState extends State<SkillAssessmentQuizPage> {
         }
       } else {
         final errorData = json.decode(resp.body);
-        _error = errorData['message'] ?? 'Failed to load questions (${resp.statusCode})';
+        _error =
+            errorData['message'] ??
+            'Failed to load questions (${resp.statusCode})';
       }
     } catch (e) {
       _error = e.toString();
@@ -134,17 +137,16 @@ class _SkillAssessmentQuizPageState extends State<SkillAssessmentQuizPage> {
               child: CircularProgressIndicator(color: Color(0xFF6B5FFF)),
             )
           : _error != null
-              ? Center(
-                  child: Text(_error!,
-                      style: const TextStyle(color: Colors.red)),
-                )
-              : _questions.isEmpty
-                  ? const Center(child: Text('No questions available'))
-                  : (_started
-                      ? _buildQuiz()
-                      : const Center(
-                          child: CircularProgressIndicator(
-                              color: Color(0xFF6B5FFF)))),
+          ? Center(
+              child: Text(_error!, style: const TextStyle(color: Colors.red)),
+            )
+          : _questions.isEmpty
+          ? const Center(child: Text('No questions available'))
+          : (_started
+                ? _buildQuiz()
+                : const Center(
+                    child: CircularProgressIndicator(color: Color(0xFF6B5FFF)),
+                  )),
     );
   }
 
@@ -166,9 +168,10 @@ class _SkillAssessmentQuizPageState extends State<SkillAssessmentQuizPage> {
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-                color: Colors.black.withOpacity(0.04),
-                blurRadius: 12,
-                offset: const Offset(0, 6)),
+              color: Colors.black.withOpacity(0.04),
+              blurRadius: 12,
+              offset: const Offset(0, 6),
+            ),
           ],
           border: Border.all(color: const Color(0xFFEDEDED)),
         ),
@@ -177,8 +180,10 @@ class _SkillAssessmentQuizPageState extends State<SkillAssessmentQuizPage> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Progress
-            Text('Question ${_currentIndex + 1} of ${_questions.length}',
-                style: const TextStyle(fontWeight: FontWeight.w700)),
+            Text(
+              'Question ${_currentIndex + 1} of ${_questions.length}',
+              style: const TextStyle(fontWeight: FontWeight.w700),
+            ),
             const SizedBox(height: 6),
             LinearProgressIndicator(
               value: (_currentIndex + 1) / _questions.length,
@@ -187,8 +192,10 @@ class _SkillAssessmentQuizPageState extends State<SkillAssessmentQuizPage> {
               minHeight: 6,
             ),
             const SizedBox(height: 8),
-            Text('$answeredCount answered',
-                style: const TextStyle(color: Colors.grey, fontSize: 12)),
+            Text(
+              '$answeredCount answered',
+              style: const TextStyle(color: Colors.grey, fontSize: 12),
+            ),
             const SizedBox(height: 12),
             Wrap(
               spacing: 8,
@@ -244,7 +251,8 @@ class _SkillAssessmentQuizPageState extends State<SkillAssessmentQuizPage> {
                       side: const BorderSide(color: Color(0xFF6B5FFF)),
                       foregroundColor: const Color(0xFF6B5FFF),
                       shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10)),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
                       minimumSize: const Size.fromHeight(44),
                     ),
                     child: const Text('Previous'),
@@ -253,7 +261,8 @@ class _SkillAssessmentQuizPageState extends State<SkillAssessmentQuizPage> {
                 const SizedBox(width: 12),
                 Expanded(
                   child: ElevatedButton(
-                    onPressed: _selectedIndex == null &&
+                    onPressed:
+                        _selectedIndex == null &&
                             _selections[_currentIndex] == null
                         ? null
                         : _handleNext,
@@ -261,12 +270,15 @@ class _SkillAssessmentQuizPageState extends State<SkillAssessmentQuizPage> {
                       backgroundColor: const Color(0xFF6B5FFF),
                       foregroundColor: Colors.white,
                       shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10)),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
                       minimumSize: const Size.fromHeight(44),
                     ),
-                    child: Text(_currentIndex == _questions.length - 1
-                        ? 'Submit'
-                        : 'Next'),
+                    child: Text(
+                      _currentIndex == _questions.length - 1
+                          ? 'Submit'
+                          : 'Next',
+                    ),
                   ),
                 ),
               ],
@@ -288,10 +300,7 @@ class _SkillAssessmentQuizPageState extends State<SkillAssessmentQuizPage> {
       final ops = _extractOptions(_questions[i]);
       final correct = _extractCorrectAnswer(_questions[i], ops);
       final sel = _selections[i];
-      if (sel != null &&
-          sel >= 0 &&
-          sel < ops.length &&
-          ops[sel] == correct) {
+      if (sel != null && sel >= 0 && sel < ops.length && ops[sel] == correct) {
         newScore += 1;
       }
     }
@@ -313,19 +322,21 @@ class _SkillAssessmentQuizPageState extends State<SkillAssessmentQuizPage> {
   }
 
   Future<void> _submitAnswer(
-      Map<String, dynamic> question, int selectedIndex) async {
+    Map<String, dynamic> question,
+    int selectedIndex,
+  ) async {
     try {
       final headers = AuthService().getAuthHeaders();
-      final questionId = question['_id']?.toString() ?? question['id']?.toString();
+      final questionId =
+          question['_id']?.toString() ?? question['id']?.toString();
       final options = _extractOptions(question);
-      final selectedAnswer = selectedIndex < options.length ? options[selectedIndex] : '';
+      final selectedAnswer = selectedIndex < options.length
+          ? options[selectedIndex]
+          : '';
 
       await http.post(
         Uri.parse(ApiEndpoints.studentSubmitAnswer),
-        headers: {
-          ...headers,
-          'Content-Type': 'application/json',
-        },
+        headers: {...headers, 'Content-Type': 'application/json'},
         body: json.encode({
           'questionId': questionId,
           'moduleId': widget.moduleId,
@@ -362,12 +373,9 @@ class _SkillAssessmentQuizPageState extends State<SkillAssessmentQuizPage> {
       final texts = raw
           .map((e) {
             if (e is Map) {
-              final t = (e['text'] ??
-                      e['label'] ??
-                      e['option'] ??
-                      e['value'] ??
-                      '')
-                  .toString();
+              final t =
+                  (e['text'] ?? e['label'] ?? e['option'] ?? e['value'] ?? '')
+                      .toString();
               return t;
             }
             return e.toString();
@@ -397,7 +405,14 @@ class _SkillAssessmentQuizPageState extends State<SkillAssessmentQuizPage> {
   String _extractQuestionText(Map<String, dynamic> q) {
     // For SkillAssessmentQuestion, description contains the actual question text
     // Check description first, then other common fields
-    final keys = ['description', 'questionText', 'question', 'text', 'title', 'prompt'];
+    final keys = [
+      'description',
+      'questionText',
+      'question',
+      'text',
+      'title',
+      'prompt',
+    ];
     for (final k in keys) {
       final v = q[k];
       if (v != null && v.toString().trim().isNotEmpty) return v.toString();
@@ -415,17 +430,20 @@ class _SkillAssessmentQuizPageState extends State<SkillAssessmentQuizPage> {
         final isGood = percent >= 60;
         return Dialog(
           backgroundColor: Colors.transparent,
-          insetPadding:
-              const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+          insetPadding: const EdgeInsets.symmetric(
+            horizontal: 24,
+            vertical: 24,
+          ),
           child: Container(
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(16),
               boxShadow: [
                 BoxShadow(
-                    color: Colors.black.withOpacity(0.08),
-                    blurRadius: 20,
-                    offset: const Offset(0, 10)),
+                  color: Colors.black.withOpacity(0.08),
+                  blurRadius: 20,
+                  offset: const Offset(0, 10),
+                ),
               ],
             ),
             child: Column(
@@ -434,7 +452,10 @@ class _SkillAssessmentQuizPageState extends State<SkillAssessmentQuizPage> {
                 // Header
                 Container(
                   width: double.infinity,
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 16,
+                  ),
                   decoration: const BoxDecoration(
                     gradient: LinearGradient(
                       colors: [Color(0xFF6B5FFF), Color(0xFF8B7FFF)],
@@ -454,16 +475,19 @@ class _SkillAssessmentQuizPageState extends State<SkillAssessmentQuizPage> {
                           color: Colors.white.withOpacity(0.15),
                           shape: BoxShape.circle,
                         ),
-                        child: const Icon(Icons.emoji_events_rounded,
-                            color: Colors.white),
+                        child: const Icon(
+                          Icons.emoji_events_rounded,
+                          color: Colors.white,
+                        ),
                       ),
                       const SizedBox(width: 12),
                       const Text(
                         'Assessment Result',
                         style: TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w700,
-                            fontSize: 16),
+                          color: Colors.white,
+                          fontWeight: FontWeight.w700,
+                          fontSize: 16,
+                        ),
                       ),
                     ],
                   ),
@@ -478,15 +502,17 @@ class _SkillAssessmentQuizPageState extends State<SkillAssessmentQuizPage> {
                         height: 88,
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          color: (isGood
-                                  ? const Color(0xFF27AE60)
-                                  : const Color(0xFFE74C3C))
-                              .withOpacity(0.1),
+                          color:
+                              (isGood
+                                      ? const Color(0xFF27AE60)
+                                      : const Color(0xFFE74C3C))
+                                  .withOpacity(0.1),
                           border: Border.all(
-                              color: isGood
-                                  ? const Color(0xFF27AE60)
-                                  : const Color(0xFFE74C3C),
-                              width: 2),
+                            color: isGood
+                                ? const Color(0xFF27AE60)
+                                : const Color(0xFFE74C3C),
+                            width: 2,
+                          ),
                         ),
                         alignment: Alignment.center,
                         child: Column(
@@ -519,9 +545,10 @@ class _SkillAssessmentQuizPageState extends State<SkillAssessmentQuizPage> {
                       Text(
                         '$percent%',
                         style: const TextStyle(
-                            fontWeight: FontWeight.w800,
-                            fontSize: 18,
-                            color: Color(0xFF1A1A1A)),
+                          fontWeight: FontWeight.w800,
+                          fontSize: 18,
+                          color: Color(0xFF1A1A1A),
+                        ),
                       ),
                       const SizedBox(height: 6),
                       Text(
@@ -530,7 +557,9 @@ class _SkillAssessmentQuizPageState extends State<SkillAssessmentQuizPage> {
                             : 'Good try! Review and attempt again.',
                         textAlign: TextAlign.center,
                         style: const TextStyle(
-                            color: Color(0xFF6B7280), fontSize: 13),
+                          color: Color(0xFF6B7280),
+                          fontSize: 13,
+                        ),
                       ),
                       const SizedBox(height: 14),
                       Row(
@@ -553,13 +582,16 @@ class _SkillAssessmentQuizPageState extends State<SkillAssessmentQuizPage> {
                         child: OutlinedButton(
                           onPressed: () {
                             Navigator.of(context).pop(); // close dialog
-                            Navigator.of(context).pop(); // go back to modules page
+                            Navigator.of(
+                              context,
+                            ).pop(); // go back to modules page
                           },
                           style: OutlinedButton.styleFrom(
                             side: const BorderSide(color: Color(0xFF6B5FFF)),
                             foregroundColor: const Color(0xFF6B5FFF),
                             shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10)),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
                             minimumSize: const Size.fromHeight(44),
                           ),
                           child: const Text('Close'),
@@ -573,8 +605,10 @@ class _SkillAssessmentQuizPageState extends State<SkillAssessmentQuizPage> {
                               _started = false;
                               _currentIndex = 0;
                               _selectedIndex = null;
-                              _selections =
-                                  List<int?>.filled(_questions.length, null);
+                              _selections = List<int?>.filled(
+                                _questions.length,
+                                null,
+                              );
                               _score = 0;
                             });
                             Navigator.of(context).pop();
@@ -583,7 +617,8 @@ class _SkillAssessmentQuizPageState extends State<SkillAssessmentQuizPage> {
                             backgroundColor: const Color(0xFF6B5FFF),
                             foregroundColor: Colors.white,
                             shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10)),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
                             minimumSize: const Size.fromHeight(44),
                           ),
                           child: const Text('Retry'),
@@ -614,16 +649,18 @@ class _SkillAssessmentQuizPageState extends State<SkillAssessmentQuizPage> {
           Text(
             '$label: ',
             style: const TextStyle(
-                color: Color(0xFF6B5FFF),
-                fontWeight: FontWeight.w700,
-                fontSize: 12),
+              color: Color(0xFF6B5FFF),
+              fontWeight: FontWeight.w700,
+              fontSize: 12,
+            ),
           ),
           Text(
             value,
             style: const TextStyle(
-                color: Color(0xFF1A1A1A),
-                fontWeight: FontWeight.w600,
-                fontSize: 12),
+              color: Color(0xFF1A1A1A),
+              fontWeight: FontWeight.w600,
+              fontSize: 12,
+            ),
           ),
         ],
       ),
@@ -647,8 +684,9 @@ class _OptionTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final borderColor =
-        selected ? const Color(0xFF6B5FFF) : const Color(0xFFE4E4E4);
+    final borderColor = selected
+        ? const Color(0xFF6B5FFF)
+        : const Color(0xFFE4E4E4);
     final fill = selected
         ? const Color(0xFF6B5FFF).withOpacity(0.06)
         : Colors.white;
@@ -689,7 +727,10 @@ class _OptionTile extends StatelessWidget {
               child: Text(
                 text,
                 style: const TextStyle(
-                    fontSize: 14, color: Color(0xFF1A1A1A), height: 1.4),
+                  fontSize: 14,
+                  color: Color(0xFF1A1A1A),
+                  height: 1.4,
+                ),
               ),
             ),
           ],
@@ -698,4 +739,3 @@ class _OptionTile extends StatelessWidget {
     );
   }
 }
-

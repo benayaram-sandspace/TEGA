@@ -76,7 +76,9 @@ class _JobRecommendationScreenState extends State<JobRecommendationScreen>
             error.toString().toLowerCase().contains('connection') ||
             error.toString().toLowerCase().contains('internet') ||
             error.toString().toLowerCase().contains('failed host lookup') ||
-            error.toString().toLowerCase().contains('no address associated with hostname'));
+            error.toString().toLowerCase().contains(
+              'no address associated with hostname',
+            ));
   }
 
   @override
@@ -194,12 +196,10 @@ class _JobRecommendationScreenState extends State<JobRecommendationScreen>
       // Cache jobs data
       await _cacheService.setJobsData(transformedJobs);
 
-      // Calculate stats from actual data
-      _calculateStats();
-
       if (mounted) {
         setState(() {
           _allJobs = transformedJobs;
+          _calculateStats();
           _filteredJobs = List.from(_allJobs);
           _applyFilters();
           _errorMessage = null;
@@ -275,11 +275,14 @@ class _JobRecommendationScreenState extends State<JobRecommendationScreen>
   double get tabletBreakpoint => 1024;
   double get desktopBreakpoint => 1440;
   bool get isMobile => MediaQuery.of(context).size.width < mobileBreakpoint;
-  bool get isTablet => MediaQuery.of(context).size.width >= mobileBreakpoint &&
+  bool get isTablet =>
+      MediaQuery.of(context).size.width >= mobileBreakpoint &&
       MediaQuery.of(context).size.width < tabletBreakpoint;
-  bool get isDesktop => MediaQuery.of(context).size.width >= tabletBreakpoint &&
+  bool get isDesktop =>
+      MediaQuery.of(context).size.width >= tabletBreakpoint &&
       MediaQuery.of(context).size.width < desktopBreakpoint;
-  bool get isLargeDesktop => MediaQuery.of(context).size.width >= desktopBreakpoint;
+  bool get isLargeDesktop =>
+      MediaQuery.of(context).size.width >= desktopBreakpoint;
   bool get isSmallScreen => MediaQuery.of(context).size.width < 400;
 
   @override
@@ -1179,10 +1182,7 @@ class _JobRecommendationScreenState extends State<JobRecommendationScreen>
     );
   }
 
-  Widget _buildJobCard(
-    Map<String, dynamic> job,
-    int index,
-  ) {
+  Widget _buildJobCard(Map<String, dynamic> job, int index) {
     return TweenAnimationBuilder<double>(
       tween: Tween(begin: 0.0, end: 1.0),
       duration: Duration(milliseconds: 300 + (index * 50)),
@@ -2079,7 +2079,7 @@ class _JobRecommendationScreenState extends State<JobRecommendationScreen>
 
   Widget _buildErrorState() {
     final isNoInternet = _errorMessage == 'No internet connection';
-    
+
     return Center(
       child: Padding(
         padding: EdgeInsets.all(
@@ -2121,7 +2121,9 @@ class _JobRecommendationScreenState extends State<JobRecommendationScreen>
                   : 20,
             ),
             Text(
-              isNoInternet ? 'No internet connection' : 'Oops! Something went wrong',
+              isNoInternet
+                  ? 'No internet connection'
+                  : 'Oops! Something went wrong',
               style: TextStyle(
                 fontSize: isLargeDesktop
                     ? 24
@@ -2629,5 +2631,3 @@ class _JobRecommendationScreenState extends State<JobRecommendationScreen>
     );
   }
 }
-
-

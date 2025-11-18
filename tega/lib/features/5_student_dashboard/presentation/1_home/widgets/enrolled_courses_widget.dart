@@ -59,7 +59,7 @@ class _EnrolledCoursesWidgetState extends State<EnrolledCoursesWidget>
 
       // Get progress data to merge with paid courses
       final progressData = await service.getAllProgress(headers);
-      
+
       // Create a map of courseId -> progress for quick lookup
       final progressMap = <String, dynamic>{};
       for (var progress in progressData) {
@@ -71,26 +71,29 @@ class _EnrolledCoursesWidgetState extends State<EnrolledCoursesWidget>
 
       // Merge paid courses with progress data
       final mergedCourses = paidCourses.map((course) {
-        final courseId = course['courseId']?.toString() ?? 
-                        course['id']?.toString() ?? 
-                        course['_id']?.toString() ?? '';
+        final courseId =
+            course['courseId']?.toString() ??
+            course['id']?.toString() ??
+            course['_id']?.toString() ??
+            '';
         final progress = progressMap[courseId];
-        
+
         if (progress != null) {
           final mergedCourse = Map<String, dynamic>.from(course);
           mergedCourse['progress'] = progress['overallProgress'] ?? 0;
           mergedCourse['lastAccessedAt'] = progress['lastAccessedAt'];
-          mergedCourse['completedLectures'] = progress['completedLectures'] ?? 0;
+          mergedCourse['completedLectures'] =
+              progress['completedLectures'] ?? 0;
           mergedCourse['totalLectures'] = progress['totalLectures'] ?? 0;
           // Add thumbnail from progress if not present in course
-          if ((mergedCourse['thumbnail'] == null || 
-               mergedCourse['thumbnail'].toString().isEmpty) &&
+          if ((mergedCourse['thumbnail'] == null ||
+                  mergedCourse['thumbnail'].toString().isEmpty) &&
               progress['thumbnail'] != null) {
             mergedCourse['thumbnail'] = progress['thumbnail'];
           }
           // Add title from progress if not present in course
-          if ((mergedCourse['title'] == null || 
-               mergedCourse['title'].toString().isEmpty) &&
+          if ((mergedCourse['title'] == null ||
+                  mergedCourse['title'].toString().isEmpty) &&
               progress['courseTitle'] != null) {
             mergedCourse['title'] = progress['courseTitle'];
           }
@@ -177,8 +180,7 @@ class _EnrolledCoursesWidgetState extends State<EnrolledCoursesWidget>
           'General';
     }
     // If courseId is a String, use category directly
-    return course['category']?.toString() ??
-        'General';
+    return course['category']?.toString() ?? 'General';
   }
 
   @override
@@ -301,11 +303,13 @@ class _EnrolledCoursesWidgetState extends State<EnrolledCoursesWidget>
     final title = _getCourseTitle(course);
     final thumbnail = _getCourseThumbnail(course);
     final category = _getCourseCategory(course);
-    
+
     // Get course ID for navigation
-    final courseId = course['id']?.toString() ?? 
-                    course['courseId']?.toString() ?? 
-                    course['_id']?.toString() ?? '';
+    final courseId =
+        course['id']?.toString() ??
+        course['courseId']?.toString() ??
+        course['_id']?.toString() ??
+        '';
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),

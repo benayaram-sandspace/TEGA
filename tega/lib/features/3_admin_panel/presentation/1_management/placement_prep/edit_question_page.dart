@@ -22,7 +22,7 @@ class _EditQuestionPageState extends State<EditQuestionPage> {
   final _timeController = TextEditingController();
   final List<TextEditingController> _optionControllers = [];
   final List<bool> _optionCorrect = [];
-  
+
   final AuthService _auth = AuthService();
   bool _isLoading = false;
   bool _isLoadingQuestion = true;
@@ -40,7 +40,8 @@ class _EditQuestionPageState extends State<EditQuestionPage> {
 
   Future<void> _loadQuestionData() async {
     try {
-      final questionId = (widget.question['_id'] ?? widget.question['id']).toString();
+      final questionId = (widget.question['_id'] ?? widget.question['id'])
+          .toString();
       final headers = await _auth.getAuthHeaders();
       final res = await http.get(
         Uri.parse(ApiEndpoints.adminPlacementQuestionById(questionId)),
@@ -61,7 +62,10 @@ class _EditQuestionPageState extends State<EditQuestionPage> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error loading question: $e'), backgroundColor: Colors.red),
+          SnackBar(
+            content: Text('Error loading question: $e'),
+            backgroundColor: Colors.red,
+          ),
         );
       }
     } finally {
@@ -75,19 +79,24 @@ class _EditQuestionPageState extends State<EditQuestionPage> {
     if (_questionData == null) return;
 
     _titleController.text = _questionData!['title']?.toString() ?? '';
-    _descriptionController.text = _questionData!['description']?.toString() ?? '';
+    _descriptionController.text =
+        _questionData!['description']?.toString() ?? '';
     _topicController.text = _questionData!['topic']?.toString() ?? '';
     _timeController.text = (_questionData!['timeLimit'] ?? 30).toString();
-    
+
     _selectedType = _questionData!['type']?.toString().toLowerCase() ?? 'mcq';
-    _selectedCategory = _questionData!['category']?.toString().toLowerCase() ?? 'assessment';
-    _selectedDifficulty = _questionData!['difficulty']?.toString().toLowerCase() ?? 'easy';
+    _selectedCategory =
+        _questionData!['category']?.toString().toLowerCase() ?? 'assessment';
+    _selectedDifficulty =
+        _questionData!['difficulty']?.toString().toLowerCase() ?? 'easy';
 
     // Load options for MCQ
     final options = _questionData!['options'] ?? [];
     if (options is List && options.isNotEmpty) {
       for (var opt in options) {
-        _optionControllers.add(TextEditingController(text: opt['text']?.toString() ?? ''));
+        _optionControllers.add(
+          TextEditingController(text: opt['text']?.toString() ?? ''),
+        );
         _optionCorrect.add(opt['isCorrect'] == true);
       }
     } else {
@@ -130,9 +139,10 @@ class _EditQuestionPageState extends State<EditQuestionPage> {
     setState(() => _isLoading = true);
 
     try {
-      final questionId = (widget.question['_id'] ?? widget.question['id']).toString();
+      final questionId = (widget.question['_id'] ?? widget.question['id'])
+          .toString();
       final questionType = _questionData!['questionType'] ?? 'placement';
-      
+
       final updateData = {
         'title': _titleController.text.trim(),
         'description': _descriptionController.text.trim(),
@@ -145,22 +155,28 @@ class _EditQuestionPageState extends State<EditQuestionPage> {
 
       // Add options for MCQ
       if (_selectedType == 'mcq') {
-        updateData['options'] = _optionControllers.asMap().entries.map((entry) {
-          final index = entry.key;
-          final controller = entry.value;
-          return {
-            'text': controller.text.trim(),
-            'isCorrect': _optionCorrect[index],
-          };
-        }).where((opt) => opt['text'].toString().isNotEmpty).toList();
+        updateData['options'] = _optionControllers
+            .asMap()
+            .entries
+            .map((entry) {
+              final index = entry.key;
+              final controller = entry.value;
+              return {
+                'text': controller.text.trim(),
+                'isCorrect': _optionCorrect[index],
+              };
+            })
+            .where((opt) => opt['text'].toString().isNotEmpty)
+            .toList();
       }
 
       final headers = await _auth.getAuthHeaders();
       headers['Content-Type'] = 'application/json';
-      
-      final uri = Uri.parse(ApiEndpoints.adminUpdatePlacementQuestion(questionId))
-          .replace(queryParameters: {'questionType': questionType});
-      
+
+      final uri = Uri.parse(
+        ApiEndpoints.adminUpdatePlacementQuestion(questionId),
+      ).replace(queryParameters: {'questionType': questionType});
+
       final res = await http.put(
         uri,
         headers: headers,
@@ -184,7 +200,10 @@ class _EditQuestionPageState extends State<EditQuestionPage> {
         }
       } else {
         final errorData = json.decode(res.body);
-        throw Exception(errorData['message'] ?? 'Failed to update question: ${res.statusCode}');
+        throw Exception(
+          errorData['message'] ??
+              'Failed to update question: ${res.statusCode}',
+        );
       }
     } catch (e) {
       if (mounted) {
@@ -226,7 +245,9 @@ class _EditQuestionPageState extends State<EditQuestionPage> {
                       icon: Icons.chat_bubble_outline_rounded,
                       child: TextFormField(
                         controller: _titleController,
-                        decoration: _buildInputDecoration(hintText: 'Enter question title'),
+                        decoration: _buildInputDecoration(
+                          hintText: 'Enter question title',
+                        ),
                         validator: (value) {
                           if (value == null || value.trim().isEmpty) {
                             return 'Please enter question title';
@@ -242,7 +263,9 @@ class _EditQuestionPageState extends State<EditQuestionPage> {
                       child: TextFormField(
                         controller: _descriptionController,
                         maxLines: 4,
-                        decoration: _buildInputDecoration(hintText: 'Enter question description'),
+                        decoration: _buildInputDecoration(
+                          hintText: 'Enter question description',
+                        ),
                         validator: (value) {
                           if (value == null || value.trim().isEmpty) {
                             return 'Please enter description';
@@ -264,15 +287,32 @@ class _EditQuestionPageState extends State<EditQuestionPage> {
                                 child: DropdownButtonFormField<String>(
                                   value: _selectedType,
                                   isExpanded: true,
-                                  decoration: _buildInputDecoration(hintText: 'Select type'),
+                                  decoration: _buildInputDecoration(
+                                    hintText: 'Select type',
+                                  ),
                                   items: const [
-                                    DropdownMenuItem(value: 'mcq', child: Text('MCQ')),
-                                    DropdownMenuItem(value: 'coding', child: Text('Coding')),
-                                    DropdownMenuItem(value: 'subjective', child: Text('Subjective')),
-                                    DropdownMenuItem(value: 'behavioral', child: Text('Behavioral')),
+                                    DropdownMenuItem(
+                                      value: 'mcq',
+                                      child: Text('MCQ'),
+                                    ),
+                                    DropdownMenuItem(
+                                      value: 'coding',
+                                      child: Text('Coding'),
+                                    ),
+                                    DropdownMenuItem(
+                                      value: 'subjective',
+                                      child: Text('Subjective'),
+                                    ),
+                                    DropdownMenuItem(
+                                      value: 'behavioral',
+                                      child: Text('Behavioral'),
+                                    ),
                                   ],
-                                  onChanged: (value) => setState(() => _selectedType = value),
-                                  validator: (value) => value == null ? 'Please select type' : null,
+                                  onChanged: (value) =>
+                                      setState(() => _selectedType = value),
+                                  validator: (value) => value == null
+                                      ? 'Please select type'
+                                      : null,
                                 ),
                               ),
                               const SizedBox(height: 16),
@@ -282,17 +322,40 @@ class _EditQuestionPageState extends State<EditQuestionPage> {
                                 child: DropdownButtonFormField<String>(
                                   value: _selectedCategory,
                                   isExpanded: true,
-                                  decoration: _buildInputDecoration(hintText: 'Select category'),
+                                  decoration: _buildInputDecoration(
+                                    hintText: 'Select category',
+                                  ),
                                   items: const [
-                                    DropdownMenuItem(value: 'assessment', child: Text('Assessment')),
-                                    DropdownMenuItem(value: 'technical', child: Text('Technical')),
-                                    DropdownMenuItem(value: 'interview', child: Text('Interview')),
-                                    DropdownMenuItem(value: 'aptitude', child: Text('Aptitude')),
-                                    DropdownMenuItem(value: 'logical', child: Text('Logical')),
-                                    DropdownMenuItem(value: 'verbal', child: Text('Verbal')),
+                                    DropdownMenuItem(
+                                      value: 'assessment',
+                                      child: Text('Assessment'),
+                                    ),
+                                    DropdownMenuItem(
+                                      value: 'technical',
+                                      child: Text('Technical'),
+                                    ),
+                                    DropdownMenuItem(
+                                      value: 'interview',
+                                      child: Text('Interview'),
+                                    ),
+                                    DropdownMenuItem(
+                                      value: 'aptitude',
+                                      child: Text('Aptitude'),
+                                    ),
+                                    DropdownMenuItem(
+                                      value: 'logical',
+                                      child: Text('Logical'),
+                                    ),
+                                    DropdownMenuItem(
+                                      value: 'verbal',
+                                      child: Text('Verbal'),
+                                    ),
                                   ],
-                                  onChanged: (value) => setState(() => _selectedCategory = value),
-                                  validator: (value) => value == null ? 'Please select category' : null,
+                                  onChanged: (value) =>
+                                      setState(() => _selectedCategory = value),
+                                  validator: (value) => value == null
+                                      ? 'Please select category'
+                                      : null,
                                 ),
                               ),
                             ],
@@ -307,15 +370,32 @@ class _EditQuestionPageState extends State<EditQuestionPage> {
                                 child: DropdownButtonFormField<String>(
                                   value: _selectedType,
                                   isExpanded: true,
-                                  decoration: _buildInputDecoration(hintText: 'Select type'),
+                                  decoration: _buildInputDecoration(
+                                    hintText: 'Select type',
+                                  ),
                                   items: const [
-                                    DropdownMenuItem(value: 'mcq', child: Text('MCQ')),
-                                    DropdownMenuItem(value: 'coding', child: Text('Coding')),
-                                    DropdownMenuItem(value: 'subjective', child: Text('Subjective')),
-                                    DropdownMenuItem(value: 'behavioral', child: Text('Behavioral')),
+                                    DropdownMenuItem(
+                                      value: 'mcq',
+                                      child: Text('MCQ'),
+                                    ),
+                                    DropdownMenuItem(
+                                      value: 'coding',
+                                      child: Text('Coding'),
+                                    ),
+                                    DropdownMenuItem(
+                                      value: 'subjective',
+                                      child: Text('Subjective'),
+                                    ),
+                                    DropdownMenuItem(
+                                      value: 'behavioral',
+                                      child: Text('Behavioral'),
+                                    ),
                                   ],
-                                  onChanged: (value) => setState(() => _selectedType = value),
-                                  validator: (value) => value == null ? 'Please select type' : null,
+                                  onChanged: (value) =>
+                                      setState(() => _selectedType = value),
+                                  validator: (value) => value == null
+                                      ? 'Please select type'
+                                      : null,
                                 ),
                               ),
                             ),
@@ -327,17 +407,40 @@ class _EditQuestionPageState extends State<EditQuestionPage> {
                                 child: DropdownButtonFormField<String>(
                                   value: _selectedCategory,
                                   isExpanded: true,
-                                  decoration: _buildInputDecoration(hintText: 'Select category'),
+                                  decoration: _buildInputDecoration(
+                                    hintText: 'Select category',
+                                  ),
                                   items: const [
-                                    DropdownMenuItem(value: 'assessment', child: Text('Assessment')),
-                                    DropdownMenuItem(value: 'technical', child: Text('Technical')),
-                                    DropdownMenuItem(value: 'interview', child: Text('Interview')),
-                                    DropdownMenuItem(value: 'aptitude', child: Text('Aptitude')),
-                                    DropdownMenuItem(value: 'logical', child: Text('Logical')),
-                                    DropdownMenuItem(value: 'verbal', child: Text('Verbal')),
+                                    DropdownMenuItem(
+                                      value: 'assessment',
+                                      child: Text('Assessment'),
+                                    ),
+                                    DropdownMenuItem(
+                                      value: 'technical',
+                                      child: Text('Technical'),
+                                    ),
+                                    DropdownMenuItem(
+                                      value: 'interview',
+                                      child: Text('Interview'),
+                                    ),
+                                    DropdownMenuItem(
+                                      value: 'aptitude',
+                                      child: Text('Aptitude'),
+                                    ),
+                                    DropdownMenuItem(
+                                      value: 'logical',
+                                      child: Text('Logical'),
+                                    ),
+                                    DropdownMenuItem(
+                                      value: 'verbal',
+                                      child: Text('Verbal'),
+                                    ),
                                   ],
-                                  onChanged: (value) => setState(() => _selectedCategory = value),
-                                  validator: (value) => value == null ? 'Please select category' : null,
+                                  onChanged: (value) =>
+                                      setState(() => _selectedCategory = value),
+                                  validator: (value) => value == null
+                                      ? 'Please select category'
+                                      : null,
                                 ),
                               ),
                             ),
@@ -358,14 +461,29 @@ class _EditQuestionPageState extends State<EditQuestionPage> {
                                 child: DropdownButtonFormField<String>(
                                   value: _selectedDifficulty,
                                   isExpanded: true,
-                                  decoration: _buildInputDecoration(hintText: 'Select difficulty'),
+                                  decoration: _buildInputDecoration(
+                                    hintText: 'Select difficulty',
+                                  ),
                                   items: const [
-                                    DropdownMenuItem(value: 'easy', child: Text('Easy')),
-                                    DropdownMenuItem(value: 'medium', child: Text('Medium')),
-                                    DropdownMenuItem(value: 'hard', child: Text('Hard')),
+                                    DropdownMenuItem(
+                                      value: 'easy',
+                                      child: Text('Easy'),
+                                    ),
+                                    DropdownMenuItem(
+                                      value: 'medium',
+                                      child: Text('Medium'),
+                                    ),
+                                    DropdownMenuItem(
+                                      value: 'hard',
+                                      child: Text('Hard'),
+                                    ),
                                   ],
-                                  onChanged: (value) => setState(() => _selectedDifficulty = value),
-                                  validator: (value) => value == null ? 'Please select difficulty' : null,
+                                  onChanged: (value) => setState(
+                                    () => _selectedDifficulty = value,
+                                  ),
+                                  validator: (value) => value == null
+                                      ? 'Please select difficulty'
+                                      : null,
                                 ),
                               ),
                               const SizedBox(height: 16),
@@ -375,7 +493,9 @@ class _EditQuestionPageState extends State<EditQuestionPage> {
                                 child: TextFormField(
                                   controller: _timeController,
                                   keyboardType: TextInputType.number,
-                                  decoration: _buildInputDecoration(hintText: 'e.g., 30'),
+                                  decoration: _buildInputDecoration(
+                                    hintText: 'e.g., 30',
+                                  ),
                                 ),
                               ),
                             ],
@@ -390,14 +510,29 @@ class _EditQuestionPageState extends State<EditQuestionPage> {
                                 child: DropdownButtonFormField<String>(
                                   value: _selectedDifficulty,
                                   isExpanded: true,
-                                  decoration: _buildInputDecoration(hintText: 'Select difficulty'),
+                                  decoration: _buildInputDecoration(
+                                    hintText: 'Select difficulty',
+                                  ),
                                   items: const [
-                                    DropdownMenuItem(value: 'easy', child: Text('Easy')),
-                                    DropdownMenuItem(value: 'medium', child: Text('Medium')),
-                                    DropdownMenuItem(value: 'hard', child: Text('Hard')),
+                                    DropdownMenuItem(
+                                      value: 'easy',
+                                      child: Text('Easy'),
+                                    ),
+                                    DropdownMenuItem(
+                                      value: 'medium',
+                                      child: Text('Medium'),
+                                    ),
+                                    DropdownMenuItem(
+                                      value: 'hard',
+                                      child: Text('Hard'),
+                                    ),
                                   ],
-                                  onChanged: (value) => setState(() => _selectedDifficulty = value),
-                                  validator: (value) => value == null ? 'Please select difficulty' : null,
+                                  onChanged: (value) => setState(
+                                    () => _selectedDifficulty = value,
+                                  ),
+                                  validator: (value) => value == null
+                                      ? 'Please select difficulty'
+                                      : null,
                                 ),
                               ),
                             ),
@@ -409,7 +544,9 @@ class _EditQuestionPageState extends State<EditQuestionPage> {
                                 child: TextFormField(
                                   controller: _timeController,
                                   keyboardType: TextInputType.number,
-                                  decoration: _buildInputDecoration(hintText: 'e.g., 30'),
+                                  decoration: _buildInputDecoration(
+                                    hintText: 'e.g., 30',
+                                  ),
                                 ),
                               ),
                             ),
@@ -423,7 +560,9 @@ class _EditQuestionPageState extends State<EditQuestionPage> {
                       icon: Icons.topic_rounded,
                       child: TextFormField(
                         controller: _topicController,
-                        decoration: _buildInputDecoration(hintText: 'Enter topic'),
+                        decoration: _buildInputDecoration(
+                          hintText: 'Enter topic',
+                        ),
                         validator: (value) {
                           if (value == null || value.trim().isEmpty) {
                             return 'Please enter topic';
@@ -449,16 +588,22 @@ class _EditQuestionPageState extends State<EditQuestionPage> {
                                 height: 20,
                                 child: CircularProgressIndicator(
                                   strokeWidth: 2,
-                                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                  valueColor: AlwaysStoppedAnimation<Color>(
+                                    Colors.white,
+                                  ),
                                 ),
                               )
                             : const Icon(Icons.save_rounded),
                         label: Text(_isLoading ? 'Saving...' : 'Save Question'),
-                        style: AdminDashboardStyles.getPrimaryButtonStyle().copyWith(
-                          padding: const MaterialStatePropertyAll(
-                            EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-                          ),
-                        ),
+                        style: AdminDashboardStyles.getPrimaryButtonStyle()
+                            .copyWith(
+                              padding: const MaterialStatePropertyAll(
+                                EdgeInsets.symmetric(
+                                  horizontal: 24,
+                                  vertical: 14,
+                                ),
+                              ),
+                            ),
                       ),
                     ),
                   ],
@@ -553,7 +698,11 @@ class _EditQuestionPageState extends State<EditQuestionPage> {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(Icons.psychology_rounded, color: AdminDashboardStyles.accentBlue, size: 24),
+          Icon(
+            Icons.psychology_rounded,
+            color: AdminDashboardStyles.accentBlue,
+            size: 24,
+          ),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
@@ -592,11 +741,17 @@ class _EditQuestionPageState extends State<EditQuestionPage> {
       fillColor: Colors.white,
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide(color: AdminDashboardStyles.borderLight, width: 1),
+        borderSide: BorderSide(
+          color: AdminDashboardStyles.borderLight,
+          width: 1,
+        ),
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide(color: AdminDashboardStyles.borderLight, width: 1),
+        borderSide: BorderSide(
+          color: AdminDashboardStyles.borderLight,
+          width: 1,
+        ),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
@@ -606,4 +761,3 @@ class _EditQuestionPageState extends State<EditQuestionPage> {
     );
   }
 }
-

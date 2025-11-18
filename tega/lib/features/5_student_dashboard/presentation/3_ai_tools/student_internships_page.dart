@@ -60,7 +60,9 @@ class _InternshipsPageState extends State<InternshipsPage> {
             error.toString().toLowerCase().contains('connection') ||
             error.toString().toLowerCase().contains('internet') ||
             error.toString().toLowerCase().contains('failed host lookup') ||
-            error.toString().toLowerCase().contains('no address associated with hostname'));
+            error.toString().toLowerCase().contains(
+              'no address associated with hostname',
+            ));
   }
 
   @override
@@ -75,7 +77,9 @@ class _InternshipsPageState extends State<InternshipsPage> {
     // Try to load from cache first (unless force refresh)
     if (!forceRefresh) {
       final cachedInternships = await _cacheService.getInternshipsData();
-      if (cachedInternships != null && cachedInternships.isNotEmpty && mounted) {
+      if (cachedInternships != null &&
+          cachedInternships.isNotEmpty &&
+          mounted) {
         setState(() {
           _allInternships = cachedInternships;
           _calculateStats();
@@ -107,7 +111,9 @@ class _InternshipsPageState extends State<InternshipsPage> {
       final internshipData = await dashboardService.getInternships({});
 
       // Transform backend data to match UI needs
-      final transformedInternships = internshipData.map<Map<String, dynamic>>((internship) {
+      final transformedInternships = internshipData.map<Map<String, dynamic>>((
+        internship,
+      ) {
         // Extract work type from jobType field (backend uses: full-time, part-time, contract, internship)
         String workType = 'Internship';
         final jobTypeRaw = internship['jobType'] ?? '';
@@ -185,12 +191,10 @@ class _InternshipsPageState extends State<InternshipsPage> {
       // Cache internships data
       await _cacheService.setInternshipsData(transformedInternships);
 
-      // Calculate stats from actual data
-      _calculateStats();
-
       if (mounted) {
         setState(() {
           _allInternships = transformedInternships;
+          _calculateStats();
           _filteredInternships = List.from(_allInternships);
           _applyFilters();
           _errorMessage = null;
@@ -489,11 +493,14 @@ class _InternshipsPageState extends State<InternshipsPage> {
   double get tabletBreakpoint => 1024;
   double get desktopBreakpoint => 1440;
   bool get isMobile => MediaQuery.of(context).size.width < mobileBreakpoint;
-  bool get isTablet => MediaQuery.of(context).size.width >= mobileBreakpoint &&
+  bool get isTablet =>
+      MediaQuery.of(context).size.width >= mobileBreakpoint &&
       MediaQuery.of(context).size.width < tabletBreakpoint;
-  bool get isDesktop => MediaQuery.of(context).size.width >= tabletBreakpoint &&
+  bool get isDesktop =>
+      MediaQuery.of(context).size.width >= tabletBreakpoint &&
       MediaQuery.of(context).size.width < desktopBreakpoint;
-  bool get isLargeDesktop => MediaQuery.of(context).size.width >= desktopBreakpoint;
+  bool get isLargeDesktop =>
+      MediaQuery.of(context).size.width >= desktopBreakpoint;
   bool get isSmallScreen => MediaQuery.of(context).size.width < 400;
 
   Widget _buildLoadingState() {
@@ -1096,7 +1103,10 @@ class _InternshipsPageState extends State<InternshipsPage> {
                         ? 10
                         : 12,
                   ),
-                  borderSide: const BorderSide(color: Color(0xFF6B5FFF), width: 2),
+                  borderSide: const BorderSide(
+                    color: Color(0xFF6B5FFF),
+                    width: 2,
+                  ),
                 ),
                 contentPadding: EdgeInsets.symmetric(
                   horizontal: isLargeDesktop
@@ -1432,9 +1442,7 @@ class _InternshipsPageState extends State<InternshipsPage> {
     );
   }
 
-  Widget _buildInternshipCard(
-    Map<String, dynamic> internship,
-  ) {
+  Widget _buildInternshipCard(Map<String, dynamic> internship) {
     return Container(
       margin: EdgeInsets.only(
         bottom: isLargeDesktop
@@ -1746,14 +1754,8 @@ class _InternshipsPageState extends State<InternshipsPage> {
                 Icons.location_on_outlined,
                 internship['location'],
               ),
-              _buildInfoChip(
-                Icons.access_time_rounded,
-                internship['duration'],
-              ),
-              _buildInfoChip(
-                Icons.payments_outlined,
-                internship['stipend'],
-              ),
+              _buildInfoChip(Icons.access_time_rounded, internship['duration']),
+              _buildInfoChip(Icons.payments_outlined, internship['stipend']),
               _buildInfoChip(
                 Icons.people_outline_rounded,
                 '${internship['applicants']} applicants',
@@ -2214,7 +2216,7 @@ class _InternshipsPageState extends State<InternshipsPage> {
 
   Widget _buildErrorState() {
     final isNoInternet = _errorMessage == 'No internet connection';
-    
+
     return Center(
       child: Padding(
         padding: EdgeInsets.all(
@@ -2575,4 +2577,3 @@ class _InternshipsPageState extends State<InternshipsPage> {
     );
   }
 }
-

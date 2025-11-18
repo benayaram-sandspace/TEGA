@@ -18,7 +18,7 @@ class _CollegeStudentsPageState extends State<CollegeStudentsPage>
     with TickerProviderStateMixin {
   final TextEditingController _searchController = TextEditingController();
   List<college_service.Student> _filteredStudents = [];
-  
+
   // Animation controllers
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
@@ -35,11 +35,14 @@ class _CollegeStudentsPageState extends State<CollegeStudentsPage>
     _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(parent: _animationController, curve: Curves.easeOutCubic),
     );
-    _slideAnimation = Tween<Offset>(
-      begin: const Offset(0, 0.3),
-      end: Offset.zero,
-    ).animate(CurvedAnimation(parent: _animationController, curve: Curves.easeOutCubic));
-    
+    _slideAnimation =
+        Tween<Offset>(begin: const Offset(0, 0.3), end: Offset.zero).animate(
+          CurvedAnimation(
+            parent: _animationController,
+            curve: Curves.easeOutCubic,
+          ),
+        );
+
     _animationController.forward();
   }
 
@@ -75,84 +78,84 @@ class _CollegeStudentsPageState extends State<CollegeStudentsPage>
           child: Column(
             children: [
               // Search Bar
-          Container(
-            padding: const EdgeInsets.all(20),
-            child: Container(
-              decoration: BoxDecoration(
-                color: AppColors.surface,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: AppColors.borderLight),
-              ),
-              child: TextField(
-                controller: _searchController,
-                onChanged: _filterStudents,
-                decoration: InputDecoration(
-                  hintText: 'Search students',
-                  hintStyle: TextStyle(color: AppColors.textSecondary),
-                  prefixIcon: Icon(
-                    Icons.search,
-                    color: AppColors.textSecondary,
+              Container(
+                padding: const EdgeInsets.all(20),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: AppColors.surface,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: AppColors.borderLight),
                   ),
-                  border: InputBorder.none,
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 12,
+                  child: TextField(
+                    controller: _searchController,
+                    onChanged: _filterStudents,
+                    decoration: InputDecoration(
+                      hintText: 'Search students',
+                      hintStyle: TextStyle(color: AppColors.textSecondary),
+                      prefixIcon: Icon(
+                        Icons.search,
+                        color: AppColors.textSecondary,
+                      ),
+                      border: InputBorder.none,
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
+                    ),
                   ),
                 ),
               ),
-            ),
-          ),
 
-          // Students List
-          Expanded(
-            child: _filteredStudents.isEmpty
-                ? Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.school_outlined,
-                          size: 64,
-                          color: AppColors.textSecondary,
+              // Students List
+              Expanded(
+                child: _filteredStudents.isEmpty
+                    ? Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.school_outlined,
+                              size: 64,
+                              color: AppColors.textSecondary,
+                            ),
+                            const SizedBox(height: 16),
+                            Text(
+                              widget.college.students.isEmpty
+                                  ? 'No students enrolled'
+                                  : 'No students found',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.textSecondary,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              widget.college.students.isEmpty
+                                  ? 'Students will appear here once they enroll'
+                                  : 'Try adjusting your search',
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: AppColors.textSecondary,
+                              ),
+                            ),
+                          ],
                         ),
-                        const SizedBox(height: 16),
-                        Text(
-                          widget.college.students.isEmpty
-                              ? 'No students enrolled'
-                              : 'No students found',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.textSecondary,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          widget.college.students.isEmpty
-                              ? 'Students will appear here once they enroll'
-                              : 'Try adjusting your search',
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: AppColors.textSecondary,
-                          ),
-                        ),
-                      ],
-                    ),
-                  )
-                : ListView.builder(
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
-                    itemCount: _filteredStudents.length,
-                    itemBuilder: (context, index) {
-                      final student = _filteredStudents[index];
-                      return _buildStudentCard(student);
-                    },
-                  ),
+                      )
+                    : ListView.builder(
+                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                        itemCount: _filteredStudents.length,
+                        itemBuilder: (context, index) {
+                          final student = _filteredStudents[index];
+                          return _buildStudentCard(student);
+                        },
+                      ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
-    ),
-    ),
-  );
+    );
   }
 
   Widget _buildStudentCard(college_service.Student student) {

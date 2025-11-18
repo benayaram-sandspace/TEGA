@@ -63,10 +63,7 @@ class FrameScheduler {
 class KeepAliveWrapper extends StatefulWidget {
   final Widget child;
 
-  const KeepAliveWrapper({
-    super.key,
-    required this.child,
-  });
+  const KeepAliveWrapper({super.key, required this.child});
 
   @override
   State<KeepAliveWrapper> createState() => _KeepAliveWrapperState();
@@ -90,9 +87,7 @@ class SmartScrollController extends ScrollController {
   Timer? _debounceTimer;
   final List<VoidCallback> _listeners = [];
 
-  SmartScrollController({
-    this.debounce = const Duration(milliseconds: 100),
-  });
+  SmartScrollController({this.debounce = const Duration(milliseconds: 100)});
 
   void addDebouncedListener(VoidCallback listener) {
     _listeners.add(listener);
@@ -279,4 +274,3 @@ class OptimizedGridView extends StatelessWidget {
     );
   }
 }
-

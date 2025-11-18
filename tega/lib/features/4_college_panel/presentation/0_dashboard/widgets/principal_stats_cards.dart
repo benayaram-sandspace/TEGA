@@ -41,10 +41,7 @@ class _PrincipalStatsCardsState extends State<PrincipalStatsCards>
 
     _fadeAnimations = List.generate(
       4,
-      (index) => Tween<double>(
-        begin: 0.0,
-        end: 1.0,
-      ).animate(
+      (index) => Tween<double>(begin: 0.0, end: 1.0).animate(
         CurvedAnimation(
           parent: _animationController,
           curve: Interval(
@@ -106,11 +103,7 @@ class _PrincipalStatsCardsState extends State<PrincipalStatsCards>
                           color: iconColor,
                           borderRadius: BorderRadius.circular(12),
                         ),
-                        child: Icon(
-                          icon,
-                          color: Colors.white,
-                          size: 24,
-                        ),
+                        child: Icon(icon, color: Colors.white, size: 24),
                       ),
                       Container(
                         padding: const EdgeInsets.symmetric(
@@ -241,4 +234,3 @@ class _PrincipalStatsCardsState extends State<PrincipalStatsCards>
     );
   }
 }
-

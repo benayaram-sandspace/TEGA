@@ -949,10 +949,7 @@ class AdminDashboardService {
       final headers = await _authService.getAuthHeaders();
 
       final response = await http
-          .get(
-            Uri.parse(ApiEndpoints.adminPaymentStatsAdmin),
-            headers: headers,
-          )
+          .get(Uri.parse(ApiEndpoints.adminPaymentStatsAdmin), headers: headers)
           .timeout(
             const Duration(seconds: 30),
             onTimeout: () {
@@ -966,12 +963,11 @@ class AdminDashboardService {
         final data = json.decode(response.body);
 
         if (data['success'] == true) {
-          return {
-            'success': true,
-            'data': data['data'],
-          };
+          return {'success': true, 'data': data['data']};
         } else {
-          throw Exception(data['message'] ?? 'Failed to load payment statistics');
+          throw Exception(
+            data['message'] ?? 'Failed to load payment statistics',
+          );
         }
       } else if (response.statusCode == 401) {
         throw Exception('Authentication required. Please log in again.');
@@ -1002,10 +998,7 @@ class AdminDashboardService {
       final headers = await _authService.getAuthHeaders();
 
       final response = await http
-          .get(
-            Uri.parse(ApiEndpoints.adminPaymentsAll),
-            headers: headers,
-          )
+          .get(Uri.parse(ApiEndpoints.adminPaymentsAll), headers: headers)
           .timeout(
             const Duration(seconds: 30),
             onTimeout: () {
@@ -1036,13 +1029,9 @@ class AdminDashboardService {
       } else {
         try {
           final errorData = json.decode(response.body);
-          throw Exception(
-            errorData['message'] ?? 'Failed to load payments',
-          );
+          throw Exception(errorData['message'] ?? 'Failed to load payments');
         } catch (e) {
-          throw Exception(
-            'Failed to load payments (${response.statusCode})',
-          );
+          throw Exception('Failed to load payments (${response.statusCode})');
         }
       }
     } catch (e) {

@@ -12,14 +12,19 @@ class SettingsPage extends StatelessWidget {
   static double get mobileBreakpoint => 600;
   static double get tabletBreakpoint => 1024;
   static double get desktopBreakpoint => 1440;
-  
-  static bool isMobile(BuildContext context) => MediaQuery.of(context).size.width < mobileBreakpoint;
-  static bool isTablet(BuildContext context) => MediaQuery.of(context).size.width >= mobileBreakpoint &&
+
+  static bool isMobile(BuildContext context) =>
+      MediaQuery.of(context).size.width < mobileBreakpoint;
+  static bool isTablet(BuildContext context) =>
+      MediaQuery.of(context).size.width >= mobileBreakpoint &&
       MediaQuery.of(context).size.width < tabletBreakpoint;
-  static bool isDesktop(BuildContext context) => MediaQuery.of(context).size.width >= tabletBreakpoint &&
+  static bool isDesktop(BuildContext context) =>
+      MediaQuery.of(context).size.width >= tabletBreakpoint &&
       MediaQuery.of(context).size.width < desktopBreakpoint;
-  static bool isLargeDesktop(BuildContext context) => MediaQuery.of(context).size.width >= desktopBreakpoint;
-  static bool isSmallScreen(BuildContext context) => MediaQuery.of(context).size.width < 400;
+  static bool isLargeDesktop(BuildContext context) =>
+      MediaQuery.of(context).size.width >= desktopBreakpoint;
+  static bool isSmallScreen(BuildContext context) =>
+      MediaQuery.of(context).size.width < 400;
 
   @override
   Widget build(BuildContext context) {
@@ -27,7 +32,7 @@ class SettingsPage extends StatelessWidget {
     final isDesktop = SettingsPage.isDesktop(context);
     final isTablet = SettingsPage.isTablet(context);
     final isSmallScreen = SettingsPage.isSmallScreen(context);
-    
+
     return Scaffold(
       backgroundColor: const Color(0xFFF7F8FC),
       body: SafeArea(
@@ -148,7 +153,7 @@ class SettingsPage extends StatelessWidget {
     final isDesktop = SettingsPage.isDesktop(context);
     final isTablet = SettingsPage.isTablet(context);
     final isSmallScreen = SettingsPage.isSmallScreen(context);
-    
+
     final Color primary = const Color(0xFF6B5FFF);
     final Color text = const Color(0xFF111827);
     return Container(
@@ -293,11 +298,14 @@ class _SecuritySettingsPageState extends State<SecuritySettingsPage> {
   double get tabletBreakpoint => 1024;
   double get desktopBreakpoint => 1440;
   bool get isMobile => MediaQuery.of(context).size.width < mobileBreakpoint;
-  bool get isTablet => MediaQuery.of(context).size.width >= mobileBreakpoint &&
+  bool get isTablet =>
+      MediaQuery.of(context).size.width >= mobileBreakpoint &&
       MediaQuery.of(context).size.width < tabletBreakpoint;
-  bool get isDesktop => MediaQuery.of(context).size.width >= tabletBreakpoint &&
+  bool get isDesktop =>
+      MediaQuery.of(context).size.width >= tabletBreakpoint &&
       MediaQuery.of(context).size.width < desktopBreakpoint;
-  bool get isLargeDesktop => MediaQuery.of(context).size.width >= desktopBreakpoint;
+  bool get isLargeDesktop =>
+      MediaQuery.of(context).size.width >= desktopBreakpoint;
   bool get isSmallScreen => MediaQuery.of(context).size.width < 400;
 
   @override
@@ -354,7 +362,7 @@ class _SecuritySettingsPageState extends State<SecuritySettingsPage> {
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
+          children: [
             _buildSecurityCard(
               title: 'Two-Factor Authentication (2FA)',
               description: 'Add an extra layer of security to your account.',
@@ -1162,11 +1170,14 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
   double get tabletBreakpoint => 1024;
   double get desktopBreakpoint => 1440;
   bool get isMobile => MediaQuery.of(context).size.width < mobileBreakpoint;
-  bool get isTablet => MediaQuery.of(context).size.width >= mobileBreakpoint &&
+  bool get isTablet =>
+      MediaQuery.of(context).size.width >= mobileBreakpoint &&
       MediaQuery.of(context).size.width < tabletBreakpoint;
-  bool get isDesktop => MediaQuery.of(context).size.width >= tabletBreakpoint &&
+  bool get isDesktop =>
+      MediaQuery.of(context).size.width >= tabletBreakpoint &&
       MediaQuery.of(context).size.width < desktopBreakpoint;
-  bool get isLargeDesktop => MediaQuery.of(context).size.width >= desktopBreakpoint;
+  bool get isLargeDesktop =>
+      MediaQuery.of(context).size.width >= desktopBreakpoint;
   bool get isSmallScreen => MediaQuery.of(context).size.width < 400;
 
   @override
@@ -1537,11 +1548,14 @@ class _PrivacySettingsPageState extends State<PrivacySettingsPage> {
   double get tabletBreakpoint => 1024;
   double get desktopBreakpoint => 1440;
   bool get isMobile => MediaQuery.of(context).size.width < mobileBreakpoint;
-  bool get isTablet => MediaQuery.of(context).size.width >= mobileBreakpoint &&
+  bool get isTablet =>
+      MediaQuery.of(context).size.width >= mobileBreakpoint &&
       MediaQuery.of(context).size.width < tabletBreakpoint;
-  bool get isDesktop => MediaQuery.of(context).size.width >= tabletBreakpoint &&
+  bool get isDesktop =>
+      MediaQuery.of(context).size.width >= tabletBreakpoint &&
       MediaQuery.of(context).size.width < desktopBreakpoint;
-  bool get isLargeDesktop => MediaQuery.of(context).size.width >= desktopBreakpoint;
+  bool get isLargeDesktop =>
+      MediaQuery.of(context).size.width >= desktopBreakpoint;
   bool get isSmallScreen => MediaQuery.of(context).size.width < 400;
 
   @override
@@ -1995,11 +2009,14 @@ class _AppearanceSettingsPageState extends State<AppearanceSettingsPage> {
   double get tabletBreakpoint => 1024;
   double get desktopBreakpoint => 1440;
   bool get isMobile => MediaQuery.of(context).size.width < mobileBreakpoint;
-  bool get isTablet => MediaQuery.of(context).size.width >= mobileBreakpoint &&
+  bool get isTablet =>
+      MediaQuery.of(context).size.width >= mobileBreakpoint &&
       MediaQuery.of(context).size.width < tabletBreakpoint;
-  bool get isDesktop => MediaQuery.of(context).size.width >= tabletBreakpoint &&
+  bool get isDesktop =>
+      MediaQuery.of(context).size.width >= tabletBreakpoint &&
       MediaQuery.of(context).size.width < desktopBreakpoint;
-  bool get isLargeDesktop => MediaQuery.of(context).size.width >= desktopBreakpoint;
+  bool get isLargeDesktop =>
+      MediaQuery.of(context).size.width >= desktopBreakpoint;
   bool get isSmallScreen => MediaQuery.of(context).size.width < 400;
 
   @override
@@ -2263,11 +2280,14 @@ class _DataStorageSettingsPageState extends State<DataStorageSettingsPage> {
   double get tabletBreakpoint => 1024;
   double get desktopBreakpoint => 1440;
   bool get isMobile => MediaQuery.of(context).size.width < mobileBreakpoint;
-  bool get isTablet => MediaQuery.of(context).size.width >= mobileBreakpoint &&
+  bool get isTablet =>
+      MediaQuery.of(context).size.width >= mobileBreakpoint &&
       MediaQuery.of(context).size.width < tabletBreakpoint;
-  bool get isDesktop => MediaQuery.of(context).size.width >= tabletBreakpoint &&
+  bool get isDesktop =>
+      MediaQuery.of(context).size.width >= tabletBreakpoint &&
       MediaQuery.of(context).size.width < desktopBreakpoint;
-  bool get isLargeDesktop => MediaQuery.of(context).size.width >= desktopBreakpoint;
+  bool get isLargeDesktop =>
+      MediaQuery.of(context).size.width >= desktopBreakpoint;
   bool get isSmallScreen => MediaQuery.of(context).size.width < 400;
 
   @override
@@ -3392,11 +3412,14 @@ class _AccountSettingsPageState extends State<AccountSettingsPage> {
   double get tabletBreakpoint => 1024;
   double get desktopBreakpoint => 1440;
   bool get isMobile => MediaQuery.of(context).size.width < mobileBreakpoint;
-  bool get isTablet => MediaQuery.of(context).size.width >= mobileBreakpoint &&
+  bool get isTablet =>
+      MediaQuery.of(context).size.width >= mobileBreakpoint &&
       MediaQuery.of(context).size.width < tabletBreakpoint;
-  bool get isDesktop => MediaQuery.of(context).size.width >= tabletBreakpoint &&
+  bool get isDesktop =>
+      MediaQuery.of(context).size.width >= tabletBreakpoint &&
       MediaQuery.of(context).size.width < desktopBreakpoint;
-  bool get isLargeDesktop => MediaQuery.of(context).size.width >= desktopBreakpoint;
+  bool get isLargeDesktop =>
+      MediaQuery.of(context).size.width >= desktopBreakpoint;
   bool get isSmallScreen => MediaQuery.of(context).size.width < 400;
 
   @override
@@ -3448,10 +3471,10 @@ class _AccountSettingsPageState extends State<AccountSettingsPage> {
           'createdAt': profile?['createdAt'],
           'lastLogin': profile?['lastLogin'] ?? 'Never',
         };
-        
+
         // Cache the data
         await _cacheService.setAccountData(accountData);
-        
+
         if (mounted) {
           setState(() {
             _data = accountData;
@@ -3566,9 +3589,7 @@ class _AccountSettingsPageState extends State<AccountSettingsPage> {
                               'Username',
                               _data?['username']?.toString() ?? '-',
                             ),
-                            SizedBox(
-                              height: isSmallScreen ? 12 : 16,
-                            ),
+                            SizedBox(height: isSmallScreen ? 12 : 16),
                             _readOnlyField(
                               'Email Address',
                               _data?['email']?.toString() ?? '-',
@@ -3624,9 +3645,7 @@ class _AccountSettingsPageState extends State<AccountSettingsPage> {
                                       .first ??
                                   '-',
                             ),
-                            SizedBox(
-                              height: isSmallScreen ? 12 : 16,
-                            ),
+                            SizedBox(height: isSmallScreen ? 12 : 16),
                             _iconInfoCard(
                               icon: Icons.visibility_outlined,
                               label: 'Last Login',
@@ -3661,7 +3680,8 @@ class _AccountSettingsPageState extends State<AccountSettingsPage> {
                               child: _iconInfoCard(
                                 icon: Icons.visibility_outlined,
                                 label: 'Last Login',
-                                value: _data?['lastLogin']?.toString() ?? 'Never',
+                                value:
+                                    _data?['lastLogin']?.toString() ?? 'Never',
                               ),
                             ),
                           ],

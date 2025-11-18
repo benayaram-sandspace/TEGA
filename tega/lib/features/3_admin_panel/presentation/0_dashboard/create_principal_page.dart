@@ -45,7 +45,7 @@ class _CreatePrincipalPageState extends State<CreatePrincipalPage> {
   Future<void> _initializeCache() async {
     // Initialize cache service (for consistency with other pages)
     await _cacheService.initialize();
-    
+
     // Try to load universities from cache if available
     final cachedUniversities = await _cacheService.getAvailableInstitutes();
     if (cachedUniversities != null && cachedUniversities.isNotEmpty) {
@@ -169,31 +169,77 @@ class _CreatePrincipalPageState extends State<CreatePrincipalPage> {
                   Expanded(
                     child: SingleChildScrollView(
                       padding: EdgeInsets.fromLTRB(
-                        isMobile ? 16 : isTablet ? 18 : 20,
+                        isMobile
+                            ? 16
+                            : isTablet
+                            ? 18
+                            : 20,
                         0,
-                        isMobile ? 16 : isTablet ? 18 : 20,
-                        isMobile ? 16 : isTablet ? 18 : 20,
+                        isMobile
+                            ? 16
+                            : isTablet
+                            ? 18
+                            : 20,
+                        isMobile
+                            ? 16
+                            : isTablet
+                            ? 18
+                            : 20,
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          SizedBox(height: isMobile ? 16 : isTablet ? 18 : 20),
+                          SizedBox(
+                            height: isMobile
+                                ? 16
+                                : isTablet
+                                ? 18
+                                : 20,
+                          ),
 
                           // Basic Information Section
                           _buildBasicInfoSection(isMobile, isTablet, isDesktop),
-                          SizedBox(height: isMobile ? 20 : isTablet ? 22 : 24),
+                          SizedBox(
+                            height: isMobile
+                                ? 20
+                                : isTablet
+                                ? 22
+                                : 24,
+                          ),
 
                           // University Information Section
-                          _buildUniversitySection(isMobile, isTablet, isDesktop),
-                          SizedBox(height: isMobile ? 20 : isTablet ? 22 : 24),
+                          _buildUniversitySection(
+                            isMobile,
+                            isTablet,
+                            isDesktop,
+                          ),
+                          SizedBox(
+                            height: isMobile
+                                ? 20
+                                : isTablet
+                                ? 22
+                                : 24,
+                          ),
 
                           // Account Information Section
                           _buildAccountSection(isMobile, isTablet, isDesktop),
-                          SizedBox(height: isMobile ? 24 : isTablet ? 28 : 32),
+                          SizedBox(
+                            height: isMobile
+                                ? 24
+                                : isTablet
+                                ? 28
+                                : 32,
+                          ),
 
                           // Action Buttons
                           _buildActionButtons(isMobile, isTablet, isDesktop),
-                          SizedBox(height: isMobile ? 16 : isTablet ? 18 : 20),
+                          SizedBox(
+                            height: isMobile
+                                ? 16
+                                : isTablet
+                                ? 18
+                                : 20,
+                          ),
                         ],
                       ),
                     ),
@@ -210,10 +256,26 @@ class _CreatePrincipalPageState extends State<CreatePrincipalPage> {
   Widget _buildModernAppBar(bool isMobile, bool isTablet, bool isDesktop) {
     return Container(
       padding: EdgeInsets.fromLTRB(
-        isMobile ? 16 : isTablet ? 18 : 20,
-        isMobile ? 12 : isTablet ? 14 : 16,
-        isMobile ? 16 : isTablet ? 18 : 20,
-        isMobile ? 12 : isTablet ? 14 : 16,
+        isMobile
+            ? 16
+            : isTablet
+            ? 18
+            : 20,
+        isMobile
+            ? 12
+            : isTablet
+            ? 14
+            : 16,
+        isMobile
+            ? 16
+            : isTablet
+            ? 18
+            : 20,
+        isMobile
+            ? 12
+            : isTablet
+            ? 14
+            : 16,
       ),
       decoration: BoxDecoration(
         color: Colors.white.withOpacity(0.9),
@@ -230,18 +292,34 @@ class _CreatePrincipalPageState extends State<CreatePrincipalPage> {
           Container(
             decoration: BoxDecoration(
               color: AdminDashboardStyles.primary.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(isMobile ? 10 : isTablet ? 11 : 12),
+              borderRadius: BorderRadius.circular(
+                isMobile
+                    ? 10
+                    : isTablet
+                    ? 11
+                    : 12,
+              ),
             ),
             child: IconButton(
               onPressed: () => Navigator.of(context).pop(),
               icon: Icon(
                 Icons.arrow_back_rounded,
                 color: AdminDashboardStyles.primary,
-                size: isMobile ? 18 : isTablet ? 19 : 20,
+                size: isMobile
+                    ? 18
+                    : isTablet
+                    ? 19
+                    : 20,
               ),
             ),
           ),
-          SizedBox(width: isMobile ? 12 : isTablet ? 14 : 16),
+          SizedBox(
+            width: isMobile
+                ? 12
+                : isTablet
+                ? 14
+                : 16,
+          ),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -249,7 +327,11 @@ class _CreatePrincipalPageState extends State<CreatePrincipalPage> {
                 Text(
                   'Create New Principal',
                   style: TextStyle(
-                    fontSize: isMobile ? 18 : isTablet ? 19 : 20,
+                    fontSize: isMobile
+                        ? 18
+                        : isTablet
+                        ? 19
+                        : 20,
                     fontWeight: FontWeight.bold,
                     color: AppColors.textPrimary,
                   ),
@@ -257,7 +339,11 @@ class _CreatePrincipalPageState extends State<CreatePrincipalPage> {
                 Text(
                   'Add a new principal to the system',
                   style: TextStyle(
-                    fontSize: isMobile ? 12 : isTablet ? 13 : 14,
+                    fontSize: isMobile
+                        ? 12
+                        : isTablet
+                        ? 13
+                        : 14,
                     color: AppColors.textSecondary,
                   ),
                 ),
@@ -265,7 +351,13 @@ class _CreatePrincipalPageState extends State<CreatePrincipalPage> {
             ),
           ),
           Container(
-            padding: EdgeInsets.all(isMobile ? 10 : isTablet ? 11 : 12),
+            padding: EdgeInsets.all(
+              isMobile
+                  ? 10
+                  : isTablet
+                  ? 11
+                  : 12,
+            ),
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 colors: [
@@ -275,12 +367,22 @@ class _CreatePrincipalPageState extends State<CreatePrincipalPage> {
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
-              borderRadius: BorderRadius.circular(isMobile ? 10 : isTablet ? 11 : 12),
+              borderRadius: BorderRadius.circular(
+                isMobile
+                    ? 10
+                    : isTablet
+                    ? 11
+                    : 12,
+              ),
             ),
             child: Icon(
               Icons.school_rounded,
               color: Colors.white,
-              size: isMobile ? 20 : isTablet ? 22 : 24,
+              size: isMobile
+                  ? 20
+                  : isTablet
+                  ? 22
+                  : 24,
             ),
           ),
         ],
@@ -313,7 +415,13 @@ class _CreatePrincipalPageState extends State<CreatePrincipalPage> {
                       return null;
                     },
                   ),
-                  SizedBox(height: isMobile ? 12 : isTablet ? 14 : 16),
+                  SizedBox(
+                    height: isMobile
+                        ? 12
+                        : isTablet
+                        ? 14
+                        : 16,
+                  ),
                   _buildModernTextField(
                     controller: _lastNameController,
                     labelText: 'Last Name',
@@ -367,7 +475,13 @@ class _CreatePrincipalPageState extends State<CreatePrincipalPage> {
                   ),
                 ],
               ),
-        SizedBox(height: isMobile ? 12 : isTablet ? 14 : 16),
+        SizedBox(
+          height: isMobile
+              ? 12
+              : isTablet
+              ? 14
+              : 16,
+        ),
         _buildModernTextField(
           controller: _principalNameController,
           labelText: 'Principal Name (Full Name)',
@@ -383,7 +497,13 @@ class _CreatePrincipalPageState extends State<CreatePrincipalPage> {
             return null;
           },
         ),
-        SizedBox(height: isMobile ? 12 : isTablet ? 14 : 16),
+        SizedBox(
+          height: isMobile
+              ? 12
+              : isTablet
+              ? 14
+              : 16,
+        ),
         _buildModernDropdown(
           value: _selectedGender,
           labelText: 'Gender',
@@ -396,7 +516,13 @@ class _CreatePrincipalPageState extends State<CreatePrincipalPage> {
               value: gender,
               child: Text(
                 gender,
-                style: TextStyle(fontSize: isMobile ? 13 : isTablet ? 14 : 16),
+                style: TextStyle(
+                  fontSize: isMobile
+                      ? 13
+                      : isTablet
+                      ? 14
+                      : 16,
+                ),
               ),
             );
           }).toList(),
@@ -436,12 +562,24 @@ class _CreatePrincipalPageState extends State<CreatePrincipalPage> {
             return DropdownMenuItem(
               value: university,
               child: Container(
-                constraints: BoxConstraints(maxWidth: isMobile ? 250 : isTablet ? 280 : 300),
+                constraints: BoxConstraints(
+                  maxWidth: isMobile
+                      ? 250
+                      : isTablet
+                      ? 280
+                      : 300,
+                ),
                 child: Text(
                   university,
                   overflow: TextOverflow.ellipsis,
                   maxLines: 1,
-                  style: TextStyle(fontSize: isMobile ? 13 : isTablet ? 14 : 16),
+                  style: TextStyle(
+                    fontSize: isMobile
+                        ? 13
+                        : isTablet
+                        ? 14
+                        : 16,
+                  ),
                 ),
               ),
             );
@@ -459,7 +597,13 @@ class _CreatePrincipalPageState extends State<CreatePrincipalPage> {
             return null;
           },
         ),
-        SizedBox(height: isMobile ? 12 : isTablet ? 14 : 16),
+        SizedBox(
+          height: isMobile
+              ? 12
+              : isTablet
+              ? 14
+              : 16,
+        ),
         _buildModernTextField(
           controller: _universityController,
           labelText: 'University Name (Custom)',
@@ -500,7 +644,13 @@ class _CreatePrincipalPageState extends State<CreatePrincipalPage> {
             return null;
           },
         ),
-        SizedBox(height: isMobile ? 12 : isTablet ? 14 : 16),
+        SizedBox(
+          height: isMobile
+              ? 12
+              : isTablet
+              ? 14
+              : 16,
+        ),
         _buildModernTextField(
           controller: _passwordController,
           labelText: 'Password',
@@ -538,7 +688,13 @@ class _CreatePrincipalPageState extends State<CreatePrincipalPage> {
   }) {
     return Container(
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(isMobile ? 12 : isTablet ? 14 : 16),
+        borderRadius: BorderRadius.circular(
+          isMobile
+              ? 12
+              : isTablet
+              ? 14
+              : 16,
+        ),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.04),
@@ -558,60 +714,132 @@ class _CreatePrincipalPageState extends State<CreatePrincipalPage> {
         },
         style: TextStyle(
           color: AppColors.textPrimary,
-          fontSize: isMobile ? 14 : isTablet ? 15 : 16,
+          fontSize: isMobile
+              ? 14
+              : isTablet
+              ? 15
+              : 16,
         ),
         decoration: InputDecoration(
           labelText: labelText,
           helperText: helperText,
           labelStyle: TextStyle(
             color: AppColors.textSecondary,
-            fontSize: isMobile ? 13 : isTablet ? 13.5 : 14,
+            fontSize: isMobile
+                ? 13
+                : isTablet
+                ? 13.5
+                : 14,
           ),
           helperStyle: TextStyle(
             color: AppColors.textSecondary,
-            fontSize: isMobile ? 11 : isTablet ? 11.5 : 12,
+            fontSize: isMobile
+                ? 11
+                : isTablet
+                ? 11.5
+                : 12,
           ),
           prefixIcon: Container(
-            margin: EdgeInsets.all(isMobile ? 10 : isTablet ? 11 : 12),
-            padding: EdgeInsets.all(isMobile ? 6 : isTablet ? 7 : 8),
+            margin: EdgeInsets.all(
+              isMobile
+                  ? 10
+                  : isTablet
+                  ? 11
+                  : 12,
+            ),
+            padding: EdgeInsets.all(
+              isMobile
+                  ? 6
+                  : isTablet
+                  ? 7
+                  : 8,
+            ),
             decoration: BoxDecoration(
               color: AdminDashboardStyles.primary.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(isMobile ? 6 : isTablet ? 7 : 8),
+              borderRadius: BorderRadius.circular(
+                isMobile
+                    ? 6
+                    : isTablet
+                    ? 7
+                    : 8,
+              ),
             ),
             child: Icon(
               prefixIcon,
               color: AdminDashboardStyles.primary,
-              size: isMobile ? 16 : isTablet ? 17 : 18,
+              size: isMobile
+                  ? 16
+                  : isTablet
+                  ? 17
+                  : 18,
             ),
           ),
           filled: true,
           fillColor: Colors.white,
           border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(isMobile ? 12 : isTablet ? 14 : 16),
+            borderRadius: BorderRadius.circular(
+              isMobile
+                  ? 12
+                  : isTablet
+                  ? 14
+                  : 16,
+            ),
             borderSide: BorderSide(color: AppColors.borderLight, width: 1),
           ),
           enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(isMobile ? 12 : isTablet ? 14 : 16),
+            borderRadius: BorderRadius.circular(
+              isMobile
+                  ? 12
+                  : isTablet
+                  ? 14
+                  : 16,
+            ),
             borderSide: BorderSide(color: AppColors.borderLight, width: 1),
           ),
           focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(isMobile ? 12 : isTablet ? 14 : 16),
+            borderRadius: BorderRadius.circular(
+              isMobile
+                  ? 12
+                  : isTablet
+                  ? 14
+                  : 16,
+            ),
             borderSide: BorderSide(
               color: AdminDashboardStyles.primary,
               width: 2,
             ),
           ),
           errorBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(isMobile ? 12 : isTablet ? 14 : 16),
+            borderRadius: BorderRadius.circular(
+              isMobile
+                  ? 12
+                  : isTablet
+                  ? 14
+                  : 16,
+            ),
             borderSide: BorderSide(color: AppColors.error, width: 1),
           ),
           focusedErrorBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(isMobile ? 12 : isTablet ? 14 : 16),
+            borderRadius: BorderRadius.circular(
+              isMobile
+                  ? 12
+                  : isTablet
+                  ? 14
+                  : 16,
+            ),
             borderSide: BorderSide(color: AppColors.error, width: 2),
           ),
           contentPadding: EdgeInsets.symmetric(
-            horizontal: isMobile ? 14 : isTablet ? 15 : 16,
-            vertical: isMobile ? 14 : isTablet ? 15 : 16,
+            horizontal: isMobile
+                ? 14
+                : isTablet
+                ? 15
+                : 16,
+            vertical: isMobile
+                ? 14
+                : isTablet
+                ? 15
+                : 16,
           ),
         ),
       ),
@@ -632,7 +860,13 @@ class _CreatePrincipalPageState extends State<CreatePrincipalPage> {
   }) {
     return Container(
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(isMobile ? 12 : isTablet ? 14 : 16),
+        borderRadius: BorderRadius.circular(
+          isMobile
+              ? 12
+              : isTablet
+              ? 14
+              : 16,
+        ),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.04),
@@ -647,64 +881,140 @@ class _CreatePrincipalPageState extends State<CreatePrincipalPage> {
         validator: validator,
         style: TextStyle(
           color: AppColors.textPrimary,
-          fontSize: isMobile ? 14 : isTablet ? 15 : 16,
+          fontSize: isMobile
+              ? 14
+              : isTablet
+              ? 15
+              : 16,
         ),
         decoration: InputDecoration(
           labelText: labelText,
           labelStyle: TextStyle(
             color: AppColors.textSecondary,
-            fontSize: isMobile ? 13 : isTablet ? 13.5 : 14,
+            fontSize: isMobile
+                ? 13
+                : isTablet
+                ? 13.5
+                : 14,
           ),
           prefixIcon: Container(
-            margin: EdgeInsets.all(isMobile ? 10 : isTablet ? 11 : 12),
-            padding: EdgeInsets.all(isMobile ? 6 : isTablet ? 7 : 8),
+            margin: EdgeInsets.all(
+              isMobile
+                  ? 10
+                  : isTablet
+                  ? 11
+                  : 12,
+            ),
+            padding: EdgeInsets.all(
+              isMobile
+                  ? 6
+                  : isTablet
+                  ? 7
+                  : 8,
+            ),
             decoration: BoxDecoration(
               color: AdminDashboardStyles.primary.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(isMobile ? 6 : isTablet ? 7 : 8),
+              borderRadius: BorderRadius.circular(
+                isMobile
+                    ? 6
+                    : isTablet
+                    ? 7
+                    : 8,
+              ),
             ),
             child: Icon(
               prefixIcon,
               color: AdminDashboardStyles.primary,
-              size: isMobile ? 16 : isTablet ? 17 : 18,
+              size: isMobile
+                  ? 16
+                  : isTablet
+                  ? 17
+                  : 18,
             ),
           ),
           filled: true,
           fillColor: Colors.white,
           border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(isMobile ? 12 : isTablet ? 14 : 16),
+            borderRadius: BorderRadius.circular(
+              isMobile
+                  ? 12
+                  : isTablet
+                  ? 14
+                  : 16,
+            ),
             borderSide: BorderSide(color: AppColors.borderLight, width: 1),
           ),
           enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(isMobile ? 12 : isTablet ? 14 : 16),
+            borderRadius: BorderRadius.circular(
+              isMobile
+                  ? 12
+                  : isTablet
+                  ? 14
+                  : 16,
+            ),
             borderSide: BorderSide(color: AppColors.borderLight, width: 1),
           ),
           focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(isMobile ? 12 : isTablet ? 14 : 16),
+            borderRadius: BorderRadius.circular(
+              isMobile
+                  ? 12
+                  : isTablet
+                  ? 14
+                  : 16,
+            ),
             borderSide: BorderSide(
               color: AdminDashboardStyles.primary,
               width: 2,
             ),
           ),
           errorBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(isMobile ? 12 : isTablet ? 14 : 16),
+            borderRadius: BorderRadius.circular(
+              isMobile
+                  ? 12
+                  : isTablet
+                  ? 14
+                  : 16,
+            ),
             borderSide: BorderSide(color: AppColors.error, width: 1),
           ),
           focusedErrorBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(isMobile ? 12 : isTablet ? 14 : 16),
+            borderRadius: BorderRadius.circular(
+              isMobile
+                  ? 12
+                  : isTablet
+                  ? 14
+                  : 16,
+            ),
             borderSide: BorderSide(color: AppColors.error, width: 2),
           ),
           contentPadding: EdgeInsets.symmetric(
-            horizontal: isMobile ? 14 : isTablet ? 15 : 16,
-            vertical: isMobile ? 14 : isTablet ? 15 : 16,
+            horizontal: isMobile
+                ? 14
+                : isTablet
+                ? 15
+                : 16,
+            vertical: isMobile
+                ? 14
+                : isTablet
+                ? 15
+                : 16,
           ),
         ),
         dropdownColor: Colors.white,
         icon: Icon(
           Icons.keyboard_arrow_down_rounded,
           color: AdminDashboardStyles.primary,
-          size: isMobile ? 20 : isTablet ? 22 : 24,
+          size: isMobile
+              ? 20
+              : isTablet
+              ? 22
+              : 24,
         ),
-        menuMaxHeight: isMobile ? 300 : isTablet ? 350 : 400,
+        menuMaxHeight: isMobile
+            ? 300
+            : isTablet
+            ? 350
+            : 400,
         items: items,
         onChanged: onChanged,
       ),
@@ -720,10 +1030,22 @@ class _CreatePrincipalPageState extends State<CreatePrincipalPage> {
     bool isDesktop = false,
   }) {
     return Container(
-      padding: EdgeInsets.all(isMobile ? 16 : isTablet ? 20 : 24),
+      padding: EdgeInsets.all(
+        isMobile
+            ? 16
+            : isTablet
+            ? 20
+            : 24,
+      ),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(isMobile ? 16 : isTablet ? 18 : 20),
+        borderRadius: BorderRadius.circular(
+          isMobile
+              ? 16
+              : isTablet
+              ? 18
+              : 20,
+        ),
         border: Border.all(color: AppColors.borderLight, width: 1),
         boxShadow: [
           BoxShadow(
@@ -742,7 +1064,13 @@ class _CreatePrincipalPageState extends State<CreatePrincipalPage> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
-            padding: EdgeInsets.all(isMobile ? 12 : isTablet ? 14 : 16),
+            padding: EdgeInsets.all(
+              isMobile
+                  ? 12
+                  : isTablet
+                  ? 14
+                  : 16,
+            ),
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 colors: [
@@ -752,7 +1080,13 @@ class _CreatePrincipalPageState extends State<CreatePrincipalPage> {
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
-              borderRadius: BorderRadius.circular(isMobile ? 10 : isTablet ? 11 : 12),
+              borderRadius: BorderRadius.circular(
+                isMobile
+                    ? 10
+                    : isTablet
+                    ? 11
+                    : 12,
+              ),
               border: Border.all(
                 color: AdminDashboardStyles.primary.withOpacity(0.2),
                 width: 1,
@@ -761,7 +1095,13 @@ class _CreatePrincipalPageState extends State<CreatePrincipalPage> {
             child: Row(
               children: [
                 Container(
-                  padding: EdgeInsets.all(isMobile ? 8 : isTablet ? 9 : 10),
+                  padding: EdgeInsets.all(
+                    isMobile
+                        ? 8
+                        : isTablet
+                        ? 9
+                        : 10,
+                  ),
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       colors: [
@@ -771,7 +1111,13 @@ class _CreatePrincipalPageState extends State<CreatePrincipalPage> {
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                     ),
-                    borderRadius: BorderRadius.circular(isMobile ? 8 : isTablet ? 9 : 10),
+                    borderRadius: BorderRadius.circular(
+                      isMobile
+                          ? 8
+                          : isTablet
+                          ? 9
+                          : 10,
+                    ),
                     boxShadow: [
                       BoxShadow(
                         color: AdminDashboardStyles.primary.withOpacity(0.3),
@@ -783,14 +1129,28 @@ class _CreatePrincipalPageState extends State<CreatePrincipalPage> {
                   child: Icon(
                     icon,
                     color: Colors.white,
-                    size: isMobile ? 18 : isTablet ? 19 : 20,
+                    size: isMobile
+                        ? 18
+                        : isTablet
+                        ? 19
+                        : 20,
                   ),
                 ),
-                SizedBox(width: isMobile ? 12 : isTablet ? 14 : 16),
+                SizedBox(
+                  width: isMobile
+                      ? 12
+                      : isTablet
+                      ? 14
+                      : 16,
+                ),
                 Text(
                   title,
                   style: TextStyle(
-                    fontSize: isMobile ? 16 : isTablet ? 17 : 18,
+                    fontSize: isMobile
+                        ? 16
+                        : isTablet
+                        ? 17
+                        : 18,
                     fontWeight: FontWeight.bold,
                     color: AppColors.textPrimary,
                   ),
@@ -798,7 +1158,13 @@ class _CreatePrincipalPageState extends State<CreatePrincipalPage> {
               ],
             ),
           ),
-          SizedBox(height: isMobile ? 16 : isTablet ? 18 : 20),
+          SizedBox(
+            height: isMobile
+                ? 16
+                : isTablet
+                ? 18
+                : 20,
+          ),
           ...children,
         ],
       ),
@@ -814,7 +1180,13 @@ class _CreatePrincipalPageState extends State<CreatePrincipalPage> {
             width: double.infinity,
             child: Container(
               decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(isMobile ? 12 : isTablet ? 14 : 16),
+                borderRadius: BorderRadius.circular(
+                  isMobile
+                      ? 12
+                      : isTablet
+                      ? 14
+                      : 16,
+                ),
                 border: Border.all(
                   color: AdminDashboardStyles.primary,
                   width: 2,
@@ -832,24 +1204,46 @@ class _CreatePrincipalPageState extends State<CreatePrincipalPage> {
                     ? null
                     : () => Navigator.of(context).pop(),
                 style: OutlinedButton.styleFrom(
-                  padding: EdgeInsets.symmetric(vertical: isMobile ? 14 : isTablet ? 15 : 16),
+                  padding: EdgeInsets.symmetric(
+                    vertical: isMobile
+                        ? 14
+                        : isTablet
+                        ? 15
+                        : 16,
+                  ),
                   side: BorderSide.none,
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(isMobile ? 12 : isTablet ? 14 : 16),
+                    borderRadius: BorderRadius.circular(
+                      isMobile
+                          ? 12
+                          : isTablet
+                          ? 14
+                          : 16,
+                    ),
                   ),
                 ),
                 child: Text(
                   'Cancel',
                   style: TextStyle(
                     fontWeight: FontWeight.w600,
-                    fontSize: isMobile ? 14 : isTablet ? 15 : 16,
+                    fontSize: isMobile
+                        ? 14
+                        : isTablet
+                        ? 15
+                        : 16,
                     color: AdminDashboardStyles.primary,
                   ),
                 ),
               ),
             ),
           ),
-          SizedBox(height: isMobile ? 10 : isTablet ? 12 : 12),
+          SizedBox(
+            height: isMobile
+                ? 10
+                : isTablet
+                ? 12
+                : 12,
+          ),
           SizedBox(
             width: double.infinity,
             child: Container(
@@ -862,7 +1256,13 @@ class _CreatePrincipalPageState extends State<CreatePrincipalPage> {
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
-                borderRadius: BorderRadius.circular(isMobile ? 12 : isTablet ? 14 : 16),
+                borderRadius: BorderRadius.circular(
+                  isMobile
+                      ? 12
+                      : isTablet
+                      ? 14
+                      : 16,
+                ),
                 boxShadow: [
                   BoxShadow(
                     color: AdminDashboardStyles.primary.withOpacity(0.3),
@@ -876,17 +1276,37 @@ class _CreatePrincipalPageState extends State<CreatePrincipalPage> {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.transparent,
                   foregroundColor: Colors.white,
-                  padding: EdgeInsets.symmetric(vertical: isMobile ? 14 : isTablet ? 15 : 16),
+                  padding: EdgeInsets.symmetric(
+                    vertical: isMobile
+                        ? 14
+                        : isTablet
+                        ? 15
+                        : 16,
+                  ),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(isMobile ? 12 : isTablet ? 14 : 16),
+                    borderRadius: BorderRadius.circular(
+                      isMobile
+                          ? 12
+                          : isTablet
+                          ? 14
+                          : 16,
+                    ),
                   ),
                   elevation: 0,
                   shadowColor: Colors.transparent,
                 ),
                 child: _isLoading
                     ? SizedBox(
-                        width: isMobile ? 18 : isTablet ? 19 : 20,
-                        height: isMobile ? 18 : isTablet ? 19 : 20,
+                        width: isMobile
+                            ? 18
+                            : isTablet
+                            ? 19
+                            : 20,
+                        height: isMobile
+                            ? 18
+                            : isTablet
+                            ? 19
+                            : 20,
                         child: const CircularProgressIndicator(
                           strokeWidth: 2,
                           valueColor: AlwaysStoppedAnimation<Color>(
@@ -898,7 +1318,11 @@ class _CreatePrincipalPageState extends State<CreatePrincipalPage> {
                         'Create Principal',
                         style: TextStyle(
                           fontWeight: FontWeight.w600,
-                          fontSize: isMobile ? 14 : isTablet ? 15 : 16,
+                          fontSize: isMobile
+                              ? 14
+                              : isTablet
+                              ? 15
+                              : 16,
                         ),
                       ),
               ),

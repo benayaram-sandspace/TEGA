@@ -3,7 +3,8 @@ import 'package:flutter/services.dart';
 import 'package:tega/features/3_admin_panel/data/models/content_quiz_model.dart';
 
 class ContentQuizRepository {
-  static final ContentQuizRepository _instance = ContentQuizRepository._internal();
+  static final ContentQuizRepository _instance =
+      ContentQuizRepository._internal();
   factory ContentQuizRepository() => _instance;
   ContentQuizRepository._internal();
 
@@ -26,12 +27,12 @@ class ContentQuizRepository {
       );
       final Map<String, dynamic> jsonData = json.decode(jsonString);
       _data = ContentQuizData.fromJson(jsonData);
-      
+
       // Initialize local lists
       _skillDrills = _data!.skillDrills;
       _scenarios = _data!.softSkillScenarios;
       _onboardingQuiz = _data!.onboardingQuiz;
-      
+
       _isLoaded = true;
       return _data!;
     } catch (e) {
@@ -151,7 +152,9 @@ class ContentQuizRepository {
   Future<bool> updateSkillDrill(SkillDrill updatedDrill) async {
     try {
       await loadData();
-      final index = _skillDrills.indexWhere((drill) => drill.id == updatedDrill.id);
+      final index = _skillDrills.indexWhere(
+        (drill) => drill.id == updatedDrill.id,
+      );
       if (index != -1) {
         _skillDrills[index] = updatedDrill;
         return true;
@@ -182,10 +185,14 @@ class ContentQuizRepository {
     }
   }
 
-  Future<bool> updateSoftSkillScenario(SoftSkillScenario updatedScenario) async {
+  Future<bool> updateSoftSkillScenario(
+    SoftSkillScenario updatedScenario,
+  ) async {
     try {
       await loadData();
-      final index = _scenarios.indexWhere((scenario) => scenario.id == updatedScenario.id);
+      final index = _scenarios.indexWhere(
+        (scenario) => scenario.id == updatedScenario.id,
+      );
       if (index != -1) {
         _scenarios[index] = updatedScenario;
         return true;
@@ -264,7 +271,9 @@ class ContentQuizRepository {
 
   Future<bool> updateQuizAttempt(QuizAttempt updatedAttempt) async {
     try {
-      final index = _quizAttempts.indexWhere((attempt) => attempt.id == updatedAttempt.id);
+      final index = _quizAttempts.indexWhere(
+        (attempt) => attempt.id == updatedAttempt.id,
+      );
       if (index != -1) {
         _quizAttempts[index] = updatedAttempt;
         return true;
@@ -275,9 +284,15 @@ class ContentQuizRepository {
     }
   }
 
-  Future<bool> completeQuizAttempt(String attemptId, int score, bool isPassed) async {
+  Future<bool> completeQuizAttempt(
+    String attemptId,
+    int score,
+    bool isPassed,
+  ) async {
     try {
-      final index = _quizAttempts.indexWhere((attempt) => attempt.id == attemptId);
+      final index = _quizAttempts.indexWhere(
+        (attempt) => attempt.id == attemptId,
+      );
       if (index != -1) {
         final attempt = _quizAttempts[index];
         final completedAttempt = QuizAttempt(
@@ -315,8 +330,10 @@ class ContentQuizRepository {
   // Analytics and Statistics
   Future<Map<String, dynamic>> getQuizAnalytics(String quizId) async {
     final attempts = await getQuizAttemptsByQuiz(quizId);
-    final completedAttempts = attempts.where((a) => a.status == 'completed').toList();
-    
+    final completedAttempts = attempts
+        .where((a) => a.status == 'completed')
+        .toList();
+
     if (completedAttempts.isEmpty) {
       return {
         'totalAttempts': attempts.length,
@@ -327,9 +344,15 @@ class ContentQuizRepository {
       };
     }
 
-    final totalScore = completedAttempts.fold(0, (sum, attempt) => sum + attempt.score);
+    final totalScore = completedAttempts.fold(
+      0,
+      (sum, attempt) => sum + attempt.score,
+    );
     final passedAttempts = completedAttempts.where((a) => a.isPassed).length;
-    final totalTime = completedAttempts.fold(0, (sum, attempt) => sum + attempt.timeSpent);
+    final totalTime = completedAttempts.fold(
+      0,
+      (sum, attempt) => sum + attempt.timeSpent,
+    );
 
     return {
       'totalAttempts': attempts.length,
@@ -337,15 +360,21 @@ class ContentQuizRepository {
       'averageScore': totalScore / completedAttempts.length,
       'passRate': (passedAttempts / completedAttempts.length) * 100,
       'averageTimeSpent': totalTime / completedAttempts.length,
-      'bestScore': completedAttempts.map((a) => a.score).reduce((a, b) => a > b ? a : b),
-      'worstScore': completedAttempts.map((a) => a.score).reduce((a, b) => a < b ? a : b),
+      'bestScore': completedAttempts
+          .map((a) => a.score)
+          .reduce((a, b) => a > b ? a : b),
+      'worstScore': completedAttempts
+          .map((a) => a.score)
+          .reduce((a, b) => a < b ? a : b),
     };
   }
 
   Future<Map<String, dynamic>> getUserProgress(String userId) async {
     final attempts = await getUserQuizAttempts(userId);
-    final completedAttempts = attempts.where((a) => a.status == 'completed').toList();
-    
+    final completedAttempts = attempts
+        .where((a) => a.status == 'completed')
+        .toList();
+
     if (completedAttempts.isEmpty) {
       return {
         'totalQuizzes': 0,
@@ -356,8 +385,14 @@ class ContentQuizRepository {
       };
     }
 
-    final totalScore = completedAttempts.fold(0, (sum, attempt) => sum + attempt.score);
-    final totalTime = completedAttempts.fold(0, (sum, attempt) => sum + attempt.timeSpent);
+    final totalScore = completedAttempts.fold(
+      0,
+      (sum, attempt) => sum + attempt.score,
+    );
+    final totalTime = completedAttempts.fold(
+      0,
+      (sum, attempt) => sum + attempt.timeSpent,
+    );
     final passedQuizzes = completedAttempts.where((a) => a.isPassed).length;
 
     return {
@@ -371,7 +406,10 @@ class ContentQuizRepository {
   }
 
   // Bulk Operations
-  Future<bool> bulkUpdateSkillDrillStatus(List<String> ids, bool isActive) async {
+  Future<bool> bulkUpdateSkillDrillStatus(
+    List<String> ids,
+    bool isActive,
+  ) async {
     try {
       await loadData();
       for (final id in ids) {
@@ -415,7 +453,9 @@ class ContentQuizRepository {
   }
 
   // Advanced Filtering
-  Future<List<SkillDrill>> getSkillDrillsByLearningStyle(LearningStyle style) async {
+  Future<List<SkillDrill>> getSkillDrillsByLearningStyle(
+    LearningStyle style,
+  ) async {
     final drills = await getSkillDrills();
     return drills.where((drill) => drill.learningStyle == style).toList();
   }
@@ -425,20 +465,28 @@ class ContentQuizRepository {
     return drills.where((drill) => drill.gradeLevel == level).toList();
   }
 
-  Future<List<SoftSkillScenario>> getScenariosByDifficulty(DifficultyLevel difficulty) async {
+  Future<List<SoftSkillScenario>> getScenariosByDifficulty(
+    DifficultyLevel difficulty,
+  ) async {
     final scenarios = await getSoftSkillScenarios();
-    return scenarios.where((scenario) => scenario.difficulty == difficulty).toList();
+    return scenarios
+        .where((scenario) => scenario.difficulty == difficulty)
+        .toList();
   }
 
   // Content Management
   Future<List<SkillDrill>> getPublishedSkillDrills() async {
     final drills = await getSkillDrills();
-    return drills.where((drill) => drill.isPublished && drill.isActive).toList();
+    return drills
+        .where((drill) => drill.isPublished && drill.isActive)
+        .toList();
   }
 
   Future<List<SoftSkillScenario>> getPublishedScenarios() async {
     final scenarios = await getSoftSkillScenarios();
-    return scenarios.where((scenario) => scenario.isPublished && scenario.isActive).toList();
+    return scenarios
+        .where((scenario) => scenario.isPublished && scenario.isActive)
+        .toList();
   }
 
   Future<bool> publishContent(String id, String type) async {

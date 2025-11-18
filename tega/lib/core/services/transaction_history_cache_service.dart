@@ -4,7 +4,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 /// Cache service for transaction history data
 /// Provides caching with TTL (Time To Live) for transaction listings and stats
 class TransactionHistoryCacheService {
-  static final TransactionHistoryCacheService _instance = TransactionHistoryCacheService._internal();
+  static final TransactionHistoryCacheService _instance =
+      TransactionHistoryCacheService._internal();
   factory TransactionHistoryCacheService() => _instance;
   TransactionHistoryCacheService._internal();
 
@@ -13,7 +14,8 @@ class TransactionHistoryCacheService {
   // Cache keys
   static const String _transactionsDataKey = 'transaction_history_data';
   static const String _statsDataKey = 'transaction_stats_data';
-  static const String _cacheTimestampKey = 'transaction_history_cache_timestamp';
+  static const String _cacheTimestampKey =
+      'transaction_history_cache_timestamp';
 
   // Cache TTL - 5 minutes
   static const Duration _cacheTTL = Duration(minutes: 5);
@@ -55,10 +57,14 @@ class TransactionHistoryCacheService {
         final map = e as Map<String, dynamic>;
         // Convert createdAt and paymentDate from string to DateTime
         if (map['createdAt'] is String) {
-          map['createdAt'] = DateTime.parse(map['createdAt'] as String).toIso8601String();
+          map['createdAt'] = DateTime.parse(
+            map['createdAt'] as String,
+          ).toIso8601String();
         }
         if (map['paymentDate'] is String && map['paymentDate'] != null) {
-          map['paymentDate'] = DateTime.parse(map['paymentDate'] as String).toIso8601String();
+          map['paymentDate'] = DateTime.parse(
+            map['paymentDate'] as String,
+          ).toIso8601String();
         }
         return map;
       }).toList();
@@ -75,15 +81,20 @@ class TransactionHistoryCacheService {
     final serializedData = data.map((transaction) {
       final transactionCopy = Map<String, dynamic>.from(transaction);
       if (transactionCopy['createdAt'] is DateTime) {
-        transactionCopy['createdAt'] = (transactionCopy['createdAt'] as DateTime).toIso8601String();
+        transactionCopy['createdAt'] =
+            (transactionCopy['createdAt'] as DateTime).toIso8601String();
       }
       if (transactionCopy['paymentDate'] is DateTime) {
-        transactionCopy['paymentDate'] = (transactionCopy['paymentDate'] as DateTime).toIso8601String();
+        transactionCopy['paymentDate'] =
+            (transactionCopy['paymentDate'] as DateTime).toIso8601String();
       }
       return transactionCopy;
     }).toList();
     await _prefs?.setString(_transactionsDataKey, json.encode(serializedData));
-    await _prefs?.setString(_cacheTimestampKey, DateTime.now().toIso8601String());
+    await _prefs?.setString(
+      _cacheTimestampKey,
+      DateTime.now().toIso8601String(),
+    );
   }
 
   /// Get cached stats data if valid
@@ -107,7 +118,10 @@ class TransactionHistoryCacheService {
   Future<void> setStatsData(Map<String, dynamic> data) async {
     await _ensurePrefs();
     await _prefs?.setString(_statsDataKey, json.encode(data));
-    await _prefs?.setString(_cacheTimestampKey, DateTime.now().toIso8601String());
+    await _prefs?.setString(
+      _cacheTimestampKey,
+      DateTime.now().toIso8601String(),
+    );
   }
 
   /// Clear transactions cache
@@ -130,4 +144,3 @@ class TransactionHistoryCacheService {
     await _prefs?.remove(_cacheTimestampKey);
   }
 }
-

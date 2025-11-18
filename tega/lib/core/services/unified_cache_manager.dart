@@ -16,12 +16,7 @@ class UnifiedCacheManager {
     required dynamic data,
     required Duration ttl,
   }) async {
-    await _cache.set(
-      key: key,
-      category: category,
-      value: data,
-      ttl: ttl,
-    );
+    await _cache.set(key: key, category: category, value: data, ttl: ttl);
   }
 
   /// Retrieve data from cache
@@ -29,21 +24,12 @@ class UnifiedCacheManager {
     required String key,
     required String category,
   }) async {
-    return await _cache.get(
-      key: key,
-      category: category,
-    );
+    return await _cache.get(key: key, category: category);
   }
 
   /// Delete specific cache entry
-  Future<void> delete({
-    required String key,
-    required String category,
-  }) async {
-    await _cache.delete(
-      key: key,
-      category: category,
-    );
+  Future<void> delete({required String key, required String category}) async {
+    await _cache.delete(key: key, category: category);
   }
 
   /// Delete all entries in a category
@@ -52,14 +38,8 @@ class UnifiedCacheManager {
   }
 
   /// Check if key exists and is valid
-  Future<bool> has({
-    required String key,
-    required String category,
-  }) async {
-    return await _cache.has(
-      key: key,
-      category: category,
-    );
+  Future<bool> has({required String key, required String category}) async {
+    return await _cache.has(key: key, category: category);
   }
 
   /// Clear all expired entries
@@ -99,4 +79,3 @@ class UnifiedCacheManager {
     return expiredBefore;
   }
 }
-

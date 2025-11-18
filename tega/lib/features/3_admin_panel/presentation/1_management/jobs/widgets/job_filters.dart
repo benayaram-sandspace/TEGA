@@ -61,15 +61,43 @@ class _JobFiltersState extends State<JobFilters> {
             opacity: value.clamp(0.0, 1.0),
             child: Container(
               margin: EdgeInsets.fromLTRB(
-                widget.isMobile ? 12 : widget.isTablet ? 14 : 16,
-                widget.isMobile ? 6 : widget.isTablet ? 7 : 8,
-                widget.isMobile ? 12 : widget.isTablet ? 14 : 16,
-                widget.isMobile ? 6 : widget.isTablet ? 7 : 8,
+                widget.isMobile
+                    ? 12
+                    : widget.isTablet
+                    ? 14
+                    : 16,
+                widget.isMobile
+                    ? 6
+                    : widget.isTablet
+                    ? 7
+                    : 8,
+                widget.isMobile
+                    ? 12
+                    : widget.isTablet
+                    ? 14
+                    : 16,
+                widget.isMobile
+                    ? 6
+                    : widget.isTablet
+                    ? 7
+                    : 8,
               ),
-              padding: EdgeInsets.all(widget.isMobile ? 12 : widget.isTablet ? 14 : 16),
+              padding: EdgeInsets.all(
+                widget.isMobile
+                    ? 12
+                    : widget.isTablet
+                    ? 14
+                    : 16,
+              ),
               decoration: BoxDecoration(
                 color: Colors.white,
-                borderRadius: BorderRadius.circular(widget.isMobile ? 10 : widget.isTablet ? 11 : 12),
+                borderRadius: BorderRadius.circular(
+                  widget.isMobile
+                      ? 10
+                      : widget.isTablet
+                      ? 11
+                      : 12,
+                ),
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black.withValues(alpha: 0.05),
@@ -85,22 +113,38 @@ class _JobFiltersState extends State<JobFilters> {
                   TextField(
                     controller: _searchController,
                     style: TextStyle(
-                      fontSize: widget.isMobile ? 13 : widget.isTablet ? 14 : 15,
+                      fontSize: widget.isMobile
+                          ? 13
+                          : widget.isTablet
+                          ? 14
+                          : 15,
                     ),
                     decoration: InputDecoration(
                       hintText: 'Search jobs, companies, or location...',
                       hintStyle: TextStyle(
-                        fontSize: widget.isMobile ? 13 : widget.isTablet ? 14 : 15,
+                        fontSize: widget.isMobile
+                            ? 13
+                            : widget.isTablet
+                            ? 14
+                            : 15,
                       ),
                       prefixIcon: Icon(
                         Icons.search,
-                        size: widget.isMobile ? 18 : widget.isTablet ? 19 : 20,
+                        size: widget.isMobile
+                            ? 18
+                            : widget.isTablet
+                            ? 19
+                            : 20,
                       ),
                       suffixIcon: _searchController.text.isNotEmpty
                           ? IconButton(
                               icon: Icon(
                                 Icons.clear,
-                                size: widget.isMobile ? 18 : widget.isTablet ? 19 : 20,
+                                size: widget.isMobile
+                                    ? 18
+                                    : widget.isTablet
+                                    ? 19
+                                    : 20,
                               ),
                               onPressed: () {
                                 _searchController.clear();
@@ -119,8 +163,16 @@ class _JobFiltersState extends State<JobFilters> {
                       filled: true,
                       fillColor: const Color(0xFFF7F8FC),
                       contentPadding: EdgeInsets.symmetric(
-                        vertical: widget.isMobile ? 12 : widget.isTablet ? 13 : 14,
-                        horizontal: widget.isMobile ? 14 : widget.isTablet ? 15 : 16,
+                        vertical: widget.isMobile
+                            ? 12
+                            : widget.isTablet
+                            ? 13
+                            : 14,
+                        horizontal: widget.isMobile
+                            ? 14
+                            : widget.isTablet
+                            ? 15
+                            : 16,
                       ),
                     ),
                     onChanged: (value) {
@@ -128,7 +180,13 @@ class _JobFiltersState extends State<JobFilters> {
                       widget.onSearchChanged(value);
                     },
                   ),
-                  SizedBox(height: widget.isMobile ? 12 : widget.isTablet ? 14 : 16),
+                  SizedBox(
+                    height: widget.isMobile
+                        ? 12
+                        : widget.isTablet
+                        ? 14
+                        : 16,
+                  ),
 
                   // Filter Dropdowns in a Row
                   Row(
@@ -148,7 +206,13 @@ class _JobFiltersState extends State<JobFilters> {
                           },
                         ),
                       ),
-                      SizedBox(width: widget.isMobile ? 10 : widget.isTablet ? 11 : 12),
+                      SizedBox(
+                        width: widget.isMobile
+                            ? 10
+                            : widget.isTablet
+                            ? 11
+                            : 12,
+                      ),
                       Expanded(
                         child: _buildDropdownFilter(
                           "Type",
@@ -189,7 +253,11 @@ class _JobFiltersState extends State<JobFilters> {
         labelStyle: TextStyle(
           color: const Color(0xFF4A5568),
           fontWeight: FontWeight.w500,
-          fontSize: widget.isMobile ? 13 : widget.isTablet ? 13.5 : 14,
+          fontSize: widget.isMobile
+              ? 13
+              : widget.isTablet
+              ? 13.5
+              : 14,
         ),
         border: _buildOutlineBorder(const Color(0xFFE2E8F0)),
         enabledBorder: _buildOutlineBorder(const Color(0xFFE2E8F0)),
@@ -197,8 +265,16 @@ class _JobFiltersState extends State<JobFilters> {
         filled: true,
         fillColor: const Color(0xFFF7F8FC),
         contentPadding: EdgeInsets.symmetric(
-          vertical: widget.isMobile ? 14 : widget.isTablet ? 15 : 16,
-          horizontal: widget.isMobile ? 14 : widget.isTablet ? 15 : 16,
+          vertical: widget.isMobile
+              ? 14
+              : widget.isTablet
+              ? 15
+              : 16,
+          horizontal: widget.isMobile
+              ? 14
+              : widget.isTablet
+              ? 15
+              : 16,
         ),
         isDense: true,
       ),
@@ -208,7 +284,11 @@ class _JobFiltersState extends State<JobFilters> {
           child: Text(
             option.key,
             style: TextStyle(
-              fontSize: widget.isMobile ? 13 : widget.isTablet ? 13.5 : 14,
+              fontSize: widget.isMobile
+                  ? 13
+                  : widget.isTablet
+                  ? 13.5
+                  : 14,
               color: Colors.black,
               fontWeight: FontWeight.w500,
             ),
@@ -218,10 +298,18 @@ class _JobFiltersState extends State<JobFilters> {
       icon: Icon(
         Icons.keyboard_arrow_down,
         color: const Color(0xFF718096),
-        size: widget.isMobile ? 18 : widget.isTablet ? 19 : 20,
+        size: widget.isMobile
+            ? 18
+            : widget.isTablet
+            ? 19
+            : 20,
       ),
       style: TextStyle(
-        fontSize: widget.isMobile ? 13 : widget.isTablet ? 13.5 : 14,
+        fontSize: widget.isMobile
+            ? 13
+            : widget.isTablet
+            ? 13.5
+            : 14,
         color: Colors.black,
         fontWeight: FontWeight.w500,
       ),
@@ -230,7 +318,13 @@ class _JobFiltersState extends State<JobFilters> {
 
   OutlineInputBorder _buildOutlineBorder(Color color) {
     return OutlineInputBorder(
-      borderRadius: BorderRadius.circular(widget.isMobile ? 10 : widget.isTablet ? 11 : 12),
+      borderRadius: BorderRadius.circular(
+        widget.isMobile
+            ? 10
+            : widget.isTablet
+            ? 11
+            : 12,
+      ),
       borderSide: BorderSide(color: color, width: 1),
     );
   }

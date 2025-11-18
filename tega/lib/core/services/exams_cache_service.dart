@@ -62,7 +62,10 @@ class ExamsCacheService {
   Future<void> setExamsData(List<Map<String, dynamic>> data) async {
     await _ensurePrefs();
     await _prefs?.setString(_examsDataKey, json.encode(data));
-    await _prefs?.setString(_cacheTimestampKey, DateTime.now().toIso8601String());
+    await _prefs?.setString(
+      _cacheTimestampKey,
+      DateTime.now().toIso8601String(),
+    );
   }
 
   /// Get cached enrolled courses data if valid
@@ -88,7 +91,10 @@ class ExamsCacheService {
   Future<void> setEnrolledCoursesData(List<Map<String, dynamic>> data) async {
     await _ensurePrefs();
     await _prefs?.setString(_enrolledCoursesKey, json.encode(data));
-    await _prefs?.setString(_cacheTimestampKey, DateTime.now().toIso8601String());
+    await _prefs?.setString(
+      _cacheTimestampKey,
+      DateTime.now().toIso8601String(),
+    );
   }
 
   /// Clear exams cache
@@ -111,4 +117,3 @@ class ExamsCacheService {
     await _prefs?.remove(_cacheTimestampKey);
   }
 }
-

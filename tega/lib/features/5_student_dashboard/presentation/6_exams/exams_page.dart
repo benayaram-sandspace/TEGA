@@ -24,11 +24,7 @@ class _ExamsPageState extends State<ExamsPage>
   String? _errorMessage;
   final ExamsCacheService _cacheService = ExamsCacheService();
 
-  final List<String> _filters = [
-    'All Exams',
-    'Course Exams',
-    'Normal Exams',
-  ];
+  final List<String> _filters = ['All Exams', 'Course Exams', 'Normal Exams'];
 
   @override
   void initState() {
@@ -53,7 +49,9 @@ class _ExamsPageState extends State<ExamsPage>
             error.toString().toLowerCase().contains('connection') ||
             error.toString().toLowerCase().contains('internet') ||
             error.toString().toLowerCase().contains('failed host lookup') ||
-            error.toString().toLowerCase().contains('no address associated with hostname'));
+            error.toString().toLowerCase().contains(
+              'no address associated with hostname',
+            ));
   }
 
   @override
@@ -84,10 +82,11 @@ class _ExamsPageState extends State<ExamsPage>
         if (!matchesSearch) return false;
 
         // Type filter
-        final isTegaExam = exam['courseName'] == 'TEGA Exam' || 
-                          exam['_backendData']?['isTegaExam'] == true ||
-                          (exam['_backendData']?['courseId'] == null || 
-                           exam['_backendData']?['courseId'].toString() == 'null');
+        final isTegaExam =
+            exam['courseName'] == 'TEGA Exam' ||
+            exam['_backendData']?['isTegaExam'] == true ||
+            (exam['_backendData']?['courseId'] == null ||
+                exam['_backendData']?['courseId'].toString() == 'null');
         final isCourseExam = !isTegaExam;
 
         final matchesFilter =
@@ -159,7 +158,7 @@ class _ExamsPageState extends State<ExamsPage>
     try {
       final auth = AuthService();
       final studentId = auth.currentUser?.id;
-      
+
       if (studentId == null) {
         if (mounted) {
           setState(() {
@@ -182,18 +181,21 @@ class _ExamsPageState extends State<ExamsPage>
       // Transform backend exam data to UI format
       for (final exam in backendExams) {
         final examData = exam as Map<String, dynamic>;
-        
+
         // Check if this is a TEGA exam
-        final isTegaExam = examData['isTegaExam'] == true || 
-                         examData['courseId'] == null ||
-                         (examData['courseId'] is String && examData['courseId'].toString() == 'null');
-        
+        final isTegaExam =
+            examData['isTegaExam'] == true ||
+            examData['courseId'] == null ||
+            (examData['courseId'] is String &&
+                examData['courseId'].toString() == 'null');
+
         // Get course name
         String courseName = 'TEGA Exam';
         if (examData['courseId'] != null) {
           if (examData['courseId'] is Map) {
             courseName = examData['courseId']['courseName'] ?? 'Course Exam';
-          } else if (examData['courseId'] is String && examData['courseId'].toString() != 'null') {
+          } else if (examData['courseId'] is String &&
+              examData['courseId'].toString() != 'null') {
             courseName = 'Course Exam';
           }
         }
@@ -218,13 +220,14 @@ class _ExamsPageState extends State<ExamsPage>
             totalQuestions = examData['questionPaperId']['totalQuestions'] ?? 0;
           }
         }
-        final questionsText = totalQuestions > 0 
+        final questionsText = totalQuestions > 0
             ? '$totalQuestions ${totalQuestions == 1 ? 'question' : 'questions'}'
             : 'Questions TBD';
 
         // Determine difficulty based on exam data
         String difficulty = 'Intermediate';
-        if (examData['totalMarks'] != null && examData['passingMarks'] != null) {
+        if (examData['totalMarks'] != null &&
+            examData['passingMarks'] != null) {
           final totalMarks = examData['totalMarks'] as num;
           final passingMarks = examData['passingMarks'] as num;
           final passingPercentage = (passingMarks / totalMarks) * 100;
@@ -238,9 +241,10 @@ class _ExamsPageState extends State<ExamsPage>
         }
 
         // Get category from subject or course
-        String category = examData['subject']?.toString() ?? 
-                         examData['courseId']?['courseName']?.toString() ?? 
-                         'General';
+        String category =
+            examData['subject']?.toString() ??
+            examData['courseId']?['courseName']?.toString() ??
+            'General';
 
         // Get attempts from registration if available
         int attempts = 0;
@@ -259,8 +263,12 @@ class _ExamsPageState extends State<ExamsPage>
           'category': category,
           'attempts': attempts,
           'maxAttempts': examData['maxAttempts'] ?? 3,
-          'passingScore': examData['passingMarks'] != null && examData['totalMarks'] != null
-              ? ((examData['passingMarks'] as num) / (examData['totalMarks'] as num) * 100).round()
+          'passingScore':
+              examData['passingMarks'] != null && examData['totalMarks'] != null
+              ? ((examData['passingMarks'] as num) /
+                        (examData['totalMarks'] as num) *
+                        100)
+                    .round()
               : 70,
           // Store additional backend data for later use
           '_backendData': examData,
@@ -339,7 +347,9 @@ class _ExamsPageState extends State<ExamsPage>
       if (backendData == null) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Exam data not available. Please refresh and try again.'),
+            content: Text(
+              'Exam data not available. Please refresh and try again.',
+            ),
             backgroundColor: Colors.orange,
           ),
         );
@@ -388,13 +398,18 @@ class _ExamsPageState extends State<ExamsPage>
         );
 
         // Register for exam
-        final registerResult = await api.registerForExam(examId, slotId, headers);
-        
+        final registerResult = await api.registerForExam(
+          examId,
+          slotId,
+          headers,
+        );
+
         Navigator.of(context).pop(); // Close loading dialog
 
         if (registerResult['success'] != true) {
-          final message = registerResult['message'] ?? 'Failed to register for exam';
-          
+          final message =
+              registerResult['message'] ?? 'Failed to register for exam';
+
           // Check if payment is required
           if (registerResult['requiresPayment'] == true) {
             ScaffoldMessenger.of(context).showSnackBar(
@@ -406,10 +421,7 @@ class _ExamsPageState extends State<ExamsPage>
             );
           } else {
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(message),
-                backgroundColor: Colors.red,
-              ),
+              SnackBar(content: Text(message), backgroundColor: Colors.red),
             );
           }
           return;
@@ -427,7 +439,7 @@ class _ExamsPageState extends State<ExamsPage>
 
       // Start exam
       final startResult = await api.startExam(examId, headers);
-      
+
       Navigator.of(context).pop(); // Close loading dialog
 
       if (startResult['success'] == true) {
@@ -439,7 +451,7 @@ class _ExamsPageState extends State<ExamsPage>
             backgroundColor: Colors.green,
           ),
         );
-        
+
         // TODO: Navigate to actual exam page
         // Navigator.push(
         //   context,
@@ -450,10 +462,7 @@ class _ExamsPageState extends State<ExamsPage>
       } else {
         final message = startResult['message'] ?? 'Failed to start exam';
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(message),
-            backgroundColor: Colors.red,
-          ),
+          SnackBar(content: Text(message), backgroundColor: Colors.red),
         );
       }
     } catch (e) {
@@ -471,11 +480,14 @@ class _ExamsPageState extends State<ExamsPage>
   double get tabletBreakpoint => 1024;
   double get desktopBreakpoint => 1440;
   bool get isMobile => MediaQuery.of(context).size.width < mobileBreakpoint;
-  bool get isTablet => MediaQuery.of(context).size.width >= mobileBreakpoint &&
+  bool get isTablet =>
+      MediaQuery.of(context).size.width >= mobileBreakpoint &&
       MediaQuery.of(context).size.width < tabletBreakpoint;
-  bool get isDesktop => MediaQuery.of(context).size.width >= tabletBreakpoint &&
+  bool get isDesktop =>
+      MediaQuery.of(context).size.width >= tabletBreakpoint &&
       MediaQuery.of(context).size.width < desktopBreakpoint;
-  bool get isLargeDesktop => MediaQuery.of(context).size.width >= desktopBreakpoint;
+  bool get isLargeDesktop =>
+      MediaQuery.of(context).size.width >= desktopBreakpoint;
   bool get isSmallScreen => MediaQuery.of(context).size.width < 400;
 
   @override
@@ -486,7 +498,9 @@ class _ExamsPageState extends State<ExamsPage>
       );
     }
 
-    if (_errorMessage != null && _courseExams.isEmpty && _tegaMainExam == null) {
+    if (_errorMessage != null &&
+        _courseExams.isEmpty &&
+        _tegaMainExam == null) {
       return _buildErrorState();
     }
 
@@ -495,9 +509,7 @@ class _ExamsPageState extends State<ExamsPage>
       body: CustomScrollView(
         slivers: [
           // Main Exam Section (only show if TEGA exam is available)
-          if (_tegaMainExam != null) ...[
-            _buildMainExamSection(),
-          ],
+          if (_tegaMainExam != null) ...[_buildMainExamSection()],
 
           // Course Exams Section
           if (_courseExams.isNotEmpty) ...[
@@ -527,7 +539,7 @@ class _ExamsPageState extends State<ExamsPage>
 
   Widget _buildErrorState() {
     final isNoInternet = _errorMessage == 'No internet connection';
-    
+
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       body: Center(
@@ -571,7 +583,9 @@ class _ExamsPageState extends State<ExamsPage>
                     : 16,
               ),
               Text(
-                isNoInternet ? 'No internet connection' : 'Something went wrong',
+                isNoInternet
+                    ? 'No internet connection'
+                    : 'Something went wrong',
                 style: TextStyle(
                   fontSize: isLargeDesktop
                       ? 22
@@ -767,7 +781,7 @@ class _ExamsPageState extends State<ExamsPage>
     }
 
     final exam = _tegaMainExam!;
-    
+
     return TweenAnimationBuilder<double>(
       duration: const Duration(milliseconds: 600),
       tween: Tween(begin: 0.0, end: 1.0),
@@ -944,8 +958,9 @@ class _ExamsPageState extends State<ExamsPage>
                                         : 4,
                                   ),
                                   Text(
-                                    exam['_backendData']?['description']?.toString() ?? 
-                                    'Comprehensive assessment across all domains',
+                                    exam['_backendData']?['description']
+                                            ?.toString() ??
+                                        'Comprehensive assessment across all domains',
                                     style: TextStyle(
                                       fontSize: isLargeDesktop
                                           ? 16
@@ -1795,14 +1810,14 @@ class _ExamsPageState extends State<ExamsPage>
                     bottom: index == _filteredExams.length - 1
                         ? 0
                         : (isLargeDesktop
-                            ? 20
-                            : isDesktop
-                            ? 16
-                            : isTablet
-                            ? 14
-                            : isSmallScreen
-                            ? 10
-                            : 12),
+                              ? 20
+                              : isDesktop
+                              ? 16
+                              : isTablet
+                              ? 14
+                              : isSmallScreen
+                              ? 10
+                              : 12),
                   ),
                   child: _buildModernExamCard(exam),
                 ),
@@ -2171,10 +2186,7 @@ class _ExamsPageState extends State<ExamsPage>
     );
   }
 
-  Widget _buildModernInfoChip({
-    required IconData icon,
-    required String label,
-  }) {
+  Widget _buildModernInfoChip({required IconData icon, required String label}) {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -2824,8 +2836,8 @@ class _ExamsPageState extends State<ExamsPage>
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              exam['_backendData']?['description']?.toString() ?? 
-              'Are you ready to begin the comprehensive Tega Main Exam?',
+              exam['_backendData']?['description']?.toString() ??
+                  'Are you ready to begin the comprehensive Tega Main Exam?',
               style: TextStyle(
                 fontSize: isLargeDesktop
                     ? 18
@@ -3372,4 +3384,3 @@ class _ExamsPageState extends State<ExamsPage>
     );
   }
 }
-

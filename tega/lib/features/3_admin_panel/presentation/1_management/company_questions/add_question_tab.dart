@@ -81,10 +81,7 @@ class _AddQuestionTabState extends State<AddQuestionTab> {
     for (int i = 0; i < _optionControllers.length; i++) {
       final text = _optionControllers[i].text.trim();
       if (text.isNotEmpty) {
-        options.add({
-          'text': text,
-          'isCorrect': i == _correctIndex,
-        });
+        options.add({'text': text, 'isCorrect': i == _correctIndex});
       }
     }
 
@@ -192,8 +189,12 @@ class _AddQuestionTabState extends State<AddQuestionTab> {
               icon: Icons.business_rounded,
               child: TextFormField(
                 controller: _companyController,
-                decoration: _inputDecoration(hint: 'e.g., TCS, Infosys, Microsoft'),
-                validator: (v) => v == null || v.trim().isEmpty ? 'Company name is required' : null,
+                decoration: _inputDecoration(
+                  hint: 'e.g., TCS, Infosys, Microsoft',
+                ),
+                validator: (v) => v == null || v.trim().isEmpty
+                    ? 'Company name is required'
+                    : null,
               ),
             ),
             const SizedBox(height: 16),
@@ -205,9 +206,12 @@ class _AddQuestionTabState extends State<AddQuestionTab> {
                 minLines: 6,
                 maxLines: 12,
                 decoration: _inputDecoration(
-                  hint: 'Enter your question here... (You can paste complete question with formatting) ',
+                  hint:
+                      'Enter your question here... (You can paste complete question with formatting) ',
                 ),
-                validator: (v) => v == null || v.trim().isEmpty ? 'Question text is required' : null,
+                validator: (v) => v == null || v.trim().isEmpty
+                    ? 'Question text is required'
+                    : null,
               ),
             ),
             const SizedBox(height: 16),
@@ -222,7 +226,9 @@ class _AddQuestionTabState extends State<AddQuestionTab> {
                 controller: _explanationController,
                 minLines: 3,
                 maxLines: 6,
-                decoration: _inputDecoration(hint: 'Explain why this answer is correct...'),
+                decoration: _inputDecoration(
+                  hint: 'Explain why this answer is correct...',
+                ),
               ),
             ),
             const SizedBox(height: 20),
@@ -233,7 +239,11 @@ class _AddQuestionTabState extends State<AddQuestionTab> {
     );
   }
 
-  Widget _buildSection({required String title, required IconData icon, required Widget child}) {
+  Widget _buildSection({
+    required String title,
+    required IconData icon,
+    required Widget child,
+  }) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(24),
@@ -242,7 +252,11 @@ class _AddQuestionTabState extends State<AddQuestionTab> {
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: AdminDashboardStyles.borderLight),
         boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 2)),
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
         ],
       ),
       child: Column(
@@ -256,13 +270,20 @@ class _AddQuestionTabState extends State<AddQuestionTab> {
                   color: AdminDashboardStyles.primary.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: Icon(icon, color: AdminDashboardStyles.primary, size: 18),
+                child: Icon(
+                  icon,
+                  color: AdminDashboardStyles.primary,
+                  size: 18,
+                ),
               ),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
                   title,
-                  style: const TextStyle(fontWeight: FontWeight.w700, color: Colors.black87),
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w700,
+                    color: Colors.black87,
+                  ),
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
@@ -289,14 +310,24 @@ class _AddQuestionTabState extends State<AddQuestionTab> {
                     value: _selectedCategory,
                     isExpanded: true,
                     items: const [
-                      DropdownMenuItem(value: 'technical', child: Text('Technical')),
-                      DropdownMenuItem(value: 'aptitude', child: Text('Aptitude')),
-                      DropdownMenuItem(value: 'reasoning', child: Text('Reasoning')),
+                      DropdownMenuItem(
+                        value: 'technical',
+                        child: Text('Technical'),
+                      ),
+                      DropdownMenuItem(
+                        value: 'aptitude',
+                        child: Text('Aptitude'),
+                      ),
+                      DropdownMenuItem(
+                        value: 'reasoning',
+                        child: Text('Reasoning'),
+                      ),
                       DropdownMenuItem(value: 'verbal', child: Text('Verbal')),
                       DropdownMenuItem(value: 'coding', child: Text('Coding')),
                       DropdownMenuItem(value: 'hr', child: Text('HR')),
                     ],
-                    onChanged: (v) => setState(() => _selectedCategory = v ?? 'technical'),
+                    onChanged: (v) =>
+                        setState(() => _selectedCategory = v ?? 'technical'),
                     decoration: _inputDecoration(),
                   ),
                 ),
@@ -314,7 +345,8 @@ class _AddQuestionTabState extends State<AddQuestionTab> {
                       DropdownMenuItem(value: 'medium', child: Text('Medium')),
                       DropdownMenuItem(value: 'hard', child: Text('Hard')),
                     ],
-                    onChanged: (v) => setState(() => _selectedDifficulty = v ?? 'medium'),
+                    onChanged: (v) =>
+                        setState(() => _selectedDifficulty = v ?? 'medium'),
                     decoration: _inputDecoration(),
                   ),
                 ),
@@ -331,14 +363,24 @@ class _AddQuestionTabState extends State<AddQuestionTab> {
                   value: _selectedCategory,
                   isExpanded: true,
                   items: const [
-                    DropdownMenuItem(value: 'technical', child: Text('Technical')),
-                    DropdownMenuItem(value: 'aptitude', child: Text('Aptitude')),
-                    DropdownMenuItem(value: 'reasoning', child: Text('Reasoning')),
+                    DropdownMenuItem(
+                      value: 'technical',
+                      child: Text('Technical'),
+                    ),
+                    DropdownMenuItem(
+                      value: 'aptitude',
+                      child: Text('Aptitude'),
+                    ),
+                    DropdownMenuItem(
+                      value: 'reasoning',
+                      child: Text('Reasoning'),
+                    ),
                     DropdownMenuItem(value: 'verbal', child: Text('Verbal')),
                     DropdownMenuItem(value: 'coding', child: Text('Coding')),
                     DropdownMenuItem(value: 'hr', child: Text('HR')),
                   ],
-                  onChanged: (v) => setState(() => _selectedCategory = v ?? 'technical'),
+                  onChanged: (v) =>
+                      setState(() => _selectedCategory = v ?? 'technical'),
                   decoration: _inputDecoration(),
                 ),
               ),
@@ -354,7 +396,8 @@ class _AddQuestionTabState extends State<AddQuestionTab> {
                     DropdownMenuItem(value: 'medium', child: Text('Medium')),
                     DropdownMenuItem(value: 'hard', child: Text('Hard')),
                   ],
-                  onChanged: (v) => setState(() => _selectedDifficulty = v ?? 'medium'),
+                  onChanged: (v) =>
+                      setState(() => _selectedDifficulty = v ?? 'medium'),
                   decoration: _inputDecoration(),
                 ),
               ),
@@ -390,7 +433,9 @@ class _AddQuestionTabState extends State<AddQuestionTab> {
                   Expanded(
                     child: TextFormField(
                       controller: _optionControllers[index],
-                      decoration: _inputDecoration(hint: 'Enter option ${String.fromCharCode(65 + index)}'),
+                      decoration: _inputDecoration(
+                        hint: 'Enter option ${String.fromCharCode(65 + index)}',
+                      ),
                       validator: (v) {
                         // Only validate the first two options strictly; others can be empty
                         if (index < 2 && (v == null || v.trim().isEmpty)) {
@@ -405,7 +450,11 @@ class _AddQuestionTabState extends State<AddQuestionTab> {
                     IconButton(
                       tooltip: 'Remove option',
                       onPressed: () => _removeOption(index),
-                      icon: const Icon(Icons.close_rounded, color: Colors.red, size: 18),
+                      icon: const Icon(
+                        Icons.close_rounded,
+                        color: Colors.red,
+                        size: 18,
+                      ),
                       padding: EdgeInsets.zero,
                       constraints: const BoxConstraints(),
                     ),
@@ -418,7 +467,10 @@ class _AddQuestionTabState extends State<AddQuestionTab> {
             alignment: Alignment.centerLeft,
             child: TextButton.icon(
               onPressed: _addOption,
-              icon: Icon(Icons.add_circle_rounded, color: AdminDashboardStyles.primary),
+              icon: Icon(
+                Icons.add_circle_rounded,
+                color: AdminDashboardStyles.primary,
+              ),
               label: const Text('Add More Options'),
             ),
           ),
@@ -444,11 +496,12 @@ class _AddQuestionTabState extends State<AddQuestionTab> {
             backgroundColor: AdminDashboardStyles.primary,
             foregroundColor: Colors.white,
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
           ),
         ),
       ],
     );
   }
 }
-

@@ -49,20 +49,35 @@ class _EditExamPageState extends State<EditExamPage> {
 
   void _populateFormFromExam() {
     final exam = widget.exam;
-    
-    _titleController = TextEditingController(text: exam['title']?.toString() ?? '');
-    _durationController = TextEditingController(text: (exam['duration'] ?? 0).toString());
-    _totalMarksController = TextEditingController(text: (exam['totalMarks'] ?? 0).toString());
-    _passingMarksController = TextEditingController(text: (exam['passingMarks'] ?? 0).toString());
-    _maxAttemptsController = TextEditingController(text: (exam['maxAttempts'] ?? 1).toString());
-    _descriptionController = TextEditingController(text: exam['description']?.toString() ?? '');
-    _instructionsController = TextEditingController(text: exam['instructions']?.toString() ?? '');
+
+    _titleController = TextEditingController(
+      text: exam['title']?.toString() ?? '',
+    );
+    _durationController = TextEditingController(
+      text: (exam['duration'] ?? 0).toString(),
+    );
+    _totalMarksController = TextEditingController(
+      text: (exam['totalMarks'] ?? 0).toString(),
+    );
+    _passingMarksController = TextEditingController(
+      text: (exam['passingMarks'] ?? 0).toString(),
+    );
+    _maxAttemptsController = TextEditingController(
+      text: (exam['maxAttempts'] ?? 1).toString(),
+    );
+    _descriptionController = TextEditingController(
+      text: exam['description']?.toString() ?? '',
+    );
+    _instructionsController = TextEditingController(
+      text: exam['instructions']?.toString() ?? '',
+    );
 
     // Set course
     final courseId = exam['courseId'];
     if (courseId != null) {
       if (courseId is Map) {
-        _selectedCourseId = courseId['_id']?.toString() ?? courseId['id']?.toString();
+        _selectedCourseId =
+            courseId['_id']?.toString() ?? courseId['id']?.toString();
       } else {
         _selectedCourseId = courseId.toString();
       }
@@ -172,8 +187,14 @@ class _EditExamPageState extends State<EditExamPage> {
     return null;
   }
 
-  Future<void> _selectTime(BuildContext context, TimeSlot slot, bool isStartTime) async {
-    final currentTime = isStartTime ? _parseTime(slot.startTime) : _parseTime(slot.endTime);
+  Future<void> _selectTime(
+    BuildContext context,
+    TimeSlot slot,
+    bool isStartTime,
+  ) async {
+    final currentTime = isStartTime
+        ? _parseTime(slot.startTime)
+        : _parseTime(slot.endTime);
     final TimeOfDay? picked = await showTimePicker(
       context: context,
       initialTime: currentTime ?? TimeOfDay.now(),
@@ -181,7 +202,8 @@ class _EditExamPageState extends State<EditExamPage> {
 
     if (picked != null) {
       setState(() {
-        final timeStr = '${picked.hour.toString().padLeft(2, '0')}:${picked.minute.toString().padLeft(2, '0')}';
+        final timeStr =
+            '${picked.hour.toString().padLeft(2, '0')}:${picked.minute.toString().padLeft(2, '0')}';
         if (isStartTime) {
           slot.startTime = timeStr;
         } else {
@@ -190,7 +212,6 @@ class _EditExamPageState extends State<EditExamPage> {
       });
     }
   }
-
 
   void _removeTimeSlot(int index) {
     setState(() {
@@ -227,7 +248,9 @@ class _EditExamPageState extends State<EditExamPage> {
       final examId = (widget.exam['_id'] ?? widget.exam['id']).toString();
       final examData = {
         'title': _titleController.text.trim(),
-        'courseId': _selectedCourseId == 'tega-exam' ? 'tega-exam' : _selectedCourseId,
+        'courseId': _selectedCourseId == 'tega-exam'
+            ? 'tega-exam'
+            : _selectedCourseId,
         'description': _descriptionController.text.trim(),
         'duration': int.parse(_durationController.text),
         'totalMarks': int.parse(_totalMarksController.text),
@@ -235,12 +258,16 @@ class _EditExamPageState extends State<EditExamPage> {
         'maxAttempts': int.parse(_maxAttemptsController.text),
         'examDate': _examDate!.toIso8601String(),
         'instructions': _instructionsController.text.trim(),
-        'slots': _timeSlots.map((slot) => {
-          'slotId': slot.slotId,
-          'startTime': slot.startTime,
-          'endTime': slot.endTime,
-          'maxParticipants': slot.maxParticipants,
-        }).toList(),
+        'slots': _timeSlots
+            .map(
+              (slot) => {
+                'slotId': slot.slotId,
+                'startTime': slot.startTime,
+                'endTime': slot.endTime,
+                'maxParticipants': slot.maxParticipants,
+              },
+            )
+            .toList(),
       };
 
       await _examRepository.updateExam(examId, examData);
@@ -252,7 +279,7 @@ class _EditExamPageState extends State<EditExamPage> {
             backgroundColor: Colors.green,
           ),
         );
-        
+
         Navigator.of(context).pop(true); // Return true to indicate success
       }
     } catch (e) {
@@ -285,17 +312,24 @@ class _EditExamPageState extends State<EditExamPage> {
           child: LayoutBuilder(
             builder: (context, constraints) {
               final isSmallScreen = constraints.maxWidth < 600;
-              final isMediumScreen = constraints.maxWidth >= 600 && constraints.maxWidth < 900;
-              
-              final outerPadding = isSmallScreen ? 16.0 : (isMediumScreen ? 20.0 : 24.0);
-              final innerPadding = isSmallScreen ? 16.0 : (isMediumScreen ? 20.0 : 24.0);
-              
+              final isMediumScreen =
+                  constraints.maxWidth >= 600 && constraints.maxWidth < 900;
+
+              final outerPadding = isSmallScreen
+                  ? 16.0
+                  : (isMediumScreen ? 20.0 : 24.0);
+              final innerPadding = isSmallScreen
+                  ? 16.0
+                  : (isMediumScreen ? 20.0 : 24.0);
+
               return SingleChildScrollView(
                 padding: EdgeInsets.all(outerPadding),
                 child: Container(
                   decoration: BoxDecoration(
                     color: AdminDashboardStyles.cardBackground,
-                    borderRadius: BorderRadius.circular(isSmallScreen ? 16 : 20),
+                    borderRadius: BorderRadius.circular(
+                      isSmallScreen ? 16 : 20,
+                    ),
                     border: Border.all(
                       color: AdminDashboardStyles.primary.withOpacity(0.2),
                       width: 1,
@@ -319,7 +353,9 @@ class _EditExamPageState extends State<EditExamPage> {
                           Container(
                             padding: EdgeInsets.all(isSmallScreen ? 10 : 12),
                             decoration: BoxDecoration(
-                              color: AdminDashboardStyles.primary.withOpacity(0.1),
+                              color: AdminDashboardStyles.primary.withOpacity(
+                                0.1,
+                              ),
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: Icon(
@@ -335,16 +371,18 @@ class _EditExamPageState extends State<EditExamPage> {
                               children: [
                                 Text(
                                   'Update Assessment',
-                                  style: AdminDashboardStyles.welcomeHeader.copyWith(
-                                    fontSize: isSmallScreen ? 20 : 24,
-                                  ),
+                                  style: AdminDashboardStyles.welcomeHeader
+                                      .copyWith(
+                                        fontSize: isSmallScreen ? 20 : 24,
+                                      ),
                                 ),
                                 SizedBox(height: isSmallScreen ? 4 : 6),
                                 Text(
                                   'Edit exam details and time slots',
-                                  style: AdminDashboardStyles.statTitle.copyWith(
-                                    fontSize: isSmallScreen ? 12 : 13,
-                                  ),
+                                  style: AdminDashboardStyles.statTitle
+                                      .copyWith(
+                                        fontSize: isSmallScreen ? 12 : 13,
+                                      ),
                                 ),
                               ],
                             ),
@@ -380,7 +418,9 @@ class _EditExamPageState extends State<EditExamPage> {
                         child: _isLoadingCourses
                             ? const SizedBox(
                                 height: 56,
-                                child: Center(child: CircularProgressIndicator()),
+                                child: Center(
+                                  child: CircularProgressIndicator(),
+                                ),
                               )
                             : DropdownButtonFormField<String>(
                                 value: _selectedCourseId,
@@ -395,11 +435,15 @@ class _EditExamPageState extends State<EditExamPage> {
                                     child: Text('TEGA Exam'),
                                   ),
                                   ..._availableCourses.map((course) {
-                                    final courseId = course['_id']?.toString() ?? course['id']?.toString();
+                                    final courseId =
+                                        course['_id']?.toString() ??
+                                        course['id']?.toString();
                                     return DropdownMenuItem(
                                       value: courseId,
                                       child: Text(
-                                        course['title'] ?? course['courseName'] ?? 'Unknown',
+                                        course['title'] ??
+                                            course['courseName'] ??
+                                            'Unknown',
                                         overflow: TextOverflow.ellipsis,
                                       ),
                                     );
@@ -451,7 +495,8 @@ class _EditExamPageState extends State<EditExamPage> {
                                       prefixIconData: Icons.timer_rounded,
                                     ),
                                     validator: (value) {
-                                      if (value == null || value.trim().isEmpty) {
+                                      if (value == null ||
+                                          value.trim().isEmpty) {
                                         return 'Please enter duration';
                                       }
                                       final duration = int.tryParse(value);
@@ -474,7 +519,8 @@ class _EditExamPageState extends State<EditExamPage> {
                                       prefixIconData: Icons.star_rounded,
                                     ),
                                     validator: (value) {
-                                      if (value == null || value.trim().isEmpty) {
+                                      if (value == null ||
+                                          value.trim().isEmpty) {
                                         return 'Please enter total marks';
                                       }
                                       final marks = int.tryParse(value);
@@ -494,10 +540,12 @@ class _EditExamPageState extends State<EditExamPage> {
                                     keyboardType: TextInputType.number,
                                     decoration: _buildInputDecoration(
                                       hintText: 'e.g., 40',
-                                      prefixIconData: Icons.check_circle_rounded,
+                                      prefixIconData:
+                                          Icons.check_circle_rounded,
                                     ),
                                     validator: (value) {
-                                      if (value == null || value.trim().isEmpty) {
+                                      if (value == null ||
+                                          value.trim().isEmpty) {
                                         return 'Please enter passing marks';
                                       }
                                       final marks = int.tryParse(value);
@@ -525,7 +573,8 @@ class _EditExamPageState extends State<EditExamPage> {
                                         prefixIconData: Icons.timer_rounded,
                                       ),
                                       validator: (value) {
-                                        if (value == null || value.trim().isEmpty) {
+                                        if (value == null ||
+                                            value.trim().isEmpty) {
                                           return 'Please enter duration';
                                         }
                                         final duration = int.tryParse(value);
@@ -550,7 +599,8 @@ class _EditExamPageState extends State<EditExamPage> {
                                         prefixIconData: Icons.star_rounded,
                                       ),
                                       validator: (value) {
-                                        if (value == null || value.trim().isEmpty) {
+                                        if (value == null ||
+                                            value.trim().isEmpty) {
                                           return 'Please enter total marks';
                                         }
                                         final marks = int.tryParse(value);
@@ -572,10 +622,12 @@ class _EditExamPageState extends State<EditExamPage> {
                                       keyboardType: TextInputType.number,
                                       decoration: _buildInputDecoration(
                                         hintText: 'e.g., 40',
-                                        prefixIconData: Icons.check_circle_rounded,
+                                        prefixIconData:
+                                            Icons.check_circle_rounded,
                                       ),
                                       validator: (value) {
-                                        if (value == null || value.trim().isEmpty) {
+                                        if (value == null ||
+                                            value.trim().isEmpty) {
                                           return 'Please enter passing marks';
                                         }
                                         final marks = int.tryParse(value);
@@ -674,27 +726,38 @@ class _EditExamPageState extends State<EditExamPage> {
                         mainAxisAlignment: MainAxisAlignment.end,
                         children: [
                           TextButton(
-                            onPressed: _isLoading ? null : () => Navigator.of(context).pop(),
+                            onPressed: _isLoading
+                                ? null
+                                : () => Navigator.of(context).pop(),
                             style: TextButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 24,
+                                vertical: 12,
+                              ),
                             ),
                             child: const Text('Cancel'),
                           ),
                           const SizedBox(width: 12),
                           ElevatedButton(
                             onPressed: _isLoading ? null : _updateExam,
-                            style: AdminDashboardStyles.getPrimaryButtonStyle().copyWith(
-                              padding: const MaterialStatePropertyAll(
-                                EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                              ),
-                            ),
+                            style: AdminDashboardStyles.getPrimaryButtonStyle()
+                                .copyWith(
+                                  padding: const MaterialStatePropertyAll(
+                                    EdgeInsets.symmetric(
+                                      horizontal: 24,
+                                      vertical: 12,
+                                    ),
+                                  ),
+                                ),
                             child: _isLoading
                                 ? const SizedBox(
                                     width: 20,
                                     height: 20,
                                     child: CircularProgressIndicator(
                                       strokeWidth: 2,
-                                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                      valueColor: AlwaysStoppedAnimation<Color>(
+                                        Colors.white,
+                                      ),
                                     ),
                                   )
                                 : const Text('Update Exam'),
@@ -725,7 +788,11 @@ class _EditExamPageState extends State<EditExamPage> {
                 children: [
                   Row(
                     children: [
-                      Icon(Icons.access_time_rounded, size: 16, color: AdminDashboardStyles.primary),
+                      Icon(
+                        Icons.access_time_rounded,
+                        size: 16,
+                        color: AdminDashboardStyles.primary,
+                      ),
                       const SizedBox(width: 8),
                       Flexible(
                         child: Text(
@@ -745,7 +812,11 @@ class _EditExamPageState extends State<EditExamPage> {
             } else {
               return Row(
                 children: [
-                  Icon(Icons.access_time_rounded, size: 16, color: AdminDashboardStyles.primary),
+                  Icon(
+                    Icons.access_time_rounded,
+                    size: 16,
+                    color: AdminDashboardStyles.primary,
+                  ),
                   const SizedBox(width: 8),
                   Text(
                     'Time Slots *',
@@ -1053,10 +1124,7 @@ class _EditExamPageState extends State<EditExamPage> {
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: IconButton(
-                      icon: Icon(
-                        Icons.delete_outline,
-                        color: AppColors.error,
-                      ),
+                      icon: Icon(Icons.delete_outline, color: AppColors.error),
                       onPressed: () => _removeTimeSlot(index),
                     ),
                   ),
@@ -1178,14 +1246,17 @@ class _EditExamPageState extends State<EditExamPage> {
                 width: double.infinity,
                 child: ElevatedButton.icon(
                   onPressed: () {
-                    if (newSlot.startTime != '--:--' && newSlot.endTime != '--:--') {
+                    if (newSlot.startTime != '--:--' &&
+                        newSlot.endTime != '--:--') {
                       setState(() {
-                        _timeSlots.add(TimeSlot(
-                          slotId: newSlot.slotId,
-                          startTime: newSlot.startTime,
-                          endTime: newSlot.endTime,
-                          maxParticipants: newSlot.maxParticipants,
-                        ));
+                        _timeSlots.add(
+                          TimeSlot(
+                            slotId: newSlot.slotId,
+                            startTime: newSlot.startTime,
+                            endTime: newSlot.endTime,
+                            maxParticipants: newSlot.maxParticipants,
+                          ),
+                        );
                         _newTimeSlot = TimeSlot(
                           slotId: 'Slot-${_timeSlots.length + 2}',
                           startTime: '--:--',
@@ -1198,7 +1269,9 @@ class _EditExamPageState extends State<EditExamPage> {
                     } else {
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
-                          content: Text('Please select both start and end time'),
+                          content: Text(
+                            'Please select both start and end time',
+                          ),
                           backgroundColor: Colors.red,
                         ),
                       );
@@ -1300,7 +1373,9 @@ class _EditExamPageState extends State<EditExamPage> {
                   label: 'Max Participants',
                   icon: Icons.people_rounded,
                   child: TextFormField(
-                    controller: TextEditingController(text: newSlot.maxParticipants.toString()),
+                    controller: TextEditingController(
+                      text: newSlot.maxParticipants.toString(),
+                    ),
                     keyboardType: TextInputType.number,
                     decoration: _buildInputDecoration(
                       hintText: 'e.g., 30',
@@ -1320,14 +1395,17 @@ class _EditExamPageState extends State<EditExamPage> {
                 padding: const EdgeInsets.only(top: 28),
                 child: ElevatedButton.icon(
                   onPressed: () {
-                    if (newSlot.startTime != '--:--' && newSlot.endTime != '--:--') {
+                    if (newSlot.startTime != '--:--' &&
+                        newSlot.endTime != '--:--') {
                       setState(() {
-                        _timeSlots.add(TimeSlot(
-                          slotId: newSlot.slotId,
-                          startTime: newSlot.startTime,
-                          endTime: newSlot.endTime,
-                          maxParticipants: newSlot.maxParticipants,
-                        ));
+                        _timeSlots.add(
+                          TimeSlot(
+                            slotId: newSlot.slotId,
+                            startTime: newSlot.startTime,
+                            endTime: newSlot.endTime,
+                            maxParticipants: newSlot.maxParticipants,
+                          ),
+                        );
                         _newTimeSlot = TimeSlot(
                           slotId: 'Slot-${_timeSlots.length + 2}',
                           startTime: '--:--',
@@ -1340,7 +1418,9 @@ class _EditExamPageState extends State<EditExamPage> {
                     } else {
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
-                          content: Text('Please select both start and end time'),
+                          content: Text(
+                            'Please select both start and end time',
+                          ),
                           backgroundColor: Colors.red,
                         ),
                       );
@@ -1351,7 +1431,10 @@ class _EditExamPageState extends State<EditExamPage> {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AdminDashboardStyles.accentBlue,
                     foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 14,
+                    ),
                   ),
                 ),
               ),
@@ -1404,29 +1487,17 @@ class _EditExamPageState extends State<EditExamPage> {
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(16),
-        borderSide: BorderSide(
-          color: AdminDashboardStyles.primary,
-          width: 2,
-        ),
+        borderSide: BorderSide(color: AdminDashboardStyles.primary, width: 2),
       ),
       errorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(16),
-        borderSide: BorderSide(
-          color: AppColors.error,
-          width: 1,
-        ),
+        borderSide: BorderSide(color: AppColors.error, width: 1),
       ),
       focusedErrorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(16),
-        borderSide: BorderSide(
-          color: AppColors.error,
-          width: 2,
-        ),
+        borderSide: BorderSide(color: AppColors.error, width: 2),
       ),
-      contentPadding: const EdgeInsets.symmetric(
-        horizontal: 16,
-        vertical: 16,
-      ),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
     );
   }
 
@@ -1441,11 +1512,7 @@ class _EditExamPageState extends State<EditExamPage> {
         Row(
           children: [
             if (icon != null) ...[
-              Icon(
-                icon,
-                size: 16,
-                color: AdminDashboardStyles.primary,
-              ),
+              Icon(icon, size: 16, color: AdminDashboardStyles.primary),
               const SizedBox(width: 8),
             ],
             Flexible(
@@ -1481,4 +1548,3 @@ class TimeSlot {
     required this.maxParticipants,
   });
 }
-

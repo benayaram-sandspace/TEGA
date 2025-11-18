@@ -299,7 +299,9 @@ class _MyCoursesScreenState extends State<MyCoursesScreen> {
                       const SizedBox(width: 8),
                       CircleAvatar(
                         radius: 24,
-                        backgroundImage: CachedNetworkImageProvider(course.imageUrl),
+                        backgroundImage: CachedNetworkImageProvider(
+                          course.imageUrl,
+                        ),
                       ),
                     ],
                   ),

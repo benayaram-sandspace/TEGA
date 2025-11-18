@@ -131,7 +131,9 @@ class User {
       if (json['course'] is String) {
         course = json['course'] as String;
       } else if (json['course'] is Map) {
-        course = json['course']?['name'] as String? ?? json['course']?['courseName'] as String?;
+        course =
+            json['course']?['name'] as String? ??
+            json['course']?['courseName'] as String?;
       }
     }
 
@@ -141,13 +143,17 @@ class User {
       if (json['college'] is String) {
         college = json['college'] as String;
       } else if (json['college'] is Map) {
-        college = json['college']?['name'] as String? ?? json['college']?['collegeName'] as String?;
+        college =
+            json['college']?['name'] as String? ??
+            json['college']?['collegeName'] as String?;
       }
     } else if (json['institute'] != null) {
       if (json['institute'] is String) {
         college = json['institute'] as String;
       } else if (json['institute'] is Map) {
-        college = json['institute']?['name'] as String? ?? json['institute']?['instituteName'] as String?;
+        college =
+            json['institute']?['name'] as String? ??
+            json['institute']?['instituteName'] as String?;
       }
     }
 
@@ -503,24 +509,24 @@ class AuthService {
       }
 
       // Handle specific error status codes for login (don't throw, return error message)
-      if (response.statusCode == 400 || response.statusCode == 401 || response.statusCode == 404) {
-        final errorMessage = responseData?['message'] ?? 
-            (response.statusCode == 401 
-              ? 'Incorrect email or password. Please try again.' 
-              : response.statusCode == 404
+      if (response.statusCode == 400 ||
+          response.statusCode == 401 ||
+          response.statusCode == 404) {
+        final errorMessage =
+            responseData?['message'] ??
+            (response.statusCode == 401
+                ? 'Incorrect email or password. Please try again.'
+                : response.statusCode == 404
                 ? 'No account found with this email address.'
                 : 'Invalid request. Please check your input.');
-        return {
-          'success': false,
-          'message': errorMessage,
-        };
+        return {'success': false, 'message': errorMessage};
       }
 
       // For other non-success status codes, use the standard error handler
       if (response.statusCode != 200 && response.statusCode != 201) {
         _handleResponseErrors(response, 'Login');
       }
-      
+
       // If responseData is null, something went wrong
       if (responseData == null) {
         return {
@@ -531,20 +537,21 @@ class AuthService {
 
       // Check if login was successful - backend returns success: true and user object
       // In production, tokens may be in cookies only, not in response body
-      final isSuccess = response.statusCode == 200 && 
-                        responseData['success'] == true && 
-                        responseData['user'] != null;
-      
+      final isSuccess =
+          response.statusCode == 200 &&
+          responseData['success'] == true &&
+          responseData['user'] != null;
+
       if (isSuccess) {
         // Extract token from response body (available in development mode)
         String? token = responseData['token'];
         String? refreshToken = responseData['refreshToken'];
-        
+
         // Parse user data
         if (responseData['user'] != null) {
           try {
             _currentUser = User.fromJson(responseData['user']);
-            
+
             // Set tokens if available in response (development mode)
             // In production, tokens are in httpOnly cookies which can't be accessed
             // but subsequent requests will work if using a cookie-aware HTTP client
@@ -561,7 +568,7 @@ class AuthService {
             _userPermissions = _currentUser?.permissions ?? [];
 
             await _saveSession();
-            
+
             // Only start token refresh timer if we have a token
             if (_authToken != null) {
               _startTokenRefreshTimer();
@@ -582,21 +589,20 @@ class AuthService {
       }
 
       // If we reach here, login failed
-      final errorMessage = responseData['message'] ?? 
-                          (responseData['success'] == false 
-                            ? 'Login failed. Please check your credentials.' 
-                            : 'Login failed. Please try again.');
-      
-      return {
-        'success': false,
-        'message': errorMessage,
-      };
+      final errorMessage =
+          responseData['message'] ??
+          (responseData['success'] == false
+              ? 'Login failed. Please check your credentials.'
+              : 'Login failed. Please try again.');
+
+      return {'success': false, 'message': errorMessage};
     } on AuthException catch (e) {
       return {'success': false, 'message': e.message};
     } catch (e) {
       return {
         'success': false,
-        'message': 'Could not connect to server. Please check your internet connection and try again.',
+        'message':
+            'Could not connect to server. Please check your internet connection and try again.',
       };
     }
   }

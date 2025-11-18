@@ -44,7 +44,10 @@ void main() {
     group('Courses Cache Service', () {
       test('should cache courses list', () async {
         final prefs = await SharedPreferences.getInstance();
-        await prefs.setString('courses_cache', '[{"id": "1", "name": "Course 1"}]');
+        await prefs.setString(
+          'courses_cache',
+          '[{"id": "1", "name": "Course 1"}]',
+        );
         final cached = prefs.getString('courses_cache');
         expect(cached, isNotNull);
       });
@@ -85,4 +88,3 @@ void main() {
     });
   });
 }
-

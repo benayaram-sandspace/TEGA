@@ -132,21 +132,18 @@ class _SignUpPageState extends State<SignUpPage> with TickerProviderStateMixin {
             borderRadius: BorderRadius.circular(16),
             child: Container(
               constraints: const BoxConstraints(maxHeight: 250),
-            decoration: BoxDecoration(
-              color: AppColors.pureWhite,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(
-                color: AppColors.borderLight,
-                width: 1,
+              decoration: BoxDecoration(
+                color: AppColors.pureWhite,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: AppColors.borderLight, width: 1),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.shadowLight,
+                    blurRadius: 20,
+                    offset: const Offset(0, 8),
+                  ),
+                ],
               ),
-              boxShadow: [
-                BoxShadow(
-                  color: AppColors.shadowLight,
-                  blurRadius: 20,
-                  offset: const Offset(0, 8),
-                ),
-              ],
-            ),
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(16),
                 child: _isCollegesLoading
@@ -154,10 +151,10 @@ class _SignUpPageState extends State<SignUpPage> with TickerProviderStateMixin {
                         child: Padding(
                           padding: EdgeInsets.all(20),
                           child: const CircularProgressIndicator(
-                          valueColor: AlwaysStoppedAnimation<Color>(
-                            AppColors.primary,
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              AppColors.primary,
+                            ),
                           ),
-                        ),
                         ),
                       )
                     : _filteredCollegeList.isEmpty
@@ -437,9 +434,7 @@ class _SignUpPageState extends State<SignUpPage> with TickerProviderStateMixin {
   Widget build(BuildContext context) {
     return Scaffold(
       body: Container(
-        decoration: const BoxDecoration(
-          color: AppColors.background,
-        ),
+        decoration: const BoxDecoration(color: AppColors.background),
         child: SafeArea(
           child: FadeTransition(
             opacity: _fadeAnimation,
@@ -623,7 +618,10 @@ class _SignUpPageState extends State<SignUpPage> with TickerProviderStateMixin {
                 hintText: _isCollegesLoading
                     ? 'Loading colleges...'
                     : 'Search and select your college',
-                hintStyle: const TextStyle(color: AppColors.textDisabled, fontSize: 14),
+                hintStyle: const TextStyle(
+                  color: AppColors.textDisabled,
+                  fontSize: 14,
+                ),
                 prefixIcon: Container(
                   margin: const EdgeInsets.only(left: 12, right: 8),
                   child: Icon(
@@ -822,7 +820,9 @@ class _SignUpPageState extends State<SignUpPage> with TickerProviderStateMixin {
                     height: 24,
                     child: CircularProgressIndicator(
                       strokeWidth: 2.5,
-                      valueColor: const AlwaysStoppedAnimation<Color>(AppColors.pureWhite),
+                      valueColor: const AlwaysStoppedAnimation<Color>(
+                        AppColors.pureWhite,
+                      ),
                     ),
                   )
                 : Row(

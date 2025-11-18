@@ -70,81 +70,81 @@ class StudentDashboardHeader extends StatelessWidget {
     final horizontalPadding = isLargeDesktop
         ? 24.0
         : isDesktop
-            ? 20.0
-            : isTablet
-                ? 18.0
-                : isSmallScreen
-                    ? 12.0
-                    : 16.0;
-    
+        ? 20.0
+        : isTablet
+        ? 18.0
+        : isSmallScreen
+        ? 12.0
+        : 16.0;
+
     final verticalPadding = isLargeDesktop
         ? 16.0
         : isDesktop
-            ? 14.0
-            : isTablet
-                ? 12.0
-                : isSmallScreen
-                    ? 10.0
-                    : 12.0;
+        ? 14.0
+        : isTablet
+        ? 12.0
+        : isSmallScreen
+        ? 10.0
+        : 12.0;
 
     // Responsive icon sizes
     final menuIconSize = isLargeDesktop
         ? 28.0
         : isDesktop
-            ? 26.0
-            : isTablet
-                ? 24.0
-                : 22.0;
-    
+        ? 26.0
+        : isTablet
+        ? 24.0
+        : 22.0;
+
     final titleIconSize = isLargeDesktop
         ? 26.0
         : isDesktop
-            ? 24.0
-            : isTablet
-                ? 22.0
-                : 20.0;
-    
+        ? 24.0
+        : isTablet
+        ? 22.0
+        : 20.0;
+
     final notificationIconSize = isLargeDesktop
         ? 26.0
         : isDesktop
-            ? 24.0
-            : isTablet
-                ? 22.0
-                : 20.0;
-    
+        ? 24.0
+        : isTablet
+        ? 22.0
+        : 20.0;
+
     final titleFontSize = isLargeDesktop
         ? 20.0
         : isDesktop
-            ? 18.0
-            : isTablet
-                ? 17.0
-                : isSmallScreen
-                    ? 15.0
-                    : 16.0;
-    
+        ? 18.0
+        : isTablet
+        ? 17.0
+        : isSmallScreen
+        ? 15.0
+        : 16.0;
+
     final avatarRadius = isLargeDesktop
         ? 20.0
         : isDesktop
-            ? 18.0
-            : isTablet
-                ? 17.0
-                : 16.0;
-    
+        ? 18.0
+        : isTablet
+        ? 17.0
+        : 16.0;
+
     final buttonPadding = isLargeDesktop
         ? 10.0
         : isDesktop
-            ? 9.0
-            : isTablet
-                ? 8.0
-                : 7.0;
-    
+        ? 9.0
+        : isTablet
+        ? 8.0
+        : 7.0;
+
     final borderRadius = isLargeDesktop
         ? 14.0
         : isDesktop
-            ? 12.0
-            : isTablet
-                ? 11.0
-                : 10.0;
+        ? 12.0
+        : isTablet
+        ? 11.0
+        : 10.0;
 
     return Container(
       padding: EdgeInsets.symmetric(

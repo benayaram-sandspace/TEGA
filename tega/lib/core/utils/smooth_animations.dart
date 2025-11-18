@@ -19,10 +19,7 @@ class SmoothAnimations {
     required Widget child,
     required Animation<double> animation,
   }) {
-    return FadeTransition(
-      opacity: animation,
-      child: child,
-    );
+    return FadeTransition(opacity: animation, child: child);
   }
 
   /// Scale transition
@@ -30,10 +27,7 @@ class SmoothAnimations {
     required Widget child,
     required Animation<double> animation,
   }) {
-    return ScaleTransition(
-      scale: animation,
-      child: child,
-    );
+    return ScaleTransition(scale: animation, child: child);
   }
 
   /// Slide transition
@@ -46,10 +40,7 @@ class SmoothAnimations {
       position: Tween<Offset>(
         begin: begin,
         end: Offset.zero,
-      ).animate(CurvedAnimation(
-        parent: animation,
-        curve: smoothCurve,
-      )),
+      ).animate(CurvedAnimation(parent: animation, curve: smoothCurve)),
       child: child,
     );
   }
@@ -64,14 +55,8 @@ class SmoothAnimations {
       position: Tween<Offset>(
         begin: begin,
         end: Offset.zero,
-      ).animate(CurvedAnimation(
-        parent: animation,
-        curve: smoothCurve,
-      )),
-      child: FadeTransition(
-        opacity: animation,
-        child: child,
-      ),
+      ).animate(CurvedAnimation(parent: animation, curve: smoothCurve)),
+      child: FadeTransition(opacity: animation, child: child),
     );
   }
 }
@@ -117,10 +102,7 @@ class SmoothPageRoute<T> extends PageRoute<T> {
     Widget child,
   ) {
     return FadeTransition(
-      opacity: CurvedAnimation(
-        parent: animation,
-        curve: curve,
-      ),
+      opacity: CurvedAnimation(parent: animation, curve: curve),
       child: child,
     );
   }
@@ -152,10 +134,8 @@ class _ShimmerLoadingState extends State<ShimmerLoading>
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: widget.duration,
-    )..repeat();
+    _controller = AnimationController(vsync: this, duration: widget.duration)
+      ..repeat();
   }
 
   @override
@@ -179,11 +159,7 @@ class _ShimmerLoadingState extends State<ShimmerLoading>
                 widget.highlightColor,
                 widget.baseColor,
               ],
-              stops: [
-                0.0,
-                _controller.value,
-                1.0,
-              ],
+              stops: [0.0, _controller.value, 1.0],
             ).createShader(bounds);
           },
           child: widget.child,
@@ -223,10 +199,7 @@ class StaggeredAnimation extends StatelessWidget {
               offset: direction == Axis.vertical
                   ? Offset(0, 20 * (1 - value))
                   : Offset(20 * (1 - value), 0),
-              child: Opacity(
-                opacity: value,
-                child: child,
-              ),
+              child: Opacity(opacity: value, child: child),
             );
           },
           child: children[index],
@@ -256,10 +229,7 @@ class AnimatedCounter extends StatelessWidget {
       duration: duration,
       curve: SmoothAnimations.smoothCurve,
       builder: (context, value, child) {
-        return Text(
-          value.toString(),
-          style: style,
-        );
+        return Text(value.toString(), style: style);
       },
     );
   }
@@ -283,16 +253,12 @@ class SmoothAnimatedList extends StatelessWidget {
         children.length,
         (index) => TweenAnimationBuilder<double>(
           tween: Tween(begin: 0.0, end: 1.0),
-          duration: SmoothAnimations.normal +
-              (staggerDelay * index),
+          duration: SmoothAnimations.normal + (staggerDelay * index),
           curve: SmoothAnimations.smoothCurve,
           builder: (context, value, child) {
             return Transform.translate(
               offset: Offset(0, 30 * (1 - value)),
-              child: Opacity(
-                opacity: value,
-                child: child,
-              ),
+              child: Opacity(opacity: value, child: child),
             );
           },
           child: children[index],
@@ -301,4 +267,3 @@ class SmoothAnimatedList extends StatelessWidget {
     );
   }
 }
-

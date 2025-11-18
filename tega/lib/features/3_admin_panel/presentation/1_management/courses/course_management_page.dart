@@ -39,10 +39,10 @@ class _CourseManagementPageState extends State<CourseManagementPage>
   Future<void> _initializeCacheAndLoadData() async {
     // Initialize cache service
     await _cacheService.initialize();
-    
+
     // Try to load from cache first
     await _loadFromCache();
-    
+
     // Then load fresh data
     await _loadCourses();
   }
@@ -121,7 +121,9 @@ class _CourseManagementPageState extends State<CourseManagementPage>
             error.toString().toLowerCase().contains('connection') ||
             error.toString().toLowerCase().contains('internet') ||
             error.toString().toLowerCase().contains('failed host lookup') ||
-            error.toString().toLowerCase().contains('no address associated with hostname'));
+            error.toString().toLowerCase().contains(
+              'no address associated with hostname',
+            ));
   }
 
   Future<void> _loadCourses({bool forceRefresh = false}) async {
@@ -182,7 +184,7 @@ class _CourseManagementPageState extends State<CourseManagementPage>
             return;
           }
         }
-        
+
         // No cache available, show error
         setState(() {
           _errorMessage = 'No internet connection';
@@ -205,7 +207,7 @@ class _CourseManagementPageState extends State<CourseManagementPage>
       final result = await _dashboardService.getAllCourses();
       if (result['success'] == true) {
         await _cacheService.setCoursesData(result);
-        
+
         final coursesData = result['courses'] as List<dynamic>;
         if (mounted) {
           setState(() {
@@ -306,7 +308,9 @@ class _CourseManagementPageState extends State<CourseManagementPage>
     if (_isLoading && !_isLoadingFromCache) {
       return const Center(
         child: CircularProgressIndicator(
-          valueColor: AlwaysStoppedAnimation<Color>(AdminDashboardStyles.primary),
+          valueColor: AlwaysStoppedAnimation<Color>(
+            AdminDashboardStyles.primary,
+          ),
         ),
       );
     }
@@ -315,38 +319,79 @@ class _CourseManagementPageState extends State<CourseManagementPage>
       return Center(
         child: Padding(
           padding: EdgeInsets.symmetric(
-            horizontal: isMobile ? 20 : isTablet ? 40 : 60,
+            horizontal: isMobile
+                ? 20
+                : isTablet
+                ? 40
+                : 60,
           ),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Icon(
                 Icons.cloud_off,
-                size: isMobile ? 56 : isTablet ? 64 : 72,
+                size: isMobile
+                    ? 56
+                    : isTablet
+                    ? 64
+                    : 72,
                 color: Colors.grey[400],
               ),
-              SizedBox(height: isMobile ? 16 : isTablet ? 18 : 20),
+              SizedBox(
+                height: isMobile
+                    ? 16
+                    : isTablet
+                    ? 18
+                    : 20,
+              ),
               Text(
                 'Failed to load courses',
                 style: TextStyle(
-                  fontSize: isMobile ? 18 : isTablet ? 19 : 20,
+                  fontSize: isMobile
+                      ? 18
+                      : isTablet
+                      ? 19
+                      : 20,
                   fontWeight: FontWeight.w600,
                   color: Colors.grey[700],
                 ),
               ),
-              SizedBox(height: isMobile ? 8 : isTablet ? 9 : 10),
+              SizedBox(
+                height: isMobile
+                    ? 8
+                    : isTablet
+                    ? 9
+                    : 10,
+              ),
               Text(
                 _errorMessage!,
                 style: TextStyle(
-                  fontSize: isMobile ? 14 : isTablet ? 15 : 16,
+                  fontSize: isMobile
+                      ? 14
+                      : isTablet
+                      ? 15
+                      : 16,
                   color: Colors.grey[600],
                 ),
                 textAlign: TextAlign.center,
               ),
-              SizedBox(height: isMobile ? 24 : isTablet ? 28 : 32),
+              SizedBox(
+                height: isMobile
+                    ? 24
+                    : isTablet
+                    ? 28
+                    : 32,
+              ),
               ElevatedButton.icon(
                 onPressed: () => _loadCourses(forceRefresh: true),
-                icon: Icon(Icons.refresh_rounded, size: isMobile ? 16 : isTablet ? 17 : 18),
+                icon: Icon(
+                  Icons.refresh_rounded,
+                  size: isMobile
+                      ? 16
+                      : isTablet
+                      ? 17
+                      : 18,
+                ),
                 label: Text('Retry'),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AdminDashboardStyles.primary,
@@ -363,7 +408,11 @@ class _CourseManagementPageState extends State<CourseManagementPage>
       return Center(
         child: Padding(
           padding: EdgeInsets.symmetric(
-            horizontal: isMobile ? 20 : isTablet ? 40 : 60,
+            horizontal: isMobile
+                ? 20
+                : isTablet
+                ? 40
+                : 60,
           ),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -406,7 +455,13 @@ class _CourseManagementPageState extends State<CourseManagementPage>
     final isTablet = screenWidth >= 600 && screenWidth < 1024;
 
     return ListView.builder(
-      padding: EdgeInsets.all(isMobile ? 16 : isTablet ? 20 : 24),
+      padding: EdgeInsets.all(
+        isMobile
+            ? 16
+            : isTablet
+            ? 20
+            : 24,
+      ),
       itemCount: _courses.length,
       itemBuilder: (context, index) {
         final course = _courses[index];
@@ -460,7 +515,13 @@ class _CourseManagementPageState extends State<CourseManagementPage>
               _buildThumbnailHeader(course, isMobile, isTablet),
               // Content Section
               Padding(
-                padding: EdgeInsets.all(isMobile ? 16 : isTablet ? 18 : 20),
+                padding: EdgeInsets.all(
+                  isMobile
+                      ? 16
+                      : isTablet
+                      ? 18
+                      : 20,
+                ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -468,7 +529,11 @@ class _CourseManagementPageState extends State<CourseManagementPage>
                     Text(
                       course.title,
                       style: TextStyle(
-                        fontSize: isMobile ? 16 : isTablet ? 17 : 18,
+                        fontSize: isMobile
+                            ? 16
+                            : isTablet
+                            ? 17
+                            : 18,
                         fontWeight: FontWeight.bold,
                         color: const Color(0xFF1A202C),
                         height: 1.2,
@@ -509,7 +574,11 @@ class _CourseManagementPageState extends State<CourseManagementPage>
 
   Widget _buildThumbnailHeader(Course course, bool isMobile, bool isTablet) {
     return Container(
-      height: isMobile ? 160 : isTablet ? 180 : 200,
+      height: isMobile
+          ? 160
+          : isTablet
+          ? 180
+          : 200,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.only(
           topLeft: Radius.circular(isMobile ? 14 : 16),
@@ -619,7 +688,9 @@ class _CourseManagementPageState extends State<CourseManagementPage>
                           color: Colors.white,
                           borderRadius: BorderRadius.circular(20),
                           border: Border.all(
-                            color: AdminDashboardStyles.primary.withOpacity(0.2),
+                            color: AdminDashboardStyles.primary.withOpacity(
+                              0.2,
+                            ),
                             width: 2,
                           ),
                           boxShadow: [

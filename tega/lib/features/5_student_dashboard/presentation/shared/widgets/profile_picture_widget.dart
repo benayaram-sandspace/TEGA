@@ -45,9 +45,10 @@ class _ProfilePictureWidgetState extends State<ProfilePictureWidget> {
   Widget build(BuildContext context) {
     final initials = _getInitials();
     final effectiveBorderColor = widget.borderColor ?? const Color(0xFF6B5FFF);
-    
+
     // Determine if we should show image or initials
-    final shouldShowImage = widget.profilePhotoUrl != null &&
+    final shouldShowImage =
+        widget.profilePhotoUrl != null &&
         widget.profilePhotoUrl!.isNotEmpty &&
         !_imageError;
 
@@ -88,7 +89,10 @@ class _ProfilePictureWidgetState extends State<ProfilePictureWidget> {
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [effectiveBorderColor, effectiveBorderColor.withOpacity(0.8)],
+            colors: [
+              effectiveBorderColor,
+              effectiveBorderColor.withOpacity(0.8),
+            ],
           ),
           boxShadow: [
             BoxShadow(
@@ -111,10 +115,7 @@ class _ProfilePictureWidgetState extends State<ProfilePictureWidget> {
     }
 
     if (widget.onTap != null) {
-      return GestureDetector(
-        onTap: widget.onTap,
-        child: avatarWidget,
-      );
+      return GestureDetector(onTap: widget.onTap, child: avatarWidget);
     }
 
     return avatarWidget;
@@ -123,8 +124,12 @@ class _ProfilePictureWidgetState extends State<ProfilePictureWidget> {
   String _getInitials() {
     // Try to get initials from firstName and lastName first
     if (widget.firstName != null && widget.lastName != null) {
-      final firstInitial = widget.firstName!.isNotEmpty ? widget.firstName![0].toUpperCase() : '';
-      final lastInitial = widget.lastName!.isNotEmpty ? widget.lastName![0].toUpperCase() : '';
+      final firstInitial = widget.firstName!.isNotEmpty
+          ? widget.firstName![0].toUpperCase()
+          : '';
+      final lastInitial = widget.lastName!.isNotEmpty
+          ? widget.lastName![0].toUpperCase()
+          : '';
       if (firstInitial.isNotEmpty && lastInitial.isNotEmpty) {
         return '$firstInitial$lastInitial';
       }

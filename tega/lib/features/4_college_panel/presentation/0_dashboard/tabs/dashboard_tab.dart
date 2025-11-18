@@ -19,17 +19,18 @@ class DashboardTab extends StatefulWidget {
 
 class _DashboardTabState extends State<DashboardTab> {
   final AuthService _authService = AuthService();
-  final PrincipalDashboardCacheService _cacheService = PrincipalDashboardCacheService();
+  final PrincipalDashboardCacheService _cacheService =
+      PrincipalDashboardCacheService();
   bool _isLoading = true;
   bool _isLoadingFromCache = false;
   String? _errorMessage;
-  
+
   // Stats data
   int _totalStudents = 0;
   int _activeStudents = 0;
   int _recentRegistrations = 0;
   int _uniqueCourses = 0;
-  
+
   // Student registrations
   List<StudentRegistration> _students = [];
 
@@ -42,10 +43,10 @@ class _DashboardTabState extends State<DashboardTab> {
   Future<void> _initializeCacheAndLoadData() async {
     // Initialize cache service
     await _cacheService.initialize();
-    
+
     // Try to load from cache first
     await _loadFromCache();
-    
+
     // Then load fresh data
     await _loadDashboardData();
   }
@@ -57,10 +58,10 @@ class _DashboardTabState extends State<DashboardTab> {
         setState(() {
           _isLoadingFromCache = true;
         });
-        
+
         final stats = cachedData['stats'] as Map<String, dynamic>?;
         final studentsList = cachedData['students'] as List<dynamic>?;
-        
+
         if (stats != null) {
           List<StudentRegistration> students = [];
           if (studentsList != null) {
@@ -78,12 +79,13 @@ class _DashboardTabState extends State<DashboardTab> {
               );
             }).toList();
           }
-          
+
           if (mounted) {
             setState(() {
               _totalStudents = stats['totalCollegeUsers'] as int? ?? 0;
               _activeStudents = stats['activeStudents'] as int? ?? 0;
-              _recentRegistrations = stats['recentCollegeRegistrations'] as int? ?? 0;
+              _recentRegistrations =
+                  stats['recentCollegeRegistrations'] as int? ?? 0;
               _uniqueCourses = stats['uniqueCourses'] as int? ?? 1;
               _students = students;
               _isLoading = false;
@@ -109,12 +111,14 @@ class _DashboardTabState extends State<DashboardTab> {
             error.toString().toLowerCase().contains('connection') ||
             error.toString().toLowerCase().contains('internet') ||
             error.toString().toLowerCase().contains('failed host lookup') ||
-            error.toString().toLowerCase().contains('no address associated with hostname'));
+            error.toString().toLowerCase().contains(
+              'no address associated with hostname',
+            ));
   }
 
   DateTime _parseDateTime(dynamic dateValue) {
     if (dateValue == null) return DateTime.now();
-    
+
     if (dateValue is String) {
       try {
         return DateTime.parse(dateValue);
@@ -122,12 +126,12 @@ class _DashboardTabState extends State<DashboardTab> {
         return DateTime.now();
       }
     }
-    
+
     if (dateValue is int) {
       // Handle Unix timestamp (milliseconds)
       return DateTime.fromMillisecondsSinceEpoch(dateValue);
     }
-    
+
     return DateTime.now();
   }
 
@@ -147,21 +151,20 @@ class _DashboardTabState extends State<DashboardTab> {
 
     try {
       final headers = await _authService.getAuthHeaders();
-      final response = await http.get(
-        Uri.parse(ApiEndpoints.principalDashboard),
-        headers: headers,
-      ).timeout(
-        const Duration(seconds: 30),
-        onTimeout: () {
-          throw Exception('Request timeout');
-        },
-      );
+      final response = await http
+          .get(Uri.parse(ApiEndpoints.principalDashboard), headers: headers)
+          .timeout(
+            const Duration(seconds: 30),
+            onTimeout: () {
+              throw Exception('Request timeout');
+            },
+          );
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         if (data['success'] == true && data['stats'] != null) {
           final stats = data['stats'] as Map<String, dynamic>;
-          
+
           // Parse students data
           List<StudentRegistration> students = [];
           if (data['students'] != null) {
@@ -174,44 +177,52 @@ class _DashboardTabState extends State<DashboardTab> {
                 lastName: student['lastName'] as String? ?? '',
                 email: student['email'] as String? ?? '',
                 course: student['course'] as String?,
-                year: student['year']?.toString() ?? student['yearOfStudy']?.toString(),
+                year:
+                    student['year']?.toString() ??
+                    student['yearOfStudy']?.toString(),
                 isActive: student['isActive'] as bool? ?? false,
                 createdAt: _parseDateTime(student['createdAt']),
               );
             }).toList();
           }
-          
+
           if (mounted) {
-          setState(() {
-            _totalStudents = stats['totalCollegeUsers'] as int? ?? 0;
-            _activeStudents = stats['activeStudents'] as int? ?? 0;
-            _recentRegistrations = stats['recentCollegeRegistrations'] as int? ?? 0;
+            setState(() {
+              _totalStudents = stats['totalCollegeUsers'] as int? ?? 0;
+              _activeStudents = stats['activeStudents'] as int? ?? 0;
+              _recentRegistrations =
+                  stats['recentCollegeRegistrations'] as int? ?? 0;
               _uniqueCourses = stats['uniqueCourses'] as int? ?? 1;
-            _students = students;
+              _students = students;
               _isLoading = false;
               _isLoadingFromCache = false;
               _errorMessage = null;
             });
-            
+
             // Cache the data
             final studentsListForCache = data['students'] as List<dynamic>?;
             await _cacheService.setDashboardData({
               'stats': stats,
-              'students': studentsListForCache != null ? studentsListForCache.map((s) {
-                final student = s as Map<String, dynamic>;
-                return {
-                  'id': (student['_id'] ?? student['id'] ?? '').toString(),
-                  'firstName': student['firstName'],
-                  'lastName': student['lastName'],
-                  'email': student['email'],
-                  'course': student['course'],
-                  'year': student['year']?.toString() ?? student['yearOfStudy']?.toString(),
-                  'isActive': student['isActive'],
-                  'createdAt': student['createdAt'],
-                };
-              }).toList() : [],
+              'students': studentsListForCache != null
+                  ? studentsListForCache.map((s) {
+                      final student = s as Map<String, dynamic>;
+                      return {
+                        'id': (student['_id'] ?? student['id'] ?? '')
+                            .toString(),
+                        'firstName': student['firstName'],
+                        'lastName': student['lastName'],
+                        'email': student['email'],
+                        'course': student['course'],
+                        'year':
+                            student['year']?.toString() ??
+                            student['yearOfStudy']?.toString(),
+                        'isActive': student['isActive'],
+                        'createdAt': student['createdAt'],
+                      };
+                    }).toList()
+                  : [],
             });
-            
+
             // Handle online state
             _cacheService.handleOnlineState(context);
           }
@@ -239,7 +250,7 @@ class _DashboardTabState extends State<DashboardTab> {
         if (cachedData != null) {
           final stats = cachedData['stats'] as Map<String, dynamic>?;
           final studentsList = cachedData['students'] as List<dynamic>?;
-          
+
           if (stats != null) {
             List<StudentRegistration> students = [];
             if (studentsList != null) {
@@ -257,26 +268,27 @@ class _DashboardTabState extends State<DashboardTab> {
                 );
               }).toList();
             }
-            
+
             if (mounted) {
               setState(() {
                 _totalStudents = stats['totalCollegeUsers'] as int? ?? 0;
                 _activeStudents = stats['activeStudents'] as int? ?? 0;
-                _recentRegistrations = stats['recentCollegeRegistrations'] as int? ?? 0;
+                _recentRegistrations =
+                    stats['recentCollegeRegistrations'] as int? ?? 0;
                 _uniqueCourses = stats['uniqueCourses'] as int? ?? 1;
                 _students = students;
                 _isLoading = false;
                 _isLoadingFromCache = false;
                 _errorMessage = null; // Clear error since we have cached data
               });
-              
+
               // Handle offline state
               _cacheService.handleOfflineState(context);
             }
             return;
           }
         }
-        
+
         // No cache available
         if (mounted) {
           setState(() {
@@ -284,15 +296,15 @@ class _DashboardTabState extends State<DashboardTab> {
             _isLoadingFromCache = false;
             _errorMessage = 'No internet connection';
           });
-          
+
           // Handle offline state
           _cacheService.handleOfflineState(context);
         }
       } else {
         // Other errors
         if (mounted) {
-        setState(() {
-          _isLoading = false;
+          setState(() {
+            _isLoading = false;
             _isLoadingFromCache = false;
             _errorMessage = e.toString();
           });
@@ -304,21 +316,20 @@ class _DashboardTabState extends State<DashboardTab> {
   Future<void> _loadDashboardDataInBackground() async {
     try {
       final headers = await _authService.getAuthHeaders();
-      final response = await http.get(
-        Uri.parse(ApiEndpoints.principalDashboard),
-        headers: headers,
-      ).timeout(
-        const Duration(seconds: 30),
-        onTimeout: () {
-          throw Exception('Request timeout');
-        },
-      );
+      final response = await http
+          .get(Uri.parse(ApiEndpoints.principalDashboard), headers: headers)
+          .timeout(
+            const Duration(seconds: 30),
+            onTimeout: () {
+              throw Exception('Request timeout');
+            },
+          );
 
       if (response.statusCode == 200 && mounted) {
         final data = json.decode(response.body);
         if (data['success'] == true && data['stats'] != null) {
           final stats = data['stats'] as Map<String, dynamic>;
-          
+
           // Parse students data
           List<StudentRegistration> students = [];
           if (data['students'] != null) {
@@ -331,41 +342,49 @@ class _DashboardTabState extends State<DashboardTab> {
                 lastName: student['lastName'] as String? ?? '',
                 email: student['email'] as String? ?? '',
                 course: student['course'] as String?,
-                year: student['year']?.toString() ?? student['yearOfStudy']?.toString(),
+                year:
+                    student['year']?.toString() ??
+                    student['yearOfStudy']?.toString(),
                 isActive: student['isActive'] as bool? ?? false,
                 createdAt: _parseDateTime(student['createdAt']),
               );
             }).toList();
           }
-          
+
           if (mounted) {
             setState(() {
               _totalStudents = stats['totalCollegeUsers'] as int? ?? 0;
               _activeStudents = stats['activeStudents'] as int? ?? 0;
-              _recentRegistrations = stats['recentCollegeRegistrations'] as int? ?? 0;
+              _recentRegistrations =
+                  stats['recentCollegeRegistrations'] as int? ?? 0;
               _uniqueCourses = stats['uniqueCourses'] as int? ?? 1;
               _students = students;
             });
-            
+
             // Cache the data
             final studentsListForCache = data['students'] as List<dynamic>?;
             await _cacheService.setDashboardData({
               'stats': stats,
-              'students': studentsListForCache != null ? studentsListForCache.map((s) {
-                final student = s as Map<String, dynamic>;
-                return {
-                  'id': (student['_id'] ?? student['id'] ?? '').toString(),
-                  'firstName': student['firstName'],
-                  'lastName': student['lastName'],
-                  'email': student['email'],
-                  'course': student['course'],
-                  'year': student['year']?.toString() ?? student['yearOfStudy']?.toString(),
-                  'isActive': student['isActive'],
-                  'createdAt': student['createdAt'],
-                };
-              }).toList() : [],
+              'students': studentsListForCache != null
+                  ? studentsListForCache.map((s) {
+                      final student = s as Map<String, dynamic>;
+                      return {
+                        'id': (student['_id'] ?? student['id'] ?? '')
+                            .toString(),
+                        'firstName': student['firstName'],
+                        'lastName': student['lastName'],
+                        'email': student['email'],
+                        'course': student['course'],
+                        'year':
+                            student['year']?.toString() ??
+                            student['yearOfStudy']?.toString(),
+                        'isActive': student['isActive'],
+                        'createdAt': student['createdAt'],
+                      };
+                    }).toList()
+                  : [],
             });
-            
+
             // Handle online state
             _cacheService.handleOnlineState(context);
           }
@@ -384,10 +403,18 @@ class _DashboardTabState extends State<DashboardTab> {
     final screenWidth = MediaQuery.of(context).size.width;
     final isMobile = screenWidth < 600;
     final isTablet = screenWidth >= 600 && screenWidth < 1024;
-    
+
     // Responsive padding
-    final padding = isMobile ? 16.0 : isTablet ? 18.0 : 20.0;
-    final spacing = isMobile ? 24.0 : isTablet ? 28.0 : 32.0;
+    final padding = isMobile
+        ? 16.0
+        : isTablet
+        ? 18.0
+        : 20.0;
+    final spacing = isMobile
+        ? 24.0
+        : isTablet
+        ? 28.0
+        : 32.0;
 
     if (_isLoading && !_isLoadingFromCache) {
       return const Center(child: CircularProgressIndicator());
@@ -422,50 +449,96 @@ class _DashboardTabState extends State<DashboardTab> {
   Widget _buildErrorState(bool isMobile, bool isTablet) {
     return Container(
       width: double.infinity,
-      padding: EdgeInsets.all(isMobile ? 24 : isTablet ? 28 : 32),
+      padding: EdgeInsets.all(
+        isMobile
+            ? 24
+            : isTablet
+            ? 28
+            : 32,
+      ),
       child: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
               Icons.cloud_off,
-              size: isMobile ? 56 : isTablet ? 64 : 72,
+              size: isMobile
+                  ? 56
+                  : isTablet
+                  ? 64
+                  : 72,
               color: Colors.grey[400],
             ),
-            SizedBox(height: isMobile ? 16 : isTablet ? 18 : 20),
+            SizedBox(
+              height: isMobile
+                  ? 16
+                  : isTablet
+                  ? 18
+                  : 20,
+            ),
             Text(
-              _errorMessage == 'No internet connection' 
+              _errorMessage == 'No internet connection'
                   ? 'No internet connection'
                   : 'Failed to load dashboard',
               style: TextStyle(
-                fontSize: isMobile ? 18 : isTablet ? 19 : 20,
+                fontSize: isMobile
+                    ? 18
+                    : isTablet
+                    ? 19
+                    : 20,
                 fontWeight: FontWeight.bold,
                 color: Colors.grey[700],
               ),
               textAlign: TextAlign.center,
             ),
             if (_errorMessage != 'No internet connection') ...[
-              SizedBox(height: isMobile ? 8 : isTablet ? 9 : 10),
+              SizedBox(
+                height: isMobile
+                    ? 8
+                    : isTablet
+                    ? 9
+                    : 10,
+              ),
               Text(
                 _errorMessage!,
                 textAlign: TextAlign.center,
                 style: TextStyle(
-                  fontSize: isMobile ? 14 : isTablet ? 15 : 16,
+                  fontSize: isMobile
+                      ? 14
+                      : isTablet
+                      ? 15
+                      : 16,
                   color: Colors.grey[600],
                 ),
               ),
             ] else ...[
-              SizedBox(height: isMobile ? 8 : isTablet ? 9 : 10),
+              SizedBox(
+                height: isMobile
+                    ? 8
+                    : isTablet
+                    ? 9
+                    : 10,
+              ),
               Text(
                 'Please check your connection and try again',
                 textAlign: TextAlign.center,
                 style: TextStyle(
-                  fontSize: isMobile ? 14 : isTablet ? 15 : 16,
+                  fontSize: isMobile
+                      ? 14
+                      : isTablet
+                      ? 15
+                      : 16,
                   color: Colors.grey[600],
                 ),
               ),
             ],
-            SizedBox(height: isMobile ? 20 : isTablet ? 24 : 28),
+            SizedBox(
+              height: isMobile
+                  ? 20
+                  : isTablet
+                  ? 24
+                  : 28,
+            ),
             ElevatedButton.icon(
               onPressed: () {
                 setState(() {
@@ -473,11 +546,23 @@ class _DashboardTabState extends State<DashboardTab> {
                 });
                 _loadDashboardData(forceRefresh: true);
               },
-              icon: Icon(Icons.refresh, size: isMobile ? 18 : isTablet ? 20 : 22, color: Colors.white),
+              icon: Icon(
+                Icons.refresh,
+                size: isMobile
+                    ? 18
+                    : isTablet
+                    ? 20
+                    : 22,
+                color: Colors.white,
+              ),
               label: Text(
                 'Retry',
                 style: TextStyle(
-                  fontSize: isMobile ? 14 : isTablet ? 15 : 16,
+                  fontSize: isMobile
+                      ? 14
+                      : isTablet
+                      ? 15
+                      : 16,
                   color: Colors.white,
                   fontWeight: FontWeight.w600,
                 ),
@@ -486,11 +571,25 @@ class _DashboardTabState extends State<DashboardTab> {
                 backgroundColor: DashboardStyles.primary,
                 foregroundColor: Colors.white,
                 padding: EdgeInsets.symmetric(
-                  horizontal: isMobile ? 20 : isTablet ? 24 : 28,
-                  vertical: isMobile ? 12 : isTablet ? 14 : 16,
+                  horizontal: isMobile
+                      ? 20
+                      : isTablet
+                      ? 24
+                      : 28,
+                  vertical: isMobile
+                      ? 12
+                      : isTablet
+                      ? 14
+                      : 16,
                 ),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(isMobile ? 8 : isTablet ? 9 : 10),
+                  borderRadius: BorderRadius.circular(
+                    isMobile
+                        ? 8
+                        : isTablet
+                        ? 9
+                        : 10,
+                  ),
                 ),
                 elevation: 2,
               ),

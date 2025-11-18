@@ -33,11 +33,14 @@ class _AIAssistantPageState extends State<AIAssistantPage> {
   double get tabletBreakpoint => 1024;
   double get desktopBreakpoint => 1440;
   bool get isMobile => MediaQuery.of(context).size.width < mobileBreakpoint;
-  bool get isTablet => MediaQuery.of(context).size.width >= mobileBreakpoint &&
+  bool get isTablet =>
+      MediaQuery.of(context).size.width >= mobileBreakpoint &&
       MediaQuery.of(context).size.width < tabletBreakpoint;
-  bool get isDesktop => MediaQuery.of(context).size.width >= tabletBreakpoint &&
+  bool get isDesktop =>
+      MediaQuery.of(context).size.width >= tabletBreakpoint &&
       MediaQuery.of(context).size.width < desktopBreakpoint;
-  bool get isLargeDesktop => MediaQuery.of(context).size.width >= desktopBreakpoint;
+  bool get isLargeDesktop =>
+      MediaQuery.of(context).size.width >= desktopBreakpoint;
   bool get isSmallScreen => MediaQuery.of(context).size.width < 400;
   bool get isWide => MediaQuery.of(context).size.width >= 900;
 
@@ -59,7 +62,9 @@ class _AIAssistantPageState extends State<AIAssistantPage> {
             error.toString().toLowerCase().contains('connection') ||
             error.toString().toLowerCase().contains('internet') ||
             error.toString().toLowerCase().contains('failed host lookup') ||
-            error.toString().toLowerCase().contains('no address associated with hostname'));
+            error.toString().toLowerCase().contains(
+              'no address associated with hostname',
+            ));
   }
 
   Future<void> _loadConversationsFromCache() async {
@@ -69,19 +74,29 @@ class _AIAssistantPageState extends State<AIAssistantPage> {
         setState(() {
           _conversations.clear();
           for (var convData in cachedConversations) {
-            final messages = (convData['messages'] as List?)
-                ?.map((m) => AIMessage(
-                      role: m['role'] as String,
-                      content: m['content'] as String,
-                      timestamp: DateTime.tryParse(m['timestamp'] as String? ?? '') ?? DateTime.now(),
-                      sessionId: m['sessionId'] as String?,
-                    ))
-                .toList() ?? [];
-            _conversations.add(_Conversation(
-              id: convData['id'] as String,
-              title: convData['title'] as String? ?? '',
-              messages: messages,
-            ));
+            final messages =
+                (convData['messages'] as List?)
+                    ?.map(
+                      (m) => AIMessage(
+                        role: m['role'] as String,
+                        content: m['content'] as String,
+                        timestamp:
+                            DateTime.tryParse(
+                              m['timestamp'] as String? ?? '',
+                            ) ??
+                            DateTime.now(),
+                        sessionId: m['sessionId'] as String?,
+                      ),
+                    )
+                    .toList() ??
+                [];
+            _conversations.add(
+              _Conversation(
+                id: convData['id'] as String,
+                title: convData['title'] as String? ?? '',
+                messages: messages,
+              ),
+            );
           }
         });
 
@@ -90,7 +105,9 @@ class _AIAssistantPageState extends State<AIAssistantPage> {
         if (activeId != null) {
           final active = _conversations.firstWhere(
             (c) => c.id == activeId,
-            orElse: () => _conversations.isNotEmpty ? _conversations.first : _Conversation(id: '', title: '', messages: []),
+            orElse: () => _conversations.isNotEmpty
+                ? _conversations.first
+                : _Conversation(id: '', title: '', messages: []),
           );
           setState(() {
             _active = active;
@@ -114,16 +131,24 @@ class _AIAssistantPageState extends State<AIAssistantPage> {
 
   Future<void> _saveConversationsToCache() async {
     try {
-      final conversationsData = _conversations.map((conv) => {
-        'id': conv.id,
-        'title': conv.title,
-        'messages': conv.messages.map((msg) => {
-          'role': msg.role,
-          'content': msg.content,
-          'timestamp': msg.timestamp.toIso8601String(),
-          'sessionId': msg.sessionId,
-        }).toList(),
-      }).toList();
+      final conversationsData = _conversations
+          .map(
+            (conv) => {
+              'id': conv.id,
+              'title': conv.title,
+              'messages': conv.messages
+                  .map(
+                    (msg) => {
+                      'role': msg.role,
+                      'content': msg.content,
+                      'timestamp': msg.timestamp.toIso8601String(),
+                      'sessionId': msg.sessionId,
+                    },
+                  )
+                  .toList(),
+            },
+          )
+          .toList();
       await _cacheService.setConversations(conversationsData);
       await _cacheService.setActiveConversationId(_active?.id);
       await _cacheService.setSessionId(_sessionId);
@@ -189,7 +214,7 @@ class _AIAssistantPageState extends State<AIAssistantPage> {
       final errorMessage = _isNoInternetError(e)
           ? 'No internet connection. Please check your connection and try again.'
           : 'Sorry, I could not process that. Please try again.';
-      
+
       setState(() {
         _active!.messages.add(
           AIMessage(
@@ -845,7 +870,8 @@ class _AIAssistantPageState extends State<AIAssistantPage> {
                   : 14,
             ),
             constraints: BoxConstraints(
-              maxWidth: MediaQuery.of(context).size.width *
+              maxWidth:
+                  MediaQuery.of(context).size.width *
                   (isLargeDesktop
                       ? 0.68
                       : isDesktop

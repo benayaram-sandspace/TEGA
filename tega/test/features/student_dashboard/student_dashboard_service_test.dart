@@ -18,11 +18,7 @@ void main() {
           return http.Response(
             json.encode({
               'success': true,
-              'counts': {
-                'courses': 5,
-                'exams': 3,
-                'notifications': 10,
-              },
+              'counts': {'courses': 5, 'exams': 3, 'notifications': 10},
             }),
             200,
           );
@@ -93,4 +89,3 @@ void main() {
     });
   });
 }
-

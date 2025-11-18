@@ -44,9 +44,7 @@ class _AdminManagementPageState extends State<AdminManagementPage>
         children: [
           // Custom Tab Bar
           Container(
-            decoration: const BoxDecoration(
-              color: Color(0xFFFFA726),
-            ),
+            decoration: const BoxDecoration(color: Color(0xFFFFA726)),
             child: TabBar(
               controller: _tabController,
               indicatorColor: Colors.white,

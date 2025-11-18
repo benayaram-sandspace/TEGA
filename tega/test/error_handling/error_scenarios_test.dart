@@ -5,26 +5,19 @@ void main() {
   group('Error Handling and Edge Cases', () {
     group('Authentication Errors', () {
       test('should handle invalid email format', () {
-        const invalidEmails = [
-          'invalid',
-          '@example.com',
-          'test@',
-          '',
-        ];
+        const invalidEmails = ['invalid', '@example.com', 'test@', ''];
 
         // More strict email regex that doesn't allow consecutive dots
-        final emailRegex = RegExp(r'^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$');
+        final emailRegex = RegExp(
+          r'^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$',
+        );
         for (final email in invalidEmails) {
           expect(emailRegex.hasMatch(email), isFalse, reason: 'Email: $email');
         }
       });
 
       test('should handle weak passwords', () {
-        const weakPasswords = [
-          '123',
-          'abc',
-          '',
-        ];
+        const weakPasswords = ['123', 'abc', ''];
 
         for (final password in weakPasswords) {
           expect(password.length >= 6, isFalse, reason: 'Password: $password');
@@ -35,7 +28,7 @@ void main() {
         // Test that passwords need to be at least 6 characters
         const shortPassword = '12345';
         const validPassword = 'password123';
-        
+
         expect(shortPassword.length >= 6, isFalse);
         expect(validPassword.length >= 6, isTrue);
       });
@@ -102,4 +95,3 @@ void main() {
     });
   });
 }
-

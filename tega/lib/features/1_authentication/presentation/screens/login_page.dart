@@ -438,9 +438,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
           FocusScope.of(context).unfocus();
         },
         child: Container(
-          decoration: const BoxDecoration(
-            color: AppColors.background,
-          ),
+          decoration: const BoxDecoration(color: AppColors.background),
           child: SafeArea(
             child: FadeTransition(
               opacity: _fadeAnimation,
@@ -826,7 +824,9 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                     height: isMobile ? 22 : 24,
                     child: const CircularProgressIndicator(
                       strokeWidth: 2.5,
-                      valueColor: AlwaysStoppedAnimation<Color>(AppColors.pureWhite),
+                      valueColor: AlwaysStoppedAnimation<Color>(
+                        AppColors.pureWhite,
+                      ),
                     ),
                   )
                 : Row(

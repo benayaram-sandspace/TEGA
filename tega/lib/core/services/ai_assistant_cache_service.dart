@@ -4,7 +4,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 /// Cache service for AI assistant conversation history
 /// Provides caching with TTL (Time To Live) for conversations
 class AIAssistantCacheService {
-  static final AIAssistantCacheService _instance = AIAssistantCacheService._internal();
+  static final AIAssistantCacheService _instance =
+      AIAssistantCacheService._internal();
   factory AIAssistantCacheService() => _instance;
   AIAssistantCacheService._internal();
 
@@ -60,10 +61,15 @@ class AIAssistantCacheService {
   }
 
   /// Set conversations in cache
-  Future<void> setConversations(List<Map<String, dynamic>> conversations) async {
+  Future<void> setConversations(
+    List<Map<String, dynamic>> conversations,
+  ) async {
     await _ensurePrefs();
     await _prefs?.setString(_conversationsKey, json.encode(conversations));
-    await _prefs?.setString(_cacheTimestampKey, DateTime.now().toIso8601String());
+    await _prefs?.setString(
+      _cacheTimestampKey,
+      DateTime.now().toIso8601String(),
+    );
   }
 
   /// Get active conversation ID
@@ -107,4 +113,3 @@ class AIAssistantCacheService {
     await _prefs?.remove(_cacheTimestampKey);
   }
 }
-

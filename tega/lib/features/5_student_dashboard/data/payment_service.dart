@@ -151,13 +151,18 @@ class PaymentService {
         throw Exception('Authentication required. Please log in again.');
       } else if (response.statusCode == 403) {
         final errorData = json.decode(response.body);
-        throw Exception(errorData['message'] ?? 'Unauthorized access to payment record');
+        throw Exception(
+          errorData['message'] ?? 'Unauthorized access to payment record',
+        );
       } else if (response.statusCode == 404) {
         final errorData = json.decode(response.body);
         throw Exception(errorData['message'] ?? 'Payment record not found');
       } else {
         final errorData = json.decode(response.body);
-        throw Exception(errorData['message'] ?? 'Payment verification failed (${response.statusCode})');
+        throw Exception(
+          errorData['message'] ??
+              'Payment verification failed (${response.statusCode})',
+        );
       }
     } catch (e) {
       throw Exception('Failed to verify payment: $e');

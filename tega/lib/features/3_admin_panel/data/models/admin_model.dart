@@ -52,8 +52,8 @@ class AdminUser {
       profileImage: json['profileImage'] ?? '',
       createdAt: DateTime.parse(json['createdAt']),
       lastLogin: DateTime.parse(json['lastLogin']),
-      emailVerifiedAt: json['emailVerifiedAt'] != null 
-          ? DateTime.parse(json['emailVerifiedAt']) 
+      emailVerifiedAt: json['emailVerifiedAt'] != null
+          ? DateTime.parse(json['emailVerifiedAt'])
           : null,
       permissions: List<String>.from(json['permissions'] ?? []),
       preferences: Map<String, dynamic>.from(json['preferences'] ?? {}),
@@ -62,8 +62,8 @@ class AdminUser {
       managedColleges: List<String>.from(json['managedColleges'] ?? []),
       activityStats: Map<String, int>.from(json['activityStats'] ?? {}),
       isSuperAdmin: json['isSuperAdmin'] ?? false,
-      lastPasswordChange: json['lastPasswordChange'] != null 
-          ? DateTime.parse(json['lastPasswordChange']) 
+      lastPasswordChange: json['lastPasswordChange'] != null
+          ? DateTime.parse(json['lastPasswordChange'])
           : null,
       requiresPasswordChange: json['requiresPasswordChange'] ?? false,
     );
@@ -102,7 +102,8 @@ class ActivityLog {
   final String action;
   final String target;
   final String details;
-  final String actionType; // user_management, college_management, content_management, etc.
+  final String
+  actionType; // user_management, college_management, content_management, etc.
   final String ipAddress;
   final String userAgent;
   final String location;
@@ -300,9 +301,12 @@ class AdminStatistics {
       activitiesByDay: Map<String, int>.from(json['activitiesByDay'] ?? {}),
       activitiesByAdmin: Map<String, int>.from(json['activitiesByAdmin'] ?? {}),
       recentLogins: json['recentLogins'] ?? 0,
-      averageSessionsPerAdmin: (json['averageSessionsPerAdmin'] ?? 0.0).toDouble(),
+      averageSessionsPerAdmin: (json['averageSessionsPerAdmin'] ?? 0.0)
+          .toDouble(),
       failedLoginAttempts: json['failedLoginAttempts'] ?? 0,
-      performanceMetrics: Map<String, double>.from(json['performanceMetrics'] ?? {}),
+      performanceMetrics: Map<String, double>.from(
+        json['performanceMetrics'] ?? {},
+      ),
     );
   }
 
@@ -357,7 +361,9 @@ class AdminSession {
       id: json['id'],
       adminId: json['adminId'],
       loginTime: DateTime.parse(json['loginTime']),
-      logoutTime: json['logoutTime'] != null ? DateTime.parse(json['logoutTime']) : null,
+      logoutTime: json['logoutTime'] != null
+          ? DateTime.parse(json['logoutTime'])
+          : null,
       ipAddress: json['ipAddress'] ?? '',
       userAgent: json['userAgent'] ?? '',
       location: json['location'] ?? '',

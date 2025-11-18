@@ -33,7 +33,6 @@ class Student {
   });
 }
 
-
 class StudentDetailsPage extends StatefulWidget {
   final Student student;
 
@@ -89,22 +88,26 @@ class _StudentDetailsPageState extends State<StudentDetailsPage>
       }
 
       final headers = await _authService.getAuthHeaders();
-      final response = await http.get(
-        Uri.parse(ApiEndpoints.principalStudentById(mongoId)),
-        headers: headers,
-      ).timeout(
-        const Duration(seconds: 30),
-        onTimeout: () {
-          throw Exception('Request timeout');
-        },
-      );
+      final response = await http
+          .get(
+            Uri.parse(ApiEndpoints.principalStudentById(mongoId)),
+            headers: headers,
+          )
+          .timeout(
+            const Duration(seconds: 30),
+            onTimeout: () {
+              throw Exception('Request timeout');
+            },
+          );
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         if (data['success'] == true) {
           setState(() {
             if (data['courses'] != null) {
-              _enrolledCourses = List<Map<String, dynamic>>.from(data['courses']);
+              _enrolledCourses = List<Map<String, dynamic>>.from(
+                data['courses'],
+              );
             }
             if (data['student'] != null) {
               _studentDetails = Map<String, dynamic>.from(data['student']);
@@ -267,7 +270,7 @@ class _StudentDetailsPageState extends State<StudentDetailsPage>
         registeredAtText = 'N/A';
       }
     }
-    
+
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -335,7 +338,10 @@ class _StudentDetailsPageState extends State<StudentDetailsPage>
               ),
               if (_enrolledCourses.isNotEmpty)
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 6,
+                  ),
                   decoration: BoxDecoration(
                     color: DashboardStyles.primary.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(12),
@@ -385,21 +391,22 @@ class _StudentDetailsPageState extends State<StudentDetailsPage>
           else
             ...List.generate(_enrolledCourses.length, (index) {
               final course = _enrolledCourses[index];
-              final courseName = course['courseName'] as String? ?? 'Unknown Course';
+              final courseName =
+                  course['courseName'] as String? ?? 'Unknown Course';
               final category = course['category'] as String? ?? 'General';
-              final progressPercentage = course['progressPercentage'] as int? ?? 0;
+              final progressPercentage =
+                  course['progressPercentage'] as int? ?? 0;
               final isCompleted = course['isCompleted'] as bool? ?? false;
-              
+
               return Container(
-                margin: EdgeInsets.only(bottom: index < _enrolledCourses.length - 1 ? 12 : 0),
+                margin: EdgeInsets.only(
+                  bottom: index < _enrolledCourses.length - 1 ? 12 : 0,
+                ),
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
                   color: Colors.grey.shade50,
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: Colors.grey.shade200,
-                    width: 1,
-                  ),
+                  border: Border.all(color: Colors.grey.shade200, width: 1),
                 ),
                 child: Row(
                   children: [
@@ -474,7 +481,10 @@ class _StudentDetailsPageState extends State<StudentDetailsPage>
                     ),
                     if (isCompleted)
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
                         decoration: BoxDecoration(
                           color: DashboardStyles.accentGreen.withOpacity(0.1),
                           borderRadius: BorderRadius.circular(8),
@@ -551,10 +561,7 @@ class _StudentDetailsPageState extends State<StudentDetailsPage>
                 const SizedBox(height: 12),
                 Text(
                   'No course progress available',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.grey.shade600,
-                  ),
+                  style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
                 ),
               ],
             ),
@@ -582,24 +589,25 @@ class _StudentDetailsPageState extends State<StudentDetailsPage>
           const SizedBox(height: 20),
           ...List.generate(_enrolledCourses.length, (index) {
             final course = _enrolledCourses[index];
-            final courseName = course['courseName'] as String? ?? 'Unknown Course';
-            final progressPercentage = course['progressPercentage'] as int? ?? 0;
+            final courseName =
+                course['courseName'] as String? ?? 'Unknown Course';
+            final progressPercentage =
+                course['progressPercentage'] as int? ?? 0;
             final totalLectures = course['totalLectures'] as int? ?? 0;
             final completedLectures = course['completedLectures'] as int? ?? 0;
             final totalModules = course['totalModules'] as int? ?? 0;
             final completedModules = course['completedModules'] as int? ?? 0;
             final isCompleted = course['isCompleted'] as bool? ?? false;
-            
+
             return Container(
-              margin: EdgeInsets.only(bottom: index < _enrolledCourses.length - 1 ? 16 : 0),
+              margin: EdgeInsets.only(
+                bottom: index < _enrolledCourses.length - 1 ? 16 : 0,
+              ),
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
                 color: Colors.grey.shade50,
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: Colors.grey.shade200,
-                  width: 1,
-                ),
+                border: Border.all(color: Colors.grey.shade200, width: 1),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -619,7 +627,10 @@ class _StudentDetailsPageState extends State<StudentDetailsPage>
                       ),
                       if (isCompleted)
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
                           decoration: BoxDecoration(
                             color: DashboardStyles.accentGreen.withOpacity(0.1),
                             borderRadius: BorderRadius.circular(8),
@@ -741,10 +752,7 @@ class _StudentDetailsPageState extends State<StudentDetailsPage>
       decoration: BoxDecoration(
         color: color.withOpacity(0.05),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(
-          color: color.withOpacity(0.2),
-          width: 1,
-        ),
+        border: Border.all(color: color.withOpacity(0.2), width: 1),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -790,13 +798,15 @@ class _StudentDetailsPageState extends State<StudentDetailsPage>
   Widget _buildContactCard() {
     // Use email and phone from the Student object (from initial API call)
     // Fallback to _studentDetails if available, otherwise use defaults
-    final email = widget.student.email ?? 
-                  _studentDetails?['email'] as String? ?? 
-                  widget.student.name.replaceAll(' ', '.').toLowerCase() + '@tega.edu';
-    final phone = widget.student.phone ?? 
-                  _studentDetails?['phone'] as String? ?? 
-                  _studentDetails?['contactNumber'] as String?;
-    
+    final email =
+        widget.student.email ??
+        _studentDetails?['email'] as String? ??
+        widget.student.name.replaceAll(' ', '.').toLowerCase() + '@tega.edu';
+    final phone =
+        widget.student.phone ??
+        _studentDetails?['phone'] as String? ??
+        _studentDetails?['contactNumber'] as String?;
+
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -834,9 +844,7 @@ class _StudentDetailsPageState extends State<StudentDetailsPage>
                 color: phone == null ? Colors.grey.shade600 : null,
               ),
             ),
-            trailing: phone != null
-                ? const Icon(Icons.copy, size: 20)
-                : null,
+            trailing: phone != null ? const Icon(Icons.copy, size: 20) : null,
             onTap: phone != null
                 ? () {
                     // TODO: Implement copy to clipboard

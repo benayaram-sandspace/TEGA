@@ -2,7 +2,6 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:tega/features/4_college_panel/presentation/0_dashboard/dashboard_styles.dart';
 
-
 class _ReportInfo {
   final String title;
   final String subtitle;

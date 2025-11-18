@@ -35,13 +35,13 @@ class _CourseContentPageState extends State<CourseContentPage> {
   bool _isFullscreen = false;
   Duration _currentPosition = Duration.zero;
   Duration _totalDuration = Duration.zero;
-  
+
   // Progress bar dragging
   bool _isDraggingProgress = false;
   double? _dragProgressPosition;
   bool _isHoveringProgress = false;
   bool _isSeeking = false;
-  
+
   // Drag-up gesture for fullscreen
   bool _isDraggingUp = false;
   double _dragUpStartY = 0;
@@ -383,7 +383,9 @@ class _CourseContentPageState extends State<CourseContentPage> {
       await _videoController?.dispose();
 
       // Check cache first - if cached, use local file, otherwise use network URL
-      String? cachedVideoPath = await _videoCacheService.getCachedVideoPath(videoUrl);
+      String? cachedVideoPath = await _videoCacheService.getCachedVideoPath(
+        videoUrl,
+      );
       VideoPlayerController controller;
 
       if (cachedVideoPath != null && await File(cachedVideoPath).exists()) {
@@ -404,7 +406,7 @@ class _CourseContentPageState extends State<CourseContentPage> {
             allowBackgroundPlayback: false,
           ),
         );
-        
+
         // Start caching video in background (don't await)
         _videoCacheService.cacheVideo(videoUrl).catchError((_) {
           // Silently handle cache errors - video will still play from network
@@ -457,7 +459,7 @@ class _CourseContentPageState extends State<CourseContentPage> {
       if (!_isSeeking && !_isDraggingProgress) {
         // Check if it's a real error or just a seek-related transient error
         final errorDescription = _videoController!.value.errorDescription ?? '';
-        
+
         // Ignore transient seek errors
         if (!errorDescription.toLowerCase().contains('seek') &&
             !errorDescription.toLowerCase().contains('position')) {
@@ -474,7 +476,7 @@ class _CourseContentPageState extends State<CourseContentPage> {
 
   void _handleVideoError() {
     // Only set error if video is actually initialized and has a real error
-    if (_videoController != null && 
+    if (_videoController != null &&
         _videoController!.value.isInitialized &&
         _videoController!.value.hasError) {
       setState(() {
@@ -512,21 +514,21 @@ class _CourseContentPageState extends State<CourseContentPage> {
       final clampedPosition = position < Duration.zero
           ? Duration.zero
           : (position > _totalDuration ? _totalDuration : position);
-      
+
       // Don't seek if position is the same (within 1 second)
       if ((clampedPosition - _currentPosition).abs().inSeconds < 1) {
         return;
       }
-      
+
       setState(() {
         _isSeeking = true;
       });
 
       await _videoController!.seekTo(clampedPosition);
-      
+
       // Wait a bit for seek to complete before clearing the flag
       await Future.delayed(const Duration(milliseconds: 300));
-      
+
       if (mounted) {
         setState(() {
           _isSeeking = false;
@@ -607,7 +609,10 @@ class _CourseContentPageState extends State<CourseContentPage> {
 
     // Hide controls after 2 seconds if video is playing
     _hideControlsTimer = Timer(const Duration(seconds: 2), () {
-      if (mounted && _showControls && _videoController != null && _videoController!.value.isPlaying) {
+      if (mounted &&
+          _showControls &&
+          _videoController != null &&
+          _videoController!.value.isPlaying) {
         _hideControls();
       }
     });
@@ -1196,11 +1201,14 @@ class _CourseContentPageState extends State<CourseContentPage> {
   double get tabletBreakpoint => 1024;
   double get desktopBreakpoint => 1440;
   bool get isMobile => MediaQuery.of(context).size.width < mobileBreakpoint;
-  bool get isTablet => MediaQuery.of(context).size.width >= mobileBreakpoint &&
+  bool get isTablet =>
+      MediaQuery.of(context).size.width >= mobileBreakpoint &&
       MediaQuery.of(context).size.width < tabletBreakpoint;
-  bool get isDesktop => MediaQuery.of(context).size.width >= tabletBreakpoint &&
+  bool get isDesktop =>
+      MediaQuery.of(context).size.width >= tabletBreakpoint &&
       MediaQuery.of(context).size.width < desktopBreakpoint;
-  bool get isLargeDesktop => MediaQuery.of(context).size.width >= desktopBreakpoint;
+  bool get isLargeDesktop =>
+      MediaQuery.of(context).size.width >= desktopBreakpoint;
   bool get isSmallScreen => MediaQuery.of(context).size.width < 400;
 
   Widget _buildHeader() {
@@ -1224,7 +1232,8 @@ class _CourseContentPageState extends State<CourseContentPage> {
             : isSmallScreen
             ? 12
             : 16,
-        top: MediaQuery.of(context).padding.top +
+        top:
+            MediaQuery.of(context).padding.top +
             (isLargeDesktop
                 ? 20
                 : isDesktop
@@ -1657,9 +1666,11 @@ class _CourseContentPageState extends State<CourseContentPage> {
         if (_isDraggingUp && !_isDraggingProgress) {
           final currentY = details.globalPosition.dy;
           final currentX = details.globalPosition.dx;
-          _dragUpTotalDelta = _dragUpStartY - currentY; // Positive when dragging up, negative when dragging down
+          _dragUpTotalDelta =
+              _dragUpStartY -
+              currentY; // Positive when dragging up, negative when dragging down
           _dragUpHorizontalDelta = (currentX - _dragUpStartX).abs();
-          
+
           // Cancel vertical drag if horizontal movement is too large (user is seeking)
           if (_dragUpHorizontalDelta > 30) {
             _isDraggingUp = false;
@@ -1808,11 +1819,7 @@ class _CourseContentPageState extends State<CourseContentPage> {
                 const SizedBox(width: 8),
                 // Time Display
                 Text(
-                  '${_formatTime(
-                    _isDraggingProgress && _dragProgressPosition != null
-                        ? Duration(milliseconds: _dragProgressPosition!.round())
-                        : _currentPosition,
-                  )} / ${_formatTime(_totalDuration)}',
+                  '${_formatTime(_isDraggingProgress && _dragProgressPosition != null ? Duration(milliseconds: _dragProgressPosition!.round()) : _currentPosition)} / ${_formatTime(_totalDuration)}',
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 12,
@@ -1862,7 +1869,7 @@ class _CourseContentPageState extends State<CourseContentPage> {
     final position = _isDraggingProgress && _dragProgressPosition != null
         ? Duration(milliseconds: _dragProgressPosition!.round())
         : _currentPosition;
-    
+
     final progress = _totalDuration.inMilliseconds > 0
         ? position.inMilliseconds / _totalDuration.inMilliseconds
         : 0.0;
@@ -1893,14 +1900,19 @@ class _CourseContentPageState extends State<CourseContentPage> {
             },
             onHorizontalDragUpdate: (details) {
               final localPosition = details.localPosition.dx;
-              final newProgress = (localPosition / constraints.maxWidth).clamp(0.0, 1.0);
-              
+              final newProgress = (localPosition / constraints.maxWidth).clamp(
+                0.0,
+                1.0,
+              );
+
               setState(() {
-                _dragProgressPosition = _totalDuration.inMilliseconds * newProgress;
+                _dragProgressPosition =
+                    _totalDuration.inMilliseconds * newProgress;
               });
             },
             onHorizontalDragEnd: (details) {
-              if (_dragProgressPosition != null && _totalDuration.inMilliseconds > 0) {
+              if (_dragProgressPosition != null &&
+                  _totalDuration.inMilliseconds > 0) {
                 final seekPosition = Duration(
                   milliseconds: _dragProgressPosition!.round().clamp(
                     0,
@@ -1917,12 +1929,14 @@ class _CourseContentPageState extends State<CourseContentPage> {
             },
             onTapDown: (details) {
               final localPosition = details.localPosition.dx;
-              final newProgress = (localPosition / constraints.maxWidth).clamp(0.0, 1.0);
+              final newProgress = (localPosition / constraints.maxWidth).clamp(
+                0.0,
+                1.0,
+              );
               final newPosition = Duration(
-                milliseconds: (_totalDuration.inMilliseconds * newProgress).round().clamp(
-                  0,
-                  _totalDuration.inMilliseconds,
-                ),
+                milliseconds: (_totalDuration.inMilliseconds * newProgress)
+                    .round()
+                    .clamp(0, _totalDuration.inMilliseconds),
               );
               _seekTo(newPosition);
               _showControlsTemporarily();
@@ -1955,11 +1969,15 @@ class _CourseContentPageState extends State<CourseContentPage> {
                     ),
                   ),
                   // Thumb - YouTube style (hidden by default, shows on hover/drag)
-                  if (_isHoveringProgress || _isDraggingProgress || _showControls)
+                  if (_isHoveringProgress ||
+                      _isDraggingProgress ||
+                      _showControls)
                     AnimatedPositioned(
                       duration: const Duration(milliseconds: 50),
                       curve: Curves.easeOut,
-                      left: (constraints.maxWidth * progress.clamp(0.0, 1.0)) - (_isDraggingProgress ? 10 : 8),
+                      left:
+                          (constraints.maxWidth * progress.clamp(0.0, 1.0)) -
+                          (_isDraggingProgress ? 10 : 8),
                       child: AnimatedScale(
                         scale: _isDraggingProgress ? 1.4 : 1.0,
                         duration: const Duration(milliseconds: 150),

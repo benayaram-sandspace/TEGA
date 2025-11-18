@@ -55,10 +55,10 @@ class _PrincipalManagementPageState extends State<PrincipalManagementPage>
   Future<void> _initializeCacheAndLoadData() async {
     // Initialize cache service
     await _cacheService.initialize();
-    
+
     // Try to load from cache first
     await _loadFromCache();
-    
+
     // Then load fresh data
     await _fetchPrincipalsFromAPI();
   }
@@ -66,7 +66,7 @@ class _PrincipalManagementPageState extends State<PrincipalManagementPage>
   Future<void> _loadFromCache() async {
     try {
       setState(() => _isLoadingFromCache = true);
-      
+
       final cachedData = await _cacheService.getPrincipalsData();
 
       if (cachedData != null && cachedData['success'] == true) {
@@ -135,7 +135,9 @@ class _PrincipalManagementPageState extends State<PrincipalManagementPage>
       MaterialPageRoute(
         builder: (context) => CreatePrincipalPage(
           onPrincipalCreated: () {
-            _fetchPrincipalsFromAPI(forceRefresh: true); // Refresh principal data
+            _fetchPrincipalsFromAPI(
+              forceRefresh: true,
+            ); // Refresh principal data
           },
         ),
       ),
@@ -158,7 +160,9 @@ class _PrincipalManagementPageState extends State<PrincipalManagementPage>
             error.toString().toLowerCase().contains('connection') ||
             error.toString().toLowerCase().contains('internet') ||
             error.toString().toLowerCase().contains('failed host lookup') ||
-            error.toString().toLowerCase().contains('no address associated with hostname'));
+            error.toString().toLowerCase().contains(
+              'no address associated with hostname',
+            ));
   }
 
   Future<void> _fetchPrincipalsFromAPI({bool forceRefresh = false}) async {
@@ -189,7 +193,7 @@ class _PrincipalManagementPageState extends State<PrincipalManagementPage>
           _errorMessage = null; // Clear error on success
         });
         _startStaggeredAnimations();
-        
+
         // Cache the data
         await _cacheService.setPrincipalsData(data);
       } else {
@@ -217,7 +221,7 @@ class _PrincipalManagementPageState extends State<PrincipalManagementPage>
             return;
           }
         }
-        
+
         // No cache available, show error
         setState(() {
           _errorMessage = 'No internet connection';
@@ -247,7 +251,7 @@ class _PrincipalManagementPageState extends State<PrincipalManagementPage>
           _filteredPrincipals = List.from(_principals);
         });
         _startStaggeredAnimations();
-        
+
         // Cache the data
         await _cacheService.setPrincipalsData(data);
       }
@@ -290,7 +294,11 @@ class _PrincipalManagementPageState extends State<PrincipalManagementPage>
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
-      floatingActionButton: _buildCreatePrincipalFAB(isMobile, isTablet, isDesktop),
+      floatingActionButton: _buildCreatePrincipalFAB(
+        isMobile,
+        isTablet,
+        isDesktop,
+      ),
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
       body: GestureDetector(
         onTap: () {
@@ -301,10 +309,26 @@ class _PrincipalManagementPageState extends State<PrincipalManagementPage>
           children: [
             Padding(
               padding: EdgeInsets.fromLTRB(
-                isMobile ? 16 : isTablet ? 20 : 24,
-                isMobile ? 16 : isTablet ? 20 : 24,
-                isMobile ? 16 : isTablet ? 20 : 24,
-                isMobile ? 12 : isTablet ? 14 : 16,
+                isMobile
+                    ? 16
+                    : isTablet
+                    ? 20
+                    : 24,
+                isMobile
+                    ? 16
+                    : isTablet
+                    ? 20
+                    : 24,
+                isMobile
+                    ? 16
+                    : isTablet
+                    ? 20
+                    : 24,
+                isMobile
+                    ? 12
+                    : isTablet
+                    ? 14
+                    : 16,
               ),
               child: _buildFilterSection(isMobile, isTablet, isDesktop),
             ),
@@ -325,10 +349,22 @@ class _PrincipalManagementPageState extends State<PrincipalManagementPage>
 
   Widget _buildFilterSection(bool isMobile, bool isTablet, bool isDesktop) {
     return Container(
-      padding: EdgeInsets.all(isMobile ? 16 : isTablet ? 18 : 20),
+      padding: EdgeInsets.all(
+        isMobile
+            ? 16
+            : isTablet
+            ? 18
+            : 20,
+      ),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(isMobile ? 14 : isTablet ? 15 : 16),
+        borderRadius: BorderRadius.circular(
+          isMobile
+              ? 14
+              : isTablet
+              ? 15
+              : 16,
+        ),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.05),
@@ -343,12 +379,22 @@ class _PrincipalManagementPageState extends State<PrincipalManagementPage>
           Text(
             'Filter Principals',
             style: TextStyle(
-              fontSize: isMobile ? 16 : isTablet ? 17 : 18,
+              fontSize: isMobile
+                  ? 16
+                  : isTablet
+                  ? 17
+                  : 18,
               fontWeight: FontWeight.bold,
               color: const Color(0xFF1F2937),
             ),
           ),
-          SizedBox(height: isMobile ? 12 : isTablet ? 14 : 16),
+          SizedBox(
+            height: isMobile
+                ? 12
+                : isTablet
+                ? 14
+                : 16,
+          ),
           isMobile
               ? Column(
                   children: [
@@ -361,11 +407,18 @@ class _PrincipalManagementPageState extends State<PrincipalManagementPage>
                 )
               : Row(
                   children: [
-                    Expanded(flex: 2, child: _buildSearchBar(isMobile, isTablet, isDesktop)),
+                    Expanded(
+                      flex: 2,
+                      child: _buildSearchBar(isMobile, isTablet, isDesktop),
+                    ),
                     SizedBox(width: isTablet ? 12 : 16),
-                    Expanded(child: _buildCollegeFilter(isMobile, isTablet, isDesktop)),
+                    Expanded(
+                      child: _buildCollegeFilter(isMobile, isTablet, isDesktop),
+                    ),
                     SizedBox(width: isTablet ? 12 : 16),
-                    Expanded(child: _buildGenderFilter(isMobile, isTablet, isDesktop)),
+                    Expanded(
+                      child: _buildGenderFilter(isMobile, isTablet, isDesktop),
+                    ),
                   ],
                 ),
         ],
@@ -379,7 +432,13 @@ class _PrincipalManagementPageState extends State<PrincipalManagementPage>
       child: Container(
         decoration: BoxDecoration(
           color: const Color(0xFFF9FAFB),
-          borderRadius: BorderRadius.circular(isMobile ? 10 : isTablet ? 11 : 12),
+          borderRadius: BorderRadius.circular(
+            isMobile
+                ? 10
+                : isTablet
+                ? 11
+                : 12,
+          ),
           border: Border.all(color: const Color(0xFFE5E7EB)),
         ),
         child: TextField(
@@ -389,19 +448,31 @@ class _PrincipalManagementPageState extends State<PrincipalManagementPage>
             hintText: 'Search principals...',
             hintStyle: TextStyle(
               color: Colors.grey.shade500,
-              fontSize: isMobile ? 13 : isTablet ? 14 : 16,
+              fontSize: isMobile
+                  ? 13
+                  : isTablet
+                  ? 14
+                  : 16,
             ),
             prefixIcon: Icon(
               Icons.search,
               color: Colors.grey.shade500,
-              size: isMobile ? 18 : isTablet ? 20 : 22,
+              size: isMobile
+                  ? 18
+                  : isTablet
+                  ? 20
+                  : 22,
             ),
             suffixIcon: _searchController.text.isNotEmpty
                 ? IconButton(
                     icon: Icon(
                       Icons.clear,
                       color: Colors.grey.shade500,
-                      size: isMobile ? 16 : isTablet ? 18 : 20,
+                      size: isMobile
+                          ? 16
+                          : isTablet
+                          ? 18
+                          : 20,
                     ),
                     onPressed: () {
                       _searchController.clear();
@@ -411,11 +482,25 @@ class _PrincipalManagementPageState extends State<PrincipalManagementPage>
                 : null,
             border: InputBorder.none,
             contentPadding: EdgeInsets.symmetric(
-              horizontal: isMobile ? 12 : isTablet ? 14 : 16,
-              vertical: isMobile ? 12 : isTablet ? 14 : 16,
+              horizontal: isMobile
+                  ? 12
+                  : isTablet
+                  ? 14
+                  : 16,
+              vertical: isMobile
+                  ? 12
+                  : isTablet
+                  ? 14
+                  : 16,
             ),
           ),
-          style: TextStyle(fontSize: isMobile ? 13 : isTablet ? 14 : 16),
+          style: TextStyle(
+            fontSize: isMobile
+                ? 13
+                : isTablet
+                ? 14
+                : 16,
+          ),
         ),
       ),
     );
@@ -427,7 +512,13 @@ class _PrincipalManagementPageState extends State<PrincipalManagementPage>
       child: Container(
         decoration: BoxDecoration(
           color: const Color(0xFFF9FAFB),
-          borderRadius: BorderRadius.circular(isMobile ? 10 : isTablet ? 11 : 12),
+          borderRadius: BorderRadius.circular(
+            isMobile
+                ? 10
+                : isTablet
+                ? 11
+                : 12,
+          ),
           border: Border.all(color: const Color(0xFFE5E7EB)),
         ),
         child: DropdownButtonFormField<String>(
@@ -442,17 +533,33 @@ class _PrincipalManagementPageState extends State<PrincipalManagementPage>
             labelText: 'College',
             labelStyle: TextStyle(
               color: Colors.grey.shade600,
-              fontSize: isMobile ? 11 : isTablet ? 12 : 14,
+              fontSize: isMobile
+                  ? 11
+                  : isTablet
+                  ? 12
+                  : 14,
             ),
             prefixIcon: Icon(
               Icons.school,
               color: Colors.grey.shade500,
-              size: isMobile ? 16 : isTablet ? 18 : 20,
+              size: isMobile
+                  ? 16
+                  : isTablet
+                  ? 18
+                  : 20,
             ),
             border: InputBorder.none,
             contentPadding: EdgeInsets.symmetric(
-              horizontal: isMobile ? 12 : isTablet ? 14 : 16,
-              vertical: isMobile ? 12 : isTablet ? 14 : 16,
+              horizontal: isMobile
+                  ? 12
+                  : isTablet
+                  ? 14
+                  : 16,
+              vertical: isMobile
+                  ? 12
+                  : isTablet
+                  ? 14
+                  : 16,
             ),
           ),
           items: collegeOptions.map((college) {
@@ -460,7 +567,13 @@ class _PrincipalManagementPageState extends State<PrincipalManagementPage>
               value: college,
               child: Text(
                 college,
-                style: TextStyle(fontSize: isMobile ? 12 : isTablet ? 13 : 14),
+                style: TextStyle(
+                  fontSize: isMobile
+                      ? 12
+                      : isTablet
+                      ? 13
+                      : 14,
+                ),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),
@@ -479,7 +592,13 @@ class _PrincipalManagementPageState extends State<PrincipalManagementPage>
       child: Container(
         decoration: BoxDecoration(
           color: const Color(0xFFF9FAFB),
-          borderRadius: BorderRadius.circular(isMobile ? 10 : isTablet ? 11 : 12),
+          borderRadius: BorderRadius.circular(
+            isMobile
+                ? 10
+                : isTablet
+                ? 11
+                : 12,
+          ),
           border: Border.all(color: const Color(0xFFE5E7EB)),
         ),
         child: DropdownButtonFormField<String>(
@@ -494,17 +613,33 @@ class _PrincipalManagementPageState extends State<PrincipalManagementPage>
             labelText: 'Gender',
             labelStyle: TextStyle(
               color: Colors.grey.shade600,
-              fontSize: isMobile ? 11 : isTablet ? 12 : 14,
+              fontSize: isMobile
+                  ? 11
+                  : isTablet
+                  ? 12
+                  : 14,
             ),
             prefixIcon: Icon(
               Icons.person,
               color: Colors.grey.shade500,
-              size: isMobile ? 16 : isTablet ? 18 : 20,
+              size: isMobile
+                  ? 16
+                  : isTablet
+                  ? 18
+                  : 20,
             ),
             border: InputBorder.none,
             contentPadding: EdgeInsets.symmetric(
-              horizontal: isMobile ? 12 : isTablet ? 14 : 16,
-              vertical: isMobile ? 12 : isTablet ? 14 : 16,
+              horizontal: isMobile
+                  ? 12
+                  : isTablet
+                  ? 14
+                  : 16,
+              vertical: isMobile
+                  ? 12
+                  : isTablet
+                  ? 14
+                  : 16,
             ),
           ),
           items: genderOptions.map((gender) {
@@ -512,7 +647,13 @@ class _PrincipalManagementPageState extends State<PrincipalManagementPage>
               value: gender,
               child: Text(
                 gender,
-                style: TextStyle(fontSize: isMobile ? 12 : isTablet ? 13 : 14),
+                style: TextStyle(
+                  fontSize: isMobile
+                      ? 12
+                      : isTablet
+                      ? 13
+                      : 14,
+                ),
               ),
             );
           }).toList(),
@@ -530,11 +671,21 @@ class _PrincipalManagementPageState extends State<PrincipalManagementPage>
           const CircularProgressIndicator(
             valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF3B82F6)),
           ),
-          SizedBox(height: isMobile ? 12 : isTablet ? 14 : 16),
+          SizedBox(
+            height: isMobile
+                ? 12
+                : isTablet
+                ? 14
+                : 16,
+          ),
           Text(
             'Loading principals...',
             style: TextStyle(
-              fontSize: isMobile ? 14 : isTablet ? 15 : 16,
+              fontSize: isMobile
+                  ? 14
+                  : isTablet
+                  ? 15
+                  : 16,
               color: const Color(0xFF6B7280),
             ),
           ),
@@ -546,11 +697,29 @@ class _PrincipalManagementPageState extends State<PrincipalManagementPage>
   Widget _buildErrorState(bool isMobile, bool isTablet, bool isDesktop) {
     return Center(
       child: Container(
-        margin: EdgeInsets.all(isMobile ? 20 : isTablet ? 24 : 28),
-        padding: EdgeInsets.all(isMobile ? 24 : isTablet ? 28 : 32),
+        margin: EdgeInsets.all(
+          isMobile
+              ? 20
+              : isTablet
+              ? 24
+              : 28,
+        ),
+        padding: EdgeInsets.all(
+          isMobile
+              ? 24
+              : isTablet
+              ? 28
+              : 32,
+        ),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(isMobile ? 16 : isTablet ? 18 : 20),
+          borderRadius: BorderRadius.circular(
+            isMobile
+                ? 16
+                : isTablet
+                ? 18
+                : 20,
+          ),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withValues(alpha: 0.05),
@@ -563,44 +732,101 @@ class _PrincipalManagementPageState extends State<PrincipalManagementPage>
           children: [
             Icon(
               Icons.cloud_off,
-              size: isMobile ? 56 : isTablet ? 64 : 72,
+              size: isMobile
+                  ? 56
+                  : isTablet
+                  ? 64
+                  : 72,
               color: Colors.grey[400],
             ),
-            SizedBox(height: isMobile ? 16 : isTablet ? 18 : 20),
+            SizedBox(
+              height: isMobile
+                  ? 16
+                  : isTablet
+                  ? 18
+                  : 20,
+            ),
             Text(
               'Failed to load principals',
               style: TextStyle(
-                fontSize: isMobile ? 18 : isTablet ? 19 : 20,
+                fontSize: isMobile
+                    ? 18
+                    : isTablet
+                    ? 19
+                    : 20,
                 fontWeight: FontWeight.w600,
                 color: Colors.grey[700],
               ),
             ),
-            SizedBox(height: isMobile ? 8 : isTablet ? 9 : 10),
+            SizedBox(
+              height: isMobile
+                  ? 8
+                  : isTablet
+                  ? 9
+                  : 10,
+            ),
             Text(
               _errorMessage ?? 'An unexpected error occurred',
               style: TextStyle(
-                fontSize: isMobile ? 14 : isTablet ? 15 : 16,
+                fontSize: isMobile
+                    ? 14
+                    : isTablet
+                    ? 15
+                    : 16,
                 color: Colors.grey[600],
               ),
               textAlign: TextAlign.center,
             ),
-            SizedBox(height: isMobile ? 24 : isTablet ? 28 : 32),
+            SizedBox(
+              height: isMobile
+                  ? 24
+                  : isTablet
+                  ? 28
+                  : 32,
+            ),
             ElevatedButton.icon(
               onPressed: () => _fetchPrincipalsFromAPI(forceRefresh: true),
-              icon: Icon(Icons.refresh, size: isMobile ? 16 : isTablet ? 17 : 18),
+              icon: Icon(
+                Icons.refresh,
+                size: isMobile
+                    ? 16
+                    : isTablet
+                    ? 17
+                    : 18,
+              ),
               label: Text(
                 'Retry',
-                style: TextStyle(fontSize: isMobile ? 13 : isTablet ? 14 : 15),
+                style: TextStyle(
+                  fontSize: isMobile
+                      ? 13
+                      : isTablet
+                      ? 14
+                      : 15,
+                ),
               ),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AdminDashboardStyles.primary,
                 foregroundColor: Colors.white,
                 padding: EdgeInsets.symmetric(
-                  horizontal: isMobile ? 20 : isTablet ? 24 : 28,
-                  vertical: isMobile ? 12 : isTablet ? 13 : 14,
+                  horizontal: isMobile
+                      ? 20
+                      : isTablet
+                      ? 24
+                      : 28,
+                  vertical: isMobile
+                      ? 12
+                      : isTablet
+                      ? 13
+                      : 14,
                 ),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(isMobile ? 10 : isTablet ? 11 : 12),
+                  borderRadius: BorderRadius.circular(
+                    isMobile
+                        ? 10
+                        : isTablet
+                        ? 11
+                        : 12,
+                  ),
                 ),
               ),
             ),
@@ -613,11 +839,29 @@ class _PrincipalManagementPageState extends State<PrincipalManagementPage>
   Widget _buildEmptyState(bool isMobile, bool isTablet, bool isDesktop) {
     return Center(
       child: Container(
-        margin: EdgeInsets.all(isMobile ? 16 : isTablet ? 20 : 24),
-        padding: EdgeInsets.all(isMobile ? 20 : isTablet ? 22 : 24),
+        margin: EdgeInsets.all(
+          isMobile
+              ? 16
+              : isTablet
+              ? 20
+              : 24,
+        ),
+        padding: EdgeInsets.all(
+          isMobile
+              ? 20
+              : isTablet
+              ? 22
+              : 24,
+        ),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(isMobile ? 14 : isTablet ? 15 : 16),
+          borderRadius: BorderRadius.circular(
+            isMobile
+                ? 14
+                : isTablet
+                ? 15
+                : 16,
+          ),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withValues(alpha: 0.05),
@@ -630,49 +874,105 @@ class _PrincipalManagementPageState extends State<PrincipalManagementPage>
           children: [
             Icon(
               Icons.admin_panel_settings_outlined,
-              size: isMobile ? 48 : isTablet ? 56 : 64,
+              size: isMobile
+                  ? 48
+                  : isTablet
+                  ? 56
+                  : 64,
               color: const Color(0xFF6B7280),
             ),
-            SizedBox(height: isMobile ? 12 : isTablet ? 14 : 16),
+            SizedBox(
+              height: isMobile
+                  ? 12
+                  : isTablet
+                  ? 14
+                  : 16,
+            ),
             Text(
               'No Principals Found',
               style: TextStyle(
-                fontSize: isMobile ? 18 : isTablet ? 19 : 20,
+                fontSize: isMobile
+                    ? 18
+                    : isTablet
+                    ? 19
+                    : 20,
                 fontWeight: FontWeight.bold,
                 color: const Color(0xFF1F2937),
               ),
             ),
-            SizedBox(height: isMobile ? 8 : isTablet ? 10 : 12),
+            SizedBox(
+              height: isMobile
+                  ? 8
+                  : isTablet
+                  ? 10
+                  : 12,
+            ),
             Text(
               'No principals match your current filters. Try adjusting your search criteria.',
               style: TextStyle(
-                fontSize: isMobile ? 14 : isTablet ? 15 : 16,
+                fontSize: isMobile
+                    ? 14
+                    : isTablet
+                    ? 15
+                    : 16,
                 color: const Color(0xFF6B7280),
               ),
               textAlign: TextAlign.center,
             ),
-            SizedBox(height: isMobile ? 16 : isTablet ? 18 : 20),
+            SizedBox(
+              height: isMobile
+                  ? 16
+                  : isTablet
+                  ? 18
+                  : 20,
+            ),
             Container(
-              padding: EdgeInsets.all(isMobile ? 12 : isTablet ? 14 : 16),
+              padding: EdgeInsets.all(
+                isMobile
+                    ? 12
+                    : isTablet
+                    ? 14
+                    : 16,
+              ),
               decoration: BoxDecoration(
                 color: const Color(0xFFF3F4F6),
-                borderRadius: BorderRadius.circular(isMobile ? 10 : isTablet ? 11 : 12),
+                borderRadius: BorderRadius.circular(
+                  isMobile
+                      ? 10
+                      : isTablet
+                      ? 11
+                      : 12,
+                ),
               ),
               child: Column(
                 children: [
                   Text(
                     'Suggestions:',
                     style: TextStyle(
-                      fontSize: isMobile ? 14 : isTablet ? 15 : 16,
+                      fontSize: isMobile
+                          ? 14
+                          : isTablet
+                          ? 15
+                          : 16,
                       fontWeight: FontWeight.w600,
                       color: const Color(0xFF374151),
                     ),
                   ),
-                  SizedBox(height: isMobile ? 8 : isTablet ? 10 : 12),
+                  SizedBox(
+                    height: isMobile
+                        ? 8
+                        : isTablet
+                        ? 10
+                        : 12,
+                  ),
                   Text(
                     '• Clear your search terms\n• Try different college filters\n• Check your gender selection',
                     style: TextStyle(
-                      fontSize: isMobile ? 12 : isTablet ? 13 : 14,
+                      fontSize: isMobile
+                          ? 12
+                          : isTablet
+                          ? 13
+                          : 14,
                       color: const Color(0xFF6B7280),
                     ),
                     textAlign: TextAlign.left,
@@ -689,8 +989,16 @@ class _PrincipalManagementPageState extends State<PrincipalManagementPage>
   Widget _buildPrincipalList(bool isMobile, bool isTablet, bool isDesktop) {
     return ListView.builder(
       padding: EdgeInsets.symmetric(
-        horizontal: isMobile ? 16 : isTablet ? 18 : 20,
-        vertical: isMobile ? 8 : isTablet ? 10 : 12,
+        horizontal: isMobile
+            ? 16
+            : isTablet
+            ? 18
+            : 20,
+        vertical: isMobile
+            ? 8
+            : isTablet
+            ? 10
+            : 12,
       ),
       itemCount: _filteredPrincipals.length,
       itemBuilder: (context, index) {
@@ -706,7 +1014,12 @@ class _PrincipalManagementPageState extends State<PrincipalManagementPage>
                 position: _slideAnimations[animationIndex],
                 child: ScaleTransition(
                   scale: _scaleAnimations[animationIndex],
-                  child: _buildPrincipalCard(principal, isMobile, isTablet, isDesktop),
+                  child: _buildPrincipalCard(
+                    principal,
+                    isMobile,
+                    isTablet,
+                    isDesktop,
+                  ),
                 ),
               ),
             );
@@ -716,12 +1029,29 @@ class _PrincipalManagementPageState extends State<PrincipalManagementPage>
     );
   }
 
-  Widget _buildPrincipalCard(Principal principal, bool isMobile, bool isTablet, bool isDesktop) {
+  Widget _buildPrincipalCard(
+    Principal principal,
+    bool isMobile,
+    bool isTablet,
+    bool isDesktop,
+  ) {
     return Container(
-      margin: EdgeInsets.only(bottom: isMobile ? 12 : isTablet ? 14 : 16),
+      margin: EdgeInsets.only(
+        bottom: isMobile
+            ? 12
+            : isTablet
+            ? 14
+            : 16,
+      ),
       child: Material(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(isMobile ? 14 : isTablet ? 15 : 16),
+        borderRadius: BorderRadius.circular(
+          isMobile
+              ? 14
+              : isTablet
+              ? 15
+              : 16,
+        ),
         elevation: 2,
         shadowColor: Colors.black.withValues(alpha: 0.1),
         child: InkWell(
@@ -734,19 +1064,43 @@ class _PrincipalManagementPageState extends State<PrincipalManagementPage>
               ),
             );
           },
-          borderRadius: BorderRadius.circular(isMobile ? 14 : isTablet ? 15 : 16),
+          borderRadius: BorderRadius.circular(
+            isMobile
+                ? 14
+                : isTablet
+                ? 15
+                : 16,
+          ),
           child: Padding(
-            padding: EdgeInsets.all(isMobile ? 16 : isTablet ? 18 : 20),
+            padding: EdgeInsets.all(
+              isMobile
+                  ? 16
+                  : isTablet
+                  ? 18
+                  : 20,
+            ),
             child: Row(
               children: [
                 // Avatar
                 Container(
-                  width: isMobile ? 48 : isTablet ? 52 : 56,
-                  height: isMobile ? 48 : isTablet ? 52 : 56,
+                  width: isMobile
+                      ? 48
+                      : isTablet
+                      ? 52
+                      : 56,
+                  height: isMobile
+                      ? 48
+                      : isTablet
+                      ? 52
+                      : 56,
                   decoration: BoxDecoration(
                     color: const Color(0xFF3B82F6),
                     borderRadius: BorderRadius.circular(
-                      isMobile ? 24 : isTablet ? 26 : 28,
+                      isMobile
+                          ? 24
+                          : isTablet
+                          ? 26
+                          : 28,
                     ),
                   ),
                   child: Center(
@@ -756,13 +1110,23 @@ class _PrincipalManagementPageState extends State<PrincipalManagementPage>
                           : 'P',
                       style: TextStyle(
                         color: Colors.white,
-                        fontSize: isMobile ? 18 : isTablet ? 19 : 20,
+                        fontSize: isMobile
+                            ? 18
+                            : isTablet
+                            ? 19
+                            : 20,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
                   ),
                 ),
-                SizedBox(width: isMobile ? 12 : isTablet ? 14 : 16),
+                SizedBox(
+                  width: isMobile
+                      ? 12
+                      : isTablet
+                      ? 14
+                      : 16,
+                ),
                 // Principal Info
                 Expanded(
                   child: Column(
@@ -771,28 +1135,52 @@ class _PrincipalManagementPageState extends State<PrincipalManagementPage>
                       Text(
                         principal.name,
                         style: TextStyle(
-                          fontSize: isMobile ? 16 : isTablet ? 17 : 18,
+                          fontSize: isMobile
+                              ? 16
+                              : isTablet
+                              ? 17
+                              : 18,
                           fontWeight: FontWeight.bold,
                           color: const Color(0xFF1F2937),
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
-                      SizedBox(height: isMobile ? 4 : isTablet ? 5 : 6),
+                      SizedBox(
+                        height: isMobile
+                            ? 4
+                            : isTablet
+                            ? 5
+                            : 6,
+                      ),
                       Text(
                         principal.email,
                         style: TextStyle(
-                          fontSize: isMobile ? 13 : isTablet ? 13.5 : 14,
+                          fontSize: isMobile
+                              ? 13
+                              : isTablet
+                              ? 13.5
+                              : 14,
                           color: const Color(0xFF6B7280),
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
-                      SizedBox(height: isMobile ? 4 : isTablet ? 5 : 6),
+                      SizedBox(
+                        height: isMobile
+                            ? 4
+                            : isTablet
+                            ? 5
+                            : 6,
+                      ),
                       Text(
                         principal.university,
                         style: TextStyle(
-                          fontSize: isMobile ? 12 : isTablet ? 12.5 : 13,
+                          fontSize: isMobile
+                              ? 12
+                              : isTablet
+                              ? 12.5
+                              : 13,
                           color: const Color(0xFF9CA3AF),
                         ),
                         maxLines: 1,
@@ -804,8 +1192,16 @@ class _PrincipalManagementPageState extends State<PrincipalManagementPage>
                 // Status Badge
                 Container(
                   padding: EdgeInsets.symmetric(
-                    horizontal: isMobile ? 8 : isTablet ? 10 : 12,
-                    vertical: isMobile ? 4 : isTablet ? 5 : 6,
+                    horizontal: isMobile
+                        ? 8
+                        : isTablet
+                        ? 10
+                        : 12,
+                    vertical: isMobile
+                        ? 4
+                        : isTablet
+                        ? 5
+                        : 6,
                   ),
                   decoration: BoxDecoration(
                     color: principal.isActive
@@ -822,7 +1218,11 @@ class _PrincipalManagementPageState extends State<PrincipalManagementPage>
                   child: Text(
                     principal.status,
                     style: TextStyle(
-                      fontSize: isMobile ? 10 : isTablet ? 11 : 12,
+                      fontSize: isMobile
+                          ? 10
+                          : isTablet
+                          ? 11
+                          : 12,
                       fontWeight: FontWeight.w600,
                       color: principal.isActive
                           ? const Color(0xFF10B981)
@@ -838,10 +1238,20 @@ class _PrincipalManagementPageState extends State<PrincipalManagementPage>
     );
   }
 
-  Widget _buildCreatePrincipalFAB(bool isMobile, bool isTablet, bool isDesktop) {
+  Widget _buildCreatePrincipalFAB(
+    bool isMobile,
+    bool isTablet,
+    bool isDesktop,
+  ) {
     return Container(
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(isMobile ? 14 : isTablet ? 15 : 16),
+            borderRadius: BorderRadius.circular(
+              isMobile
+                  ? 14
+                  : isTablet
+                  ? 15
+                  : 16,
+            ),
             boxShadow: [
               BoxShadow(
                 color: AdminDashboardStyles.primary.withOpacity(0.3),
@@ -863,17 +1273,31 @@ class _PrincipalManagementPageState extends State<PrincipalManagementPage>
             foregroundColor: Colors.white,
             elevation: 0,
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(isMobile ? 14 : isTablet ? 15 : 16),
+              borderRadius: BorderRadius.circular(
+                isMobile
+                    ? 14
+                    : isTablet
+                    ? 15
+                    : 16,
+              ),
             ),
             icon: Icon(
               Icons.school_rounded,
-              size: isMobile ? 18 : isTablet ? 19 : 20,
+              size: isMobile
+                  ? 18
+                  : isTablet
+                  ? 19
+                  : 20,
             ),
             label: Text(
               'Create Principal',
               style: TextStyle(
                 fontWeight: FontWeight.w600,
-                fontSize: isMobile ? 13 : isTablet ? 13.5 : 14,
+                fontSize: isMobile
+                    ? 13
+                    : isTablet
+                    ? 13.5
+                    : 14,
               ),
             ),
           ),

@@ -9,11 +9,8 @@ import 'package:tega/features/5_student_dashboard/presentation/6_exams/exams_pag
 
 class MyResultsPage extends StatefulWidget {
   final VoidCallback? onNavigateToExams;
-  
-  const MyResultsPage({
-    super.key,
-    this.onNavigateToExams,
-  });
+
+  const MyResultsPage({super.key, this.onNavigateToExams});
 
   @override
   State<MyResultsPage> createState() => _MyResultsPageState();
@@ -68,7 +65,9 @@ class _MyResultsPageState extends State<MyResultsPage>
             error.toString().toLowerCase().contains('connection') ||
             error.toString().toLowerCase().contains('internet') ||
             error.toString().toLowerCase().contains('failed host lookup') ||
-            error.toString().toLowerCase().contains('no address associated with hostname'));
+            error.toString().toLowerCase().contains(
+              'no address associated with hostname',
+            ));
   }
 
   @override
@@ -269,11 +268,14 @@ class _MyResultsPageState extends State<MyResultsPage>
   double get tabletBreakpoint => 1024;
   double get desktopBreakpoint => 1440;
   bool get isMobile => MediaQuery.of(context).size.width < mobileBreakpoint;
-  bool get isTablet => MediaQuery.of(context).size.width >= mobileBreakpoint &&
+  bool get isTablet =>
+      MediaQuery.of(context).size.width >= mobileBreakpoint &&
       MediaQuery.of(context).size.width < tabletBreakpoint;
-  bool get isDesktop => MediaQuery.of(context).size.width >= tabletBreakpoint &&
+  bool get isDesktop =>
+      MediaQuery.of(context).size.width >= tabletBreakpoint &&
       MediaQuery.of(context).size.width < desktopBreakpoint;
-  bool get isLargeDesktop => MediaQuery.of(context).size.width >= desktopBreakpoint;
+  bool get isLargeDesktop =>
+      MediaQuery.of(context).size.width >= desktopBreakpoint;
   bool get isSmallScreen => MediaQuery.of(context).size.width < 400;
 
   @override
@@ -283,11 +285,11 @@ class _MyResultsPageState extends State<MyResultsPage>
     return Scaffold(
       backgroundColor: const Color(0xFFF5F5F5),
       body: _isLoading
-              ? _buildLoadingState()
-              : _errorMessage != null
-              ? _buildErrorState()
-              : _filteredResults.isEmpty
-              ? _buildEmptyState()
+          ? _buildLoadingState()
+          : _errorMessage != null
+          ? _buildErrorState()
+          : _filteredResults.isEmpty
+          ? _buildEmptyState()
           : _buildModernResultsPage(),
     );
   }
@@ -397,8 +399,8 @@ class _MyResultsPageState extends State<MyResultsPage>
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-        Row(
-          children: [
+            Row(
+              children: [
                 Container(
                   padding: EdgeInsets.all(
                     isLargeDesktop
@@ -437,20 +439,20 @@ class _MyResultsPageState extends State<MyResultsPage>
                         : isSmallScreen
                         ? 22
                         : 28,
-              ),
-            ),
-            SizedBox(
-              width: isLargeDesktop
-                  ? 20
-                  : isDesktop
-                  ? 16
-                  : isTablet
-                  ? 14
-                  : isSmallScreen
-                  ? 8
-                  : 12,
-            ),
-            Expanded(
+                  ),
+                ),
+                SizedBox(
+                  width: isLargeDesktop
+                      ? 20
+                      : isDesktop
+                      ? 16
+                      : isTablet
+                      ? 14
+                      : isSmallScreen
+                      ? 8
+                      : 12,
+                ),
+                Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -492,9 +494,9 @@ class _MyResultsPageState extends State<MyResultsPage>
                               ? 11
                               : 14,
                           color: Colors.white.withOpacity(0.9),
-              ),
-            ),
-          ],
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ],
@@ -511,7 +513,7 @@ class _MyResultsPageState extends State<MyResultsPage>
                   : 20,
             ),
             Container(
-      padding: EdgeInsets.symmetric(
+              padding: EdgeInsets.symmetric(
                 horizontal: isLargeDesktop
                     ? 24
                     : isDesktop
@@ -530,8 +532,8 @@ class _MyResultsPageState extends State<MyResultsPage>
                     : isSmallScreen
                     ? 8
                     : 10,
-      ),
-      decoration: BoxDecoration(
+              ),
+              decoration: BoxDecoration(
                 color: Colors.white.withOpacity(0.15),
                 borderRadius: BorderRadius.circular(
                   isLargeDesktop
@@ -578,7 +580,7 @@ class _MyResultsPageState extends State<MyResultsPage>
                   Expanded(
                     child: Text(
                       'View detailed analytics and performance insights',
-          style: TextStyle(
+                      style: TextStyle(
                         fontSize: isLargeDesktop
                             ? 16
                             : isDesktop
@@ -589,8 +591,8 @@ class _MyResultsPageState extends State<MyResultsPage>
                             ? 11
                             : 13,
                         color: Colors.white,
-            fontWeight: FontWeight.w500,
-          ),
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
                   ),
                 ],
@@ -618,7 +620,7 @@ class _MyResultsPageState extends State<MyResultsPage>
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
+          children: [
             Text(
               'Performance Overview',
               style: TextStyle(
@@ -718,10 +720,10 @@ class _MyResultsPageState extends State<MyResultsPage>
                 children: [
                   Expanded(
                     child: _buildModernStatItem(
-          icon: Icons.assignment_rounded,
+                      icon: Icons.assignment_rounded,
                       value: _totalExams.toString(),
                       label: 'Total Exams',
-          color: const Color(0xFF6B5FFF),
+                      color: const Color(0xFF6B5FFF),
                     ),
                   ),
                   Container(
@@ -739,10 +741,10 @@ class _MyResultsPageState extends State<MyResultsPage>
                   ),
                   Expanded(
                     child: _buildModernStatItem(
-          icon: Icons.check_circle_rounded,
+                      icon: Icons.check_circle_rounded,
                       value: _passedExams.toString(),
                       label: 'Passed',
-          color: const Color(0xFF4CAF50),
+                      color: const Color(0xFF4CAF50),
                     ),
                   ),
                   Container(
@@ -760,10 +762,10 @@ class _MyResultsPageState extends State<MyResultsPage>
                   ),
                   Expanded(
                     child: _buildModernStatItem(
-          icon: Icons.workspace_premium_rounded,
+                      icon: Icons.workspace_premium_rounded,
                       value: _qualifiedExams.toString(),
                       label: 'Qualified',
-          color: const Color(0xFFFFD700),
+                      color: const Color(0xFFFFD700),
                     ),
                   ),
                   Container(
@@ -781,13 +783,13 @@ class _MyResultsPageState extends State<MyResultsPage>
                   ),
                   Expanded(
                     child: _buildModernStatItem(
-          icon: Icons.pending_actions_rounded,
+                      icon: Icons.pending_actions_rounded,
                       value: _underReviewExams.toString(),
                       label: 'Under Review',
-          color: const Color(0xFFFF9800),
+                      color: const Color(0xFFFF9800),
                     ),
-        ),
-      ],
+                  ),
+                ],
               ),
             ),
           ),
@@ -1005,8 +1007,8 @@ class _MyResultsPageState extends State<MyResultsPage>
 
             // Search Bar
             Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
+              decoration: BoxDecoration(
+                color: Colors.white,
                 borderRadius: BorderRadius.circular(
                   isLargeDesktop
                       ? 16
@@ -1018,9 +1020,9 @@ class _MyResultsPageState extends State<MyResultsPage>
                       ? 8
                       : 10,
                 ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
                     blurRadius: isLargeDesktop
                         ? 12
                         : isDesktop
@@ -1031,9 +1033,9 @@ class _MyResultsPageState extends State<MyResultsPage>
                         ? 4
                         : 6,
                     offset: const Offset(0, 2),
-          ),
-        ],
-      ),
+                  ),
+                ],
+              ),
               child: TextField(
                 controller: _searchController,
                 onChanged: (_) => _applyFilters(),
@@ -1175,7 +1177,7 @@ class _MyResultsPageState extends State<MyResultsPage>
                           : 8,
                     ),
                     child: Container(
-            decoration: BoxDecoration(
+                      decoration: BoxDecoration(
                         color: isSelected
                             ? const Color(0xFF6B5FFF)
                             : Colors.white,
@@ -1253,9 +1255,9 @@ class _MyResultsPageState extends State<MyResultsPage>
                                   ? 6
                                   : 8,
                             ),
-            child: Text(
+                            child: Text(
                               filter,
-              style: TextStyle(
+                              style: TextStyle(
                                 fontSize: isLargeDesktop
                                     ? 16
                                     : isDesktop
@@ -1334,14 +1336,14 @@ class _MyResultsPageState extends State<MyResultsPage>
                     bottom: index == _filteredResults.length - 1
                         ? 0
                         : (isLargeDesktop
-                            ? 20
-                            : isDesktop
-                            ? 16
-                            : isTablet
-                            ? 14
-                            : isSmallScreen
-                            ? 8
-                            : 12),
+                              ? 20
+                              : isDesktop
+                              ? 16
+                              : isTablet
+                              ? 14
+                              : isSmallScreen
+                              ? 8
+                              : 12),
                   ),
                   child: _buildModernResultCard(result),
                 ),
@@ -1353,9 +1355,7 @@ class _MyResultsPageState extends State<MyResultsPage>
     );
   }
 
-  Widget _buildModernResultCard(
-    Map<String, dynamic> result,
-  ) {
+  Widget _buildModernResultCard(Map<String, dynamic> result) {
     final percentage = result['percentage'] as double;
     final status = result['status'] as String;
     final statusColor = _getStatusColor(status, percentage);
@@ -1363,22 +1363,22 @@ class _MyResultsPageState extends State<MyResultsPage>
     final formattedDate = DateFormat('MMM dd, yyyy').format(date);
 
     return Container(
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(
-                  isLargeDesktop
-                      ? 20
-                      : isDesktop
-                      ? 16
-                      : isTablet
-                      ? 15
-                      : isSmallScreen
-                      ? 10
-                      : 14,
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(
+          isLargeDesktop
+              ? 20
+              : isDesktop
+              ? 16
+              : isTablet
+              ? 15
+              : isSmallScreen
+              ? 10
+              : 14,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
             blurRadius: isLargeDesktop
                 ? 16
                 : isDesktop
@@ -1400,25 +1400,25 @@ class _MyResultsPageState extends State<MyResultsPage>
                   ? 2
                   : 2,
             ),
-                  ),
-                ],
-              ),
-              child: Material(
-                color: Colors.transparent,
-                child: InkWell(
-                  onTap: () => _showResultDetails(result),
-                  borderRadius: BorderRadius.circular(
-                    isLargeDesktop
-                        ? 20
-                        : isDesktop
-                        ? 16
-                        : isTablet
-                        ? 15
-                        : isSmallScreen
-                        ? 10
-                        : 14,
-                  ),
-                  child: Padding(
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () => _showResultDetails(result),
+          borderRadius: BorderRadius.circular(
+            isLargeDesktop
+                ? 20
+                : isDesktop
+                ? 16
+                : isTablet
+                ? 15
+                : isSmallScreen
+                ? 10
+                : 14,
+          ),
+          child: Padding(
             padding: EdgeInsets.all(
               isLargeDesktop
                   ? 24
@@ -1431,7 +1431,7 @@ class _MyResultsPageState extends State<MyResultsPage>
                   : 16,
             ),
             child: Row(
-                      children: [
+              children: [
                 // Status Icon
                 Container(
                   padding: EdgeInsets.all(
@@ -1445,8 +1445,8 @@ class _MyResultsPageState extends State<MyResultsPage>
                         ? 10
                         : 12,
                   ),
-                                decoration: BoxDecoration(
-                                  color: statusColor.withOpacity(0.1),
+                  decoration: BoxDecoration(
+                    color: statusColor.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(
                       isLargeDesktop
                           ? 16
@@ -1460,7 +1460,7 @@ class _MyResultsPageState extends State<MyResultsPage>
                     ),
                   ),
                   child: Icon(
-                                      _getStatusIcon(status, percentage),
+                    _getStatusIcon(status, percentage),
                     size: isLargeDesktop
                         ? 32
                         : isDesktop
@@ -1470,8 +1470,8 @@ class _MyResultsPageState extends State<MyResultsPage>
                         : isSmallScreen
                         ? 20
                         : 24,
-                                      color: statusColor,
-                                    ),
+                    color: statusColor,
+                  ),
                 ),
                 SizedBox(
                   width: isLargeDesktop
@@ -1490,12 +1490,12 @@ class _MyResultsPageState extends State<MyResultsPage>
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                        Row(
-                          children: [
-                            Expanded(
-                              child: Text(
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
                               result['examTitle'],
-                                style: TextStyle(
+                              style: TextStyle(
                                 fontSize: isLargeDesktop
                                     ? 22
                                     : isDesktop
@@ -1507,15 +1507,15 @@ class _MyResultsPageState extends State<MyResultsPage>
                                     : 16,
                                 fontWeight: FontWeight.bold,
                                 color: const Color(0xFF1A1A1A),
-                                ),
-                                maxLines: isLargeDesktop || isDesktop
-                                    ? 2
-                                    : isTablet
-                                    ? 2
-                                    : 1,
-                                overflow: TextOverflow.ellipsis,
                               ),
+                              maxLines: isLargeDesktop || isDesktop
+                                  ? 2
+                                  : isTablet
+                                  ? 2
+                                  : 1,
+                              overflow: TextOverflow.ellipsis,
                             ),
+                          ),
                           Container(
                             padding: EdgeInsets.symmetric(
                               horizontal: isLargeDesktop
@@ -1551,9 +1551,9 @@ class _MyResultsPageState extends State<MyResultsPage>
                                     : 4,
                               ),
                             ),
-                                        child: Text(
+                            child: Text(
                               status,
-                                          style: TextStyle(
+                              style: TextStyle(
                                 fontSize: isLargeDesktop
                                     ? 12
                                     : isDesktop
@@ -1566,10 +1566,10 @@ class _MyResultsPageState extends State<MyResultsPage>
                                 color: statusColor,
                                 fontWeight: FontWeight.w600,
                               ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
+                            ),
+                          ),
+                        ],
+                      ),
                       SizedBox(
                         height: isLargeDesktop || isDesktop
                             ? 6
@@ -1579,9 +1579,9 @@ class _MyResultsPageState extends State<MyResultsPage>
                             ? 2
                             : 4,
                       ),
-                                        Text(
+                      Text(
                         result['subject'],
-                                          style: TextStyle(
+                        style: TextStyle(
                           fontSize: isLargeDesktop
                               ? 16
                               : isDesktop
@@ -1591,7 +1591,7 @@ class _MyResultsPageState extends State<MyResultsPage>
                               : isSmallScreen
                               ? 11
                               : 12,
-                                            color: Colors.grey[600],
+                          color: Colors.grey[600],
                           fontWeight: FontWeight.w500,
                         ),
                       ),
@@ -1607,7 +1607,7 @@ class _MyResultsPageState extends State<MyResultsPage>
                             : 8,
                       ),
                       Row(
-                                          children: [
+                        children: [
                           _buildModernInfoChip(
                             icon: Icons.percent_rounded,
                             label: '${percentage.toStringAsFixed(1)}%',
@@ -1626,42 +1626,42 @@ class _MyResultsPageState extends State<MyResultsPage>
                           _buildModernInfoChip(
                             icon: Icons.quiz_rounded,
                             label:
-                                          '${result['correctAnswers']}/${result['totalQuestions']}',
-                                          ),
+                                '${result['correctAnswers']}/${result['totalQuestions']}',
+                          ),
                           const Spacer(),
-                                        Text(
+                          Text(
                             formattedDate,
-                                          style: TextStyle(
-                                            fontSize: isLargeDesktop
-                                                ? 14
-                                                : isDesktop
-                                                ? 12
-                                                : isTablet
-                                                ? 11
-                                                : isSmallScreen
-                                                ? 9
-                                                : 11,
-                                            color: Colors.grey[600],
-                                          ),
-                                        ),
-                                      ],
-                                  ),
-                                ],
-                              ),
+                            style: TextStyle(
+                              fontSize: isLargeDesktop
+                                  ? 14
+                                  : isDesktop
+                                  ? 12
+                                  : isTablet
+                                  ? 11
+                                  : isSmallScreen
+                                  ? 9
+                                  : 11,
+                              color: Colors.grey[600],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
-                              SizedBox(
-                                width: isLargeDesktop
-                                    ? 14
-                                    : isDesktop
-                                    ? 12
-                                    : isTablet
-                                    ? 11
-                                    : isSmallScreen
-                                    ? 6
-                                    : 8,
-                              ),
-                            Icon(
-                              Icons.arrow_forward_ios_rounded,
+                SizedBox(
+                  width: isLargeDesktop
+                      ? 14
+                      : isDesktop
+                      ? 12
+                      : isTablet
+                      ? 11
+                      : isSmallScreen
+                      ? 6
+                      : 8,
+                ),
+                Icon(
+                  Icons.arrow_forward_ios_rounded,
                   size: isLargeDesktop
                       ? 20
                       : isDesktop
@@ -1671,36 +1671,33 @@ class _MyResultsPageState extends State<MyResultsPage>
                       : isSmallScreen
                       ? 14
                       : 16,
-                              color: const Color(0xFF6B5FFF),
-                            ),
-                          ],
+                  color: const Color(0xFF6B5FFF),
                 ),
-              ),
+              ],
             ),
           ),
+        ),
+      ),
     );
   }
 
-  Widget _buildModernInfoChip({
-    required IconData icon,
-    required String label,
-  }) {
+  Widget _buildModernInfoChip({required IconData icon, required String label}) {
     return Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            icon,
-            size: isLargeDesktop
-                ? 16
-                : isDesktop
-                ? 14
-                : isTablet
-                ? 13
-                : isSmallScreen
-                ? 10
-                : 12,
-            color: Colors.grey[600],
-          ),
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(
+          icon,
+          size: isLargeDesktop
+              ? 16
+              : isDesktop
+              ? 14
+              : isTablet
+              ? 13
+              : isSmallScreen
+              ? 10
+              : 12,
+          color: Colors.grey[600],
+        ),
         SizedBox(
           width: isLargeDesktop || isDesktop
               ? 4
@@ -1710,10 +1707,10 @@ class _MyResultsPageState extends State<MyResultsPage>
               ? 2
               : 2,
         ),
-          Flexible(
-            child: Text(
-              label,
-              style: TextStyle(
+        Flexible(
+          child: Text(
+            label,
+            style: TextStyle(
               fontSize: isLargeDesktop
                   ? 14
                   : isDesktop
@@ -1723,12 +1720,12 @@ class _MyResultsPageState extends State<MyResultsPage>
                   : isSmallScreen
                   ? 9
                   : 11,
-                color: Colors.grey[600],
-              ),
-              overflow: TextOverflow.ellipsis,
+              color: Colors.grey[600],
             ),
+            overflow: TextOverflow.ellipsis,
           ),
-        ],
+        ),
+      ],
     );
   }
 
@@ -1746,9 +1743,7 @@ class _MyResultsPageState extends State<MyResultsPage>
     return Icons.cancel_rounded;
   }
 
-  void _showResultDetails(
-    Map<String, dynamic> result,
-  ) {
+  void _showResultDetails(Map<String, dynamic> result) {
     final percentage = result['percentage'] as double;
     final status = result['status'] as String;
     final statusColor = _getStatusColor(status, percentage);
@@ -2204,7 +2199,7 @@ class _MyResultsPageState extends State<MyResultsPage>
 
   Widget _buildErrorState() {
     final isNoInternet = _errorMessage == 'No internet connection';
-    
+
     return Center(
       child: SingleChildScrollView(
         padding: EdgeInsets.all(
@@ -2247,7 +2242,9 @@ class _MyResultsPageState extends State<MyResultsPage>
                   : 20,
             ),
             Text(
-              isNoInternet ? 'No internet connection' : 'Oops! Something went wrong',
+              isNoInternet
+                  ? 'No internet connection'
+                  : 'Oops! Something went wrong',
               style: TextStyle(
                 fontSize: isLargeDesktop
                     ? 24
@@ -2745,9 +2742,7 @@ class _MyResultsPageState extends State<MyResultsPage>
                   // Fallback: navigate to exams page if callback not provided
                   Navigator.push(
                     context,
-                    MaterialPageRoute(
-                      builder: (context) => const ExamsPage(),
-                    ),
+                    MaterialPageRoute(builder: (context) => const ExamsPage()),
                   );
                 }
               },

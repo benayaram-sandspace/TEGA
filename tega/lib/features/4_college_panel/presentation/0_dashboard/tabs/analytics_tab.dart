@@ -17,14 +17,15 @@ class AnalyticsPage extends StatefulWidget {
 
 class _AnalyticsPageState extends State<AnalyticsPage> {
   final AuthService _authService = AuthService();
-  final PrincipalDashboardCacheService _cacheService = PrincipalDashboardCacheService();
+  final PrincipalDashboardCacheService _cacheService =
+      PrincipalDashboardCacheService();
   bool _isLoading = true;
   bool _isLoadingFromCache = false;
   String? _errorMessage;
   int _totalStudents = 0;
   int _activeLearners = 0;
   double _avgPerformance = 0.0;
-  
+
   // Course enrollment data
   List<Map<String, dynamic>> _courseEnrollments = [];
   int _totalEnrollments = 0;
@@ -40,10 +41,10 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
   Future<void> _initializeCacheAndLoadData() async {
     // Initialize cache service
     await _cacheService.initialize();
-    
+
     // Try to load from cache first
     await _loadFromCache();
-    
+
     // Then load fresh data
     await _loadAnalyticsData();
   }
@@ -55,18 +56,20 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
         setState(() {
           _isLoadingFromCache = true;
         });
-        
+
         // Restore data from cache
         _totalStudents = cachedData['totalStudents'] as int? ?? 0;
         _activeLearners = cachedData['activeLearners'] as int? ?? 0;
-        _avgPerformance = (cachedData['avgPerformance'] as num?)?.toDouble() ?? 0.0;
+        _avgPerformance =
+            (cachedData['avgPerformance'] as num?)?.toDouble() ?? 0.0;
         _courseEnrollments = List<Map<String, dynamic>>.from(
-          cachedData['courseEnrollments'] as List? ?? []
+          cachedData['courseEnrollments'] as List? ?? [],
         );
         _totalEnrollments = cachedData['totalEnrollments'] as int? ?? 0;
         _activeCourses = cachedData['activeCourses'] as int? ?? 0;
-        _totalInstituteStudents = cachedData['totalInstituteStudents'] as int? ?? 0;
-        
+        _totalInstituteStudents =
+            cachedData['totalInstituteStudents'] as int? ?? 0;
+
         if (mounted) {
           setState(() {
             _isLoading = false;
@@ -91,7 +94,9 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
             error.toString().toLowerCase().contains('connection') ||
             error.toString().toLowerCase().contains('internet') ||
             error.toString().toLowerCase().contains('failed host lookup') ||
-            error.toString().toLowerCase().contains('no address associated with hostname'));
+            error.toString().toLowerCase().contains(
+              'no address associated with hostname',
+            ));
   }
 
   Future<void> _loadAnalyticsData({bool forceRefresh = false}) async {
@@ -110,15 +115,14 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
 
     try {
       final headers = await _authService.getAuthHeaders();
-      final response = await http.get(
-        Uri.parse(ApiEndpoints.principalDashboard),
-        headers: headers,
-      ).timeout(
-        const Duration(seconds: 30),
-        onTimeout: () {
-          throw Exception('Request timeout');
-        },
-      );
+      final response = await http
+          .get(Uri.parse(ApiEndpoints.principalDashboard), headers: headers)
+          .timeout(
+            const Duration(seconds: 30),
+            onTimeout: () {
+              throw Exception('Request timeout');
+            },
+          );
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
@@ -126,13 +130,13 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
           final stats = data['stats'] as Map<String, dynamic>;
           final totalStudents = stats['totalCollegeUsers'] as int? ?? 0;
           final activeLearners = stats['activeStudents'] as int? ?? 0;
-          
+
           // Fetch average performance from course-engagement endpoint
           await _calculatePerformanceAndRisk(headers, totalStudents);
-          
+
           // Fetch course enrollment data
           await _loadCourseEnrollments(headers);
-          
+
           if (mounted) {
             setState(() {
               _totalStudents = totalStudents;
@@ -140,7 +144,7 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
               _isLoading = false;
               _isLoadingFromCache = false;
             });
-            
+
             // Cache the analytics data
             await _cacheService.setAnalyticsData({
               'totalStudents': totalStudents,
@@ -151,7 +155,7 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
               'activeCourses': _activeCourses,
               'totalInstituteStudents': _totalInstituteStudents,
             });
-            
+
             // Handle online state
             _cacheService.handleOnlineState(context);
           }
@@ -181,18 +185,20 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
           setState(() {
             _totalStudents = cachedData['totalStudents'] as int? ?? 0;
             _activeLearners = cachedData['activeLearners'] as int? ?? 0;
-            _avgPerformance = (cachedData['avgPerformance'] as num?)?.toDouble() ?? 0.0;
+            _avgPerformance =
+                (cachedData['avgPerformance'] as num?)?.toDouble() ?? 0.0;
             _courseEnrollments = List<Map<String, dynamic>>.from(
-              cachedData['courseEnrollments'] as List? ?? []
+              cachedData['courseEnrollments'] as List? ?? [],
             );
             _totalEnrollments = cachedData['totalEnrollments'] as int? ?? 0;
             _activeCourses = cachedData['activeCourses'] as int? ?? 0;
-            _totalInstituteStudents = cachedData['totalInstituteStudents'] as int? ?? 0;
+            _totalInstituteStudents =
+                cachedData['totalInstituteStudents'] as int? ?? 0;
             _isLoading = false;
             _isLoadingFromCache = false;
             _errorMessage = null;
           });
-          
+
           // Handle offline state
           _cacheService.handleOfflineState(context);
         } else {
@@ -203,7 +209,7 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
               _isLoadingFromCache = false;
               _errorMessage = 'No internet connection';
             });
-            
+
             // Handle offline state
             _cacheService.handleOfflineState(context);
           }
@@ -224,15 +230,14 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
   Future<void> _loadAnalyticsDataInBackground() async {
     try {
       final headers = await _authService.getAuthHeaders();
-      final response = await http.get(
-        Uri.parse(ApiEndpoints.principalDashboard),
-        headers: headers,
-      ).timeout(
-        const Duration(seconds: 30),
-        onTimeout: () {
-          throw Exception('Request timeout');
-        },
-      );
+      final response = await http
+          .get(Uri.parse(ApiEndpoints.principalDashboard), headers: headers)
+          .timeout(
+            const Duration(seconds: 30),
+            onTimeout: () {
+              throw Exception('Request timeout');
+            },
+          );
 
       if (response.statusCode == 200 && mounted) {
         final data = json.decode(response.body);
@@ -240,19 +245,19 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
           final stats = data['stats'] as Map<String, dynamic>;
           final totalStudents = stats['totalCollegeUsers'] as int? ?? 0;
           final activeLearners = stats['activeStudents'] as int? ?? 0;
-          
+
           // Fetch average performance from course-engagement endpoint
           await _calculatePerformanceAndRisk(headers, totalStudents);
-          
+
           // Fetch course enrollment data
           await _loadCourseEnrollments(headers);
-          
+
           if (mounted) {
             setState(() {
               _totalStudents = totalStudents;
               _activeLearners = activeLearners;
             });
-            
+
             // Cache the analytics data
             await _cacheService.setAnalyticsData({
               'totalStudents': totalStudents,
@@ -263,7 +268,7 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
               'activeCourses': _activeCourses,
               'totalInstituteStudents': _totalInstituteStudents,
             });
-            
+
             // Handle online state
             _cacheService.handleOnlineState(context);
           }
@@ -277,26 +282,31 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
     }
   }
 
-  Future<void> _calculatePerformanceAndRisk(Map<String, String> headers, int totalStudents) async {
+  Future<void> _calculatePerformanceAndRisk(
+    Map<String, String> headers,
+    int totalStudents,
+  ) async {
     try {
       // Use course-engagement endpoint to get average completion/performance from backend
-      final engagementResponse = await http.get(
-        Uri.parse(ApiEndpoints.principalCourseEngagement),
-        headers: headers,
-      ).timeout(
-        const Duration(seconds: 30),
-        onTimeout: () {
-          throw Exception('Request timeout');
-        },
-      );
+      final engagementResponse = await http
+          .get(
+            Uri.parse(ApiEndpoints.principalCourseEngagement),
+            headers: headers,
+          )
+          .timeout(
+            const Duration(seconds: 30),
+            onTimeout: () {
+              throw Exception('Request timeout');
+            },
+          );
 
       if (engagementResponse.statusCode == 200) {
         final engagementData = json.decode(engagementResponse.body);
-        
+
         // Check response structure - data might be directly in response or nested
         if (engagementData['success'] == true) {
           Map<String, dynamic>? data;
-          
+
           // Try different possible response structures
           if (engagementData['data'] != null) {
             data = engagementData['data'] as Map<String, dynamic>?;
@@ -304,35 +314,35 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
             // If avgCompletion is directly in response
             final avgCompletion = engagementData['avgCompletion'];
             setState(() {
-              _avgPerformance = (avgCompletion is int) 
-                  ? avgCompletion.toDouble() 
-                  : (avgCompletion is double) 
-                      ? avgCompletion 
-                      : 0.0;
+              _avgPerformance = (avgCompletion is int)
+                  ? avgCompletion.toDouble()
+                  : (avgCompletion is double)
+                  ? avgCompletion
+                  : 0.0;
             });
             return;
           }
-          
+
           if (data != null) {
             // Get avgCompletion from data
             final avgCompletion = data['avgCompletion'];
-            
+
             if (avgCompletion != null) {
               setState(() {
-                _avgPerformance = (avgCompletion is int) 
-                    ? avgCompletion.toDouble() 
-                    : (avgCompletion is double) 
-                        ? avgCompletion 
-                        : (avgCompletion is num)
-                            ? avgCompletion.toDouble()
-                            : 0.0;
+                _avgPerformance = (avgCompletion is int)
+                    ? avgCompletion.toDouble()
+                    : (avgCompletion is double)
+                    ? avgCompletion
+                    : (avgCompletion is num)
+                    ? avgCompletion.toDouble()
+                    : 0.0;
               });
               return;
             }
           }
         }
       }
-      
+
       // If endpoint fails, set to 0
       setState(() {
         _avgPerformance = 0.0;
@@ -345,36 +355,41 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
     }
   }
 
-
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
     final isMobile = screenWidth < 600;
     final isTablet = screenWidth >= 600 && screenWidth < 1024;
-    
-    final padding = isMobile ? 12.0 : isTablet ? 16.0 : 20.0;
-    final spacing = isMobile ? 16.0 : isTablet ? 18.0 : 20.0;
-    
+
+    final padding = isMobile
+        ? 12.0
+        : isTablet
+        ? 16.0
+        : 20.0;
+    final spacing = isMobile
+        ? 16.0
+        : isTablet
+        ? 18.0
+        : 20.0;
+
     return Scaffold(
       backgroundColor: DashboardStyles.background,
       body: SafeArea(
         child: _isLoading && !_isLoadingFromCache
-            ? const Center(
-                child: CircularProgressIndicator(),
-              )
+            ? const Center(child: CircularProgressIndicator())
             : _errorMessage != null && _totalStudents == 0
-                ? _buildErrorState(isMobile, isTablet)
-                : SingleChildScrollView(
-                    padding: EdgeInsets.all(padding),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        _buildStatsCard(isMobile, isTablet),
-                        SizedBox(height: spacing),
-                        _buildCourseEnrollmentChart(isMobile, isTablet),
-                      ],
-                    ),
-                  ),
+            ? _buildErrorState(isMobile, isTablet)
+            : SingleChildScrollView(
+                padding: EdgeInsets.all(padding),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildStatsCard(isMobile, isTablet),
+                    SizedBox(height: spacing),
+                    _buildCourseEnrollmentChart(isMobile, isTablet),
+                  ],
+                ),
+              ),
       ),
     );
   }
@@ -382,20 +397,34 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
   Widget _buildErrorState(bool isMobile, bool isTablet) {
     return Center(
       child: Padding(
-        padding: EdgeInsets.all(isMobile ? 24.0 : isTablet ? 32.0 : 40.0),
+        padding: EdgeInsets.all(
+          isMobile
+              ? 24.0
+              : isTablet
+              ? 32.0
+              : 40.0,
+        ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
               Icons.cloud_off,
-              size: isMobile ? 56 : isTablet ? 64 : 72,
+              size: isMobile
+                  ? 56
+                  : isTablet
+                  ? 64
+                  : 72,
               color: Colors.grey[400],
             ),
             SizedBox(height: isMobile ? 16 : 20),
             Text(
               'No internet connection',
               style: TextStyle(
-                fontSize: isMobile ? 18 : isTablet ? 20 : 22,
+                fontSize: isMobile
+                    ? 18
+                    : isTablet
+                    ? 20
+                    : 22,
                 fontWeight: FontWeight.bold,
                 color: Colors.grey[700],
               ),
@@ -405,7 +434,11 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
             Text(
               'Please check your connection and try again',
               style: TextStyle(
-                fontSize: isMobile ? 14 : isTablet ? 15 : 16,
+                fontSize: isMobile
+                    ? 14
+                    : isTablet
+                    ? 15
+                    : 16,
                 color: Colors.grey[600],
               ),
               textAlign: TextAlign.center,
@@ -413,7 +446,11 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
             SizedBox(height: isMobile ? 24 : 32),
             ElevatedButton.icon(
               onPressed: () => _loadAnalyticsData(forceRefresh: true),
-              icon: Icon(Icons.refresh, size: isMobile ? 18 : 20, color: Colors.white),
+              icon: Icon(
+                Icons.refresh,
+                size: isMobile ? 18 : 20,
+                color: Colors.white,
+              ),
               label: Text(
                 'Retry',
                 style: TextStyle(
@@ -442,10 +479,22 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
   }
 
   Widget _buildStatsCard(bool isMobile, bool isTablet) {
-    final padding = isMobile ? 12.0 : isTablet ? 14.0 : 16.0;
-    final spacing = isMobile ? 8.0 : isTablet ? 10.0 : 12.0;
-    final borderRadius = isMobile ? 10.0 : isTablet ? 11.0 : 12.0;
-    
+    final padding = isMobile
+        ? 12.0
+        : isTablet
+        ? 14.0
+        : 16.0;
+    final spacing = isMobile
+        ? 8.0
+        : isTablet
+        ? 10.0
+        : 12.0;
+    final borderRadius = isMobile
+        ? 10.0
+        : isTablet
+        ? 11.0
+        : 12.0;
+
     return Container(
       padding: EdgeInsets.all(padding),
       decoration: BoxDecoration(
@@ -454,7 +503,11 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.05),
-            blurRadius: isMobile ? 8 : isTablet ? 9 : 10,
+            blurRadius: isMobile
+                ? 8
+                : isTablet
+                ? 9
+                : 10,
             offset: Offset(0, isMobile ? 1.5 : 2),
           ),
         ],
@@ -506,13 +559,33 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
     required bool isMobile,
     required bool isTablet,
   }) {
-    final iconSize = isMobile ? 28.0 : isTablet ? 30.0 : 32.0;
-    final iconInnerSize = isMobile ? 14.0 : isTablet ? 15.0 : 16.0;
-    final valueFontSize = isMobile ? 18.0 : isTablet ? 20.0 : 22.0;
-    final titleFontSize = isMobile ? 10.0 : isTablet ? 10.5 : 11.0;
-    final iconSpacing = isMobile ? 8.0 : isTablet ? 9.0 : 10.0;
+    final iconSize = isMobile
+        ? 28.0
+        : isTablet
+        ? 30.0
+        : 32.0;
+    final iconInnerSize = isMobile
+        ? 14.0
+        : isTablet
+        ? 15.0
+        : 16.0;
+    final valueFontSize = isMobile
+        ? 18.0
+        : isTablet
+        ? 20.0
+        : 22.0;
+    final titleFontSize = isMobile
+        ? 10.0
+        : isTablet
+        ? 10.5
+        : 11.0;
+    final iconSpacing = isMobile
+        ? 8.0
+        : isTablet
+        ? 9.0
+        : 10.0;
     final valueSpacing = isMobile ? 1.5 : 2.0;
-    
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -523,11 +596,7 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
             color: iconColor,
             borderRadius: BorderRadius.circular(isMobile ? 5 : 6),
           ),
-          child: Icon(
-            icon,
-            color: Colors.white,
-            size: iconInnerSize,
-          ),
+          child: Icon(icon, color: Colors.white, size: iconInnerSize),
         ),
         SizedBox(height: iconSpacing),
         Text(
@@ -557,28 +626,33 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
 
   Future<void> _loadCourseEnrollments(Map<String, String> headers) async {
     try {
-      final response = await http.get(
-        Uri.parse(ApiEndpoints.principalCourseEnrollments),
-        headers: headers,
-      ).timeout(
-        const Duration(seconds: 30),
-        onTimeout: () {
-          throw Exception('Request timeout');
-        },
-      );
+      final response = await http
+          .get(
+            Uri.parse(ApiEndpoints.principalCourseEnrollments),
+            headers: headers,
+          )
+          .timeout(
+            const Duration(seconds: 30),
+            onTimeout: () {
+              throw Exception('Request timeout');
+            },
+          );
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         if (data['success'] == true && data['courseEnrollments'] != null) {
-          final enrollments = List<Map<String, dynamic>>.from(data['courseEnrollments']);
-          
+          final enrollments = List<Map<String, dynamic>>.from(
+            data['courseEnrollments'],
+          );
+
           // Get totalInstituteStudents from backend
-          final totalInstituteStudents = data['totalInstituteStudents'] as int? ?? 0;
-          
+          final totalInstituteStudents =
+              data['totalInstituteStudents'] as int? ?? 0;
+
           // Calculate totals
           int totalEnrollments = 0;
           int activeCourses = 0;
-          
+
           for (var course in enrollments) {
             final enrollmentCount = course['enrollments'] as int? ?? 0;
             totalEnrollments += enrollmentCount;
@@ -586,7 +660,7 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
               activeCourses++;
             }
           }
-          
+
           setState(() {
             _courseEnrollments = enrollments;
             _totalEnrollments = totalEnrollments;
@@ -602,11 +676,27 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
 
   Widget _buildCourseEnrollmentChart(bool isMobile, bool isTablet) {
     if (_courseEnrollments.isEmpty) {
-      final padding = isMobile ? 20.0 : isTablet ? 22.0 : 24.0;
-      final borderRadius = isMobile ? 10.0 : isTablet ? 11.0 : 12.0;
-      final iconSize = isMobile ? 40.0 : isTablet ? 44.0 : 48.0;
-      final fontSize = isMobile ? 13.0 : isTablet ? 13.5 : 14.0;
-      
+      final padding = isMobile
+          ? 20.0
+          : isTablet
+          ? 22.0
+          : 24.0;
+      final borderRadius = isMobile
+          ? 10.0
+          : isTablet
+          ? 11.0
+          : 12.0;
+      final iconSize = isMobile
+          ? 40.0
+          : isTablet
+          ? 44.0
+          : 48.0;
+      final fontSize = isMobile
+          ? 13.0
+          : isTablet
+          ? 13.5
+          : 14.0;
+
       return Container(
         padding: EdgeInsets.all(padding),
         decoration: BoxDecoration(
@@ -615,7 +705,11 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
           boxShadow: [
             BoxShadow(
               color: Colors.black.withOpacity(0.05),
-              blurRadius: isMobile ? 8 : isTablet ? 9 : 10,
+              blurRadius: isMobile
+                  ? 8
+                  : isTablet
+                  ? 9
+                  : 10,
               offset: Offset(0, isMobile ? 1.5 : 2),
             ),
           ],
@@ -643,27 +737,79 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
     }
 
     final maxEnrollment = _courseEnrollments.isNotEmpty
-        ? _courseEnrollments.map((e) => e['enrollments'] as int? ?? 0).reduce((a, b) => a > b ? a : b)
+        ? _courseEnrollments
+              .map((e) => e['enrollments'] as int? ?? 0)
+              .reduce((a, b) => a > b ? a : b)
         : 1;
     final maxY = maxEnrollment > 0 ? ((maxEnrollment / 5).ceil() * 5) : 5;
 
     // Responsive values
-    final padding = isMobile ? 16.0 : isTablet ? 20.0 : 24.0;
-    final borderRadius = isMobile ? 12.0 : isTablet ? 14.0 : 16.0;
-    final iconPadding = isMobile ? 6.0 : isTablet ? 7.0 : 8.0;
-    final iconSize = isMobile ? 18.0 : isTablet ? 19.0 : 20.0;
-    final titleFontSize = isMobile ? 15.0 : isTablet ? 16.0 : 17.0;
-    final subtitleFontSize = isMobile ? 10.0 : isTablet ? 10.5 : 11.0;
-    final badgePadding = isMobile ? 8.0 : isTablet ? 9.0 : 10.0;
-    final badgeFontSize = isMobile ? 10.0 : isTablet ? 10.5 : 11.0;
-    final chartSpacing = isMobile ? 18.0 : isTablet ? 20.0 : 24.0;
-    final legendSpacing = isMobile ? 10.0 : isTablet ? 11.0 : 12.0;
-    final summarySpacing = isMobile ? 18.0 : isTablet ? 20.0 : 24.0;
-    final chartHeight = isMobile 
-        ? (_courseEnrollments.length > 10 ? 350 : (_courseEnrollments.length * 50.0).clamp(180.0, 350.0))
+    final padding = isMobile
+        ? 16.0
         : isTablet
-            ? (_courseEnrollments.length > 10 ? 375 : (_courseEnrollments.length * 55.0).clamp(190.0, 375.0))
-            : (_courseEnrollments.length > 10 ? 400 : (_courseEnrollments.length * 60.0).clamp(200.0, 400.0));
+        ? 20.0
+        : 24.0;
+    final borderRadius = isMobile
+        ? 12.0
+        : isTablet
+        ? 14.0
+        : 16.0;
+    final iconPadding = isMobile
+        ? 6.0
+        : isTablet
+        ? 7.0
+        : 8.0;
+    final iconSize = isMobile
+        ? 18.0
+        : isTablet
+        ? 19.0
+        : 20.0;
+    final titleFontSize = isMobile
+        ? 15.0
+        : isTablet
+        ? 16.0
+        : 17.0;
+    final subtitleFontSize = isMobile
+        ? 10.0
+        : isTablet
+        ? 10.5
+        : 11.0;
+    final badgePadding = isMobile
+        ? 8.0
+        : isTablet
+        ? 9.0
+        : 10.0;
+    final badgeFontSize = isMobile
+        ? 10.0
+        : isTablet
+        ? 10.5
+        : 11.0;
+    final chartSpacing = isMobile
+        ? 18.0
+        : isTablet
+        ? 20.0
+        : 24.0;
+    final legendSpacing = isMobile
+        ? 10.0
+        : isTablet
+        ? 11.0
+        : 12.0;
+    final summarySpacing = isMobile
+        ? 18.0
+        : isTablet
+        ? 20.0
+        : 24.0;
+    final chartHeight = isMobile
+        ? (_courseEnrollments.length > 10
+              ? 350
+              : (_courseEnrollments.length * 50.0).clamp(180.0, 350.0))
+        : isTablet
+        ? (_courseEnrollments.length > 10
+              ? 375
+              : (_courseEnrollments.length * 55.0).clamp(190.0, 375.0))
+        : (_courseEnrollments.length > 10
+              ? 400
+              : (_courseEnrollments.length * 60.0).clamp(200.0, 400.0));
 
     return Container(
       padding: EdgeInsets.all(padding),
@@ -673,8 +819,19 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.08),
-            blurRadius: isMobile ? 16 : isTablet ? 18 : 20,
-            offset: Offset(0, isMobile ? 3 : isTablet ? 3.5 : 4),
+            blurRadius: isMobile
+                ? 16
+                : isTablet
+                ? 18
+                : 20,
+            offset: Offset(
+              0,
+              isMobile
+                  ? 3
+                  : isTablet
+                  ? 3.5
+                  : 4,
+            ),
             spreadRadius: 0,
           ),
         ],
@@ -817,7 +974,11 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
             children: [
               Expanded(
                 child: _buildSummaryStat(
-                  value: (_totalInstituteStudents > 0 ? _totalInstituteStudents : _totalStudents).toString(),
+                  value:
+                      (_totalInstituteStudents > 0
+                              ? _totalInstituteStudents
+                              : _totalStudents)
+                          .toString(),
                   label: 'Total Students',
                   color: const Color(0xFF1F2937),
                   icon: Icons.people_outline_rounded,
@@ -825,7 +986,13 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
                   isTablet: isTablet,
                 ),
               ),
-              SizedBox(width: isMobile ? 8 : isTablet ? 10 : 12),
+              SizedBox(
+                width: isMobile
+                    ? 8
+                    : isTablet
+                    ? 10
+                    : 12,
+              ),
               Expanded(
                 child: _buildSummaryStat(
                   value: _activeCourses.toString(),
@@ -836,7 +1003,13 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
                   isTablet: isTablet,
                 ),
               ),
-              SizedBox(width: isMobile ? 8 : isTablet ? 10 : 12),
+              SizedBox(
+                width: isMobile
+                    ? 8
+                    : isTablet
+                    ? 10
+                    : 12,
+              ),
               Expanded(
                 child: _buildSummaryStat(
                   value: _totalEnrollments.toString(),
@@ -862,15 +1035,35 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
     required bool isMobile,
     required bool isTablet,
   }) {
-    final padding = isMobile ? 10.0 : isTablet ? 11.0 : 12.0;
+    final padding = isMobile
+        ? 10.0
+        : isTablet
+        ? 11.0
+        : 12.0;
     final horizontalPadding = isMobile ? 6.0 : 8.0;
-    final borderRadius = isMobile ? 10.0 : isTablet ? 11.0 : 12.0;
-    final iconSize = isMobile ? 18.0 : isTablet ? 19.0 : 20.0;
-    final valueFontSize = isMobile ? 18.0 : isTablet ? 20.0 : 22.0;
-    final labelFontSize = isMobile ? 10.0 : isTablet ? 10.5 : 11.0;
+    final borderRadius = isMobile
+        ? 10.0
+        : isTablet
+        ? 11.0
+        : 12.0;
+    final iconSize = isMobile
+        ? 18.0
+        : isTablet
+        ? 19.0
+        : 20.0;
+    final valueFontSize = isMobile
+        ? 18.0
+        : isTablet
+        ? 20.0
+        : 22.0;
+    final labelFontSize = isMobile
+        ? 10.0
+        : isTablet
+        ? 10.5
+        : 11.0;
     final iconSpacing = isMobile ? 6.0 : 8.0;
     final valueSpacing = isMobile ? 3.0 : 4.0;
-    
+
     return Container(
       padding: EdgeInsets.symmetric(
         vertical: padding,
@@ -879,19 +1072,12 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
       decoration: BoxDecoration(
         color: color.withOpacity(0.05),
         borderRadius: BorderRadius.circular(borderRadius),
-        border: Border.all(
-          color: color.withOpacity(0.15),
-          width: 1,
-        ),
+        border: Border.all(color: color.withOpacity(0.15), width: 1),
       ),
       child: Column(
         children: [
           if (icon != null) ...[
-            Icon(
-              icon,
-              size: iconSize,
-              color: color,
-            ),
+            Icon(icon, size: iconSize, color: color),
             SizedBox(height: iconSpacing),
           ],
           Text(
@@ -950,7 +1136,11 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
                 child: Text(
                   'Number of Students (out of ${_totalInstituteStudents > 0 ? _totalInstituteStudents : _totalStudents})',
                   style: TextStyle(
-                    fontSize: isMobile ? 9 : isTablet ? 9.5 : 10,
+                    fontSize: isMobile
+                        ? 9
+                        : isTablet
+                        ? 9.5
+                        : 10,
                     color: Colors.grey.shade700,
                     fontWeight: FontWeight.w600,
                   ),
@@ -997,13 +1187,17 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
             shrinkWrap: true,
             physics: const AlwaysScrollableScrollPhysics(),
             itemCount: _courseEnrollments.length,
-            separatorBuilder: (context, index) => SizedBox(height: isMobile ? 10 : 12),
+            separatorBuilder: (context, index) =>
+                SizedBox(height: isMobile ? 10 : 12),
             itemBuilder: (context, index) {
               final course = _courseEnrollments[index];
-              final courseName = course['courseName'] as String? ?? 'Unknown Course';
+              final courseName =
+                  course['courseName'] as String? ?? 'Unknown Course';
               final enrollments = course['enrollments'] as int? ?? 0;
               final gradients = _getBarGradient(index);
-              final percentage = maxY > 0 ? (enrollments / maxY).clamp(0.0, 1.0) : 0.0;
+              final percentage = maxY > 0
+                  ? (enrollments / maxY).clamp(0.0, 1.0)
+                  : 0.0;
 
               return _buildHorizontalBarItem(
                 courseName: courseName,
@@ -1030,14 +1224,34 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
     required bool isMobile,
     required bool isTablet,
   }) {
-    final courseNameFontSize = isMobile ? 11.0 : isTablet ? 11.5 : 12.0;
-    final enrollmentFontSize = isMobile ? 11.0 : isTablet ? 11.5 : 12.0;
-    final badgePadding = isMobile ? 6.0 : isTablet ? 7.0 : 8.0;
+    final courseNameFontSize = isMobile
+        ? 11.0
+        : isTablet
+        ? 11.5
+        : 12.0;
+    final enrollmentFontSize = isMobile
+        ? 11.0
+        : isTablet
+        ? 11.5
+        : 12.0;
+    final badgePadding = isMobile
+        ? 6.0
+        : isTablet
+        ? 7.0
+        : 8.0;
     final badgeVerticalPadding = isMobile ? 3.0 : 4.0;
-    final barHeight = isMobile ? 24.0 : isTablet ? 26.0 : 28.0;
+    final barHeight = isMobile
+        ? 24.0
+        : isTablet
+        ? 26.0
+        : 28.0;
     final percentageFontSize = isMobile ? 9.0 : 10.0;
-    final spacing = isMobile ? 6.0 : isTablet ? 7.0 : 8.0;
-    
+    final spacing = isMobile
+        ? 6.0
+        : isTablet
+        ? 7.0
+        : 8.0;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -1127,4 +1341,3 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
     );
   }
 }
-

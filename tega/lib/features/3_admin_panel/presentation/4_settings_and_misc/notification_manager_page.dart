@@ -44,42 +44,88 @@ class _ComposeNotificationPageState extends State<ComposeNotificationPage> {
         Text(
           label,
           style: TextStyle(
-            fontSize: isMobile ? 14 : isTablet ? 15 : 16,
+            fontSize: isMobile
+                ? 14
+                : isTablet
+                ? 15
+                : 16,
             fontWeight: FontWeight.w600,
             color: AdminDashboardStyles.textDark,
           ),
         ),
-        SizedBox(height: isMobile ? 10 : isTablet ? 11 : 12),
+        SizedBox(
+          height: isMobile
+              ? 10
+              : isTablet
+              ? 11
+              : 12,
+        ),
         TextField(
           controller: controller,
           maxLines: maxLines,
-          style: TextStyle(fontSize: isMobile ? 14 : isTablet ? 15 : 16),
+          style: TextStyle(
+            fontSize: isMobile
+                ? 14
+                : isTablet
+                ? 15
+                : 16,
+          ),
           decoration: InputDecoration(
             hintText: hint,
             hintStyle: TextStyle(
               color: Colors.grey.shade400,
-              fontSize: isMobile ? 13 : isTablet ? 14 : 15,
+              fontSize: isMobile
+                  ? 13
+                  : isTablet
+                  ? 14
+                  : 15,
             ),
             filled: true,
             fillColor: Colors.grey.shade50,
             border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(isMobile ? 10 : isTablet ? 11 : 12),
+              borderRadius: BorderRadius.circular(
+                isMobile
+                    ? 10
+                    : isTablet
+                    ? 11
+                    : 12,
+              ),
               borderSide: BorderSide(color: Colors.grey.shade300),
             ),
             enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(isMobile ? 10 : isTablet ? 11 : 12),
+              borderRadius: BorderRadius.circular(
+                isMobile
+                    ? 10
+                    : isTablet
+                    ? 11
+                    : 12,
+              ),
               borderSide: BorderSide(color: Colors.grey.shade300),
             ),
             focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(isMobile ? 10 : isTablet ? 11 : 12),
+              borderRadius: BorderRadius.circular(
+                isMobile
+                    ? 10
+                    : isTablet
+                    ? 11
+                    : 12,
+              ),
               borderSide: const BorderSide(
                 color: Color(0xFF4B3FB5),
                 width: 2.0,
               ),
             ),
             contentPadding: EdgeInsets.symmetric(
-              horizontal: isMobile ? 14 : isTablet ? 15 : 16,
-              vertical: isMobile ? 12 : isTablet ? 13 : 14,
+              horizontal: isMobile
+                  ? 14
+                  : isTablet
+                  ? 15
+                  : 16,
+              vertical: isMobile
+                  ? 12
+                  : isTablet
+                  ? 13
+                  : 14,
             ),
           ),
         ),
@@ -104,41 +150,87 @@ class _ComposeNotificationPageState extends State<ComposeNotificationPage> {
         Text(
           label,
           style: TextStyle(
-            fontSize: isMobile ? 14 : isTablet ? 15 : 16,
+            fontSize: isMobile
+                ? 14
+                : isTablet
+                ? 15
+                : 16,
             fontWeight: FontWeight.w600,
             color: Colors.black87,
           ),
         ),
-        SizedBox(height: isMobile ? 10 : isTablet ? 11 : 12),
+        SizedBox(
+          height: isMobile
+              ? 10
+              : isTablet
+              ? 11
+              : 12,
+        ),
         DropdownButtonFormField<String>(
           value: value,
-          style: TextStyle(fontSize: isMobile ? 14 : isTablet ? 15 : 16),
+          style: TextStyle(
+            fontSize: isMobile
+                ? 14
+                : isTablet
+                ? 15
+                : 16,
+          ),
           decoration: InputDecoration(
             hintText: hint,
             hintStyle: TextStyle(
               color: Colors.grey.shade400,
-              fontSize: isMobile ? 13 : isTablet ? 14 : 15,
+              fontSize: isMobile
+                  ? 13
+                  : isTablet
+                  ? 14
+                  : 15,
             ),
             filled: true,
             fillColor: Colors.grey.shade50,
             border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(isMobile ? 10 : isTablet ? 11 : 12),
+              borderRadius: BorderRadius.circular(
+                isMobile
+                    ? 10
+                    : isTablet
+                    ? 11
+                    : 12,
+              ),
               borderSide: BorderSide(color: Colors.grey.shade300),
             ),
             enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(isMobile ? 10 : isTablet ? 11 : 12),
+              borderRadius: BorderRadius.circular(
+                isMobile
+                    ? 10
+                    : isTablet
+                    ? 11
+                    : 12,
+              ),
               borderSide: BorderSide(color: Colors.grey.shade300),
             ),
             focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(isMobile ? 10 : isTablet ? 11 : 12),
+              borderRadius: BorderRadius.circular(
+                isMobile
+                    ? 10
+                    : isTablet
+                    ? 11
+                    : 12,
+              ),
               borderSide: const BorderSide(
                 color: Color(0xFF4B3FB5),
                 width: 2.0,
               ),
             ),
             contentPadding: EdgeInsets.symmetric(
-              horizontal: isMobile ? 14 : isTablet ? 15 : 16,
-              vertical: isMobile ? 12 : isTablet ? 13 : 14,
+              horizontal: isMobile
+                  ? 14
+                  : isTablet
+                  ? 15
+                  : 16,
+              vertical: isMobile
+                  ? 12
+                  : isTablet
+                  ? 13
+                  : 14,
             ),
           ),
           items: items,
@@ -163,8 +255,16 @@ class _ComposeNotificationPageState extends State<ComposeNotificationPage> {
             // Custom AppBar
             Container(
               padding: EdgeInsets.symmetric(
-                horizontal: isMobile ? 16 : isTablet ? 18 : 20,
-                vertical: isMobile ? 12 : isTablet ? 14 : 16,
+                horizontal: isMobile
+                    ? 16
+                    : isTablet
+                    ? 18
+                    : 20,
+                vertical: isMobile
+                    ? 12
+                    : isTablet
+                    ? 14
+                    : 16,
               ),
               decoration: BoxDecoration(
                 color: Colors.white,
@@ -182,7 +282,11 @@ class _ComposeNotificationPageState extends State<ComposeNotificationPage> {
                     icon: Icon(
                       Icons.arrow_back_ios_new,
                       color: Colors.black,
-                      size: isMobile ? 18 : isTablet ? 20 : 22,
+                      size: isMobile
+                          ? 18
+                          : isTablet
+                          ? 20
+                          : 22,
                     ),
                     onPressed: () => Navigator.pop(context),
                   ),
@@ -191,13 +295,19 @@ class _ComposeNotificationPageState extends State<ComposeNotificationPage> {
                       'Compose Notification',
                       style: TextStyle(
                         color: Colors.black,
-                        fontSize: isMobile ? 18 : isTablet ? 19 : 20,
+                        fontSize: isMobile
+                            ? 18
+                            : isTablet
+                            ? 19
+                            : 20,
                         fontWeight: FontWeight.bold,
                       ),
                       textAlign: TextAlign.center,
                     ),
                   ),
-                  SizedBox(width: isMobile ? 48 : 56), // Balance the back button
+                  SizedBox(
+                    width: isMobile ? 48 : 56,
+                  ), // Balance the back button
                 ],
               ),
             ),
@@ -205,31 +315,61 @@ class _ComposeNotificationPageState extends State<ComposeNotificationPage> {
             Expanded(
               child: SingleChildScrollView(
                 child: Padding(
-                  padding: EdgeInsets.all(isMobile ? 16 : isTablet ? 18 : 20),
+                  padding: EdgeInsets.all(
+                    isMobile
+                        ? 16
+                        : isTablet
+                        ? 18
+                        : 20,
+                  ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       // --- Refined Header Image ---
                       Container(
                         width: double.infinity,
-                        height: isMobile ? 150 : isTablet ? 175 : 200,
+                        height: isMobile
+                            ? 150
+                            : isTablet
+                            ? 175
+                            : 200,
                         decoration: BoxDecoration(
                           color: const Color(0xFFF5E6D8),
-                          borderRadius: BorderRadius.circular(isMobile ? 16 : isTablet ? 18 : 20),
+                          borderRadius: BorderRadius.circular(
+                            isMobile
+                                ? 16
+                                : isTablet
+                                ? 18
+                                : 20,
+                          ),
                         ),
                         child: Icon(
                           Icons.edit_notifications_outlined,
-                          size: isMobile ? 60 : isTablet ? 70 : 80,
+                          size: isMobile
+                              ? 60
+                              : isTablet
+                              ? 70
+                              : 80,
                           color: const Color(0xFFD4A574),
                         ),
                       ),
-                      SizedBox(height: isMobile ? 24 : isTablet ? 28 : 32),
+                      SizedBox(
+                        height: isMobile
+                            ? 24
+                            : isTablet
+                            ? 28
+                            : 32,
+                      ),
 
                       // --- Title and Description ---
                       Text(
                         'Create a New Message',
                         style: TextStyle(
-                          fontSize: isMobile ? 22 : isTablet ? 24 : 26,
+                          fontSize: isMobile
+                              ? 22
+                              : isTablet
+                              ? 24
+                              : 26,
                           fontWeight: FontWeight.bold,
                           color: Colors.black87,
                         ),
@@ -238,12 +378,22 @@ class _ComposeNotificationPageState extends State<ComposeNotificationPage> {
                       Text(
                         'Craft a new notification to keep your users informed and engaged.',
                         style: TextStyle(
-                          fontSize: isMobile ? 14 : isTablet ? 15 : 16,
+                          fontSize: isMobile
+                              ? 14
+                              : isTablet
+                              ? 15
+                              : 16,
                           color: Colors.grey,
                           height: 1.5,
                         ),
                       ),
-                      SizedBox(height: isMobile ? 24 : isTablet ? 28 : 32),
+                      SizedBox(
+                        height: isMobile
+                            ? 24
+                            : isTablet
+                            ? 28
+                            : 32,
+                      ),
 
                       // --- Use a Template Section ---
                       _buildDropdownField(
@@ -258,21 +408,39 @@ class _ComposeNotificationPageState extends State<ComposeNotificationPage> {
                             value: 'template1',
                             child: Text(
                               'Welcome Template',
-                              style: TextStyle(fontSize: isMobile ? 13 : isTablet ? 14 : 16),
+                              style: TextStyle(
+                                fontSize: isMobile
+                                    ? 13
+                                    : isTablet
+                                    ? 14
+                                    : 16,
+                              ),
                             ),
                           ),
                           DropdownMenuItem(
                             value: 'template2',
                             child: Text(
                               'Update Template',
-                              style: TextStyle(fontSize: isMobile ? 13 : isTablet ? 14 : 16),
+                              style: TextStyle(
+                                fontSize: isMobile
+                                    ? 13
+                                    : isTablet
+                                    ? 14
+                                    : 16,
+                              ),
                             ),
                           ),
                           DropdownMenuItem(
                             value: 'template3',
                             child: Text(
                               'Promotion Template',
-                              style: TextStyle(fontSize: isMobile ? 13 : isTablet ? 14 : 16),
+                              style: TextStyle(
+                                fontSize: isMobile
+                                    ? 13
+                                    : isTablet
+                                    ? 14
+                                    : 16,
+                              ),
                             ),
                           ),
                         ],
@@ -282,7 +450,13 @@ class _ComposeNotificationPageState extends State<ComposeNotificationPage> {
                           });
                         },
                       ),
-                      SizedBox(height: isMobile ? 20 : isTablet ? 22 : 24),
+                      SizedBox(
+                        height: isMobile
+                            ? 20
+                            : isTablet
+                            ? 22
+                            : 24,
+                      ),
 
                       // --- Notification Title ---
                       _buildTextField(
@@ -293,7 +467,13 @@ class _ComposeNotificationPageState extends State<ComposeNotificationPage> {
                         isTablet: isTablet,
                         isDesktop: isDesktop,
                       ),
-                      SizedBox(height: isMobile ? 20 : isTablet ? 22 : 24),
+                      SizedBox(
+                        height: isMobile
+                            ? 20
+                            : isTablet
+                            ? 22
+                            : 24,
+                      ),
 
                       // --- Message ---
                       _buildTextField(
@@ -305,7 +485,13 @@ class _ComposeNotificationPageState extends State<ComposeNotificationPage> {
                         isTablet: isTablet,
                         isDesktop: isDesktop,
                       ),
-                      SizedBox(height: isMobile ? 20 : isTablet ? 22 : 24),
+                      SizedBox(
+                        height: isMobile
+                            ? 20
+                            : isTablet
+                            ? 22
+                            : 24,
+                      ),
 
                       // --- Target Audience ---
                       _buildDropdownField(
@@ -320,28 +506,52 @@ class _ComposeNotificationPageState extends State<ComposeNotificationPage> {
                             value: 'all',
                             child: Text(
                               'All Users',
-                              style: TextStyle(fontSize: isMobile ? 13 : isTablet ? 14 : 16),
+                              style: TextStyle(
+                                fontSize: isMobile
+                                    ? 13
+                                    : isTablet
+                                    ? 14
+                                    : 16,
+                              ),
                             ),
                           ),
                           DropdownMenuItem(
                             value: 'specific',
                             child: Text(
                               'Specific Group',
-                              style: TextStyle(fontSize: isMobile ? 13 : isTablet ? 14 : 16),
+                              style: TextStyle(
+                                fontSize: isMobile
+                                    ? 13
+                                    : isTablet
+                                    ? 14
+                                    : 16,
+                              ),
                             ),
                           ),
                           DropdownMenuItem(
                             value: 'premium',
                             child: Text(
                               'Premium Users',
-                              style: TextStyle(fontSize: isMobile ? 13 : isTablet ? 14 : 16),
+                              style: TextStyle(
+                                fontSize: isMobile
+                                    ? 13
+                                    : isTablet
+                                    ? 14
+                                    : 16,
+                              ),
                             ),
                           ),
                           DropdownMenuItem(
                             value: 'new',
                             child: Text(
                               'New Users',
-                              style: TextStyle(fontSize: isMobile ? 13 : isTablet ? 14 : 16),
+                              style: TextStyle(
+                                fontSize: isMobile
+                                    ? 13
+                                    : isTablet
+                                    ? 14
+                                    : 16,
+                              ),
                             ),
                           ),
                         ],
@@ -351,7 +561,13 @@ class _ComposeNotificationPageState extends State<ComposeNotificationPage> {
                           });
                         },
                       ),
-                      SizedBox(height: isMobile ? 32 : isTablet ? 36 : 40),
+                      SizedBox(
+                        height: isMobile
+                            ? 32
+                            : isTablet
+                            ? 36
+                            : 40,
+                      ),
 
                       // --- Action Buttons ---
                       isMobile
@@ -363,24 +579,46 @@ class _ComposeNotificationPageState extends State<ComposeNotificationPage> {
                                     onPressed: _sendNotification,
                                     icon: Icon(
                                       Icons.send_rounded,
-                                      size: isMobile ? 18 : isTablet ? 19 : 20,
+                                      size: isMobile
+                                          ? 18
+                                          : isTablet
+                                          ? 19
+                                          : 20,
                                     ),
                                     label: Text(
                                       'Send',
                                       style: TextStyle(
-                                        fontSize: isMobile ? 14 : isTablet ? 15 : 16,
+                                        fontSize: isMobile
+                                            ? 14
+                                            : isTablet
+                                            ? 15
+                                            : 16,
                                         fontWeight: FontWeight.bold,
                                       ),
                                     ),
                                     style: ElevatedButton.styleFrom(
                                       backgroundColor: const Color(0xFF4B3FB5),
                                       foregroundColor: Colors.white,
-                                      padding: EdgeInsets.symmetric(vertical: isMobile ? 14 : isTablet ? 15 : 16),
+                                      padding: EdgeInsets.symmetric(
+                                        vertical: isMobile
+                                            ? 14
+                                            : isTablet
+                                            ? 15
+                                            : 16,
+                                      ),
                                       shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(isMobile ? 10 : isTablet ? 11 : 12),
+                                        borderRadius: BorderRadius.circular(
+                                          isMobile
+                                              ? 10
+                                              : isTablet
+                                              ? 11
+                                              : 12,
+                                        ),
                                       ),
                                       elevation: 2,
-                                      shadowColor: const Color(0xFF4B3FB5).withOpacity(0.4),
+                                      shadowColor: const Color(
+                                        0xFF4B3FB5,
+                                      ).withOpacity(0.4),
                                     ),
                                   ),
                                 ),
@@ -391,12 +629,20 @@ class _ComposeNotificationPageState extends State<ComposeNotificationPage> {
                                     onPressed: _saveDraft,
                                     icon: Icon(
                                       Icons.drafts_outlined,
-                                      size: isMobile ? 18 : isTablet ? 19 : 20,
+                                      size: isMobile
+                                          ? 18
+                                          : isTablet
+                                          ? 19
+                                          : 20,
                                     ),
                                     label: Text(
                                       'Save Draft',
                                       style: TextStyle(
-                                        fontSize: isMobile ? 14 : isTablet ? 15 : 16,
+                                        fontSize: isMobile
+                                            ? 14
+                                            : isTablet
+                                            ? 15
+                                            : 16,
                                         fontWeight: FontWeight.bold,
                                         color: Colors.black87,
                                       ),
@@ -404,9 +650,21 @@ class _ComposeNotificationPageState extends State<ComposeNotificationPage> {
                                     style: ElevatedButton.styleFrom(
                                       backgroundColor: Colors.grey.shade200,
                                       foregroundColor: Colors.black87,
-                                      padding: EdgeInsets.symmetric(vertical: isMobile ? 14 : isTablet ? 15 : 16),
+                                      padding: EdgeInsets.symmetric(
+                                        vertical: isMobile
+                                            ? 14
+                                            : isTablet
+                                            ? 15
+                                            : 16,
+                                      ),
                                       shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(isMobile ? 10 : isTablet ? 11 : 12),
+                                        borderRadius: BorderRadius.circular(
+                                          isMobile
+                                              ? 10
+                                              : isTablet
+                                              ? 11
+                                              : 12,
+                                        ),
                                       ),
                                       elevation: 0,
                                     ),
@@ -434,9 +692,13 @@ class _ComposeNotificationPageState extends State<ComposeNotificationPage> {
                                     style: ElevatedButton.styleFrom(
                                       backgroundColor: Colors.grey.shade200,
                                       foregroundColor: Colors.black87,
-                                      padding: EdgeInsets.symmetric(vertical: isTablet ? 15 : 16),
+                                      padding: EdgeInsets.symmetric(
+                                        vertical: isTablet ? 15 : 16,
+                                      ),
                                       shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(isTablet ? 11 : 12),
+                                        borderRadius: BorderRadius.circular(
+                                          isTablet ? 11 : 12,
+                                        ),
                                       ),
                                       elevation: 0,
                                     ),
@@ -460,18 +722,30 @@ class _ComposeNotificationPageState extends State<ComposeNotificationPage> {
                                     style: ElevatedButton.styleFrom(
                                       backgroundColor: const Color(0xFF4B3FB5),
                                       foregroundColor: Colors.white,
-                                      padding: EdgeInsets.symmetric(vertical: isTablet ? 15 : 16),
+                                      padding: EdgeInsets.symmetric(
+                                        vertical: isTablet ? 15 : 16,
+                                      ),
                                       shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(isTablet ? 11 : 12),
+                                        borderRadius: BorderRadius.circular(
+                                          isTablet ? 11 : 12,
+                                        ),
                                       ),
                                       elevation: 2,
-                                      shadowColor: const Color(0xFF4B3FB5).withOpacity(0.4),
+                                      shadowColor: const Color(
+                                        0xFF4B3FB5,
+                                      ).withOpacity(0.4),
                                     ),
                                   ),
                                 ),
                               ],
                             ),
-                      SizedBox(height: isMobile ? 16 : isTablet ? 18 : 20),
+                      SizedBox(
+                        height: isMobile
+                            ? 16
+                            : isTablet
+                            ? 18
+                            : 20,
+                      ),
                     ],
                   ),
                 ),
@@ -553,10 +827,10 @@ class _NotificationManagerPageState extends State<NotificationManagerPage>
   Future<void> _initializeCacheAndLoadData() async {
     // Initialize cache service
     await _cacheService.initialize();
-    
+
     // Try to load from cache first
     await _loadFromCache();
-    
+
     // Then load fresh data
     await _loadNotifications();
   }
@@ -564,7 +838,7 @@ class _NotificationManagerPageState extends State<NotificationManagerPage>
   Future<void> _loadFromCache() async {
     try {
       setState(() => _isLoadingFromCache = true);
-      
+
       final cachedNotifications = await _cacheService.getNotificationsData();
 
       if (cachedNotifications != null && cachedNotifications.isNotEmpty) {
@@ -588,7 +862,9 @@ class _NotificationManagerPageState extends State<NotificationManagerPage>
             error.toString().toLowerCase().contains('connection') ||
             error.toString().toLowerCase().contains('internet') ||
             error.toString().toLowerCase().contains('failed host lookup') ||
-            error.toString().toLowerCase().contains('no address associated with hostname'));
+            error.toString().toLowerCase().contains(
+              'no address associated with hostname',
+            ));
   }
 
   Future<void> _loadNotifications({bool forceRefresh = false}) async {
@@ -616,7 +892,7 @@ class _NotificationManagerPageState extends State<NotificationManagerPage>
       });
 
       _initializeAnimations();
-      
+
       // Cache the data
       await _cacheService.setNotificationsData(notifications);
     } catch (e) {
@@ -635,7 +911,7 @@ class _NotificationManagerPageState extends State<NotificationManagerPage>
           _initializeAnimations();
           return;
         }
-        
+
         // No cache available, show error
         setState(() {
           _errorMessage = 'No internet connection';
@@ -662,7 +938,7 @@ class _NotificationManagerPageState extends State<NotificationManagerPage>
           _notifications = notifications;
         });
         _initializeAnimations();
-        
+
         // Cache the data
         await _cacheService.setNotificationsData(notifications);
       }
@@ -763,14 +1039,34 @@ class _NotificationManagerPageState extends State<NotificationManagerPage>
                   children: [
                     // Header Section with Unread count and Mark all as read
                     Container(
-                      margin: EdgeInsets.all(isMobile ? 16 : isTablet ? 18 : 20),
+                      margin: EdgeInsets.all(
+                        isMobile
+                            ? 16
+                            : isTablet
+                            ? 18
+                            : 20,
+                      ),
                       padding: EdgeInsets.symmetric(
-                        horizontal: isMobile ? 16 : isTablet ? 18 : 20,
-                        vertical: isMobile ? 12 : isTablet ? 14 : 16,
+                        horizontal: isMobile
+                            ? 16
+                            : isTablet
+                            ? 18
+                            : 20,
+                        vertical: isMobile
+                            ? 12
+                            : isTablet
+                            ? 14
+                            : 16,
                       ),
                       decoration: BoxDecoration(
                         color: Colors.white,
-                        borderRadius: BorderRadius.circular(isMobile ? 14 : isTablet ? 15 : 16),
+                        borderRadius: BorderRadius.circular(
+                          isMobile
+                              ? 14
+                              : isTablet
+                              ? 15
+                              : 16,
+                        ),
                         boxShadow: [
                           BoxShadow(
                             color: Colors.black.withOpacity(0.05),
@@ -784,26 +1080,52 @@ class _NotificationManagerPageState extends State<NotificationManagerPage>
                           Row(
                             children: [
                               Container(
-                                padding: EdgeInsets.all(isMobile ? 8 : isTablet ? 9 : 10),
+                                padding: EdgeInsets.all(
+                                  isMobile
+                                      ? 8
+                                      : isTablet
+                                      ? 9
+                                      : 10,
+                                ),
                                 decoration: BoxDecoration(
                                   color: AdminDashboardStyles.primary
                                       .withOpacity(0.1),
-                                  borderRadius: BorderRadius.circular(isMobile ? 8 : isTablet ? 9 : 10),
+                                  borderRadius: BorderRadius.circular(
+                                    isMobile
+                                        ? 8
+                                        : isTablet
+                                        ? 9
+                                        : 10,
+                                  ),
                                 ),
                                 child: Icon(
                                   Icons.notifications_active,
                                   color: AdminDashboardStyles.primary,
-                                  size: isMobile ? 20 : isTablet ? 22 : 24,
+                                  size: isMobile
+                                      ? 20
+                                      : isTablet
+                                      ? 22
+                                      : 24,
                                 ),
                               ),
-                              SizedBox(width: isMobile ? 10 : isTablet ? 11 : 12),
+                              SizedBox(
+                                width: isMobile
+                                    ? 10
+                                    : isTablet
+                                    ? 11
+                                    : 12,
+                              ),
                               Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
                                     'Unread Notifications',
                                     style: TextStyle(
-                                      fontSize: isMobile ? 12 : isTablet ? 13 : 14,
+                                      fontSize: isMobile
+                                          ? 12
+                                          : isTablet
+                                          ? 13
+                                          : 14,
                                       color: AdminDashboardStyles.textLight,
                                     ),
                                   ),
@@ -811,7 +1133,11 @@ class _NotificationManagerPageState extends State<NotificationManagerPage>
                                   Text(
                                     '$unreadNotifications',
                                     style: TextStyle(
-                                      fontSize: isMobile ? 18 : isTablet ? 19 : 20,
+                                      fontSize: isMobile
+                                          ? 18
+                                          : isTablet
+                                          ? 19
+                                          : 20,
                                       fontWeight: FontWeight.bold,
                                       color: AdminDashboardStyles.textDark,
                                     ),
@@ -821,19 +1147,33 @@ class _NotificationManagerPageState extends State<NotificationManagerPage>
                             ],
                           ),
                           if (unreadNotifications > 0) ...[
-                            SizedBox(height: isMobile ? 12 : isTablet ? 14 : 16),
+                            SizedBox(
+                              height: isMobile
+                                  ? 12
+                                  : isTablet
+                                  ? 14
+                                  : 16,
+                            ),
                             SizedBox(
                               width: double.infinity,
                               child: TextButton.icon(
                                 onPressed: _markAllAsRead,
                                 icon: Icon(
                                   Icons.done_all,
-                                  size: isMobile ? 16 : isTablet ? 17 : 18,
+                                  size: isMobile
+                                      ? 16
+                                      : isTablet
+                                      ? 17
+                                      : 18,
                                 ),
                                 label: Text(
                                   'Mark all as read',
                                   style: TextStyle(
-                                    fontSize: isMobile ? 13 : isTablet ? 14 : 15,
+                                    fontSize: isMobile
+                                        ? 13
+                                        : isTablet
+                                        ? 14
+                                        : 15,
                                   ),
                                 ),
                                 style: TextButton.styleFrom(
@@ -841,11 +1181,25 @@ class _NotificationManagerPageState extends State<NotificationManagerPage>
                                   backgroundColor: AdminDashboardStyles.primary
                                       .withOpacity(0.1),
                                   padding: EdgeInsets.symmetric(
-                                    horizontal: isMobile ? 14 : isTablet ? 15 : 16,
-                                    vertical: isMobile ? 10 : isTablet ? 11 : 12,
+                                    horizontal: isMobile
+                                        ? 14
+                                        : isTablet
+                                        ? 15
+                                        : 16,
+                                    vertical: isMobile
+                                        ? 10
+                                        : isTablet
+                                        ? 11
+                                        : 12,
                                   ),
                                   shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(isMobile ? 8 : isTablet ? 9 : 10),
+                                    borderRadius: BorderRadius.circular(
+                                      isMobile
+                                          ? 8
+                                          : isTablet
+                                          ? 9
+                                          : 10,
+                                    ),
                                   ),
                                 ),
                               ),
@@ -861,7 +1215,11 @@ class _NotificationManagerPageState extends State<NotificationManagerPage>
                           ? _buildEmptyState(isMobile, isTablet, isDesktop)
                           : ListView.builder(
                               padding: EdgeInsets.symmetric(
-                                horizontal: isMobile ? 16 : isTablet ? 18 : 20,
+                                horizontal: isMobile
+                                    ? 16
+                                    : isTablet
+                                    ? 18
+                                    : 20,
                               ),
                               itemCount: _notifications.length,
                               itemBuilder: (context, index) {
@@ -904,12 +1262,22 @@ class _NotificationManagerPageState extends State<NotificationManagerPage>
               AdminDashboardStyles.primary,
             ),
           ),
-          SizedBox(height: isMobile ? 12 : isTablet ? 14 : 16),
+          SizedBox(
+            height: isMobile
+                ? 12
+                : isTablet
+                ? 14
+                : 16,
+          ),
           Text(
             'Loading notifications...',
             style: TextStyle(
               color: AdminDashboardStyles.textLight,
-              fontSize: isMobile ? 14 : isTablet ? 15 : 16,
+              fontSize: isMobile
+                  ? 14
+                  : isTablet
+                  ? 15
+                  : 16,
             ),
           ),
         ],
@@ -920,53 +1288,113 @@ class _NotificationManagerPageState extends State<NotificationManagerPage>
   Widget _buildErrorState(bool isMobile, bool isTablet, bool isDesktop) {
     return Center(
       child: Padding(
-        padding: EdgeInsets.all(isMobile ? 20 : isTablet ? 24 : 28),
+        padding: EdgeInsets.all(
+          isMobile
+              ? 20
+              : isTablet
+              ? 24
+              : 28,
+        ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
               Icons.cloud_off,
-              size: isMobile ? 56 : isTablet ? 64 : 72,
+              size: isMobile
+                  ? 56
+                  : isTablet
+                  ? 64
+                  : 72,
               color: Colors.grey[400],
             ),
-            SizedBox(height: isMobile ? 16 : isTablet ? 18 : 20),
+            SizedBox(
+              height: isMobile
+                  ? 16
+                  : isTablet
+                  ? 18
+                  : 20,
+            ),
             Text(
               'Failed to load notifications',
               style: TextStyle(
-                fontSize: isMobile ? 18 : isTablet ? 19 : 20,
+                fontSize: isMobile
+                    ? 18
+                    : isTablet
+                    ? 19
+                    : 20,
                 fontWeight: FontWeight.w600,
                 color: Colors.grey[700],
               ),
             ),
-            SizedBox(height: isMobile ? 8 : isTablet ? 9 : 10),
+            SizedBox(
+              height: isMobile
+                  ? 8
+                  : isTablet
+                  ? 9
+                  : 10,
+            ),
             Text(
               _errorMessage ?? 'Unknown error occurred',
               style: TextStyle(
                 color: Colors.grey[600],
-                fontSize: isMobile ? 14 : isTablet ? 15 : 16,
+                fontSize: isMobile
+                    ? 14
+                    : isTablet
+                    ? 15
+                    : 16,
               ),
               textAlign: TextAlign.center,
             ),
-            SizedBox(height: isMobile ? 24 : isTablet ? 28 : 32),
+            SizedBox(
+              height: isMobile
+                  ? 24
+                  : isTablet
+                  ? 28
+                  : 32,
+            ),
             ElevatedButton.icon(
               onPressed: () => _loadNotifications(forceRefresh: true),
               icon: Icon(
                 Icons.refresh,
-                size: isMobile ? 16 : isTablet ? 17 : 18,
+                size: isMobile
+                    ? 16
+                    : isTablet
+                    ? 17
+                    : 18,
               ),
               label: Text(
                 'Retry',
-                style: TextStyle(fontSize: isMobile ? 13 : isTablet ? 14 : 15),
+                style: TextStyle(
+                  fontSize: isMobile
+                      ? 13
+                      : isTablet
+                      ? 14
+                      : 15,
+                ),
               ),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AdminDashboardStyles.primary,
                 foregroundColor: Colors.white,
                 padding: EdgeInsets.symmetric(
-                  horizontal: isMobile ? 20 : isTablet ? 24 : 28,
-                  vertical: isMobile ? 12 : isTablet ? 13 : 14,
+                  horizontal: isMobile
+                      ? 20
+                      : isTablet
+                      ? 24
+                      : 28,
+                  vertical: isMobile
+                      ? 12
+                      : isTablet
+                      ? 13
+                      : 14,
                 ),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(isMobile ? 10 : isTablet ? 11 : 12),
+                  borderRadius: BorderRadius.circular(
+                    isMobile
+                        ? 10
+                        : isTablet
+                        ? 11
+                        : 12,
+                  ),
                 ),
               ),
             ),
@@ -979,30 +1407,60 @@ class _NotificationManagerPageState extends State<NotificationManagerPage>
   Widget _buildEmptyState(bool isMobile, bool isTablet, bool isDesktop) {
     return Center(
       child: Padding(
-        padding: EdgeInsets.all(isMobile ? 16 : isTablet ? 20 : 24),
+        padding: EdgeInsets.all(
+          isMobile
+              ? 16
+              : isTablet
+              ? 20
+              : 24,
+        ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
               Icons.notifications_none,
-              size: isMobile ? 48 : isTablet ? 56 : 64,
+              size: isMobile
+                  ? 48
+                  : isTablet
+                  ? 56
+                  : 64,
               color: AdminDashboardStyles.textLight,
             ),
-            SizedBox(height: isMobile ? 12 : isTablet ? 14 : 16),
+            SizedBox(
+              height: isMobile
+                  ? 12
+                  : isTablet
+                  ? 14
+                  : 16,
+            ),
             Text(
               'No notifications yet',
               style: TextStyle(
-                fontSize: isMobile ? 18 : isTablet ? 19 : 20,
+                fontSize: isMobile
+                    ? 18
+                    : isTablet
+                    ? 19
+                    : 20,
                 fontWeight: FontWeight.w600,
                 color: AdminDashboardStyles.textDark,
               ),
             ),
-            SizedBox(height: isMobile ? 8 : isTablet ? 10 : 12),
+            SizedBox(
+              height: isMobile
+                  ? 8
+                  : isTablet
+                  ? 10
+                  : 12,
+            ),
             Text(
               'You haven\'t sent any notifications yet',
               style: TextStyle(
                 color: AdminDashboardStyles.textLight,
-                fontSize: isMobile ? 14 : isTablet ? 15 : 16,
+                fontSize: isMobile
+                    ? 14
+                    : isTablet
+                    ? 15
+                    : 16,
               ),
               textAlign: TextAlign.center,
             ),
@@ -1057,10 +1515,22 @@ class _NotificationManagerPageState extends State<NotificationManagerPage>
     bool isDesktop,
   ) {
     return Container(
-      margin: EdgeInsets.only(bottom: isMobile ? 12 : isTablet ? 14 : 16),
+      margin: EdgeInsets.only(
+        bottom: isMobile
+            ? 12
+            : isTablet
+            ? 14
+            : 16,
+      ),
       decoration: BoxDecoration(
         color: AdminDashboardStyles.surface,
-        borderRadius: BorderRadius.circular(isMobile ? 14 : isTablet ? 15 : 16),
+        borderRadius: BorderRadius.circular(
+          isMobile
+              ? 14
+              : isTablet
+              ? 15
+              : 16,
+        ),
         border: Border.all(color: AdminDashboardStyles.borderLight),
         boxShadow: [
           BoxShadow(
@@ -1072,21 +1542,45 @@ class _NotificationManagerPageState extends State<NotificationManagerPage>
       ),
       child: InkWell(
         onTap: () => _handleNotificationTap(context, notification['title']),
-        borderRadius: BorderRadius.circular(isMobile ? 14 : isTablet ? 15 : 16),
+        borderRadius: BorderRadius.circular(
+          isMobile
+              ? 14
+              : isTablet
+              ? 15
+              : 16,
+        ),
         child: Padding(
-          padding: EdgeInsets.all(isMobile ? 16 : isTablet ? 18 : 20),
+          padding: EdgeInsets.all(
+            isMobile
+                ? 16
+                : isTablet
+                ? 18
+                : 20,
+          ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
                 children: [
                   Container(
-                    padding: EdgeInsets.all(isMobile ? 10 : isTablet ? 11 : 12),
+                    padding: EdgeInsets.all(
+                      isMobile
+                          ? 10
+                          : isTablet
+                          ? 11
+                          : 12,
+                    ),
                     decoration: BoxDecoration(
                       color: _getTypeColor(
                         notification['type']?.toString() ?? 'info',
                       ).withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(isMobile ? 10 : isTablet ? 11 : 12),
+                      borderRadius: BorderRadius.circular(
+                        isMobile
+                            ? 10
+                            : isTablet
+                            ? 11
+                            : 12,
+                      ),
                     ),
                     child: Icon(
                       _getNotificationIcon(
@@ -1095,10 +1589,20 @@ class _NotificationManagerPageState extends State<NotificationManagerPage>
                       color: _getTypeColor(
                         notification['type']?.toString() ?? 'info',
                       ),
-                      size: isMobile ? 20 : isTablet ? 22 : 24,
+                      size: isMobile
+                          ? 20
+                          : isTablet
+                          ? 22
+                          : 24,
                     ),
                   ),
-                  SizedBox(width: isMobile ? 12 : isTablet ? 14 : 16),
+                  SizedBox(
+                    width: isMobile
+                        ? 12
+                        : isTablet
+                        ? 14
+                        : 16,
+                  ),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1106,7 +1610,11 @@ class _NotificationManagerPageState extends State<NotificationManagerPage>
                         Text(
                           notification['title']?.toString() ?? 'Notification',
                           style: TextStyle(
-                            fontSize: isMobile ? 15 : isTablet ? 15.5 : 16,
+                            fontSize: isMobile
+                                ? 15
+                                : isTablet
+                                ? 15.5
+                                : 16,
                             fontWeight: FontWeight.bold,
                             color: AdminDashboardStyles.textDark,
                           ),
@@ -1117,7 +1625,11 @@ class _NotificationManagerPageState extends State<NotificationManagerPage>
                         Text(
                           notification['message']?.toString() ?? 'No message',
                           style: TextStyle(
-                            fontSize: isMobile ? 13 : isTablet ? 13.5 : 14,
+                            fontSize: isMobile
+                                ? 13
+                                : isTablet
+                                ? 13.5
+                                : 14,
                             color: AdminDashboardStyles.textLight,
                           ),
                           maxLines: 2,
@@ -1128,20 +1640,38 @@ class _NotificationManagerPageState extends State<NotificationManagerPage>
                   ),
                   Container(
                     padding: EdgeInsets.symmetric(
-                      horizontal: isMobile ? 6 : isTablet ? 7 : 8,
-                      vertical: isMobile ? 3 : isTablet ? 3.5 : 4,
+                      horizontal: isMobile
+                          ? 6
+                          : isTablet
+                          ? 7
+                          : 8,
+                      vertical: isMobile
+                          ? 3
+                          : isTablet
+                          ? 3.5
+                          : 4,
                     ),
                     decoration: BoxDecoration(
                       color: _getStatusColor(
                         notification['status']?.toString() ?? 'sent',
                       ).withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(isMobile ? 10 : isTablet ? 11 : 12),
+                      borderRadius: BorderRadius.circular(
+                        isMobile
+                            ? 10
+                            : isTablet
+                            ? 11
+                            : 12,
+                      ),
                     ),
                     child: Text(
                       (notification['status']?.toString() ?? 'sent')
                           .toUpperCase(),
                       style: TextStyle(
-                        fontSize: isMobile ? 9 : isTablet ? 9.5 : 10,
+                        fontSize: isMobile
+                            ? 9
+                            : isTablet
+                            ? 9.5
+                            : 10,
                         fontWeight: FontWeight.bold,
                         color: _getStatusColor(
                           notification['status']?.toString() ?? 'sent',
@@ -1151,12 +1681,22 @@ class _NotificationManagerPageState extends State<NotificationManagerPage>
                   ),
                 ],
               ),
-              SizedBox(height: isMobile ? 12 : isTablet ? 14 : 16),
+              SizedBox(
+                height: isMobile
+                    ? 12
+                    : isTablet
+                    ? 14
+                    : 16,
+              ),
               Row(
                 children: [
                   Icon(
                     Icons.people,
-                    size: isMobile ? 14 : isTablet ? 15 : 16,
+                    size: isMobile
+                        ? 14
+                        : isTablet
+                        ? 15
+                        : 16,
                     color: AdminDashboardStyles.textLight,
                   ),
                   SizedBox(width: isMobile ? 3 : 4),
@@ -1164,7 +1704,11 @@ class _NotificationManagerPageState extends State<NotificationManagerPage>
                     child: Text(
                       notification['recipientModel']?.toString() ?? 'All',
                       style: TextStyle(
-                        fontSize: isMobile ? 11 : isTablet ? 11.5 : 12,
+                        fontSize: isMobile
+                            ? 11
+                            : isTablet
+                            ? 11.5
+                            : 12,
                         color: AdminDashboardStyles.textLight,
                       ),
                       maxLines: 1,
@@ -1173,14 +1717,22 @@ class _NotificationManagerPageState extends State<NotificationManagerPage>
                   ),
                   Icon(
                     Icons.schedule,
-                    size: isMobile ? 14 : isTablet ? 15 : 16,
+                    size: isMobile
+                        ? 14
+                        : isTablet
+                        ? 15
+                        : 16,
                     color: AdminDashboardStyles.textLight,
                   ),
                   SizedBox(width: isMobile ? 3 : 4),
                   Text(
                     _formatDate(notification['createdAt']?.toString()),
                     style: TextStyle(
-                      fontSize: isMobile ? 11 : isTablet ? 11.5 : 12,
+                      fontSize: isMobile
+                          ? 11
+                          : isTablet
+                          ? 11.5
+                          : 12,
                       color: AdminDashboardStyles.textLight,
                     ),
                   ),

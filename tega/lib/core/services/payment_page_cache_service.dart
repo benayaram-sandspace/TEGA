@@ -4,7 +4,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 /// Cache service for payment page data (courses and exams)
 /// Provides caching with TTL (Time To Live) for payment listings
 class PaymentPageCacheService {
-  static final PaymentPageCacheService _instance = PaymentPageCacheService._internal();
+  static final PaymentPageCacheService _instance =
+      PaymentPageCacheService._internal();
   factory PaymentPageCacheService() => _instance;
   PaymentPageCacheService._internal();
 
@@ -62,7 +63,10 @@ class PaymentPageCacheService {
   Future<void> setCoursesData(List<Map<String, dynamic>> data) async {
     await _ensurePrefs();
     await _prefs?.setString(_coursesDataKey, json.encode(data));
-    await _prefs?.setString(_cacheTimestampKey, DateTime.now().toIso8601String());
+    await _prefs?.setString(
+      _cacheTimestampKey,
+      DateTime.now().toIso8601String(),
+    );
   }
 
   /// Get cached exams data if valid
@@ -88,7 +92,10 @@ class PaymentPageCacheService {
   Future<void> setExamsData(List<Map<String, dynamic>> data) async {
     await _ensurePrefs();
     await _prefs?.setString(_examsDataKey, json.encode(data));
-    await _prefs?.setString(_cacheTimestampKey, DateTime.now().toIso8601String());
+    await _prefs?.setString(
+      _cacheTimestampKey,
+      DateTime.now().toIso8601String(),
+    );
   }
 
   /// Clear courses cache
@@ -111,4 +118,3 @@ class PaymentPageCacheService {
     await _prefs?.remove(_cacheTimestampKey);
   }
 }
-

@@ -44,12 +44,8 @@ class SQLiteCacheService {
               ttl INTEGER NOT NULL
             )
           ''');
-          await db.execute(
-            'CREATE INDEX idx_category ON cache(category)',
-          );
-          await db.execute(
-            'CREATE INDEX idx_timestamp ON cache(timestamp)',
-          );
+          await db.execute('CREATE INDEX idx_category ON cache(category)');
+          await db.execute('CREATE INDEX idx_timestamp ON cache(timestamp)');
         },
       );
 
@@ -79,24 +75,17 @@ class SQLiteCacheService {
     final db = await database;
     final now = DateTime.now().millisecondsSinceEpoch;
 
-    await db.insert(
-      'cache',
-      {
-        'key': key,
-        'category': category,
-        'value': jsonEncode(value),
-        'timestamp': now,
-        'ttl': ttl.inMilliseconds,
-      },
-      conflictAlgorithm: ConflictAlgorithm.replace,
-    );
+    await db.insert('cache', {
+      'key': key,
+      'category': category,
+      'value': jsonEncode(value),
+      'timestamp': now,
+      'ttl': ttl.inMilliseconds,
+    }, conflictAlgorithm: ConflictAlgorithm.replace);
   }
 
   /// Get a value from cache if not expired
-  Future<dynamic> get({
-    required String key,
-    required String category,
-  }) async {
+  Future<dynamic> get({required String key, required String category}) async {
     final db = await database;
     final now = DateTime.now().millisecondsSinceEpoch;
 
@@ -124,10 +113,7 @@ class SQLiteCacheService {
   }
 
   /// Delete a specific cache entry
-  Future<void> delete({
-    required String key,
-    required String category,
-  }) async {
+  Future<void> delete({required String key, required String category}) async {
     final db = await database;
     await db.delete(
       'cache',
@@ -139,11 +125,7 @@ class SQLiteCacheService {
   /// Delete all cache entries in a category
   Future<void> deleteCategory(String category) async {
     final db = await database;
-    await db.delete(
-      'cache',
-      where: 'category = ?',
-      whereArgs: [category],
-    );
+    await db.delete('cache', where: 'category = ?', whereArgs: [category]);
   }
 
   /// Clear all expired entries
@@ -151,11 +133,7 @@ class SQLiteCacheService {
     final db = await database;
     final now = DateTime.now().millisecondsSinceEpoch;
 
-    await db.delete(
-      'cache',
-      where: 'timestamp + ttl < ?',
-      whereArgs: [now],
-    );
+    await db.delete('cache', where: 'timestamp + ttl < ?', whereArgs: [now]);
   }
 
   /// Clear all cache
@@ -169,7 +147,9 @@ class SQLiteCacheService {
     final db = await database;
 
     // Total entries
-    final totalResult = await db.rawQuery('SELECT COUNT(*) as count FROM cache');
+    final totalResult = await db.rawQuery(
+      'SELECT COUNT(*) as count FROM cache',
+    );
     final total = Sqflite.firstIntValue(totalResult) ?? 0;
 
     // Entries by category
@@ -207,10 +187,7 @@ class SQLiteCacheService {
   }
 
   /// Check if a key exists and is not expired
-  Future<bool> has({
-    required String key,
-    required String category,
-  }) async {
+  Future<bool> has({required String key, required String category}) async {
     final value = await get(key: key, category: category);
     return value != null;
   }
@@ -224,4 +201,3 @@ class SQLiteCacheService {
     }
   }
 }
-

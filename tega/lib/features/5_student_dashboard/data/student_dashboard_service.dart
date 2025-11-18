@@ -321,10 +321,7 @@ class StudentDashboardService {
   ) async {
     try {
       final uri = Uri.parse(ApiEndpoints.studentRegisterExam(examId));
-      final requestHeaders = {
-        ...headers,
-        'Content-Type': 'application/json',
-      };
+      final requestHeaders = {...headers, 'Content-Type': 'application/json'};
       final res = await http.post(
         uri,
         headers: requestHeaders,

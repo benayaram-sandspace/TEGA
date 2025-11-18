@@ -200,66 +200,66 @@ class LockedNavItem extends StatelessWidget {
     final borderRadius = isLargeDesktop
         ? 14.0
         : isDesktop
-            ? 12.0
-            : isTablet
-                ? 11.0
-                : 10.0;
-    
+        ? 12.0
+        : isTablet
+        ? 11.0
+        : 10.0;
+
     final padding = isLargeDesktop
         ? const EdgeInsets.symmetric(horizontal: 18, vertical: 14)
         : isDesktop
-            ? const EdgeInsets.symmetric(horizontal: 16, vertical: 12)
-            : isTablet
-                ? const EdgeInsets.symmetric(horizontal: 14, vertical: 11)
-                : const EdgeInsets.symmetric(horizontal: 12, vertical: 10);
-    
+        ? const EdgeInsets.symmetric(horizontal: 16, vertical: 12)
+        : isTablet
+        ? const EdgeInsets.symmetric(horizontal: 14, vertical: 11)
+        : const EdgeInsets.symmetric(horizontal: 12, vertical: 10);
+
     final iconPadding = isLargeDesktop
         ? 9.0
         : isDesktop
-            ? 8.0
-            : isTablet
-                ? 7.5
-                : 7.0;
-    
+        ? 8.0
+        : isTablet
+        ? 7.5
+        : 7.0;
+
     final iconSize = isLargeDesktop
         ? 22.0
         : isDesktop
-            ? 20.0
-            : isTablet
-                ? 19.0
-                : 18.0;
-    
+        ? 20.0
+        : isTablet
+        ? 19.0
+        : 18.0;
+
     final lockIconSize = isLargeDesktop
         ? 12.0
         : isDesktop
-            ? 10.0
-            : isTablet
-                ? 9.5
-                : 9.0;
-    
+        ? 10.0
+        : isTablet
+        ? 9.5
+        : 9.0;
+
     final titleFontSize = isLargeDesktop
         ? 15.0
         : isDesktop
-            ? 14.0
-            : isTablet
-                ? 13.5
-                : 13.0;
-    
+        ? 14.0
+        : isTablet
+        ? 13.5
+        : 13.0;
+
     final descriptionFontSize = isLargeDesktop
         ? 13.0
         : isDesktop
-            ? 12.0
-            : isTablet
-                ? 11.5
-                : 11.0;
-    
+        ? 12.0
+        : isTablet
+        ? 11.5
+        : 11.0;
+
     final soonBadgeFontSize = isLargeDesktop
         ? 11.0
         : isDesktop
-            ? 10.0
-            : isTablet
-                ? 9.5
-                : 9.0;
+        ? 10.0
+        : isTablet
+        ? 9.5
+        : 9.0;
 
     return Material(
       color: Colors.transparent,

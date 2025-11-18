@@ -24,10 +24,7 @@ class TestHelpers {
 
   /// Create a mock admin user
   static User createMockAdmin() {
-    return createMockUser(
-      email: 'admin@example.com',
-      role: UserRole.admin,
-    );
+    return createMockUser(email: 'admin@example.com', role: UserRole.admin);
   }
 
   /// Create a mock principal user
@@ -61,4 +58,3 @@ class CustomMatchers {
     return password.length >= 6;
   }, 'is a valid password');
 }
-

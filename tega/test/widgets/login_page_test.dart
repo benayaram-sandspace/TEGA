@@ -10,11 +10,7 @@ void main() {
     });
 
     testWidgets('should display login form', (WidgetTester tester) async {
-      await tester.pumpWidget(
-        const MaterialApp(
-          home: LoginPage(),
-        ),
-      );
+      await tester.pumpWidget(const MaterialApp(home: LoginPage()));
 
       await tester.pump();
 
@@ -22,12 +18,10 @@ void main() {
       expect(find.byType(Scaffold), findsOneWidget);
     });
 
-    testWidgets('should have email and password fields', (WidgetTester tester) async {
-      await tester.pumpWidget(
-        const MaterialApp(
-          home: LoginPage(),
-        ),
-      );
+    testWidgets('should have email and password fields', (
+      WidgetTester tester,
+    ) async {
+      await tester.pumpWidget(const MaterialApp(home: LoginPage()));
 
       await tester.pump();
 
@@ -37,11 +31,7 @@ void main() {
     });
 
     testWidgets('should display login button', (WidgetTester tester) async {
-      await tester.pumpWidget(
-        const MaterialApp(
-          home: LoginPage(),
-        ),
-      );
+      await tester.pumpWidget(const MaterialApp(home: LoginPage()));
 
       await tester.pump();
 
@@ -49,14 +39,13 @@ void main() {
       final elevatedButtons = find.byType(ElevatedButton);
       final textButtons = find.byType(TextButton);
       final iconButtons = find.byType(IconButton);
-      
+
       // At least one type of button should be present
       final hasElevatedButton = elevatedButtons.evaluate().isNotEmpty;
       final hasTextButton = textButtons.evaluate().isNotEmpty;
       final hasIconButton = iconButtons.evaluate().isNotEmpty;
-      
+
       expect(hasElevatedButton || hasTextButton || hasIconButton, isTrue);
     });
   });
 }
-

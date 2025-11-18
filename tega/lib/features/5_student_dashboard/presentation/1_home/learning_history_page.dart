@@ -16,7 +16,8 @@ class LearningHistoryPage extends StatefulWidget {
 class _LearningHistoryPageState extends State<LearningHistoryPage> {
   final LearningHistoryService _learningService = LearningHistoryService();
   final StudentDashboardService _dashboardService = StudentDashboardService();
-  final LearningHistoryCacheService _cacheService = LearningHistoryCacheService();
+  final LearningHistoryCacheService _cacheService =
+      LearningHistoryCacheService();
 
   // Data
   LearningStats? _learningStats;
@@ -35,11 +36,14 @@ class _LearningHistoryPageState extends State<LearningHistoryPage> {
   double get tabletBreakpoint => 1024;
   double get desktopBreakpoint => 1440;
   bool get isMobile => MediaQuery.of(context).size.width < mobileBreakpoint;
-  bool get isTablet => MediaQuery.of(context).size.width >= mobileBreakpoint &&
+  bool get isTablet =>
+      MediaQuery.of(context).size.width >= mobileBreakpoint &&
       MediaQuery.of(context).size.width < tabletBreakpoint;
-  bool get isDesktop => MediaQuery.of(context).size.width >= tabletBreakpoint &&
+  bool get isDesktop =>
+      MediaQuery.of(context).size.width >= tabletBreakpoint &&
       MediaQuery.of(context).size.width < desktopBreakpoint;
-  bool get isLargeDesktop => MediaQuery.of(context).size.width >= desktopBreakpoint;
+  bool get isLargeDesktop =>
+      MediaQuery.of(context).size.width >= desktopBreakpoint;
   bool get isSmallScreen => MediaQuery.of(context).size.width < 400;
 
   @override
@@ -60,7 +64,9 @@ class _LearningHistoryPageState extends State<LearningHistoryPage> {
             error.toString().toLowerCase().contains('connection') ||
             error.toString().toLowerCase().contains('internet') ||
             error.toString().toLowerCase().contains('failed host lookup') ||
-            error.toString().toLowerCase().contains('no address associated with hostname'));
+            error.toString().toLowerCase().contains(
+              'no address associated with hostname',
+            ));
   }
 
   Future<void> _loadData({bool forceRefresh = false}) async {
@@ -192,10 +198,10 @@ class _LearningHistoryPageState extends State<LearningHistoryPage> {
 
       // Fetch paid courses
       final paidCourses = await _dashboardService.getEnrolledCourses(headers);
-      
+
       // Get progress data to merge with paid courses
       final progressData = await _dashboardService.getAllProgress(headers);
-      
+
       // Create a map of courseId -> progress for quick lookup
       final progressMap = <String, dynamic>{};
       for (var progress in progressData) {
@@ -211,37 +217,43 @@ class _LearningHistoryPageState extends State<LearningHistoryPage> {
         String courseId;
         if (course['courseId'] is Map) {
           // If courseId is an object, get its _id or id
-          courseId = course['courseId']['_id']?.toString() ?? 
-                    course['courseId']['id']?.toString() ?? '';
+          courseId =
+              course['courseId']['_id']?.toString() ??
+              course['courseId']['id']?.toString() ??
+              '';
         } else {
           // If courseId is a string
-          courseId = course['courseId']?.toString() ?? 
-                    course['id']?.toString() ?? 
-                    course['_id']?.toString() ?? '';
+          courseId =
+              course['courseId']?.toString() ??
+              course['id']?.toString() ??
+              course['_id']?.toString() ??
+              '';
         }
-        
+
         final progress = progressMap[courseId];
-        
+
         // Get course title
         String title = '';
         if (course['courseId'] is Map) {
-          title = course['courseId']?['title']?.toString() ?? 
-                 course['courseName']?.toString() ?? 
-                 course['title']?.toString() ?? 
-                 'Untitled Course';
+          title =
+              course['courseId']?['title']?.toString() ??
+              course['courseName']?.toString() ??
+              course['title']?.toString() ??
+              'Untitled Course';
         } else {
-          title = course['courseName']?.toString() ?? 
-                 course['title']?.toString() ?? 
-                 course['name']?.toString() ?? 
-                 'Untitled Course';
+          title =
+              course['courseName']?.toString() ??
+              course['title']?.toString() ??
+              course['name']?.toString() ??
+              'Untitled Course';
         }
-        
+
         // Get progress percentage
         double progressPercentage = 0.0;
         if (progress != null) {
           progressPercentage = (progress['overallProgress'] ?? 0).toDouble();
         }
-        
+
         // Get enrollment date or last accessed date
         DateTime? enrollmentDate;
         if (course['enrolledAt'] != null) {
@@ -254,15 +266,18 @@ class _LearningHistoryPageState extends State<LearningHistoryPage> {
           } catch (_) {}
         } else if (progress != null && progress['lastAccessedAt'] != null) {
           try {
-            enrollmentDate = DateTime.parse(progress['lastAccessedAt'].toString());
+            enrollmentDate = DateTime.parse(
+              progress['lastAccessedAt'].toString(),
+            );
           } catch (_) {}
         }
-        
+
         return {
           'id': courseId,
           'title': title,
           'progress': progressPercentage,
-          'enrollmentDate': (enrollmentDate ?? DateTime.now()).toIso8601String(),
+          'enrollmentDate': (enrollmentDate ?? DateTime.now())
+              .toIso8601String(),
           'thumbnail': course['thumbnail']?.toString(),
         };
       }).toList();
@@ -307,7 +322,8 @@ class _LearningHistoryPageState extends State<LearningHistoryPage> {
           });
         } else {
           setState(() {
-            _coursesError = 'Unable to load enrolled courses. Please try again.';
+            _coursesError =
+                'Unable to load enrolled courses. Please try again.';
             _isLoadingCourses = false;
           });
         }
@@ -334,7 +350,7 @@ class _LearningHistoryPageState extends State<LearningHistoryPage> {
 
     if (_statsError != null) {
       return _buildErrorState(
-        _statsError == 'No internet connection' 
+        _statsError == 'No internet connection'
             ? 'No internet connection'
             : 'Failed to load learning stats',
         _statsError!,
@@ -404,15 +420,15 @@ class _LearningHistoryPageState extends State<LearningHistoryPage> {
 
     return Container(
       padding: EdgeInsets.all(
-        isLargeDesktop 
-            ? 40 
-            : isDesktop 
-            ? 36 
-            : isTablet 
-            ? 32 
-            : isSmallScreen 
-            ? 24 
-            : 28
+        isLargeDesktop
+            ? 40
+            : isDesktop
+            ? 36
+            : isTablet
+            ? 32
+            : isSmallScreen
+            ? 24
+            : 28,
       ),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
@@ -421,12 +437,28 @@ class _LearningHistoryPageState extends State<LearningHistoryPage> {
           colors: [Color(0xFF9C88FF), Color(0xFF7A6BFF)],
         ),
         borderRadius: BorderRadius.circular(
-          isLargeDesktop ? 28 : isDesktop ? 26 : isTablet ? 24 : isSmallScreen ? 20 : 22
+          isLargeDesktop
+              ? 28
+              : isDesktop
+              ? 26
+              : isTablet
+              ? 24
+              : isSmallScreen
+              ? 20
+              : 22,
         ),
         boxShadow: [
           BoxShadow(
             color: const Color(0xFF9C88FF).withOpacity(0.3),
-            blurRadius: isLargeDesktop ? 24 : isDesktop ? 20 : isTablet ? 18 : isSmallScreen ? 12 : 16,
+            blurRadius: isLargeDesktop
+                ? 24
+                : isDesktop
+                ? 20
+                : isTablet
+                ? 18
+                : isSmallScreen
+                ? 12
+                : 16,
             offset: const Offset(0, 10),
           ),
         ],
@@ -438,45 +470,45 @@ class _LearningHistoryPageState extends State<LearningHistoryPage> {
             children: [
               // Circular Progress Ring
               SizedBox(
-                width: isLargeDesktop 
-                    ? 160 
-                    : isDesktop 
-                    ? 140 
-                    : isTablet 
-                    ? 120 
-                    : isSmallScreen 
-                    ? 100 
+                width: isLargeDesktop
+                    ? 160
+                    : isDesktop
+                    ? 140
+                    : isTablet
+                    ? 120
+                    : isSmallScreen
+                    ? 100
                     : 110,
-                height: isLargeDesktop 
-                    ? 160 
-                    : isDesktop 
-                    ? 140 
-                    : isTablet 
-                    ? 120 
-                    : isSmallScreen 
-                    ? 100 
+                height: isLargeDesktop
+                    ? 160
+                    : isDesktop
+                    ? 140
+                    : isTablet
+                    ? 120
+                    : isSmallScreen
+                    ? 100
                     : 110,
                 child: Stack(
                   children: [
                     // Background Circle
                     Container(
-                      width: isLargeDesktop 
-                          ? 160 
-                          : isDesktop 
-                          ? 140 
-                          : isTablet 
-                          ? 120 
-                          : isSmallScreen 
-                          ? 100 
+                      width: isLargeDesktop
+                          ? 160
+                          : isDesktop
+                          ? 140
+                          : isTablet
+                          ? 120
+                          : isSmallScreen
+                          ? 100
                           : 110,
-                      height: isLargeDesktop 
-                          ? 160 
-                          : isDesktop 
-                          ? 140 
-                          : isTablet 
-                          ? 120 
-                          : isSmallScreen 
-                          ? 100 
+                      height: isLargeDesktop
+                          ? 160
+                          : isDesktop
+                          ? 140
+                          : isTablet
+                          ? 120
+                          : isSmallScreen
+                          ? 100
                           : 110,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
@@ -487,14 +519,14 @@ class _LearningHistoryPageState extends State<LearningHistoryPage> {
                     Positioned.fill(
                       child: CircularProgressIndicator(
                         value: completionRate,
-                        strokeWidth: isLargeDesktop 
-                            ? 12 
-                            : isDesktop 
-                            ? 10 
-                            : isTablet 
-                            ? 9 
-                            : isSmallScreen 
-                            ? 7 
+                        strokeWidth: isLargeDesktop
+                            ? 12
+                            : isDesktop
+                            ? 10
+                            : isTablet
+                            ? 9
+                            : isSmallScreen
+                            ? 7
                             : 8,
                         backgroundColor: Colors.white.withOpacity(0.3),
                         valueColor: const AlwaysStoppedAnimation<Color>(
@@ -510,14 +542,14 @@ class _LearningHistoryPageState extends State<LearningHistoryPage> {
                           Text(
                             '${stats.completionRate.toStringAsFixed(0)}%',
                             style: TextStyle(
-                              fontSize: isLargeDesktop 
-                                  ? 36 
-                                  : isDesktop 
-                                  ? 32 
-                                  : isTablet 
-                                  ? 28 
-                                  : isSmallScreen 
-                                  ? 22 
+                              fontSize: isLargeDesktop
+                                  ? 36
+                                  : isDesktop
+                                  ? 32
+                                  : isTablet
+                                  ? 28
+                                  : isSmallScreen
+                                  ? 22
                                   : 24,
                               fontWeight: FontWeight.bold,
                               color: Colors.white,
@@ -526,14 +558,14 @@ class _LearningHistoryPageState extends State<LearningHistoryPage> {
                           Text(
                             'Complete',
                             style: TextStyle(
-                              fontSize: isLargeDesktop 
-                                  ? 18 
-                                  : isDesktop 
-                                  ? 16 
-                                  : isTablet 
-                                  ? 14 
-                                  : isSmallScreen 
-                                  ? 12 
+                              fontSize: isLargeDesktop
+                                  ? 18
+                                  : isDesktop
+                                  ? 16
+                                  : isTablet
+                                  ? 14
+                                  : isSmallScreen
+                                  ? 12
                                   : 13,
                               color: Colors.white70,
                             ),
@@ -544,7 +576,17 @@ class _LearningHistoryPageState extends State<LearningHistoryPage> {
                   ],
                 ),
               ),
-              SizedBox(width: isLargeDesktop ? 32 : isDesktop ? 28 : isTablet ? 24 : isSmallScreen ? 16 : 20),
+              SizedBox(
+                width: isLargeDesktop
+                    ? 32
+                    : isDesktop
+                    ? 28
+                    : isTablet
+                    ? 24
+                    : isSmallScreen
+                    ? 16
+                    : 20,
+              ),
               // Stats Info
               Expanded(
                 child: Column(
@@ -553,32 +595,62 @@ class _LearningHistoryPageState extends State<LearningHistoryPage> {
                     Text(
                       'Learning Progress',
                       style: TextStyle(
-                        fontSize: isLargeDesktop 
-                            ? 32 
-                            : isDesktop 
-                            ? 28 
-                            : isTablet 
-                            ? 24 
-                            : isSmallScreen 
-                            ? 20 
+                        fontSize: isLargeDesktop
+                            ? 32
+                            : isDesktop
+                            ? 28
+                            : isTablet
+                            ? 24
+                            : isSmallScreen
+                            ? 20
                             : 22,
                         fontWeight: FontWeight.bold,
                         color: Colors.white,
                       ),
                     ),
-                    SizedBox(height: isLargeDesktop ? 14 : isDesktop ? 12 : isTablet ? 10 : isSmallScreen ? 6 : 8),
+                    SizedBox(
+                      height: isLargeDesktop
+                          ? 14
+                          : isDesktop
+                          ? 12
+                          : isTablet
+                          ? 10
+                          : isSmallScreen
+                          ? 6
+                          : 8,
+                    ),
                     _buildStatRow(
                       Icons.school_outlined,
                       '${_enrolledCourses.length} Courses',
                       'Enrolled',
                     ),
-                    SizedBox(height: isLargeDesktop ? 12 : isDesktop ? 10 : isTablet ? 8 : isSmallScreen ? 5 : 6),
+                    SizedBox(
+                      height: isLargeDesktop
+                          ? 12
+                          : isDesktop
+                          ? 10
+                          : isTablet
+                          ? 8
+                          : isSmallScreen
+                          ? 5
+                          : 6,
+                    ),
                     _buildStatRow(
                       Icons.check_circle_outline,
                       '${stats.completedLectures} Completed',
                       'Lectures',
                     ),
-                    SizedBox(height: isLargeDesktop ? 12 : isDesktop ? 10 : isTablet ? 8 : isSmallScreen ? 5 : 6),
+                    SizedBox(
+                      height: isLargeDesktop
+                          ? 12
+                          : isDesktop
+                          ? 10
+                          : isTablet
+                          ? 8
+                          : isSmallScreen
+                          ? 5
+                          : 6,
+                    ),
                     _buildStatRow(
                       Icons.access_time,
                       stats.formattedTimeSpent,
@@ -589,41 +661,89 @@ class _LearningHistoryPageState extends State<LearningHistoryPage> {
               ),
             ],
           ),
-          SizedBox(height: isLargeDesktop ? 32 : isDesktop ? 28 : isTablet ? 24 : 20),
+          SizedBox(
+            height: isLargeDesktop
+                ? 32
+                : isDesktop
+                ? 28
+                : isTablet
+                ? 24
+                : 20,
+          ),
           // Achievement Badge
           Container(
             padding: EdgeInsets.symmetric(
-              horizontal: isLargeDesktop ? 28 : isDesktop ? 24 : isTablet ? 20 : isSmallScreen ? 16 : 18,
-              vertical: isLargeDesktop ? 14 : isDesktop ? 12 : isTablet ? 10 : isSmallScreen ? 8 : 9
+              horizontal: isLargeDesktop
+                  ? 28
+                  : isDesktop
+                  ? 24
+                  : isTablet
+                  ? 20
+                  : isSmallScreen
+                  ? 16
+                  : 18,
+              vertical: isLargeDesktop
+                  ? 14
+                  : isDesktop
+                  ? 12
+                  : isTablet
+                  ? 10
+                  : isSmallScreen
+                  ? 8
+                  : 9,
             ),
             decoration: BoxDecoration(
               color: Colors.white.withOpacity(0.2),
               borderRadius: BorderRadius.circular(
-                isLargeDesktop ? 28 : isDesktop ? 24 : isTablet ? 22 : isSmallScreen ? 20 : 22
+                isLargeDesktop
+                    ? 28
+                    : isDesktop
+                    ? 24
+                    : isTablet
+                    ? 22
+                    : isSmallScreen
+                    ? 20
+                    : 22,
               ),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
                 Icon(
-                  Icons.emoji_events, 
-                  color: Colors.white, 
-                  size: isLargeDesktop ? 22 : isDesktop ? 20 : isTablet ? 18 : isSmallScreen ? 16 : 17
+                  Icons.emoji_events,
+                  color: Colors.white,
+                  size: isLargeDesktop
+                      ? 22
+                      : isDesktop
+                      ? 20
+                      : isTablet
+                      ? 18
+                      : isSmallScreen
+                      ? 16
+                      : 17,
                 ),
-                SizedBox(width: isLargeDesktop ? 14 : isDesktop ? 12 : isTablet ? 10 : 8),
+                SizedBox(
+                  width: isLargeDesktop
+                      ? 14
+                      : isDesktop
+                      ? 12
+                      : isTablet
+                      ? 10
+                      : 8,
+                ),
                 Flexible(
                   child: Text(
                     'Keep up the great work!',
                     style: TextStyle(
                       color: Colors.white,
-                      fontSize: isLargeDesktop 
-                          ? 20 
-                          : isDesktop 
-                          ? 18 
-                          : isTablet 
-                          ? 16 
-                          : isSmallScreen 
-                          ? 14 
+                      fontSize: isLargeDesktop
+                          ? 20
+                          : isDesktop
+                          ? 18
+                          : isTablet
+                          ? 16
+                          : isSmallScreen
+                          ? 14
                           : 15,
                       fontWeight: FontWeight.w500,
                     ),
@@ -639,11 +759,7 @@ class _LearningHistoryPageState extends State<LearningHistoryPage> {
     );
   }
 
-  Widget _buildStatRow(
-    IconData icon,
-    String value,
-    String label,
-  ) {
+  Widget _buildStatRow(IconData icon, String value, String label) {
     return Row(
       children: [
         Icon(
@@ -652,23 +768,23 @@ class _LearningHistoryPageState extends State<LearningHistoryPage> {
           size: isLargeDesktop
               ? 24
               : isDesktop
-                  ? 22
-                  : isTablet
-                      ? 20
-                      : isSmallScreen
-                          ? 18
-                          : 19,
+              ? 22
+              : isTablet
+              ? 20
+              : isSmallScreen
+              ? 18
+              : 19,
         ),
         SizedBox(
           width: isLargeDesktop
               ? 16
               : isDesktop
-                  ? 14
-                  : isTablet
-                      ? 12
-                      : isSmallScreen
-                          ? 8
-                          : 10,
+              ? 14
+              : isTablet
+              ? 12
+              : isSmallScreen
+              ? 8
+              : 10,
         ),
         Flexible(
           child: Text(
@@ -678,12 +794,12 @@ class _LearningHistoryPageState extends State<LearningHistoryPage> {
               fontSize: isLargeDesktop
                   ? 22
                   : isDesktop
-                      ? 20
-                      : isTablet
-                          ? 18
-                          : isSmallScreen
-                              ? 14
-                              : 16,
+                  ? 20
+                  : isTablet
+                  ? 18
+                  : isSmallScreen
+                  ? 14
+                  : 16,
               fontWeight: FontWeight.w600,
             ),
             maxLines: 1,
@@ -694,12 +810,12 @@ class _LearningHistoryPageState extends State<LearningHistoryPage> {
           width: isLargeDesktop
               ? 12
               : isDesktop
-                  ? 10
-                  : isTablet
-                      ? 8
-                      : isSmallScreen
-                          ? 4
-                          : 6,
+              ? 10
+              : isTablet
+              ? 8
+              : isSmallScreen
+              ? 4
+              : 6,
         ),
         Flexible(
           child: Text(
@@ -709,12 +825,12 @@ class _LearningHistoryPageState extends State<LearningHistoryPage> {
               fontSize: isLargeDesktop
                   ? 20
                   : isDesktop
-                      ? 18
-                      : isTablet
-                          ? 16
-                          : isSmallScreen
-                              ? 12
-                              : 14,
+                  ? 18
+                  : isTablet
+                  ? 16
+                  : isSmallScreen
+                  ? 12
+                  : 14,
             ),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
@@ -795,7 +911,7 @@ class _LearningHistoryPageState extends State<LearningHistoryPage> {
 
   Widget _buildErrorState(String title, String message, VoidCallback onRetry) {
     final isNoInternet = message == 'No internet connection';
-    
+
     return Center(
       child: Padding(
         padding: EdgeInsets.all(
@@ -1122,31 +1238,57 @@ class _LearningHistoryPageState extends State<LearningHistoryPage> {
             children: [
               Container(
                 padding: EdgeInsets.all(
-                  isLargeDesktop ? 10 : isDesktop ? 8 : isTablet ? 7 : 6
+                  isLargeDesktop
+                      ? 10
+                      : isDesktop
+                      ? 8
+                      : isTablet
+                      ? 7
+                      : 6,
                 ),
                 decoration: BoxDecoration(
                   color: const Color(0xFF9C88FF).withOpacity(0.1),
                   borderRadius: BorderRadius.circular(
-                    isLargeDesktop ? 10 : isDesktop ? 8 : isTablet ? 7 : 8
+                    isLargeDesktop
+                        ? 10
+                        : isDesktop
+                        ? 8
+                        : isTablet
+                        ? 7
+                        : 8,
                   ),
                 ),
                 child: Icon(
                   Icons.tune,
                   color: const Color(0xFF9C88FF),
-                  size: isLargeDesktop ? 22 : isDesktop ? 20 : isTablet ? 18 : 17,
+                  size: isLargeDesktop
+                      ? 22
+                      : isDesktop
+                      ? 20
+                      : isTablet
+                      ? 18
+                      : 17,
                 ),
               ),
-              SizedBox(width: isLargeDesktop ? 14 : isDesktop ? 12 : isTablet ? 10 : 9),
+              SizedBox(
+                width: isLargeDesktop
+                    ? 14
+                    : isDesktop
+                    ? 12
+                    : isTablet
+                    ? 10
+                    : 9,
+              ),
               Expanded(
                 child: Text(
                   'Filter',
                   style: TextStyle(
-                    fontSize: isLargeDesktop 
-                        ? 20 
-                        : isDesktop 
-                        ? 18 
-                        : isTablet 
-                        ? 17 
+                    fontSize: isLargeDesktop
+                        ? 20
+                        : isDesktop
+                        ? 18
+                        : isTablet
+                        ? 17
                         : 16,
                     fontWeight: FontWeight.bold,
                     color: const Color(0xFF2C3E50),
@@ -1157,7 +1299,15 @@ class _LearningHistoryPageState extends State<LearningHistoryPage> {
               ),
             ],
           ),
-          SizedBox(height: isLargeDesktop ? 24 : isDesktop ? 20 : isTablet ? 18 : 16),
+          SizedBox(
+            height: isLargeDesktop
+                ? 24
+                : isDesktop
+                ? 20
+                : isTablet
+                ? 18
+                : 16,
+          ),
           // Filter Chips Row
           Row(
             children: [
@@ -1167,29 +1317,87 @@ class _LearningHistoryPageState extends State<LearningHistoryPage> {
                   child: Row(
                     children: [
                       _buildFilterChip('All Activities', true),
-                      SizedBox(width: isLargeDesktop ? 14 : isDesktop ? 12 : isTablet ? 10 : 8),
+                      SizedBox(
+                        width: isLargeDesktop
+                            ? 14
+                            : isDesktop
+                            ? 12
+                            : isTablet
+                            ? 10
+                            : 8,
+                      ),
                       _buildFilterChip('Lectures', false),
-                      SizedBox(width: isLargeDesktop ? 14 : isDesktop ? 12 : isTablet ? 10 : 8),
+                      SizedBox(
+                        width: isLargeDesktop
+                            ? 14
+                            : isDesktop
+                            ? 12
+                            : isTablet
+                            ? 10
+                            : 8,
+                      ),
                       _buildFilterChip('Quizzes', false),
-                      SizedBox(width: isLargeDesktop ? 14 : isDesktop ? 12 : isTablet ? 10 : 8),
+                      SizedBox(
+                        width: isLargeDesktop
+                            ? 14
+                            : isDesktop
+                            ? 12
+                            : isTablet
+                            ? 10
+                            : 8,
+                      ),
                       _buildFilterChip('Assignments', false),
-                      SizedBox(width: isLargeDesktop ? 14 : isDesktop ? 12 : isTablet ? 10 : 8),
+                      SizedBox(
+                        width: isLargeDesktop
+                            ? 14
+                            : isDesktop
+                            ? 12
+                            : isTablet
+                            ? 10
+                            : 8,
+                      ),
                       _buildFilterChip('Certificates', false),
                     ],
                   ),
                 ),
               ),
-              SizedBox(width: isLargeDesktop ? 14 : isDesktop ? 12 : isTablet ? 10 : 9),
+              SizedBox(
+                width: isLargeDesktop
+                    ? 14
+                    : isDesktop
+                    ? 12
+                    : isTablet
+                    ? 10
+                    : 9,
+              ),
               // Sort Button
               Container(
-                height: isLargeDesktop ? 40 : isDesktop ? 36 : isTablet ? 34 : 32,
+                height: isLargeDesktop
+                    ? 40
+                    : isDesktop
+                    ? 36
+                    : isTablet
+                    ? 34
+                    : 32,
                 padding: EdgeInsets.symmetric(
-                  horizontal: isLargeDesktop ? 14 : isDesktop ? 12 : isTablet ? 10 : 9
+                  horizontal: isLargeDesktop
+                      ? 14
+                      : isDesktop
+                      ? 12
+                      : isTablet
+                      ? 10
+                      : 9,
                 ),
                 decoration: BoxDecoration(
                   color: const Color(0xFFF8F9FA),
                   borderRadius: BorderRadius.circular(
-                    isLargeDesktop ? 20 : isDesktop ? 18 : isTablet ? 16 : 16
+                    isLargeDesktop
+                        ? 20
+                        : isDesktop
+                        ? 18
+                        : isTablet
+                        ? 16
+                        : 16,
                   ),
                   border: Border.all(color: const Color(0xFFE9ECEF), width: 1),
                 ),
@@ -1199,20 +1407,34 @@ class _LearningHistoryPageState extends State<LearningHistoryPage> {
                     Icon(
                       Icons.sort_rounded,
                       color: const Color(0xFF6C757D),
-                      size: isLargeDesktop ? 18 : isDesktop ? 16 : isTablet ? 15 : 14,
+                      size: isLargeDesktop
+                          ? 18
+                          : isDesktop
+                          ? 16
+                          : isTablet
+                          ? 15
+                          : 14,
                     ),
-                    SizedBox(width: isLargeDesktop ? 8 : isDesktop ? 6 : isTablet ? 5 : 4),
+                    SizedBox(
+                      width: isLargeDesktop
+                          ? 8
+                          : isDesktop
+                          ? 6
+                          : isTablet
+                          ? 5
+                          : 4,
+                    ),
                     Flexible(
                       child: Text(
                         'Newest',
                         style: TextStyle(
                           color: const Color(0xFF6C757D),
-                          fontSize: isLargeDesktop 
-                              ? 14 
-                              : isDesktop 
-                              ? 12 
-                              : isTablet 
-                              ? 11 
+                          fontSize: isLargeDesktop
+                              ? 14
+                              : isDesktop
+                              ? 12
+                              : isTablet
+                              ? 11
                               : 10,
                           fontWeight: FontWeight.w500,
                         ),
@@ -1220,35 +1442,75 @@ class _LearningHistoryPageState extends State<LearningHistoryPage> {
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
-                    SizedBox(width: isLargeDesktop ? 10 : isDesktop ? 8 : isTablet ? 6 : 5),
+                    SizedBox(
+                      width: isLargeDesktop
+                          ? 10
+                          : isDesktop
+                          ? 8
+                          : isTablet
+                          ? 6
+                          : 5,
+                    ),
                     Icon(
                       Icons.keyboard_arrow_down_rounded,
                       color: const Color(0xFF6C757D),
-                      size: isLargeDesktop ? 18 : isDesktop ? 16 : isTablet ? 15 : 14,
+                      size: isLargeDesktop
+                          ? 18
+                          : isDesktop
+                          ? 16
+                          : isTablet
+                          ? 15
+                          : 14,
                     ),
                   ],
                 ),
               ),
             ],
           ),
-          SizedBox(height: isLargeDesktop ? 20 : isDesktop ? 16 : isTablet ? 14 : 12),
+          SizedBox(
+            height: isLargeDesktop
+                ? 20
+                : isDesktop
+                ? 16
+                : isTablet
+                ? 14
+                : 12,
+          ),
           // Action Buttons Row
           Row(
             children: [
               Expanded(
                 child: Container(
-                  height: isLargeDesktop ? 48 : isDesktop ? 44 : isTablet ? 42 : 40,
+                  height: isLargeDesktop
+                      ? 48
+                      : isDesktop
+                      ? 44
+                      : isTablet
+                      ? 42
+                      : 40,
                   decoration: BoxDecoration(
                     gradient: const LinearGradient(
                       colors: [Color(0xFF9C88FF), Color(0xFF7A6BFF)],
                     ),
                     borderRadius: BorderRadius.circular(
-                      isLargeDesktop ? 14 : isDesktop ? 12 : isTablet ? 11 : 11
+                      isLargeDesktop
+                          ? 14
+                          : isDesktop
+                          ? 12
+                          : isTablet
+                          ? 11
+                          : 11,
                     ),
                     boxShadow: [
                       BoxShadow(
                         color: const Color(0xFF9C88FF).withOpacity(0.3),
-                        blurRadius: isLargeDesktop ? 10 : isDesktop ? 8 : isTablet ? 7 : 6,
+                        blurRadius: isLargeDesktop
+                            ? 10
+                            : isDesktop
+                            ? 8
+                            : isTablet
+                            ? 7
+                            : 6,
                         offset: const Offset(0, 4),
                       ),
                     ],
@@ -1257,7 +1519,13 @@ class _LearningHistoryPageState extends State<LearningHistoryPage> {
                     color: Colors.transparent,
                     child: InkWell(
                       borderRadius: BorderRadius.circular(
-                        isLargeDesktop ? 14 : isDesktop ? 12 : isTablet ? 11 : 11
+                        isLargeDesktop
+                            ? 14
+                            : isDesktop
+                            ? 12
+                            : isTablet
+                            ? 11
+                            : 11,
                       ),
                       onTap: () {},
                       child: Center(
@@ -1267,20 +1535,34 @@ class _LearningHistoryPageState extends State<LearningHistoryPage> {
                             Icon(
                               Icons.analytics_rounded,
                               color: Colors.white,
-                              size: isLargeDesktop ? 20 : isDesktop ? 18 : isTablet ? 17 : 16,
+                              size: isLargeDesktop
+                                  ? 20
+                                  : isDesktop
+                                  ? 18
+                                  : isTablet
+                                  ? 17
+                                  : 16,
                             ),
-                            SizedBox(width: isLargeDesktop ? 14 : isDesktop ? 12 : isTablet ? 10 : 8),
+                            SizedBox(
+                              width: isLargeDesktop
+                                  ? 14
+                                  : isDesktop
+                                  ? 12
+                                  : isTablet
+                                  ? 10
+                                  : 8,
+                            ),
                             Flexible(
                               child: Text(
                                 'View Analytics',
                                 style: TextStyle(
                                   color: Colors.white,
-                                  fontSize: isLargeDesktop 
-                                      ? 16 
-                                      : isDesktop 
-                                      ? 14 
-                                      : isTablet 
-                                      ? 13 
+                                  fontSize: isLargeDesktop
+                                      ? 16
+                                      : isDesktop
+                                      ? 14
+                                      : isTablet
+                                      ? 13
                                       : 12,
                                   fontWeight: FontWeight.w600,
                                 ),
@@ -1295,14 +1577,40 @@ class _LearningHistoryPageState extends State<LearningHistoryPage> {
                   ),
                 ),
               ),
-              SizedBox(width: isLargeDesktop ? 14 : isDesktop ? 12 : isTablet ? 10 : 9),
+              SizedBox(
+                width: isLargeDesktop
+                    ? 14
+                    : isDesktop
+                    ? 12
+                    : isTablet
+                    ? 10
+                    : 9,
+              ),
               Container(
-                height: isLargeDesktop ? 48 : isDesktop ? 44 : isTablet ? 42 : 40,
-                width: isLargeDesktop ? 48 : isDesktop ? 44 : isTablet ? 42 : 40,
+                height: isLargeDesktop
+                    ? 48
+                    : isDesktop
+                    ? 44
+                    : isTablet
+                    ? 42
+                    : 40,
+                width: isLargeDesktop
+                    ? 48
+                    : isDesktop
+                    ? 44
+                    : isTablet
+                    ? 42
+                    : 40,
                 decoration: BoxDecoration(
                   color: const Color(0xFFF8F9FA),
                   borderRadius: BorderRadius.circular(
-                    isLargeDesktop ? 14 : isDesktop ? 12 : isTablet ? 11 : 11
+                    isLargeDesktop
+                        ? 14
+                        : isDesktop
+                        ? 12
+                        : isTablet
+                        ? 11
+                        : 11,
                   ),
                   border: Border.all(color: const Color(0xFFE9ECEF), width: 1),
                 ),
@@ -1310,14 +1618,26 @@ class _LearningHistoryPageState extends State<LearningHistoryPage> {
                   color: Colors.transparent,
                   child: InkWell(
                     borderRadius: BorderRadius.circular(
-                      isLargeDesktop ? 14 : isDesktop ? 12 : isTablet ? 11 : 11
+                      isLargeDesktop
+                          ? 14
+                          : isDesktop
+                          ? 12
+                          : isTablet
+                          ? 11
+                          : 11,
                     ),
                     onTap: () {},
                     child: Center(
                       child: Icon(
                         Icons.refresh_rounded,
                         color: const Color(0xFF6C757D),
-                        size: isLargeDesktop ? 22 : isDesktop ? 20 : isTablet ? 18 : 17,
+                        size: isLargeDesktop
+                            ? 22
+                            : isDesktop
+                            ? 20
+                            : isTablet
+                            ? 18
+                            : 17,
                       ),
                     ),
                   ),
@@ -1448,7 +1768,9 @@ class _LearningHistoryPageState extends State<LearningHistoryPage> {
                       : 32,
                 ),
                 child: CircularProgressIndicator(
-                  valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF9C88FF)),
+                  valueColor: const AlwaysStoppedAnimation<Color>(
+                    Color(0xFF9C88FF),
+                  ),
                   strokeWidth: isLargeDesktop
                       ? 4
                       : isDesktop
@@ -1753,7 +2075,9 @@ class _LearningHistoryPageState extends State<LearningHistoryPage> {
           // Courses List
           else
             Column(
-              children: _enrolledCourses.map((course) => _buildCourseCard(course)).toList(),
+              children: _enrolledCourses
+                  .map((course) => _buildCourseCard(course))
+                  .toList(),
             ),
         ],
       ),
@@ -1766,18 +2090,31 @@ class _LearningHistoryPageState extends State<LearningHistoryPage> {
     final enrollmentDateStr = course['enrollmentDate'] as String;
     final enrollmentDate = DateTime.parse(enrollmentDateStr);
     final progressPercent = progress.round();
-    
+
     // Format date
-    final monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 
-                       'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    final dateStr = '${monthNames[enrollmentDate.month - 1]} ${enrollmentDate.day}, ${enrollmentDate.year}';
-    
+    final monthNames = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
+    final dateStr =
+        '${monthNames[enrollmentDate.month - 1]} ${enrollmentDate.day}, ${enrollmentDate.year}';
+
     // Progress color
-    final progressColor = progressPercent == 0 
-        ? Colors.red 
-        : progressPercent < 50 
-            ? Colors.orange 
-            : const Color(0xFF4CAF50);
+    final progressColor = progressPercent == 0
+        ? Colors.red
+        : progressPercent < 50
+        ? Colors.orange
+        : const Color(0xFF4CAF50);
 
     return Container(
       margin: EdgeInsets.only(
@@ -2145,6 +2482,4 @@ class _LearningHistoryPageState extends State<LearningHistoryPage> {
       ),
     );
   }
-
 }
-

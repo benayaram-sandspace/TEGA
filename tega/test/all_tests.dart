@@ -3,7 +3,8 @@ import 'package:flutter_test/flutter_test.dart';
 // Import all test files
 import 'core/config/env_config_test.dart' as env_config_test;
 import 'core/constants/api_constants_test.dart' as api_constants_test;
-import 'features/authentication/auth_repository_test.dart' as auth_repository_test;
+import 'features/authentication/auth_repository_test.dart'
+    as auth_repository_test;
 import 'widgets/splash_screen_test.dart' as splash_screen_test;
 import 'widgets/login_page_test.dart' as login_page_test;
 import 'widgets/main_app_test.dart' as main_app_test;
@@ -29,4 +30,3 @@ void main() {
     auth_flow_test.main();
   });
 }
-

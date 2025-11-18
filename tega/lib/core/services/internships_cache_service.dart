@@ -4,7 +4,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 /// Cache service for internships data
 /// Provides caching with TTL (Time To Live) for internships
 class InternshipsCacheService {
-  static final InternshipsCacheService _instance = InternshipsCacheService._internal();
+  static final InternshipsCacheService _instance =
+      InternshipsCacheService._internal();
   factory InternshipsCacheService() => _instance;
   InternshipsCacheService._internal();
 
@@ -61,7 +62,10 @@ class InternshipsCacheService {
   Future<void> setInternshipsData(List<Map<String, dynamic>> data) async {
     await _ensurePrefs();
     await _prefs?.setString(_internshipsDataKey, json.encode(data));
-    await _prefs?.setString(_cacheTimestampKey, DateTime.now().toIso8601String());
+    await _prefs?.setString(
+      _cacheTimestampKey,
+      DateTime.now().toIso8601String(),
+    );
   }
 
   /// Clear all cached data
@@ -71,4 +75,3 @@ class InternshipsCacheService {
     await _prefs?.remove(_cacheTimestampKey);
   }
 }
-

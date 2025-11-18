@@ -17,11 +17,14 @@ class _HelpSupportPageState extends State<HelpSupportPage> {
   double get tabletBreakpoint => 1024;
   double get desktopBreakpoint => 1440;
   bool get isMobile => MediaQuery.of(context).size.width < mobileBreakpoint;
-  bool get isTablet => MediaQuery.of(context).size.width >= mobileBreakpoint &&
+  bool get isTablet =>
+      MediaQuery.of(context).size.width >= mobileBreakpoint &&
       MediaQuery.of(context).size.width < tabletBreakpoint;
-  bool get isDesktop => MediaQuery.of(context).size.width >= tabletBreakpoint &&
+  bool get isDesktop =>
+      MediaQuery.of(context).size.width >= tabletBreakpoint &&
       MediaQuery.of(context).size.width < desktopBreakpoint;
-  bool get isLargeDesktop => MediaQuery.of(context).size.width >= desktopBreakpoint;
+  bool get isLargeDesktop =>
+      MediaQuery.of(context).size.width >= desktopBreakpoint;
   bool get isSmallScreen => MediaQuery.of(context).size.width < 400;
 
   @override
@@ -668,9 +671,7 @@ class _HelpSupportPageState extends State<HelpSupportPage> {
                       isPrimary: false,
                       onTap: () => _launchEmail(),
                     ),
-                    SizedBox(
-                      height: isSmallScreen ? 12 : 16,
-                    ),
+                    SizedBox(height: isSmallScreen ? 12 : 16),
                     _buildSupportButton(
                       icon: Icons.phone_outlined,
                       title: 'Call Support',

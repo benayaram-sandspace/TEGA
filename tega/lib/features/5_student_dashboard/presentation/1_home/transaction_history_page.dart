@@ -18,7 +18,8 @@ class TransactionHistoryPage extends StatefulWidget {
 class _TransactionHistoryPageState extends State<TransactionHistoryPage> {
   final TransactionHistoryService _transactionService =
       TransactionHistoryService();
-  final TransactionHistoryCacheService _cacheService = TransactionHistoryCacheService();
+  final TransactionHistoryCacheService _cacheService =
+      TransactionHistoryCacheService();
 
   List<Transaction> _transactions = [];
   TransactionStats _stats = TransactionStats.empty();
@@ -31,11 +32,14 @@ class _TransactionHistoryPageState extends State<TransactionHistoryPage> {
   double get tabletBreakpoint => 1024;
   double get desktopBreakpoint => 1440;
   bool get isMobile => MediaQuery.of(context).size.width < mobileBreakpoint;
-  bool get isTablet => MediaQuery.of(context).size.width >= mobileBreakpoint &&
+  bool get isTablet =>
+      MediaQuery.of(context).size.width >= mobileBreakpoint &&
       MediaQuery.of(context).size.width < tabletBreakpoint;
-  bool get isDesktop => MediaQuery.of(context).size.width >= tabletBreakpoint &&
+  bool get isDesktop =>
+      MediaQuery.of(context).size.width >= tabletBreakpoint &&
       MediaQuery.of(context).size.width < desktopBreakpoint;
-  bool get isLargeDesktop => MediaQuery.of(context).size.width >= desktopBreakpoint;
+  bool get isLargeDesktop =>
+      MediaQuery.of(context).size.width >= desktopBreakpoint;
   bool get isSmallScreen => MediaQuery.of(context).size.width < 400;
 
   @override
@@ -57,7 +61,9 @@ class _TransactionHistoryPageState extends State<TransactionHistoryPage> {
             error.toString().toLowerCase().contains('connection') ||
             error.toString().toLowerCase().contains('internet') ||
             error.toString().toLowerCase().contains('failed host lookup') ||
-            error.toString().toLowerCase().contains('no address associated with hostname'));
+            error.toString().toLowerCase().contains(
+              'no address associated with hostname',
+            ));
   }
 
   Future<String> _getStudentName() async {
@@ -92,7 +98,7 @@ class _TransactionHistoryPageState extends State<TransactionHistoryPage> {
     if (!forceRefresh) {
       final cachedTransactions = await _cacheService.getTransactionsData();
       final cachedStats = await _cacheService.getStatsData();
-      
+
       if (cachedTransactions != null && cachedStats != null && mounted) {
         setState(() {
           _transactions = cachedTransactions
@@ -128,20 +134,24 @@ class _TransactionHistoryPageState extends State<TransactionHistoryPage> {
       final stats = await _transactionService.getTransactionStats();
 
       // Cache transactions data
-      final transactionsJson = transactions.map((t) => {
-        'id': t.id,
-        'courseId': t.courseId,
-        'courseName': t.courseName,
-        'amount': t.amount,
-        'currency': t.currency,
-        'paymentMethod': t.paymentMethod,
-        'status': t.status,
-        'transactionId': t.transactionId,
-        'createdAt': t.createdAt.toIso8601String(),
-        'paymentDate': t.paymentDate?.toIso8601String(),
-        'description': t.description,
-        'source': t.source,
-      }).toList();
+      final transactionsJson = transactions
+          .map(
+            (t) => {
+              'id': t.id,
+              'courseId': t.courseId,
+              'courseName': t.courseName,
+              'amount': t.amount,
+              'currency': t.currency,
+              'paymentMethod': t.paymentMethod,
+              'status': t.status,
+              'transactionId': t.transactionId,
+              'createdAt': t.createdAt.toIso8601String(),
+              'paymentDate': t.paymentDate?.toIso8601String(),
+              'description': t.description,
+              'source': t.source,
+            },
+          )
+          .toList();
       await _cacheService.setTransactionsData(transactionsJson);
 
       // Cache stats data
@@ -167,7 +177,7 @@ class _TransactionHistoryPageState extends State<TransactionHistoryPage> {
           // Try to load from cache if available
           final cachedTransactions = await _cacheService.getTransactionsData();
           final cachedStats = await _cacheService.getStatsData();
-          
+
           if (cachedTransactions != null && cachedStats != null) {
             setState(() {
               _transactions = cachedTransactions
@@ -235,7 +245,9 @@ class _TransactionHistoryPageState extends State<TransactionHistoryPage> {
           child: _isLoading
               ? Center(
                   child: CircularProgressIndicator(
-                    valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF9C88FF)),
+                    valueColor: const AlwaysStoppedAnimation<Color>(
+                      Color(0xFF9C88FF),
+                    ),
                     strokeWidth: isLargeDesktop
                         ? 4
                         : isDesktop
@@ -742,11 +754,7 @@ class _TransactionHistoryPageState extends State<TransactionHistoryPage> {
         scrollDirection: Axis.horizontal,
         child: Row(
           children: [
-            _buildFilterTab(
-              'All',
-              Icons.all_inclusive,
-              _transactions.length,
-            ),
+            _buildFilterTab('All', Icons.all_inclusive, _transactions.length),
             SizedBox(
               width: isLargeDesktop
                   ? 12
@@ -982,19 +990,18 @@ class _TransactionHistoryPageState extends State<TransactionHistoryPage> {
               const Spacer(),
               Text(
                 '${filteredTransactions.length} transactions',
-                style: const TextStyle(
-                  fontSize: 12,
-                  color: Color(0xFF6C757D),
-                ),
+                style: const TextStyle(fontSize: 12, color: Color(0xFF6C757D)),
               ),
             ],
           ),
           const SizedBox(height: 16),
           // Transaction Cards
-          ...filteredTransactions.map((transaction) => Padding(
-            padding: const EdgeInsets.only(bottom: 12),
-            child: _buildTransactionCard(transaction),
-          )),
+          ...filteredTransactions.map(
+            (transaction) => Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: _buildTransactionCard(transaction),
+            ),
+          ),
         ],
       ),
     );
@@ -1195,7 +1202,7 @@ class _TransactionHistoryPageState extends State<TransactionHistoryPage> {
 
   Widget _buildErrorState() {
     final isNoInternet = _error == 'No internet connection';
-    
+
     return Center(
       child: Padding(
         padding: EdgeInsets.all(

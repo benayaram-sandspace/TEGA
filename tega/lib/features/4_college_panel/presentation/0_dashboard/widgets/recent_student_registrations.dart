@@ -23,7 +23,7 @@ class StudentRegistration {
   });
 
   String get fullName => '$firstName $lastName'.trim();
-  
+
   String get initials {
     final first = firstName.isNotEmpty ? firstName[0].toUpperCase() : '';
     final last = lastName.isNotEmpty ? lastName[0].toUpperCase() : '';
@@ -34,10 +34,7 @@ class StudentRegistration {
 class RecentStudentRegistrations extends StatelessWidget {
   final List<StudentRegistration> students;
 
-  const RecentStudentRegistrations({
-    super.key,
-    required this.students,
-  });
+  const RecentStudentRegistrations({super.key, required this.students});
 
   String _formatDate(DateTime date) {
     return DateFormat('MM/dd/yyyy').format(date);
@@ -52,19 +49,37 @@ class RecentStudentRegistrations extends StatelessWidget {
     final screenWidth = MediaQuery.of(context).size.width;
     final isMobile = screenWidth < 600;
     final isTablet = screenWidth >= 600 && screenWidth < 1024;
-    
+
     final displayStudents = students.take(4).toList();
     final isScrollable = students.length > 4;
 
     // Responsive padding
-    final padding = isMobile ? 16.0 : isTablet ? 18.0 : 20.0;
-    final headerFontSize = isMobile ? 16.0 : isTablet ? 17.0 : 18.0;
-    final badgeFontSize = isMobile ? 11.0 : isTablet ? 11.5 : 12.0;
+    final padding = isMobile
+        ? 16.0
+        : isTablet
+        ? 18.0
+        : 20.0;
+    final headerFontSize = isMobile
+        ? 16.0
+        : isTablet
+        ? 17.0
+        : 18.0;
+    final badgeFontSize = isMobile
+        ? 11.0
+        : isTablet
+        ? 11.5
+        : 12.0;
 
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(isMobile ? 10 : isTablet ? 11 : 12),
+        borderRadius: BorderRadius.circular(
+          isMobile
+              ? 10
+              : isTablet
+              ? 11
+              : 12,
+        ),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.05),
@@ -144,10 +159,22 @@ class RecentStudentRegistrations extends StatelessWidget {
                 children: displayStudents.map((student) {
                   return Container(
                     margin: EdgeInsets.only(bottom: isMobile ? 10 : 12),
-                    padding: EdgeInsets.all(isMobile ? 12 : isTablet ? 14 : 16),
+                    padding: EdgeInsets.all(
+                      isMobile
+                          ? 12
+                          : isTablet
+                          ? 14
+                          : 16,
+                    ),
                     decoration: BoxDecoration(
                       color: Colors.white,
-                      borderRadius: BorderRadius.circular(isMobile ? 10 : isTablet ? 11 : 12),
+                      borderRadius: BorderRadius.circular(
+                        isMobile
+                            ? 10
+                            : isTablet
+                            ? 11
+                            : 12,
+                      ),
                       border: Border.all(
                         color: Colors.grey.withOpacity(0.1),
                         width: 1,
@@ -167,13 +194,21 @@ class RecentStudentRegistrations extends StatelessWidget {
                         Row(
                           children: [
                             CircleAvatar(
-                              radius: isMobile ? 20 : isTablet ? 22 : 24,
+                              radius: isMobile
+                                  ? 20
+                                  : isTablet
+                                  ? 22
+                                  : 24,
                               backgroundColor: const Color(0xFF8B5CF6),
                               child: Text(
                                 student.initials,
                                 style: TextStyle(
                                   color: Colors.white,
-                                  fontSize: isMobile ? 14 : isTablet ? 15 : 16,
+                                  fontSize: isMobile
+                                      ? 14
+                                      : isTablet
+                                      ? 15
+                                      : 16,
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),
@@ -186,7 +221,11 @@ class RecentStudentRegistrations extends StatelessWidget {
                                   Text(
                                     student.fullName,
                                     style: TextStyle(
-                                      fontSize: isMobile ? 14 : isTablet ? 15 : 16,
+                                      fontSize: isMobile
+                                          ? 14
+                                          : isTablet
+                                          ? 15
+                                          : 16,
                                       fontWeight: FontWeight.bold,
                                       color: const Color(0xFF1F2937),
                                       height: 1.3,
@@ -236,9 +275,17 @@ class RecentStudentRegistrations extends StatelessWidget {
                             ? Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  _buildInfoRow('Course', student.course ?? 'Not specified', isMobile),
+                                  _buildInfoRow(
+                                    'Course',
+                                    student.course ?? 'Not specified',
+                                    isMobile,
+                                  ),
                                   SizedBox(height: isMobile ? 8 : 10),
-                                  _buildInfoRow('Year', student.year ?? 'Not specified', isMobile),
+                                  _buildInfoRow(
+                                    'Year',
+                                    student.year ?? 'Not specified',
+                                    isMobile,
+                                  ),
                                   SizedBox(height: isMobile ? 8 : 10),
                                   _buildDateInfo(student.createdAt, isMobile),
                                 ],
@@ -246,15 +293,29 @@ class RecentStudentRegistrations extends StatelessWidget {
                             : Row(
                                 children: [
                                   Expanded(
-                                    child: _buildInfoColumn('Course', student.course ?? 'Not specified', isMobile, isTablet),
+                                    child: _buildInfoColumn(
+                                      'Course',
+                                      student.course ?? 'Not specified',
+                                      isMobile,
+                                      isTablet,
+                                    ),
                                   ),
                                   SizedBox(width: isMobile ? 12 : 16),
                                   Expanded(
-                                    child: _buildInfoColumn('Year', student.year ?? 'Not specified', isMobile, isTablet),
+                                    child: _buildInfoColumn(
+                                      'Year',
+                                      student.year ?? 'Not specified',
+                                      isMobile,
+                                      isTablet,
                                     ),
+                                  ),
                                   SizedBox(width: isMobile ? 12 : 16),
                                   Expanded(
-                                    child: _buildDateColumn(student.createdAt, isMobile, isTablet),
+                                    child: _buildDateColumn(
+                                      student.createdAt,
+                                      isMobile,
+                                      isTablet,
+                                    ),
                                   ),
                                 ],
                               ),
@@ -269,68 +330,81 @@ class RecentStudentRegistrations extends StatelessWidget {
     );
   }
 
-  Widget _buildInfoColumn(String label, String value, bool isMobile, bool isTablet) {
+  Widget _buildInfoColumn(
+    String label,
+    String value,
+    bool isMobile,
+    bool isTablet,
+  ) {
     return Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
           label,
-                                    style: TextStyle(
+          style: TextStyle(
             fontSize: isMobile ? 10 : 11,
-                                      fontWeight: FontWeight.w500,
-                                      color: Colors.grey[600],
-                                      letterSpacing: 0.3,
-                                    ),
-                                  ),
+            fontWeight: FontWeight.w500,
+            color: Colors.grey[600],
+            letterSpacing: 0.3,
+          ),
+        ),
         SizedBox(height: isMobile ? 3 : 4),
-                                  Text(
+        Text(
           value,
           style: TextStyle(
-            fontSize: isMobile ? 13 : isTablet ? 13.5 : 14,
-                                      fontWeight: FontWeight.w600,
+            fontSize: isMobile
+                ? 13
+                : isTablet
+                ? 13.5
+                : 14,
+            fontWeight: FontWeight.w600,
             color: const Color(0xFF1F2937),
-                                      height: 1.3,
-                                    ),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ],
+            height: 1.3,
+          ),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
+      ],
     );
   }
 
   Widget _buildDateColumn(DateTime date, bool isMobile, bool isTablet) {
     return Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    'Registration Date',
-                                    style: TextStyle(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Registration Date',
+          style: TextStyle(
             fontSize: isMobile ? 10 : 11,
-                                      fontWeight: FontWeight.w500,
-                                      color: Colors.grey[600],
-                                      letterSpacing: 0.3,
-                                    ),
-                                  ),
+            fontWeight: FontWeight.w500,
+            color: Colors.grey[600],
+            letterSpacing: 0.3,
+          ),
+        ),
         SizedBox(height: isMobile ? 3 : 4),
-                                  Text(
+        Text(
           _formatDate(date),
           style: TextStyle(
-            fontSize: isMobile ? 13 : isTablet ? 13.5 : 14,
-                                      fontWeight: FontWeight.w600,
+            fontSize: isMobile
+                ? 13
+                : isTablet
+                ? 13.5
+                : 14,
+            fontWeight: FontWeight.w600,
             color: const Color(0xFF1F2937),
-                                      height: 1.3,
-                                    ),
-                                  ),
+            height: 1.3,
+          ),
+        ),
         SizedBox(height: isMobile ? 1 : 2),
-                                  Text(
+        Text(
           _formatTime(date),
-                                    style: TextStyle(
+          style: TextStyle(
             fontSize: isMobile ? 11 : 12,
-                                      color: Colors.grey[600],
-                                      height: 1.3,
-                                    ),
-                                  ),
-                                ],
+            color: Colors.grey[600],
+            height: 1.3,
+          ),
+        ),
+      ],
     );
   }
 
@@ -357,9 +431,9 @@ class RecentStudentRegistrations extends StatelessWidget {
               fontWeight: FontWeight.w600,
               color: const Color(0xFF1F2937),
             ),
-                              ),
-                            ),
-                          ],
+          ),
+        ),
+      ],
     );
   }
 
@@ -375,7 +449,7 @@ class RecentStudentRegistrations extends StatelessWidget {
               fontSize: isMobile ? 12 : 13,
               fontWeight: FontWeight.w500,
               color: Colors.grey[600],
-                    ),
+            ),
           ),
         ),
         Expanded(
@@ -396,13 +470,12 @@ class RecentStudentRegistrations extends StatelessWidget {
                 style: TextStyle(
                   fontSize: isMobile ? 11 : 12,
                   color: Colors.grey[600],
+                ),
               ),
-            ),
-        ],
-      ),
+            ],
+          ),
         ),
       ],
     );
   }
 }
-

@@ -117,13 +117,15 @@ class ConnectionOptimizer {
     dynamic body,
   }) {
     final completer = Completer<http.Response>();
-    _requestQueue.add(_QueuedRequest(
-      method: method,
-      url: url,
-      headers: headers,
-      body: body,
-      completer: completer,
-    ));
+    _requestQueue.add(
+      _QueuedRequest(
+        method: method,
+        url: url,
+        headers: headers,
+        body: body,
+        completer: completer,
+      ),
+    );
     return completer.future;
   }
 
@@ -184,10 +186,12 @@ class ConnectionOptimizer {
   /// Prefetch resources in background
   Future<void> prefetch(List<Uri> urls) async {
     for (final url in urls) {
-      unawaited(_client.get(url).catchError((error) {
-        // Silently handle prefetch errors
-        return http.Response('', 500);
-      }));
+      unawaited(
+        _client.get(url).catchError((error) {
+          // Silently handle prefetch errors
+          return http.Response('', 500);
+        }),
+      );
     }
   }
 
@@ -223,11 +227,11 @@ class ConnectionOptimizer {
 
   /// Get connection stats
   Map<String, dynamic> get stats => {
-        'isOnline': _isOnline,
-        'queueSize': _requestQueue.length,
-        'activeBatches': _batchedRequests.length,
-        'networkListeners': _networkListeners.length,
-      };
+    'isOnline': _isOnline,
+    'queueSize': _requestQueue.length,
+    'activeBatches': _batchedRequests.length,
+    'networkListeners': _networkListeners.length,
+  };
 
   /// Clear all queues and batches
   void clearQueues() {
@@ -263,4 +267,3 @@ class _QueuedRequest {
     required this.completer,
   });
 }
-

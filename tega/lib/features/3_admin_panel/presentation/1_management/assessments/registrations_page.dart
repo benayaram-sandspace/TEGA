@@ -31,10 +31,10 @@ class _RegistrationsPageState extends State<RegistrationsPage> {
   Future<void> _initializeCacheAndLoadData() async {
     // Initialize cache service
     await _cacheService.initialize();
-    
+
     // Try to load from cache first
     await _loadFromCache();
-    
+
     // Then load fresh data
     await _loadExams();
   }
@@ -60,7 +60,9 @@ class _RegistrationsPageState extends State<RegistrationsPage> {
             error.toString().toLowerCase().contains('connection') ||
             error.toString().toLowerCase().contains('internet') ||
             error.toString().toLowerCase().contains('failed host lookup') ||
-            error.toString().toLowerCase().contains('no address associated with hostname'));
+            error.toString().toLowerCase().contains(
+              'no address associated with hostname',
+            ));
   }
 
   Future<void> _loadExams({bool forceRefresh = false}) async {
@@ -77,7 +79,7 @@ class _RegistrationsPageState extends State<RegistrationsPage> {
         _exams = exams;
         _loadingExams = false;
       });
-      
+
       // Cache the data
       await _cacheService.setExamsData(exams);
       // Reset toast flag on successful load (internet is back)
@@ -95,7 +97,7 @@ class _RegistrationsPageState extends State<RegistrationsPage> {
           });
           return;
         }
-        
+
         // No cache available
         setState(() => _loadingExams = false);
       } else {
@@ -103,7 +105,10 @@ class _RegistrationsPageState extends State<RegistrationsPage> {
         setState(() => _loadingExams = false);
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Failed to load exams: $e'), backgroundColor: Colors.red),
+            SnackBar(
+              content: Text('Failed to load exams: $e'),
+              backgroundColor: Colors.red,
+            ),
           );
         }
       }
@@ -117,7 +122,7 @@ class _RegistrationsPageState extends State<RegistrationsPage> {
         setState(() {
           _exams = exams;
         });
-        
+
         // Cache the data
         await _cacheService.setExamsData(exams);
         // Reset toast flag on successful load (internet is back)
@@ -131,13 +136,13 @@ class _RegistrationsPageState extends State<RegistrationsPage> {
 
   Future<void> _loadRegistrations({bool forceRefresh = false}) async {
     if (_selectedExamId == null || _selectedExamId!.isEmpty) return;
-    
+
     // If we have cached data and not forcing refresh, load in background
     if (!forceRefresh && _registrations.isNotEmpty) {
       _loadRegistrationsInBackground();
       return;
     }
-    
+
     setState(() => _loadingRegs = true);
     try {
       final regs = await _examRepository.getExamRegistrations(_selectedExamId!);
@@ -145,7 +150,7 @@ class _RegistrationsPageState extends State<RegistrationsPage> {
         _registrations = regs;
         _loadingRegs = false;
       });
-      
+
       // Cache the data
       await _cacheService.setExamRegistrationsData(_selectedExamId!, regs);
       // Reset toast flag on successful load (internet is back)
@@ -154,7 +159,9 @@ class _RegistrationsPageState extends State<RegistrationsPage> {
       // Check if it's a network/internet error
       if (_isNoInternetError(e)) {
         // Try to load from cache if available
-        final cachedRegs = await _cacheService.getExamRegistrationsData(_selectedExamId!);
+        final cachedRegs = await _cacheService.getExamRegistrationsData(
+          _selectedExamId!,
+        );
         if (cachedRegs != null && cachedRegs.isNotEmpty) {
           // Load from cache
           setState(() {
@@ -163,7 +170,7 @@ class _RegistrationsPageState extends State<RegistrationsPage> {
           });
           return;
         }
-        
+
         // No cache available
         setState(() => _loadingRegs = false);
       } else {
@@ -171,7 +178,10 @@ class _RegistrationsPageState extends State<RegistrationsPage> {
         setState(() => _loadingRegs = false);
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Failed to load registrations: $e'), backgroundColor: Colors.red),
+            SnackBar(
+              content: Text('Failed to load registrations: $e'),
+              backgroundColor: Colors.red,
+            ),
           );
         }
       }
@@ -180,14 +190,14 @@ class _RegistrationsPageState extends State<RegistrationsPage> {
 
   Future<void> _loadRegistrationsInBackground() async {
     if (_selectedExamId == null || _selectedExamId!.isEmpty) return;
-    
+
     try {
       final regs = await _examRepository.getExamRegistrations(_selectedExamId!);
       if (mounted) {
         setState(() {
           _registrations = regs;
         });
-        
+
         // Cache the data
         await _cacheService.setExamRegistrationsData(_selectedExamId!, regs);
         // Reset toast flag on successful load (internet is back)
@@ -207,7 +217,13 @@ class _RegistrationsPageState extends State<RegistrationsPage> {
     final isDesktop = screenWidth >= 1024;
 
     return SingleChildScrollView(
-      padding: EdgeInsets.all(isMobile ? 16 : isTablet ? 18 : 20),
+      padding: EdgeInsets.all(
+        isMobile
+            ? 16
+            : isTablet
+            ? 18
+            : 20,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -215,62 +231,149 @@ class _RegistrationsPageState extends State<RegistrationsPage> {
           Row(
             children: [
               Container(
-                padding: EdgeInsets.all(isMobile ? 10 : isTablet ? 11 : 12),
+                padding: EdgeInsets.all(
+                  isMobile
+                      ? 10
+                      : isTablet
+                      ? 11
+                      : 12,
+                ),
                 decoration: BoxDecoration(
                   color: AdminDashboardStyles.primary.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(isMobile ? 10 : isTablet ? 11 : 12),
+                  borderRadius: BorderRadius.circular(
+                    isMobile
+                        ? 10
+                        : isTablet
+                        ? 11
+                        : 12,
+                  ),
                 ),
                 child: Icon(
                   Icons.people_alt_rounded,
                   color: AdminDashboardStyles.primary,
-                  size: isMobile ? 20 : isTablet ? 22 : 24,
+                  size: isMobile
+                      ? 20
+                      : isTablet
+                      ? 22
+                      : 24,
                 ),
               ),
-              SizedBox(width: isMobile ? 10 : isTablet ? 11 : 12),
+              SizedBox(
+                width: isMobile
+                    ? 10
+                    : isTablet
+                    ? 11
+                    : 12,
+              ),
               Expanded(
                 child: Text(
                   'Exam Registrations',
                   style: AdminDashboardStyles.welcomeHeader.copyWith(
-                    fontSize: isMobile ? 18 : isTablet ? 20 : 22,
+                    fontSize: isMobile
+                        ? 18
+                        : isTablet
+                        ? 20
+                        : 22,
                   ),
                 ),
               ),
             ],
           ),
-          SizedBox(height: isMobile ? 12 : isTablet ? 14 : 16),
+          SizedBox(
+            height: isMobile
+                ? 12
+                : isTablet
+                ? 14
+                : 16,
+          ),
 
           // Exam filter (full width, left-aligned)
           SizedBox(
-            width: isMobile ? double.infinity : isTablet ? 400 : 420,
+            width: isMobile
+                ? double.infinity
+                : isTablet
+                ? 400
+                : 420,
             child: _loadingExams
                 ? LinearProgressIndicator(
-                    minHeight: isMobile ? 3 : isTablet ? 3.5 : 4,
-                    valueColor: AlwaysStoppedAnimation<Color>(AdminDashboardStyles.primary),
+                    minHeight: isMobile
+                        ? 3
+                        : isTablet
+                        ? 3.5
+                        : 4,
+                    valueColor: AlwaysStoppedAnimation<Color>(
+                      AdminDashboardStyles.primary,
+                    ),
                   )
                 : DropdownButtonFormField<String>(
                     value: _selectedExamId,
                     isExpanded: true,
-                    style: TextStyle(fontSize: isMobile ? 14 : isTablet ? 15 : 16),
+                    style: TextStyle(
+                      fontSize: isMobile
+                          ? 14
+                          : isTablet
+                          ? 15
+                          : 16,
+                    ),
                     hint: Text(
                       'Select an exam to view registrations',
-                      style: TextStyle(fontSize: isMobile ? 14 : isTablet ? 15 : 16),
+                      style: TextStyle(
+                        fontSize: isMobile
+                            ? 14
+                            : isTablet
+                            ? 15
+                            : 16,
+                      ),
                     ),
                     decoration: InputDecoration(
                       contentPadding: EdgeInsets.symmetric(
-                        horizontal: isMobile ? 12 : isTablet ? 13 : 14,
-                        vertical: isMobile ? 12 : isTablet ? 13 : 14,
+                        horizontal: isMobile
+                            ? 12
+                            : isTablet
+                            ? 13
+                            : 14,
+                        vertical: isMobile
+                            ? 12
+                            : isTablet
+                            ? 13
+                            : 14,
                       ),
                       border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(isMobile ? 10 : isTablet ? 11 : 12),
-                        borderSide: BorderSide(color: AdminDashboardStyles.borderLight),
+                        borderRadius: BorderRadius.circular(
+                          isMobile
+                              ? 10
+                              : isTablet
+                              ? 11
+                              : 12,
+                        ),
+                        borderSide: BorderSide(
+                          color: AdminDashboardStyles.borderLight,
+                        ),
                       ),
                       enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(isMobile ? 10 : isTablet ? 11 : 12),
-                        borderSide: BorderSide(color: AdminDashboardStyles.borderLight),
+                        borderRadius: BorderRadius.circular(
+                          isMobile
+                              ? 10
+                              : isTablet
+                              ? 11
+                              : 12,
+                        ),
+                        borderSide: BorderSide(
+                          color: AdminDashboardStyles.borderLight,
+                        ),
                       ),
                       focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(isMobile ? 10 : isTablet ? 11 : 12),
-                        borderSide: BorderSide(color: AdminDashboardStyles.primary, width: 2),
+                        borderRadius: BorderRadius.circular(
+                          isMobile
+                              ? 10
+                              : isTablet
+                              ? 11
+                              : 12,
+                        ),
+                        borderSide: BorderSide(
+                          color: AdminDashboardStyles.primary,
+                          width: 2,
+                        ),
                       ),
                     ),
                     items: _exams.map((e) {
@@ -281,7 +384,13 @@ class _RegistrationsPageState extends State<RegistrationsPage> {
                         child: Text(
                           title,
                           overflow: TextOverflow.ellipsis,
-                          style: TextStyle(fontSize: isMobile ? 14 : isTablet ? 15 : 16),
+                          style: TextStyle(
+                            fontSize: isMobile
+                                ? 14
+                                : isTablet
+                                ? 15
+                                : 16,
+                          ),
                         ),
                       );
                     }).toList(),
@@ -290,11 +399,12 @@ class _RegistrationsPageState extends State<RegistrationsPage> {
                         _selectedExamId = v;
                         _registrations = []; // Clear previous registrations
                       });
-                      
+
                       // Try to load from cache first
                       if (v != null && v.isNotEmpty) {
                         try {
-                          final cachedRegs = await _cacheService.getExamRegistrationsData(v);
+                          final cachedRegs = await _cacheService
+                              .getExamRegistrationsData(v);
                           if (cachedRegs != null && cachedRegs.isNotEmpty) {
                             setState(() {
                               _registrations = cachedRegs;
@@ -304,37 +414,71 @@ class _RegistrationsPageState extends State<RegistrationsPage> {
                           // Silently handle cache errors
                         }
                       }
-                      
+
                       // Then load fresh data
                       await _loadRegistrations();
                     },
                   ),
           ),
-          SizedBox(height: isMobile ? 20 : isTablet ? 22 : 24),
+          SizedBox(
+            height: isMobile
+                ? 20
+                : isTablet
+                ? 22
+                : 24,
+          ),
 
           if (_selectedExamId == null)
-            _buildEmptyState(promptOnly: true, isMobile: isMobile, isTablet: isTablet, isDesktop: isDesktop)
+            _buildEmptyState(
+              promptOnly: true,
+              isMobile: isMobile,
+              isTablet: isTablet,
+              isDesktop: isDesktop,
+            )
           else if (_loadingRegs)
             Padding(
-              padding: EdgeInsets.all(isMobile ? 32 : isTablet ? 36 : 40),
+              padding: EdgeInsets.all(
+                isMobile
+                    ? 32
+                    : isTablet
+                    ? 36
+                    : 40,
+              ),
               child: Center(
                 child: CircularProgressIndicator(
-                  valueColor: AlwaysStoppedAnimation<Color>(AdminDashboardStyles.primary),
+                  valueColor: AlwaysStoppedAnimation<Color>(
+                    AdminDashboardStyles.primary,
+                  ),
                 ),
               ),
             )
           else if (_registrations.isEmpty)
-            _buildEmptyState(isMobile: isMobile, isTablet: isTablet, isDesktop: isDesktop)
+            _buildEmptyState(
+              isMobile: isMobile,
+              isTablet: isTablet,
+              isDesktop: isDesktop,
+            )
           else
             Column(
               children: [
                 _buildTableHeader(isMobile, isTablet, isDesktop),
-                SizedBox(height: isMobile ? 6 : isTablet ? 7 : 8),
+                SizedBox(
+                  height: isMobile
+                      ? 6
+                      : isTablet
+                      ? 7
+                      : 8,
+                ),
                 ListView.builder(
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
                   itemCount: _registrations.length,
-                  itemBuilder: (context, index) => _buildRow(_registrations[index], isMobile, isTablet, isDesktop),
+                  itemBuilder: (context, index) => _buildRow(
+                    _registrations[index],
+                    isMobile,
+                    isTablet,
+                    isDesktop,
+                  ),
                 ),
               ],
             ),
@@ -346,17 +490,35 @@ class _RegistrationsPageState extends State<RegistrationsPage> {
   Widget _buildTableHeader(bool isMobile, bool isTablet, bool isDesktop) {
     final style = TextStyle(
       fontWeight: FontWeight.w600,
-      fontSize: isMobile ? 10 : isTablet ? 11 : 12,
+      fontSize: isMobile
+          ? 10
+          : isTablet
+          ? 11
+          : 12,
       color: AdminDashboardStyles.textLight,
     );
     return Container(
       padding: EdgeInsets.symmetric(
-        horizontal: isMobile ? 12 : isTablet ? 14 : 16,
-        vertical: isMobile ? 12 : isTablet ? 13 : 14,
+        horizontal: isMobile
+            ? 12
+            : isTablet
+            ? 14
+            : 16,
+        vertical: isMobile
+            ? 12
+            : isTablet
+            ? 13
+            : 14,
       ),
       decoration: BoxDecoration(
         color: Colors.grey[100],
-        borderRadius: BorderRadius.circular(isMobile ? 8 : isTablet ? 9 : 10),
+        borderRadius: BorderRadius.circular(
+          isMobile
+              ? 8
+              : isTablet
+              ? 9
+              : 10,
+        ),
         border: Border.all(color: AdminDashboardStyles.borderLight),
       ),
       child: Row(
@@ -371,38 +533,73 @@ class _RegistrationsPageState extends State<RegistrationsPage> {
     );
   }
 
-  Widget _buildEmptyState({bool promptOnly = false, bool isMobile = false, bool isTablet = false, bool isDesktop = false}) {
+  Widget _buildEmptyState({
+    bool promptOnly = false,
+    bool isMobile = false,
+    bool isTablet = false,
+    bool isDesktop = false,
+  }) {
     return Container(
       width: double.infinity,
-      padding: EdgeInsets.all(isMobile ? 32 : isTablet ? 40 : 48),
-      decoration: const BoxDecoration(
-        color: Colors.transparent,
+      padding: EdgeInsets.all(
+        isMobile
+            ? 32
+            : isTablet
+            ? 40
+            : 48,
       ),
+      decoration: const BoxDecoration(color: Colors.transparent),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Icon(
             Icons.people_outline_rounded,
-            size: isMobile ? 48 : isTablet ? 56 : 64,
+            size: isMobile
+                ? 48
+                : isTablet
+                ? 56
+                : 64,
             color: Colors.grey[400],
           ),
-          SizedBox(height: isMobile ? 12 : isTablet ? 14 : 16),
+          SizedBox(
+            height: isMobile
+                ? 12
+                : isTablet
+                ? 14
+                : 16,
+          ),
           Text(
-            promptOnly ? 'Select an exam to view registrations' : 'No registrations yet',
+            promptOnly
+                ? 'Select an exam to view registrations'
+                : 'No registrations yet',
             style: TextStyle(
-              fontSize: isMobile ? 16 : isTablet ? 17 : 18,
+              fontSize: isMobile
+                  ? 16
+                  : isTablet
+                  ? 17
+                  : 18,
               fontWeight: FontWeight.w600,
               color: Colors.grey[700],
             ),
             textAlign: TextAlign.center,
           ),
-          SizedBox(height: isMobile ? 6 : isTablet ? 7 : 8),
+          SizedBox(
+            height: isMobile
+                ? 6
+                : isTablet
+                ? 7
+                : 8,
+          ),
           if (!promptOnly)
             Text(
               'Students will appear here once they register for the selected exam.',
               textAlign: TextAlign.center,
               style: TextStyle(
-                fontSize: isMobile ? 13 : isTablet ? 13.5 : 14,
+                fontSize: isMobile
+                    ? 13
+                    : isTablet
+                    ? 13.5
+                    : 14,
                 color: Colors.grey[600],
               ),
             ),
@@ -411,39 +608,109 @@ class _RegistrationsPageState extends State<RegistrationsPage> {
     );
   }
 
-  Widget _buildRow(Map<String, dynamic> r, bool isMobile, bool isTablet, bool isDesktop) {
+  Widget _buildRow(
+    Map<String, dynamic> r,
+    bool isMobile,
+    bool isTablet,
+    bool isDesktop,
+  ) {
     final student = r['student'] ?? r['studentId'] ?? {};
     final exam = r['exam'] ?? r['examId'] ?? {};
-    final name = (student is Map ? (student['name'] ?? student['username'] ?? 'Student') : student?.toString()) ?? 'Student';
+    final name =
+        (student is Map
+            ? (student['name'] ?? student['username'] ?? 'Student')
+            : student?.toString()) ??
+        'Student';
     final email = (student is Map ? (student['email'] ?? '-') : '-') as String;
-    final examTitle = (exam is Map ? (exam['title'] ?? 'Exam') : exam?.toString()) ?? 'Exam';
+    final examTitle =
+        (exam is Map ? (exam['title'] ?? 'Exam') : exam?.toString()) ?? 'Exam';
     final slotId = r['slotId']?.toString() ?? '-';
-    final status = r['paymentStatus']?.toString() ?? r['status']?.toString() ?? 'pending';
+    final status =
+        r['paymentStatus']?.toString() ?? r['status']?.toString() ?? 'pending';
 
     return Container(
       padding: EdgeInsets.symmetric(
-        horizontal: isMobile ? 12 : isTablet ? 14 : 16,
-        vertical: isMobile ? 12 : isTablet ? 13 : 14,
+        horizontal: isMobile
+            ? 12
+            : isTablet
+            ? 14
+            : 16,
+        vertical: isMobile
+            ? 12
+            : isTablet
+            ? 13
+            : 14,
       ),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(isMobile ? 8 : isTablet ? 9 : 10),
+        borderRadius: BorderRadius.circular(
+          isMobile
+              ? 8
+              : isTablet
+              ? 9
+              : 10,
+        ),
         border: Border.all(color: AdminDashboardStyles.borderLight),
       ),
-      margin: EdgeInsets.only(top: isMobile ? 8 : isTablet ? 9 : 10),
+      margin: EdgeInsets.only(
+        top: isMobile
+            ? 8
+            : isTablet
+            ? 9
+            : 10,
+      ),
       child: Row(
         children: [
-          _cell(name, flex: 3, strong: true, isMobile: isMobile, isTablet: isTablet, isDesktop: isDesktop),
-          if (!isMobile) _cell(email, flex: 3, isMobile: isMobile, isTablet: isTablet, isDesktop: isDesktop),
-          _cell(examTitle, flex: 3, isMobile: isMobile, isTablet: isTablet, isDesktop: isDesktop),
-          if (!isMobile) _cell(slotId, flex: 2, isMobile: isMobile, isTablet: isTablet, isDesktop: isDesktop),
-          _cell(_statusBadge(status, isMobile, isTablet, isDesktop), flex: 2, alignEnd: true, isMobile: isMobile, isTablet: isTablet, isDesktop: isDesktop),
+          _cell(
+            name,
+            flex: 3,
+            strong: true,
+            isMobile: isMobile,
+            isTablet: isTablet,
+            isDesktop: isDesktop,
+          ),
+          if (!isMobile)
+            _cell(
+              email,
+              flex: 3,
+              isMobile: isMobile,
+              isTablet: isTablet,
+              isDesktop: isDesktop,
+            ),
+          _cell(
+            examTitle,
+            flex: 3,
+            isMobile: isMobile,
+            isTablet: isTablet,
+            isDesktop: isDesktop,
+          ),
+          if (!isMobile)
+            _cell(
+              slotId,
+              flex: 2,
+              isMobile: isMobile,
+              isTablet: isTablet,
+              isDesktop: isDesktop,
+            ),
+          _cell(
+            _statusBadge(status, isMobile, isTablet, isDesktop),
+            flex: 2,
+            alignEnd: true,
+            isMobile: isMobile,
+            isTablet: isTablet,
+            isDesktop: isDesktop,
+          ),
         ],
       ),
     );
   }
 
-  Widget _statusBadge(String status, bool isMobile, bool isTablet, bool isDesktop) {
+  Widget _statusBadge(
+    String status,
+    bool isMobile,
+    bool isTablet,
+    bool isDesktop,
+  ) {
     Color color;
     switch (status.toLowerCase()) {
       case 'paid':
@@ -457,12 +724,26 @@ class _RegistrationsPageState extends State<RegistrationsPage> {
     }
     return Container(
       padding: EdgeInsets.symmetric(
-        horizontal: isMobile ? 8 : isTablet ? 9 : 10,
-        vertical: isMobile ? 4 : isTablet ? 5 : 6,
+        horizontal: isMobile
+            ? 8
+            : isTablet
+            ? 9
+            : 10,
+        vertical: isMobile
+            ? 4
+            : isTablet
+            ? 5
+            : 6,
       ),
       decoration: BoxDecoration(
         color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(isMobile ? 16 : isTablet ? 18 : 20),
+        borderRadius: BorderRadius.circular(
+          isMobile
+              ? 16
+              : isTablet
+              ? 18
+              : 20,
+        ),
         border: Border.all(color: color.withOpacity(0.25)),
       ),
       child: Text(
@@ -470,7 +751,11 @@ class _RegistrationsPageState extends State<RegistrationsPage> {
         style: TextStyle(
           color: color,
           fontWeight: FontWeight.w700,
-          fontSize: isMobile ? 10 : isTablet ? 10.5 : 11,
+          fontSize: isMobile
+              ? 10
+              : isTablet
+              ? 10.5
+              : 11,
           letterSpacing: 0.2,
         ),
       ),
@@ -491,11 +776,16 @@ class _RegistrationsPageState extends State<RegistrationsPage> {
     if (child is String) {
       content = Text(
         child,
-        style: (style ??
+        style:
+            (style ??
             TextStyle(
               color: AdminDashboardStyles.textDark,
               fontWeight: strong ? FontWeight.w600 : FontWeight.w500,
-              fontSize: isMobile ? 12 : isTablet ? 12.5 : 13,
+              fontSize: isMobile
+                  ? 12
+                  : isTablet
+                  ? 12.5
+                  : 13,
             )),
         overflow: TextOverflow.ellipsis,
         maxLines: 1,
@@ -512,5 +802,3 @@ class _RegistrationsPageState extends State<RegistrationsPage> {
     );
   }
 }
-
-

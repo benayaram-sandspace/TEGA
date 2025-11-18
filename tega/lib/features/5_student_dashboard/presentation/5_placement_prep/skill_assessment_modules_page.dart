@@ -39,7 +39,9 @@ class _SkillAssessmentModulesPageState
             error.toString().toLowerCase().contains('connection') ||
             error.toString().toLowerCase().contains('internet') ||
             error.toString().toLowerCase().contains('failed host lookup') ||
-            error.toString().toLowerCase().contains('no address associated with hostname'));
+            error.toString().toLowerCase().contains(
+              'no address associated with hostname',
+            ));
   }
 
   Future<void> _loadSkillAssessments({bool forceRefresh = false}) async {
@@ -56,15 +58,17 @@ class _SkillAssessmentModulesPageState
           final modules = cachedData['modules'] as List<dynamic>? ?? [];
           setState(() {
             _modules = modules
-                .map<Map<String, dynamic>>((m) => {
-                      'id': m['_id']?.toString() ?? '',
-                      'title': m['title']?.toString() ?? 'Untitled Module',
-                      'description': m['description']?.toString() ?? '',
-                      'questionCount': m['questionCount'] ?? 0,
-                      'status': m['status']?.toString() ?? 'not-started',
-                      'progress': m['progress'] ?? 0,
-                      'assessmentHistory': m['assessmentHistory'] ?? {},
-                    })
+                .map<Map<String, dynamic>>(
+                  (m) => {
+                    'id': m['_id']?.toString() ?? '',
+                    'title': m['title']?.toString() ?? 'Untitled Module',
+                    'description': m['description']?.toString() ?? '',
+                    'questionCount': m['questionCount'] ?? 0,
+                    'status': m['status']?.toString() ?? 'not-started',
+                    'progress': m['progress'] ?? 0,
+                    'assessmentHistory': m['assessmentHistory'] ?? {},
+                  },
+                )
                 .toList();
             _isLoading = false;
           });
@@ -109,15 +113,17 @@ class _SkillAssessmentModulesPageState
       if (mounted) {
         setState(() {
           _modules = modules
-              .map<Map<String, dynamic>>((m) => {
-                    'id': m['_id']?.toString() ?? '',
-                    'title': m['title']?.toString() ?? 'Untitled Module',
-                    'description': m['description']?.toString() ?? '',
-                    'questionCount': m['questionCount'] ?? 0,
-                    'status': m['status']?.toString() ?? 'not-started',
-                    'progress': m['progress'] ?? 0,
-                    'assessmentHistory': m['assessmentHistory'] ?? {},
-                  })
+              .map<Map<String, dynamic>>(
+                (m) => {
+                  'id': m['_id']?.toString() ?? '',
+                  'title': m['title']?.toString() ?? 'Untitled Module',
+                  'description': m['description']?.toString() ?? '',
+                  'questionCount': m['questionCount'] ?? 0,
+                  'status': m['status']?.toString() ?? 'not-started',
+                  'progress': m['progress'] ?? 0,
+                  'assessmentHistory': m['assessmentHistory'] ?? {},
+                },
+              )
               .toList();
           _isLoading = false;
         });
@@ -145,11 +151,14 @@ class _SkillAssessmentModulesPageState
   double get tabletBreakpoint => 1024;
   double get desktopBreakpoint => 1440;
   bool get isMobile => MediaQuery.of(context).size.width < mobileBreakpoint;
-  bool get isTablet => MediaQuery.of(context).size.width >= mobileBreakpoint &&
+  bool get isTablet =>
+      MediaQuery.of(context).size.width >= mobileBreakpoint &&
       MediaQuery.of(context).size.width < tabletBreakpoint;
-  bool get isDesktop => MediaQuery.of(context).size.width >= tabletBreakpoint &&
+  bool get isDesktop =>
+      MediaQuery.of(context).size.width >= tabletBreakpoint &&
       MediaQuery.of(context).size.width < desktopBreakpoint;
-  bool get isLargeDesktop => MediaQuery.of(context).size.width >= desktopBreakpoint;
+  bool get isLargeDesktop =>
+      MediaQuery.of(context).size.width >= desktopBreakpoint;
   bool get isSmallScreen => MediaQuery.of(context).size.width < 400;
 
   @override
@@ -181,243 +190,244 @@ class _SkillAssessmentModulesPageState
               child: CircularProgressIndicator(color: Color(0xFF6B5FFF)),
             )
           : _errorMessage != null
-              ? Center(
-                  child: Padding(
-                    padding: EdgeInsets.all(
-                      isLargeDesktop
-                          ? 32
+          ? Center(
+              child: Padding(
+                padding: EdgeInsets.all(
+                  isLargeDesktop
+                      ? 32
+                      : isDesktop
+                      ? 28
+                      : isTablet
+                      ? 24
+                      : isSmallScreen
+                      ? 16
+                      : 20,
+                ),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.cloud_off,
+                      size: isLargeDesktop
+                          ? 80
                           : isDesktop
-                          ? 28
+                          ? 72
                           : isTablet
-                          ? 24
+                          ? 64
                           : isSmallScreen
-                          ? 16
-                          : 20,
+                          ? 48
+                          : 56,
+                      color: Colors.grey[400],
                     ),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.cloud_off,
-                          size: isLargeDesktop
-                              ? 80
-                              : isDesktop
-                              ? 72
-                              : isTablet
-                              ? 64
-                              : isSmallScreen
-                              ? 48
-                              : 56,
-                          color: Colors.grey[400],
-                        ),
-                        SizedBox(
-                          height: isLargeDesktop
-                              ? 24
-                              : isDesktop
-                              ? 20
-                              : isTablet
-                              ? 18
-                              : isSmallScreen
-                              ? 12
-                              : 16,
-                        ),
-                        Text(
-                          _errorMessage == 'No internet connection'
-                              ? 'No internet connection'
-                              : 'Something went wrong',
-                          style: TextStyle(
-                            color: Colors.grey[700],
-                            fontSize: isLargeDesktop
-                                ? 18
-                                : isDesktop
-                                ? 16
-                                : isTablet
-                                ? 15
-                                : isSmallScreen
-                                ? 12
-                                : 14,
-                            fontWeight: FontWeight.bold,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                        if (_errorMessage == 'No internet connection') ...[
-                          SizedBox(
-                            height: isLargeDesktop
-                                ? 8
-                                : isDesktop
-                                ? 6
-                                : isTablet
-                                ? 5
-                                : isSmallScreen
-                                ? 4
-                                : 5,
-                          ),
-                          Text(
-                            'Please check your connection and try again',
-                            style: TextStyle(
-                              color: Colors.grey[600],
-                              fontSize: isLargeDesktop
-                                  ? 14
-                                  : isDesktop
-                                  ? 13
-                                  : isTablet
-                                  ? 12
-                                  : isSmallScreen
-                                  ? 10
-                                  : 11,
-                            ),
-                            textAlign: TextAlign.center,
-                          ),
-                        ],
-                        SizedBox(
-                          height: isLargeDesktop
-                              ? 24
-                              : isDesktop
-                              ? 20
-                              : isTablet
-                              ? 18
-                              : isSmallScreen
-                              ? 12
-                              : 16,
-                        ),
-                        ElevatedButton(
-                          onPressed: () => _loadSkillAssessments(forceRefresh: true),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF6B5FFF),
-                            foregroundColor: Colors.white,
-                            padding: EdgeInsets.symmetric(
-                              horizontal: isLargeDesktop
-                                  ? 24
-                                  : isDesktop
-                                  ? 20
-                                  : isTablet
-                                  ? 18
-                                  : isSmallScreen
-                                  ? 12
-                                  : 16,
-                              vertical: isLargeDesktop
-                                  ? 14
-                                  : isDesktop
-                                  ? 12
-                                  : isTablet
-                                  ? 11
-                                  : isSmallScreen
-                                  ? 8
-                                  : 10,
-                            ),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(
-                                isLargeDesktop
-                                    ? 12
-                                    : isDesktop
-                                    ? 10
-                                    : isTablet
-                                    ? 9
-                                    : isSmallScreen
-                                    ? 6
-                                    : 8,
-                              ),
-                            ),
-                          ),
-                          child: Text(
-                            'Retry',
-                            style: TextStyle(
-                              fontSize: isLargeDesktop
-                                  ? 16
-                                  : isDesktop
-                                  ? 15
-                                  : isTablet
-                                  ? 14
-                                  : isSmallScreen
-                                  ? 12
-                                  : 13,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
-                      ],
+                    SizedBox(
+                      height: isLargeDesktop
+                          ? 24
+                          : isDesktop
+                          ? 20
+                          : isTablet
+                          ? 18
+                          : isSmallScreen
+                          ? 12
+                          : 16,
                     ),
-                  ),
-                )
-              : _modules.isEmpty
-                  ? Center(
-                      child: Padding(
-                        padding: EdgeInsets.all(
-                          isLargeDesktop
-                              ? 32
-                              : isDesktop
-                              ? 28
-                              : isTablet
-                              ? 24
-                              : isSmallScreen
-                              ? 16
-                              : 20,
-                        ),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.assessment_outlined,
-                              size: isLargeDesktop
-                                  ? 80
-                                  : isDesktop
-                                  ? 72
-                                  : isTablet
-                                  ? 64
-                                  : isSmallScreen
-                                  ? 48
-                                  : 56,
-                              color: Colors.grey[400],
-                            ),
-                            SizedBox(
-                              height: isLargeDesktop
-                                  ? 24
-                                  : isDesktop
-                                  ? 20
-                                  : isTablet
-                                  ? 18
-                                  : isSmallScreen
-                                  ? 12
-                                  : 16,
-                            ),
-                            Text(
-                              'No skill assessment modules available',
-                              style: TextStyle(
-                                color: Colors.grey[600],
-                                fontSize: isLargeDesktop
-                                    ? 20
-                                    : isDesktop
-                                    ? 18
-                                    : isTablet
-                                    ? 16
-                                    : isSmallScreen
-                                    ? 14
-                                    : 15,
-                              ),
-                              textAlign: TextAlign.center,
-                            ),
-                          ],
-                        ),
-                      ),
-                    )
-                  : ListView.builder(
-                      padding: EdgeInsets.all(
-                        isLargeDesktop
-                            ? 32
+                    Text(
+                      _errorMessage == 'No internet connection'
+                          ? 'No internet connection'
+                          : 'Something went wrong',
+                      style: TextStyle(
+                        color: Colors.grey[700],
+                        fontSize: isLargeDesktop
+                            ? 18
                             : isDesktop
-                            ? 24
+                            ? 16
                             : isTablet
-                            ? 20
+                            ? 15
                             : isSmallScreen
                             ? 12
-                            : 16,
+                            : 14,
+                        fontWeight: FontWeight.bold,
                       ),
-                      itemCount: _modules.length,
-                      itemBuilder: (context, index) {
-                        final module = _modules[index];
-                        return _buildModuleCard(module);
-                      },
+                      textAlign: TextAlign.center,
                     ),
+                    if (_errorMessage == 'No internet connection') ...[
+                      SizedBox(
+                        height: isLargeDesktop
+                            ? 8
+                            : isDesktop
+                            ? 6
+                            : isTablet
+                            ? 5
+                            : isSmallScreen
+                            ? 4
+                            : 5,
+                      ),
+                      Text(
+                        'Please check your connection and try again',
+                        style: TextStyle(
+                          color: Colors.grey[600],
+                          fontSize: isLargeDesktop
+                              ? 14
+                              : isDesktop
+                              ? 13
+                              : isTablet
+                              ? 12
+                              : isSmallScreen
+                              ? 10
+                              : 11,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+                    SizedBox(
+                      height: isLargeDesktop
+                          ? 24
+                          : isDesktop
+                          ? 20
+                          : isTablet
+                          ? 18
+                          : isSmallScreen
+                          ? 12
+                          : 16,
+                    ),
+                    ElevatedButton(
+                      onPressed: () =>
+                          _loadSkillAssessments(forceRefresh: true),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF6B5FFF),
+                        foregroundColor: Colors.white,
+                        padding: EdgeInsets.symmetric(
+                          horizontal: isLargeDesktop
+                              ? 24
+                              : isDesktop
+                              ? 20
+                              : isTablet
+                              ? 18
+                              : isSmallScreen
+                              ? 12
+                              : 16,
+                          vertical: isLargeDesktop
+                              ? 14
+                              : isDesktop
+                              ? 12
+                              : isTablet
+                              ? 11
+                              : isSmallScreen
+                              ? 8
+                              : 10,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(
+                            isLargeDesktop
+                                ? 12
+                                : isDesktop
+                                ? 10
+                                : isTablet
+                                ? 9
+                                : isSmallScreen
+                                ? 6
+                                : 8,
+                          ),
+                        ),
+                      ),
+                      child: Text(
+                        'Retry',
+                        style: TextStyle(
+                          fontSize: isLargeDesktop
+                              ? 16
+                              : isDesktop
+                              ? 15
+                              : isTablet
+                              ? 14
+                              : isSmallScreen
+                              ? 12
+                              : 13,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            )
+          : _modules.isEmpty
+          ? Center(
+              child: Padding(
+                padding: EdgeInsets.all(
+                  isLargeDesktop
+                      ? 32
+                      : isDesktop
+                      ? 28
+                      : isTablet
+                      ? 24
+                      : isSmallScreen
+                      ? 16
+                      : 20,
+                ),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.assessment_outlined,
+                      size: isLargeDesktop
+                          ? 80
+                          : isDesktop
+                          ? 72
+                          : isTablet
+                          ? 64
+                          : isSmallScreen
+                          ? 48
+                          : 56,
+                      color: Colors.grey[400],
+                    ),
+                    SizedBox(
+                      height: isLargeDesktop
+                          ? 24
+                          : isDesktop
+                          ? 20
+                          : isTablet
+                          ? 18
+                          : isSmallScreen
+                          ? 12
+                          : 16,
+                    ),
+                    Text(
+                      'No skill assessment modules available',
+                      style: TextStyle(
+                        color: Colors.grey[600],
+                        fontSize: isLargeDesktop
+                            ? 20
+                            : isDesktop
+                            ? 18
+                            : isTablet
+                            ? 16
+                            : isSmallScreen
+                            ? 14
+                            : 15,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                ),
+              ),
+            )
+          : ListView.builder(
+              padding: EdgeInsets.all(
+                isLargeDesktop
+                    ? 32
+                    : isDesktop
+                    ? 24
+                    : isTablet
+                    ? 20
+                    : isSmallScreen
+                    ? 12
+                    : 16,
+              ),
+              itemCount: _modules.length,
+              itemBuilder: (context, index) {
+                final module = _modules[index];
+                return _buildModuleCard(module);
+              },
+            ),
     );
   }
 
@@ -427,15 +437,16 @@ class _SkillAssessmentModulesPageState
     final questionCount = module['questionCount'] as int;
     final status = module['status'] as String;
     final progress = module['progress'] as num;
-    final assessmentHistory = module['assessmentHistory'] as Map<String, dynamic>?;
+    final assessmentHistory =
+        module['assessmentHistory'] as Map<String, dynamic>?;
     final totalAttempts = assessmentHistory?['totalAttempts'] ?? 0;
     final correctAnswers = assessmentHistory?['correctAnswers'] ?? 0;
 
     final statusColor = status == 'completed'
         ? Colors.green
         : status == 'in-progress'
-            ? Colors.orange
-            : Colors.grey;
+        ? Colors.orange
+        : Colors.grey;
 
     return Container(
       margin: EdgeInsets.only(
@@ -683,8 +694,8 @@ class _SkillAssessmentModulesPageState
                         status == 'completed'
                             ? 'Completed'
                             : status == 'in-progress'
-                                ? 'In Progress'
-                                : 'Not Started',
+                            ? 'In Progress'
+                            : 'Not Started',
                         style: TextStyle(
                           fontSize: isLargeDesktop
                               ? 13
@@ -884,4 +895,3 @@ class _SkillAssessmentModulesPageState
     );
   }
 }
-
