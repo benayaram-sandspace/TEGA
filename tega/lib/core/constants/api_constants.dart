@@ -56,6 +56,8 @@ class ApiEndpoints {
       '${EnvConfig.baseUrl}/api/student/announcements/$id';
   static String get studentProfileDebug =>
       '${EnvConfig.baseUrl}/api/student/profile/debug';
+  static String get studentDeleteAccount =>
+      '${EnvConfig.baseUrl}/api/student/delete-account';
 
   // ==================== PRINCIPAL PORTAL ====================
   static String get principalLogin =>

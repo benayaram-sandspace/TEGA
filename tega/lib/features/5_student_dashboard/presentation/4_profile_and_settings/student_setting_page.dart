@@ -1,7 +1,8 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:tega/features/1_authentication/data/auth_repository.dart';
+import 'package:tega/features/1_authentication/presentation/screens/login_page.dart';
 import 'package:tega/core/constants/api_constants.dart';
 import 'package:tega/core/services/settings_cache_service.dart';
 
@@ -74,38 +75,12 @@ class SettingsPage extends StatelessWidget {
             _divider(),
             _buildItem(
               context,
-              icon: Icons.shield_outlined,
+              icon: Icons.security,
               label: 'Security',
               onTap: () {
                 Navigator.of(context).push(
                   MaterialPageRoute(
                     builder: (_) => const SecuritySettingsPage(),
-                  ),
-                );
-              },
-            ),
-            _divider(),
-            _buildItem(
-              context,
-              icon: Icons.notifications_none,
-              label: 'Notifications',
-              onTap: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (_) => const NotificationSettingsPage(),
-                  ),
-                );
-              },
-            ),
-            _divider(),
-            _buildItem(
-              context,
-              icon: Icons.visibility_outlined,
-              label: 'Privacy',
-              onTap: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (_) => const PrivacySettingsPage(),
                   ),
                 );
               },
@@ -119,19 +94,6 @@ class SettingsPage extends StatelessWidget {
                 Navigator.of(context).push(
                   MaterialPageRoute(
                     builder: (_) => const AppearanceSettingsPage(),
-                  ),
-                );
-              },
-            ),
-            _divider(),
-            _buildItem(
-              context,
-              icon: Icons.storage_outlined,
-              label: 'Data & Storage',
-              onTap: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (_) => const DataStorageSettingsPage(),
                   ),
                 );
               },
@@ -282,16 +244,14 @@ class SecuritySettingsPage extends StatefulWidget {
 }
 
 class _SecuritySettingsPageState extends State<SecuritySettingsPage> {
-  bool _twoFactorEnabled = false;
-  bool _loginNotifications = true;
-  String _sessionTimeout = '30 Minutes';
-  final List<String> _timeoutOptions = [
-    '15 Minutes',
-    '30 Minutes',
-    '1 Hour',
-    '2 Hours',
-    'Never',
-  ];
+  final _formKey = GlobalKey<FormState>();
+  final _currentPasswordController = TextEditingController();
+  final _newPasswordController = TextEditingController();
+  final _confirmPasswordController = TextEditingController();
+  bool _isLoading = false;
+  bool _obscureCurrent = true;
+  bool _obscureNew = true;
+  bool _obscureConfirm = true;
 
   // Responsive breakpoints
   double get mobileBreakpoint => 600;
@@ -309,6 +269,155 @@ class _SecuritySettingsPageState extends State<SecuritySettingsPage> {
   bool get isSmallScreen => MediaQuery.of(context).size.width < 400;
 
   @override
+  void initState() {
+    super.initState();
+    _loadCurrentPassword();
+  }
+
+  Future<void> _loadCurrentPassword() async {
+    print('DEBUG: UI - Loading current password...');
+    final password = await AuthService().getSavedPassword();
+    print('DEBUG: UI - Password loaded from service: ${password != null}');
+    if (password != null && mounted) {
+      setState(() {
+        _currentPasswordController.text = password;
+      });
+      print('DEBUG: UI - Password set to controller');
+    } else {
+      print('DEBUG: UI - Password was null or widget not mounted');
+    }
+  }
+
+  @override
+  void dispose() {
+    _currentPasswordController.dispose();
+    _newPasswordController.dispose();
+    _confirmPasswordController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _changePassword() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    setState(() => _isLoading = true);
+
+    try {
+      final headers = await AuthService().getAuthHeaders();
+      final response = await http.put(
+        Uri.parse(ApiEndpoints.studentChangePassword),
+        headers: headers,
+        body: json.encode({
+          'currentPassword': _currentPasswordController.text,
+          'newPassword': _newPasswordController.text,
+        }),
+      );
+
+      if (!mounted) return;
+
+      if (response.statusCode == 200) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Password changed successfully'),
+            backgroundColor: Color(0xFF6B5FFF),
+          ),
+        );
+        // Don't clear current password as it's still valid until next login (or update it if we want)
+        // But usually change password requires re-login or updating the stored password.
+        // For now, let's just clear new/confirm fields.
+        _newPasswordController.clear();
+        _confirmPasswordController.clear();
+      } else {
+        final error =
+            json.decode(response.body)['message'] ??
+            'Failed to change password';
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(error), backgroundColor: Colors.red),
+        );
+      }
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+      );
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  void _showDeleteAccountDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete Account'),
+        content: const Text(
+          'Are you sure you want to delete your account? This action cannot be undone.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.of(context).pop();
+              await _deleteAccount();
+            },
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _deleteAccount() async {
+    setState(() => _isLoading = true);
+
+    try {
+      final headers = await AuthService().getAuthHeaders();
+      final response = await http.delete(
+        Uri.parse(ApiEndpoints.studentDeleteAccount),
+        headers: headers,
+      );
+
+      if (!mounted) return;
+
+      if (response.statusCode == 200) {
+        // Clear auth data and navigate to login
+        await AuthService().logout();
+        if (!mounted) return;
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Account deleted successfully'),
+            backgroundColor: Color(0xFF6B5FFF),
+          ),
+        );
+
+        // Navigate to login page and remove all previous routes
+        // Using MaterialPageRoute since named route might not be defined
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (context) => const LoginPage()),
+          (route) => false,
+        );
+      } else {
+        final error =
+            json.decode(response.body)['message'] ?? 'Failed to delete account';
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(error), backgroundColor: Colors.red),
+        );
+      }
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+      );
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF7F8FC),
@@ -316,7 +425,7 @@ class _SecuritySettingsPageState extends State<SecuritySettingsPage> {
         backgroundColor: Colors.white,
         elevation: 0,
         title: Text(
-          'Security & Authentication',
+          'Security',
           style: TextStyle(
             color: const Color(0xFF111827),
             fontWeight: FontWeight.w700,
@@ -363,350 +472,21 @@ class _SecuritySettingsPageState extends State<SecuritySettingsPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildSecurityCard(
-              title: 'Two-Factor Authentication (2FA)',
-              description: 'Add an extra layer of security to your account.',
-              value: _twoFactorEnabled,
-              onChanged: (value) => setState(() => _twoFactorEnabled = value),
-            ),
-            SizedBox(
-              height: isLargeDesktop
-                  ? 16
-                  : isDesktop
-                  ? 14
-                  : isTablet
-                  ? 12
-                  : isSmallScreen
-                  ? 8
-                  : 12,
-            ),
-            _buildSecurityCard(
-              title: 'Login Notifications',
-              description:
-                  'Receive email alerts for new logins to your account.',
-              value: _loginNotifications,
-              onChanged: (value) => setState(() => _loginNotifications = value),
-            ),
-            SizedBox(
-              height: isLargeDesktop
-                  ? 16
-                  : isDesktop
-                  ? 14
-                  : isTablet
-                  ? 12
-                  : isSmallScreen
-                  ? 8
-                  : 12,
-            ),
-            _buildSessionTimeoutCard(),
-            SizedBox(
-              height: isLargeDesktop
-                  ? 32
-                  : isDesktop
-                  ? 28
-                  : isTablet
-                  ? 24
-                  : isSmallScreen
-                  ? 16
-                  : 20,
-            ),
             _buildPasswordManagementCard(),
+            SizedBox(
+              height: isLargeDesktop
+                  ? 24
+                  : isDesktop
+                  ? 20
+                  : isTablet
+                  ? 16
+                  : isSmallScreen
+                  ? 12
+                  : 16,
+            ),
+            _buildDeleteAccountCard(),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildSecurityCard({
-    required String title,
-    required String description,
-    required bool value,
-    required ValueChanged<bool> onChanged,
-  }) {
-    return Container(
-      padding: EdgeInsets.all(
-        isLargeDesktop
-            ? 20
-            : isDesktop
-            ? 18
-            : isTablet
-            ? 16
-            : isSmallScreen
-            ? 12
-            : 14,
-      ),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(
-          isLargeDesktop
-              ? 16
-              : isDesktop
-              ? 14
-              : isTablet
-              ? 12
-              : isSmallScreen
-              ? 10
-              : 12,
-        ),
-        border: Border.all(
-          color: const Color(0xFFE5E7EB),
-          width: isLargeDesktop || isDesktop
-              ? 1.5
-              : isTablet
-              ? 1.2
-              : isSmallScreen
-              ? 0.8
-              : 1,
-        ),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: TextStyle(
-                    color: const Color(0xFF111827),
-                    fontWeight: FontWeight.w600,
-                    fontSize: isLargeDesktop
-                        ? 18
-                        : isDesktop
-                        ? 17
-                        : isTablet
-                        ? 16
-                        : isSmallScreen
-                        ? 14
-                        : 15,
-                  ),
-                ),
-                SizedBox(
-                  height: isLargeDesktop
-                      ? 6
-                      : isDesktop
-                      ? 5
-                      : isTablet
-                      ? 4
-                      : isSmallScreen
-                      ? 3
-                      : 4,
-                ),
-                Text(
-                  description,
-                  style: TextStyle(
-                    color: const Color(0xFF6B7280),
-                    fontSize: isLargeDesktop
-                        ? 15
-                        : isDesktop
-                        ? 14
-                        : isTablet
-                        ? 13
-                        : isSmallScreen
-                        ? 11
-                        : 12,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Switch(
-            value: value,
-            onChanged: onChanged,
-            activeColor: const Color(0xFF6B5FFF),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSessionTimeoutCard() {
-    return Container(
-      padding: EdgeInsets.all(
-        isLargeDesktop
-            ? 20
-            : isDesktop
-            ? 18
-            : isTablet
-            ? 16
-            : isSmallScreen
-            ? 12
-            : 14,
-      ),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(
-          isLargeDesktop
-              ? 16
-              : isDesktop
-              ? 14
-              : isTablet
-              ? 12
-              : isSmallScreen
-              ? 10
-              : 12,
-        ),
-        border: Border.all(
-          color: const Color(0xFFE5E7EB),
-          width: isLargeDesktop || isDesktop
-              ? 1.5
-              : isTablet
-              ? 1.2
-              : isSmallScreen
-              ? 0.8
-              : 1,
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Session Timeout',
-            style: TextStyle(
-              color: const Color(0xFF111827),
-              fontWeight: FontWeight.w600,
-              fontSize: isLargeDesktop
-                  ? 18
-                  : isDesktop
-                  ? 17
-                  : isTablet
-                  ? 16
-                  : isSmallScreen
-                  ? 14
-                  : 15,
-            ),
-          ),
-          SizedBox(
-            height: isLargeDesktop
-                ? 12
-                : isDesktop
-                ? 10
-                : isTablet
-                ? 8
-                : isSmallScreen
-                ? 6
-                : 8,
-          ),
-          DropdownButtonFormField<String>(
-            value: _sessionTimeout,
-            decoration: InputDecoration(
-              contentPadding: EdgeInsets.symmetric(
-                horizontal: isLargeDesktop
-                    ? 16
-                    : isDesktop
-                    ? 14
-                    : isTablet
-                    ? 12
-                    : isSmallScreen
-                    ? 10
-                    : 12,
-                vertical: isLargeDesktop
-                    ? 12
-                    : isDesktop
-                    ? 10
-                    : isTablet
-                    ? 8
-                    : isSmallScreen
-                    ? 6
-                    : 8,
-              ),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(
-                  isLargeDesktop
-                      ? 10
-                      : isDesktop
-                      ? 9
-                      : isTablet
-                      ? 8
-                      : isSmallScreen
-                      ? 6
-                      : 8,
-                ),
-                borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(
-                  isLargeDesktop
-                      ? 10
-                      : isDesktop
-                      ? 9
-                      : isTablet
-                      ? 8
-                      : isSmallScreen
-                      ? 6
-                      : 8,
-                ),
-                borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(
-                  isLargeDesktop
-                      ? 10
-                      : isDesktop
-                      ? 9
-                      : isTablet
-                      ? 8
-                      : isSmallScreen
-                      ? 6
-                      : 8,
-                ),
-                borderSide: const BorderSide(color: Color(0xFF6B5FFF)),
-              ),
-            ),
-            items: _timeoutOptions.map((String value) {
-              return DropdownMenuItem<String>(
-                value: value,
-                child: Text(
-                  value,
-                  style: TextStyle(
-                    fontSize: isLargeDesktop
-                        ? 16
-                        : isDesktop
-                        ? 15
-                        : isTablet
-                        ? 14
-                        : isSmallScreen
-                        ? 12
-                        : 13,
-                  ),
-                ),
-              );
-            }).toList(),
-            onChanged: (String? newValue) {
-              if (newValue != null) {
-                setState(() {
-                  _sessionTimeout = newValue;
-                });
-              }
-            },
-          ),
-          SizedBox(
-            height: isLargeDesktop
-                ? 12
-                : isDesktop
-                ? 10
-                : isTablet
-                ? 8
-                : isSmallScreen
-                ? 6
-                : 8,
-          ),
-          Text(
-            'Automatically log out after inactivity.',
-            style: TextStyle(
-              color: const Color(0xFF6B7280),
-              fontSize: isLargeDesktop
-                  ? 15
-                  : isDesktop
-                  ? 14
-                  : isTablet
-                  ? 13
-                  : isSmallScreen
-                  ? 11
-                  : 12,
-            ),
-          ),
-        ],
       ),
     );
   }
@@ -748,147 +528,78 @@ class _SecuritySettingsPageState extends State<SecuritySettingsPage> {
               : 1,
         ),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
+      child: Form(
+        key: _formKey,
+        child: AutofillGroup(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Icon(
-                Icons.key,
-                color: const Color(0xFF6B5FFF),
-                size: isLargeDesktop
-                    ? 26
-                    : isDesktop
-                    ? 24
-                    : isTablet
-                    ? 22
-                    : isSmallScreen
-                    ? 18
-                    : 20,
+              Row(
+                children: [
+                  Icon(
+                    Icons.key,
+                    color: const Color(0xFF6B5FFF),
+                    size: isLargeDesktop
+                        ? 26
+                        : isDesktop
+                        ? 24
+                        : isTablet
+                        ? 22
+                        : isSmallScreen
+                        ? 18
+                        : 20,
+                  ),
+                  SizedBox(
+                    width: isLargeDesktop
+                        ? 12
+                        : isDesktop
+                        ? 10
+                        : isTablet
+                        ? 8
+                        : isSmallScreen
+                        ? 6
+                        : 8,
+                  ),
+                  Text(
+                    'Password Management',
+                    style: TextStyle(
+                      color: const Color(0xFF111827),
+                      fontSize: isLargeDesktop
+                          ? 22
+                          : isDesktop
+                          ? 20
+                          : isTablet
+                          ? 19
+                          : isSmallScreen
+                          ? 16
+                          : 18,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ],
               ),
               SizedBox(
-                width: isLargeDesktop
-                    ? 12
-                    : isDesktop
-                    ? 10
-                    : isTablet
-                    ? 8
-                    : isSmallScreen
-                    ? 6
-                    : 8,
-              ),
-              Text(
-                'Password Management',
-                style: TextStyle(
-                  color: const Color(0xFF111827),
-                  fontSize: isLargeDesktop
-                      ? 22
-                      : isDesktop
-                      ? 20
-                      : isTablet
-                      ? 19
-                      : isSmallScreen
-                      ? 16
-                      : 18,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ],
-          ),
-          SizedBox(
-            height: isLargeDesktop
-                ? 20
-                : isDesktop
-                ? 18
-                : isTablet
-                ? 16
-                : isSmallScreen
-                ? 12
-                : 16,
-          ),
-          _buildPasswordForm(),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildPasswordForm() {
-    final currentPasswordController = TextEditingController();
-    final newPasswordController = TextEditingController();
-    final confirmPasswordController = TextEditingController();
-
-    return Column(
-      children: [
-        _buildPasswordField(
-          label: 'Current Password',
-          controller: currentPasswordController,
-          hintText: 'Enter current password',
-        ),
-        SizedBox(
-          height: isLargeDesktop
-              ? 20
-              : isDesktop
-              ? 18
-              : isTablet
-              ? 16
-              : isSmallScreen
-              ? 12
-              : 16,
-        ),
-        _buildPasswordField(
-          label: 'New Password',
-          controller: newPasswordController,
-          hintText: 'Enter new password',
-        ),
-        SizedBox(
-          height: isLargeDesktop
-              ? 20
-              : isDesktop
-              ? 18
-              : isTablet
-              ? 16
-              : isSmallScreen
-              ? 12
-              : 16,
-        ),
-        _buildPasswordField(
-          label: 'Confirm New Password',
-          controller: confirmPasswordController,
-          hintText: 'Confirm new password',
-        ),
-        SizedBox(
-          height: isLargeDesktop
-              ? 24
-              : isDesktop
-              ? 22
-              : isTablet
-              ? 20
-              : isSmallScreen
-              ? 16
-              : 20,
-        ),
-        Align(
-          alignment: Alignment.centerRight,
-          child: ElevatedButton.icon(
-            onPressed: () => _changePassword(
-              currentPasswordController.text,
-              newPasswordController.text,
-              confirmPasswordController.text,
-            ),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF6B5FFF),
-              foregroundColor: Colors.white,
-              padding: EdgeInsets.symmetric(
-                horizontal: isLargeDesktop
-                    ? 28
-                    : isDesktop
-                    ? 24
-                    : isTablet
+                height: isLargeDesktop
                     ? 20
-                    : isSmallScreen
+                    : isDesktop
+                    ? 18
+                    : isTablet
                     ? 16
-                    : 20,
-                vertical: isLargeDesktop
+                    : isSmallScreen
+                    ? 12
+                    : 16,
+              ),
+              _buildPasswordField(
+                controller: _currentPasswordController,
+                label: 'Current Password',
+                hint: '••••••••••',
+                obscure: _obscureCurrent,
+                onToggle: () =>
+                    setState(() => _obscureCurrent = !_obscureCurrent),
+                autofillHints: const [AutofillHints.password],
+              ),
+              SizedBox(
+                height: isLargeDesktop
                     ? 16
                     : isDesktop
                     ? 14
@@ -898,56 +609,124 @@ class _SecuritySettingsPageState extends State<SecuritySettingsPage> {
                     ? 10
                     : 12,
               ),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(
-                  isLargeDesktop
-                      ? 10
-                      : isDesktop
-                      ? 9
-                      : isTablet
-                      ? 8
-                      : isSmallScreen
-                      ? 6
-                      : 8,
+              _buildPasswordField(
+                controller: _newPasswordController,
+                label: 'New Password',
+                hint: 'Enter new password',
+                obscure: _obscureNew,
+                onToggle: () => setState(() => _obscureNew = !_obscureNew),
+                autofillHints: const [AutofillHints.newPassword],
+              ),
+              SizedBox(
+                height: isLargeDesktop
+                    ? 16
+                    : isDesktop
+                    ? 14
+                    : isTablet
+                    ? 12
+                    : isSmallScreen
+                    ? 10
+                    : 12,
+              ),
+              _buildPasswordField(
+                controller: _confirmPasswordController,
+                label: 'Confirm New Password',
+                hint: 'Confirm new password',
+                obscure: _obscureConfirm,
+                onToggle: () =>
+                    setState(() => _obscureConfirm = !_obscureConfirm),
+                validator: (value) {
+                  if (value != _newPasswordController.text) {
+                    return 'Passwords do not match';
+                  }
+                  return null;
+                },
+                autofillHints: const [AutofillHints.newPassword],
+              ),
+              SizedBox(
+                height: isLargeDesktop
+                    ? 24
+                    : isDesktop
+                    ? 20
+                    : isTablet
+                    ? 16
+                    : isSmallScreen
+                    ? 12
+                    : 16,
+              ),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: _isLoading ? null : _changePassword,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF6B5FFF),
+                    foregroundColor: Colors.white,
+                    padding: EdgeInsets.symmetric(
+                      vertical: isLargeDesktop
+                          ? 16
+                          : isDesktop
+                          ? 14
+                          : isTablet
+                          ? 12
+                          : isSmallScreen
+                          ? 10
+                          : 12,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(
+                        isLargeDesktop
+                            ? 10
+                            : isDesktop
+                            ? 9
+                            : isTablet
+                            ? 8
+                            : isSmallScreen
+                            ? 6
+                            : 8,
+                      ),
+                    ),
+                  ),
+                  child: _isLoading
+                      ? const SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : Text(
+                          'Change Password',
+                          style: TextStyle(
+                            fontSize: isLargeDesktop
+                                ? 16
+                                : isDesktop
+                                ? 15
+                                : isTablet
+                                ? 14
+                                : isSmallScreen
+                                ? 12
+                                : 13,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
                 ),
               ),
-            ),
-            icon: Icon(
-              Icons.lock,
-              size: isLargeDesktop
-                  ? 20
-                  : isDesktop
-                  ? 19
-                  : isTablet
-                  ? 18
-                  : isSmallScreen
-                  ? 16
-                  : 18,
-            ),
-            label: Text(
-              'Change Password',
-              style: TextStyle(
-                fontSize: isLargeDesktop
-                    ? 17
-                    : isDesktop
-                    ? 16
-                    : isTablet
-                    ? 15
-                    : isSmallScreen
-                    ? 13
-                    : 14,
-              ),
-            ),
+            ],
           ),
         ),
-      ],
+      ),
     );
   }
 
   Widget _buildPasswordField({
-    required String label,
     required TextEditingController controller,
-    required String hintText,
+    required String label,
+    required String hint,
+    required bool obscure,
+    required VoidCallback onToggle,
+    String? Function(String?)? validator,
+    Iterable<String>? autofillHints,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -955,7 +734,7 @@ class _SecuritySettingsPageState extends State<SecuritySettingsPage> {
         Text(
           label,
           style: TextStyle(
-            color: const Color(0xFF111827),
+            color: const Color(0xFF374151),
             fontWeight: FontWeight.w600,
             fontSize: isLargeDesktop
                 ? 16
@@ -970,31 +749,32 @@ class _SecuritySettingsPageState extends State<SecuritySettingsPage> {
         ),
         SizedBox(
           height: isLargeDesktop
-              ? 10
-              : isDesktop
-              ? 9
-              : isTablet
               ? 8
-              : isSmallScreen
+              : isDesktop
+              ? 7
+              : isTablet
               ? 6
-              : 8,
+              : isSmallScreen
+              ? 4
+              : 6,
         ),
-        TextField(
+        TextFormField(
           controller: controller,
-          obscureText: true,
-          style: TextStyle(
-            fontSize: isLargeDesktop
-                ? 16
-                : isDesktop
-                ? 15
-                : isTablet
-                ? 14
-                : isSmallScreen
-                ? 12
-                : 13,
-          ),
+          obscureText: obscure,
+          autofillHints: autofillHints,
+          validator:
+              validator ??
+              (value) {
+                if (value == null || value.isEmpty) {
+                  return 'This field is required';
+                }
+                if (value.length < 6) {
+                  return 'Password must be at least 6 characters';
+                }
+                return null;
+              },
           decoration: InputDecoration(
-            hintText: hintText,
+            hintText: hint,
             hintStyle: TextStyle(
               color: const Color(0xFF9CA3AF),
               fontSize: isLargeDesktop
@@ -1007,8 +787,6 @@ class _SecuritySettingsPageState extends State<SecuritySettingsPage> {
                   ? 12
                   : 13,
             ),
-            filled: true,
-            fillColor: const Color(0xFFF7F8FC),
             contentPadding: EdgeInsets.symmetric(
               horizontal: isLargeDesktop
                   ? 16
@@ -1020,14 +798,14 @@ class _SecuritySettingsPageState extends State<SecuritySettingsPage> {
                   ? 10
                   : 12,
               vertical: isLargeDesktop
-                  ? 16
-                  : isDesktop
-                  ? 14
-                  : isTablet
                   ? 12
-                  : isSmallScreen
+                  : isDesktop
                   ? 10
-                  : 12,
+                  : isTablet
+                  ? 8
+                  : isSmallScreen
+                  ? 6
+                  : 8,
             ),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(
@@ -1071,296 +849,31 @@ class _SecuritySettingsPageState extends State<SecuritySettingsPage> {
               ),
               borderSide: const BorderSide(color: Color(0xFF6B5FFF)),
             ),
+            suffixIcon: IconButton(
+              icon: Icon(
+                obscure
+                    ? Icons.visibility_outlined
+                    : Icons.visibility_off_outlined,
+                color: const Color(0xFF9CA3AF),
+                size: isLargeDesktop
+                    ? 22
+                    : isDesktop
+                    ? 20
+                    : isTablet
+                    ? 18
+                    : isSmallScreen
+                    ? 16
+                    : 18,
+              ),
+              onPressed: onToggle,
+            ),
           ),
         ),
       ],
     );
   }
 
-  Future<void> _changePassword(
-    String currentPassword,
-    String newPassword,
-    String confirmPassword,
-  ) async {
-    if (currentPassword.isEmpty ||
-        newPassword.isEmpty ||
-        confirmPassword.isEmpty) {
-      _showSnackBar('Please fill in all fields', isError: true);
-      return;
-    }
-
-    if (newPassword != confirmPassword) {
-      _showSnackBar('New passwords do not match', isError: true);
-      return;
-    }
-
-    if (newPassword.length < 6) {
-      _showSnackBar('Password must be at least 6 characters', isError: true);
-      return;
-    }
-
-    try {
-      final headers = AuthService().getAuthHeaders();
-      final response = await http.post(
-        Uri.parse(ApiEndpoints.changePassword),
-        headers: headers,
-        body: jsonEncode({
-          'currentPassword': currentPassword,
-          'newPassword': newPassword,
-        }),
-      );
-
-      if (response.statusCode == 200) {
-        _showSnackBar('Password changed successfully');
-      } else {
-        final data = jsonDecode(response.body);
-        _showSnackBar(
-          data['message'] ?? 'Failed to change password',
-          isError: true,
-        );
-      }
-    } catch (e) {
-      _showSnackBar('Error changing password: ${e.toString()}', isError: true);
-    }
-  }
-
-  void _showSnackBar(String message, {bool isError = false}) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: isError ? Colors.red : Colors.green,
-        duration: const Duration(seconds: 3),
-      ),
-    );
-  }
-}
-
-class NotificationSettingsPage extends StatefulWidget {
-  const NotificationSettingsPage({super.key});
-
-  @override
-  State<NotificationSettingsPage> createState() =>
-      _NotificationSettingsPageState();
-}
-
-class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
-  // Email Notifications
-  bool _emailCourseUpdates = true;
-  bool _emailExamReminders = true;
-  bool _emailJobAlerts = true;
-  bool _emailPaymentAlerts = true;
-  bool _emailSystemUpdates = true;
-
-  // Push Notifications
-  bool _pushCourseUpdates = true;
-  bool _pushExamReminders = true;
-  bool _pushJobAlerts = true;
-  bool _pushPaymentAlerts = true;
-  bool _pushSystemUpdates = true;
-
-  // SMS Notifications
-  bool _smsCourseUpdates = false;
-  bool _smsExamReminders = false;
-  bool _smsJobAlerts = false;
-  bool _smsPaymentAlerts = false;
-  bool _smsSystemUpdates = false;
-
-  // Responsive breakpoints
-  double get mobileBreakpoint => 600;
-  double get tabletBreakpoint => 1024;
-  double get desktopBreakpoint => 1440;
-  bool get isMobile => MediaQuery.of(context).size.width < mobileBreakpoint;
-  bool get isTablet =>
-      MediaQuery.of(context).size.width >= mobileBreakpoint &&
-      MediaQuery.of(context).size.width < tabletBreakpoint;
-  bool get isDesktop =>
-      MediaQuery.of(context).size.width >= tabletBreakpoint &&
-      MediaQuery.of(context).size.width < desktopBreakpoint;
-  bool get isLargeDesktop =>
-      MediaQuery.of(context).size.width >= desktopBreakpoint;
-  bool get isSmallScreen => MediaQuery.of(context).size.width < 400;
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFF7F8FC),
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        title: Text(
-          'Notification Preferences',
-          style: TextStyle(
-            color: const Color(0xFF111827),
-            fontWeight: FontWeight.w700,
-            fontSize: isLargeDesktop
-                ? 22
-                : isDesktop
-                ? 20
-                : isTablet
-                ? 19
-                : isSmallScreen
-                ? 16
-                : 18,
-          ),
-        ),
-        leading: IconButton(
-          icon: Icon(
-            Icons.arrow_back,
-            color: const Color(0xFF111827),
-            size: isLargeDesktop
-                ? 28
-                : isDesktop
-                ? 26
-                : isTablet
-                ? 24
-                : isSmallScreen
-                ? 20
-                : 22,
-          ),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
-      ),
-      body: SingleChildScrollView(
-        padding: EdgeInsets.all(
-          isLargeDesktop
-              ? 24
-              : isDesktop
-              ? 20
-              : isTablet
-              ? 18
-              : isSmallScreen
-              ? 12
-              : 16,
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildNotificationSection(
-              title: 'Email Notifications',
-              icon: Icons.email_outlined,
-              notifications: [
-                _NotificationItem(
-                  'Course Updates',
-                  _emailCourseUpdates,
-                  (value) => setState(() => _emailCourseUpdates = value),
-                ),
-                _NotificationItem(
-                  'Exam Reminders',
-                  _emailExamReminders,
-                  (value) => setState(() => _emailExamReminders = value),
-                ),
-                _NotificationItem(
-                  'Job Alerts',
-                  _emailJobAlerts,
-                  (value) => setState(() => _emailJobAlerts = value),
-                ),
-                _NotificationItem(
-                  'Payment Alerts',
-                  _emailPaymentAlerts,
-                  (value) => setState(() => _emailPaymentAlerts = value),
-                ),
-                _NotificationItem(
-                  'System Updates',
-                  _emailSystemUpdates,
-                  (value) => setState(() => _emailSystemUpdates = value),
-                ),
-              ],
-            ),
-            SizedBox(
-              height: isLargeDesktop
-                  ? 20
-                  : isDesktop
-                  ? 18
-                  : isTablet
-                  ? 16
-                  : isSmallScreen
-                  ? 12
-                  : 16,
-            ),
-            _buildNotificationSection(
-              title: 'Push Notifications',
-              icon: Icons.phone_android_outlined,
-              notifications: [
-                _NotificationItem(
-                  'Course Updates',
-                  _pushCourseUpdates,
-                  (value) => setState(() => _pushCourseUpdates = value),
-                ),
-                _NotificationItem(
-                  'Exam Reminders',
-                  _pushExamReminders,
-                  (value) => setState(() => _pushExamReminders = value),
-                ),
-                _NotificationItem(
-                  'Job Alerts',
-                  _pushJobAlerts,
-                  (value) => setState(() => _pushJobAlerts = value),
-                ),
-                _NotificationItem(
-                  'Payment Alerts',
-                  _pushPaymentAlerts,
-                  (value) => setState(() => _pushPaymentAlerts = value),
-                ),
-                _NotificationItem(
-                  'System Updates',
-                  _pushSystemUpdates,
-                  (value) => setState(() => _pushSystemUpdates = value),
-                ),
-              ],
-            ),
-            SizedBox(
-              height: isLargeDesktop
-                  ? 20
-                  : isDesktop
-                  ? 18
-                  : isTablet
-                  ? 16
-                  : isSmallScreen
-                  ? 12
-                  : 16,
-            ),
-            _buildNotificationSection(
-              title: 'SMS Notifications',
-              icon: Icons.sms_outlined,
-              notifications: [
-                _NotificationItem(
-                  'Course Updates',
-                  _smsCourseUpdates,
-                  (value) => setState(() => _smsCourseUpdates = value),
-                ),
-                _NotificationItem(
-                  'Exam Reminders',
-                  _smsExamReminders,
-                  (value) => setState(() => _smsExamReminders = value),
-                ),
-                _NotificationItem(
-                  'Job Alerts',
-                  _smsJobAlerts,
-                  (value) => setState(() => _smsJobAlerts = value),
-                ),
-                _NotificationItem(
-                  'Payment Alerts',
-                  _smsPaymentAlerts,
-                  (value) => setState(() => _smsPaymentAlerts = value),
-                ),
-                _NotificationItem(
-                  'System Updates',
-                  _smsSystemUpdates,
-                  (value) => setState(() => _smsSystemUpdates = value),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildNotificationSection({
-    required String title,
-    required IconData icon,
-    required List<_NotificationItem> notifications,
-  }) {
+  Widget _buildDeleteAccountCard() {
     return Container(
       padding: EdgeInsets.all(
         isLargeDesktop
@@ -1374,7 +887,7 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
             : 14,
       ),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: const Color(0xFFFEF2F2),
         borderRadius: BorderRadius.circular(
           isLargeDesktop
               ? 16
@@ -1387,7 +900,7 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
               : 12,
         ),
         border: Border.all(
-          color: const Color(0xFFE5E7EB),
+          color: const Color(0xFFFECACA),
           width: isLargeDesktop || isDesktop
               ? 1.5
               : isTablet
@@ -1403,14 +916,14 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
           Row(
             children: [
               Icon(
-                icon,
-                color: const Color(0xFF6B5FFF),
+                Icons.warning_amber_rounded,
+                color: const Color(0xFFDC2626),
                 size: isLargeDesktop
-                    ? 24
+                    ? 26
                     : isDesktop
-                    ? 22
+                    ? 24
                     : isTablet
-                    ? 20
+                    ? 22
                     : isSmallScreen
                     ? 18
                     : 20,
@@ -1427,22 +940,76 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
                     : 8,
               ),
               Text(
-                title,
+                'Danger Zone',
                 style: TextStyle(
-                  color: const Color(0xFF111827),
+                  color: const Color(0xFF991B1B),
                   fontSize: isLargeDesktop
-                      ? 18
+                      ? 22
                       : isDesktop
-                      ? 17
+                      ? 20
                       : isTablet
-                      ? 16
+                      ? 19
                       : isSmallScreen
-                      ? 14
-                      : 15,
-                  fontWeight: FontWeight.w600,
+                      ? 16
+                      : 18,
+                  fontWeight: FontWeight.w700,
                 ),
               ),
             ],
+          ),
+          SizedBox(
+            height: isLargeDesktop
+                ? 12
+                : isDesktop
+                ? 10
+                : isTablet
+                ? 8
+                : isSmallScreen
+                ? 6
+                : 8,
+          ),
+          Text(
+            'Delete Account',
+            style: TextStyle(
+              color: const Color(0xFF7F1D1D),
+              fontSize: isLargeDesktop
+                  ? 18
+                  : isDesktop
+                  ? 17
+                  : isTablet
+                  ? 16
+                  : isSmallScreen
+                  ? 14
+                  : 15,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          SizedBox(
+            height: isLargeDesktop
+                ? 8
+                : isDesktop
+                ? 7
+                : isTablet
+                ? 6
+                : isSmallScreen
+                ? 4
+                : 6,
+          ),
+          Text(
+            'Permanently delete your account and all associated data. This action cannot be undone. All your courses, exam results, and progress will be lost.',
+            style: TextStyle(
+              color: const Color(0xFF991B1B),
+              fontSize: isLargeDesktop
+                  ? 15
+                  : isDesktop
+                  ? 14
+                  : isTablet
+                  ? 13
+                  : isSmallScreen
+                  ? 11
+                  : 12,
+              height: 1.5,
+            ),
           ),
           SizedBox(
             height: isLargeDesktop
@@ -1455,538 +1022,54 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
                 ? 12
                 : 16,
           ),
-          ...notifications.map(
-            (notification) => _buildNotificationItem(notification),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildNotificationItem(_NotificationItem notification) {
-    return Padding(
-      padding: EdgeInsets.only(
-        bottom: isLargeDesktop
-            ? 16
-            : isDesktop
-            ? 14
-            : isTablet
-            ? 12
-            : isSmallScreen
-            ? 8
-            : 12,
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Text(
-              notification.label,
-              style: TextStyle(
-                color: const Color(0xFF111827),
-                fontSize: isLargeDesktop
-                    ? 16
-                    : isDesktop
-                    ? 15
-                    : isTablet
-                    ? 14
-                    : isSmallScreen
-                    ? 12
-                    : 13,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ),
-          Switch(
-            value: notification.value,
-            onChanged: notification.onChanged,
-            activeColor: const Color(0xFF6B5FFF),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _NotificationItem {
-  final String label;
-  final bool value;
-  final ValueChanged<bool> onChanged;
-
-  _NotificationItem(this.label, this.value, this.onChanged);
-}
-
-class PrivacySettingsPage extends StatefulWidget {
-  const PrivacySettingsPage({super.key});
-
-  @override
-  State<PrivacySettingsPage> createState() => _PrivacySettingsPageState();
-}
-
-class _PrivacySettingsPageState extends State<PrivacySettingsPage> {
-  String _profileVisibility = 'Public (Visible to everyone)';
-  String _contactVisibility = 'Public';
-  String _messagePermissions = 'Allow messages from everyone';
-  bool _dataSharing = true;
-  bool _analyticsTracking = true;
-
-  final List<String> _profileOptions = [
-    'Public (Visible to everyone)',
-    'Friends only',
-    'Private (Only me)',
-  ];
-
-  final List<String> _contactOptions = ['Public', 'Friends only', 'Private'];
-
-  final List<String> _messageOptions = [
-    'Allow messages from everyone',
-    'Friends only',
-    'No messages',
-  ];
-
-  // Responsive breakpoints
-  double get mobileBreakpoint => 600;
-  double get tabletBreakpoint => 1024;
-  double get desktopBreakpoint => 1440;
-  bool get isMobile => MediaQuery.of(context).size.width < mobileBreakpoint;
-  bool get isTablet =>
-      MediaQuery.of(context).size.width >= mobileBreakpoint &&
-      MediaQuery.of(context).size.width < tabletBreakpoint;
-  bool get isDesktop =>
-      MediaQuery.of(context).size.width >= tabletBreakpoint &&
-      MediaQuery.of(context).size.width < desktopBreakpoint;
-  bool get isLargeDesktop =>
-      MediaQuery.of(context).size.width >= desktopBreakpoint;
-  bool get isSmallScreen => MediaQuery.of(context).size.width < 400;
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFF7F8FC),
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        title: Text(
-          'Privacy Settings',
-          style: TextStyle(
-            color: const Color(0xFF111827),
-            fontWeight: FontWeight.w700,
-            fontSize: isLargeDesktop
-                ? 22
-                : isDesktop
-                ? 20
-                : isTablet
-                ? 19
-                : isSmallScreen
-                ? 16
-                : 18,
-          ),
-        ),
-        leading: IconButton(
-          icon: Icon(
-            Icons.arrow_back,
-            color: const Color(0xFF111827),
-            size: isLargeDesktop
-                ? 28
-                : isDesktop
-                ? 26
-                : isTablet
-                ? 24
-                : isSmallScreen
-                ? 20
-                : 22,
-          ),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
-      ),
-      body: SingleChildScrollView(
-        padding: EdgeInsets.all(
-          isLargeDesktop
-              ? 24
-              : isDesktop
-              ? 20
-              : isTablet
-              ? 18
-              : isSmallScreen
-              ? 12
-              : 16,
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildPrivacyCard(
-              title: 'Profile Visibility',
-              description: 'Control who can see your profile.',
-              value: _profileVisibility,
-              options: _profileOptions,
-              onChanged: (value) => setState(() => _profileVisibility = value!),
-            ),
-            SizedBox(
-              height: isLargeDesktop
-                  ? 16
-                  : isDesktop
-                  ? 14
-                  : isTablet
-                  ? 12
-                  : isSmallScreen
-                  ? 8
-                  : 12,
-            ),
-            _buildPrivacyCard(
-              title: 'Contact Information Visibility',
-              description: 'Control who can see your email and phone number.',
-              value: _contactVisibility,
-              options: _contactOptions,
-              onChanged: (value) => setState(() => _contactVisibility = value!),
-            ),
-            SizedBox(
-              height: isLargeDesktop
-                  ? 16
-                  : isDesktop
-                  ? 14
-                  : isTablet
-                  ? 12
-                  : isSmallScreen
-                  ? 8
-                  : 12,
-            ),
-            _buildPrivacyCard(
-              title: 'Message Permissions',
-              description: 'Control who can send you messages.',
-              value: _messagePermissions,
-              options: _messageOptions,
-              onChanged: (value) =>
-                  setState(() => _messagePermissions = value!),
-            ),
-            SizedBox(
-              height: isLargeDesktop
-                  ? 16
-                  : isDesktop
-                  ? 14
-                  : isTablet
-                  ? 12
-                  : isSmallScreen
-                  ? 8
-                  : 12,
-            ),
-            _buildToggleCard(
-              title: 'Data Sharing',
-              description:
-                  'Allow sharing of anonymized data with partners for improvements.',
-              value: _dataSharing,
-              onChanged: (value) => setState(() => _dataSharing = value),
-            ),
-            SizedBox(
-              height: isLargeDesktop
-                  ? 16
-                  : isDesktop
-                  ? 14
-                  : isTablet
-                  ? 12
-                  : isSmallScreen
-                  ? 8
-                  : 12,
-            ),
-            _buildToggleCard(
-              title: 'Analytics Tracking',
-              description:
-                  'Allow us to collect anonymous usage data to improve the app.',
-              value: _analyticsTracking,
-              onChanged: (value) => setState(() => _analyticsTracking = value),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildPrivacyCard({
-    required String title,
-    required String description,
-    required String value,
-    required List<String> options,
-    required ValueChanged<String?> onChanged,
-  }) {
-    return Container(
-      padding: EdgeInsets.all(
-        isLargeDesktop
-            ? 20
-            : isDesktop
-            ? 18
-            : isTablet
-            ? 16
-            : isSmallScreen
-            ? 12
-            : 14,
-      ),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(
-          isLargeDesktop
-              ? 16
-              : isDesktop
-              ? 14
-              : isTablet
-              ? 12
-              : isSmallScreen
-              ? 10
-              : 12,
-        ),
-        border: Border.all(
-          color: const Color(0xFFE5E7EB),
-          width: isLargeDesktop || isDesktop
-              ? 1.5
-              : isTablet
-              ? 1.2
-              : isSmallScreen
-              ? 0.8
-              : 1,
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            title,
-            style: TextStyle(
-              color: const Color(0xFF111827),
-              fontWeight: FontWeight.w600,
-              fontSize: isLargeDesktop
-                  ? 18
-                  : isDesktop
-                  ? 17
-                  : isTablet
-                  ? 16
-                  : isSmallScreen
-                  ? 14
-                  : 15,
-            ),
-          ),
           SizedBox(
-            height: isLargeDesktop
-                ? 12
-                : isDesktop
-                ? 10
-                : isTablet
-                ? 8
-                : isSmallScreen
-                ? 6
-                : 8,
-          ),
-          DropdownButtonFormField<String>(
-            value: value,
-            decoration: InputDecoration(
-              contentPadding: EdgeInsets.symmetric(
-                horizontal: isLargeDesktop
-                    ? 16
-                    : isDesktop
-                    ? 14
-                    : isTablet
-                    ? 12
-                    : isSmallScreen
-                    ? 10
-                    : 12,
-                vertical: isLargeDesktop
-                    ? 12
-                    : isDesktop
-                    ? 10
-                    : isTablet
-                    ? 8
-                    : isSmallScreen
-                    ? 6
-                    : 8,
-              ),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(
-                  isLargeDesktop
-                      ? 10
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: _showDeleteAccountDialog,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFDC2626),
+                foregroundColor: Colors.white,
+                padding: EdgeInsets.symmetric(
+                  vertical: isLargeDesktop
+                      ? 16
                       : isDesktop
-                      ? 9
+                      ? 14
                       : isTablet
-                      ? 8
+                      ? 12
                       : isSmallScreen
-                      ? 6
-                      : 8,
-                ),
-                borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(
-                  isLargeDesktop
                       ? 10
-                      : isDesktop
-                      ? 9
-                      : isTablet
-                      ? 8
-                      : isSmallScreen
-                      ? 6
-                      : 8,
+                      : 12,
                 ),
-                borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(
-                  isLargeDesktop
-                      ? 10
-                      : isDesktop
-                      ? 9
-                      : isTablet
-                      ? 8
-                      : isSmallScreen
-                      ? 6
-                      : 8,
-                ),
-                borderSide: const BorderSide(color: Color(0xFF6B5FFF)),
-              ),
-            ),
-            items: options.map((String value) {
-              return DropdownMenuItem<String>(
-                value: value,
-                child: Text(
-                  value,
-                  style: TextStyle(
-                    fontSize: isLargeDesktop
-                        ? 16
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(
+                    isLargeDesktop
+                        ? 10
                         : isDesktop
-                        ? 15
+                        ? 9
                         : isTablet
-                        ? 14
+                        ? 8
                         : isSmallScreen
-                        ? 12
-                        : 13,
+                        ? 6
+                        : 8,
                   ),
                 ),
-              );
-            }).toList(),
-            onChanged: onChanged,
-          ),
-          SizedBox(
-            height: isLargeDesktop
-                ? 12
-                : isDesktop
-                ? 10
-                : isTablet
-                ? 8
-                : isSmallScreen
-                ? 6
-                : 8,
-          ),
-          Text(
-            description,
-            style: TextStyle(
-              color: const Color(0xFF6B7280),
-              fontSize: isLargeDesktop
-                  ? 15
-                  : isDesktop
-                  ? 14
-                  : isTablet
-                  ? 13
-                  : isSmallScreen
-                  ? 11
-                  : 12,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildToggleCard({
-    required String title,
-    required String description,
-    required bool value,
-    required ValueChanged<bool> onChanged,
-  }) {
-    return Container(
-      padding: EdgeInsets.all(
-        isLargeDesktop
-            ? 20
-            : isDesktop
-            ? 18
-            : isTablet
-            ? 16
-            : isSmallScreen
-            ? 12
-            : 14,
-      ),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(
-          isLargeDesktop
-              ? 16
-              : isDesktop
-              ? 14
-              : isTablet
-              ? 12
-              : isSmallScreen
-              ? 10
-              : 12,
-        ),
-        border: Border.all(
-          color: const Color(0xFFE5E7EB),
-          width: isLargeDesktop || isDesktop
-              ? 1.5
-              : isTablet
-              ? 1.2
-              : isSmallScreen
-              ? 0.8
-              : 1,
-        ),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: TextStyle(
-                    color: const Color(0xFF111827),
-                    fontWeight: FontWeight.w600,
-                    fontSize: isLargeDesktop
-                        ? 18
-                        : isDesktop
-                        ? 17
-                        : isTablet
-                        ? 16
-                        : isSmallScreen
-                        ? 14
-                        : 15,
-                  ),
-                ),
-                SizedBox(
-                  height: isLargeDesktop
-                      ? 6
+              ),
+              child: Text(
+                'Delete Account',
+                style: TextStyle(
+                  fontSize: isLargeDesktop
+                      ? 16
                       : isDesktop
-                      ? 5
+                      ? 15
                       : isTablet
-                      ? 4
+                      ? 14
                       : isSmallScreen
-                      ? 3
-                      : 4,
+                      ? 12
+                      : 13,
+                  fontWeight: FontWeight.w600,
                 ),
-                Text(
-                  description,
-                  style: TextStyle(
-                    color: const Color(0xFF6B7280),
-                    fontSize: isLargeDesktop
-                        ? 15
-                        : isDesktop
-                        ? 14
-                        : isTablet
-                        ? 13
-                        : isSmallScreen
-                        ? 11
-                        : 12,
-                  ),
-                ),
-              ],
+              ),
             ),
-          ),
-          Switch(
-            value: value,
-            onChanged: onChanged,
-            activeColor: const Color(0xFF6B5FFF),
           ),
         ],
       ),
@@ -2244,1152 +1327,6 @@ class _AppearanceSettingsPageState extends State<AppearanceSettingsPage> {
         content: Text('Theme switched to $_currentTheme'),
         backgroundColor: const Color(0xFF6B5FFF),
         duration: const Duration(seconds: 2),
-      ),
-    );
-  }
-}
-
-class DataStorageSettingsPage extends StatefulWidget {
-  const DataStorageSettingsPage({super.key});
-
-  @override
-  State<DataStorageSettingsPage> createState() =>
-      _DataStorageSettingsPageState();
-}
-
-class _DataStorageSettingsPageState extends State<DataStorageSettingsPage> {
-  bool _automaticBackup = true;
-  String _backupFrequency = 'Weekly';
-  String _dataRetention = '1 Year';
-  String _exportFormat = 'JSON';
-
-  final List<String> _frequencyOptions = ['Daily', 'Weekly', 'Monthly'];
-
-  final List<String> _retentionOptions = [
-    '3 Months',
-    '6 Months',
-    '1 Year',
-    '2 Years',
-    'Forever',
-  ];
-
-  final List<String> _exportFormats = ['JSON', 'CSV', 'PDF'];
-
-  // Responsive breakpoints
-  double get mobileBreakpoint => 600;
-  double get tabletBreakpoint => 1024;
-  double get desktopBreakpoint => 1440;
-  bool get isMobile => MediaQuery.of(context).size.width < mobileBreakpoint;
-  bool get isTablet =>
-      MediaQuery.of(context).size.width >= mobileBreakpoint &&
-      MediaQuery.of(context).size.width < tabletBreakpoint;
-  bool get isDesktop =>
-      MediaQuery.of(context).size.width >= tabletBreakpoint &&
-      MediaQuery.of(context).size.width < desktopBreakpoint;
-  bool get isLargeDesktop =>
-      MediaQuery.of(context).size.width >= desktopBreakpoint;
-  bool get isSmallScreen => MediaQuery.of(context).size.width < 400;
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFF7F8FC),
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        title: Text(
-          'Data & Storage',
-          style: TextStyle(
-            color: const Color(0xFF111827),
-            fontWeight: FontWeight.w700,
-            fontSize: isLargeDesktop
-                ? 22
-                : isDesktop
-                ? 20
-                : isTablet
-                ? 19
-                : isSmallScreen
-                ? 16
-                : 18,
-          ),
-        ),
-        leading: IconButton(
-          icon: Icon(
-            Icons.arrow_back,
-            color: const Color(0xFF111827),
-            size: isLargeDesktop
-                ? 28
-                : isDesktop
-                ? 26
-                : isTablet
-                ? 24
-                : isSmallScreen
-                ? 20
-                : 22,
-          ),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
-      ),
-      body: SingleChildScrollView(
-        padding: EdgeInsets.all(
-          isLargeDesktop
-              ? 24
-              : isDesktop
-              ? 20
-              : isTablet
-              ? 18
-              : isSmallScreen
-              ? 12
-              : 16,
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildBackupCard(),
-            SizedBox(
-              height: isLargeDesktop
-                  ? 16
-                  : isDesktop
-                  ? 14
-                  : isTablet
-                  ? 12
-                  : isSmallScreen
-                  ? 8
-                  : 12,
-            ),
-            _buildFrequencyCard(),
-            SizedBox(
-              height: isLargeDesktop
-                  ? 16
-                  : isDesktop
-                  ? 14
-                  : isTablet
-                  ? 12
-                  : isSmallScreen
-                  ? 8
-                  : 12,
-            ),
-            _buildRetentionCard(),
-            SizedBox(
-              height: isLargeDesktop
-                  ? 16
-                  : isDesktop
-                  ? 14
-                  : isTablet
-                  ? 12
-                  : isSmallScreen
-                  ? 8
-                  : 12,
-            ),
-            _buildExportCard(),
-            SizedBox(
-              height: isLargeDesktop
-                  ? 32
-                  : isDesktop
-                  ? 28
-                  : isTablet
-                  ? 24
-                  : isSmallScreen
-                  ? 16
-                  : 20,
-            ),
-            _buildDeleteAccountCard(),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildBackupCard() {
-    return Container(
-      padding: EdgeInsets.all(
-        isLargeDesktop
-            ? 20
-            : isDesktop
-            ? 18
-            : isTablet
-            ? 16
-            : isSmallScreen
-            ? 12
-            : 14,
-      ),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(
-          isLargeDesktop
-              ? 16
-              : isDesktop
-              ? 14
-              : isTablet
-              ? 12
-              : isSmallScreen
-              ? 10
-              : 12,
-        ),
-        border: Border.all(
-          color: const Color(0xFFE5E7EB),
-          width: isLargeDesktop || isDesktop
-              ? 1.5
-              : isTablet
-              ? 1.2
-              : isSmallScreen
-              ? 0.8
-              : 1,
-        ),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Automatic Data Backup',
-                  style: TextStyle(
-                    color: const Color(0xFF111827),
-                    fontWeight: FontWeight.w600,
-                    fontSize: isLargeDesktop
-                        ? 18
-                        : isDesktop
-                        ? 17
-                        : isTablet
-                        ? 16
-                        : isSmallScreen
-                        ? 14
-                        : 15,
-                  ),
-                ),
-                SizedBox(
-                  height: isLargeDesktop
-                      ? 6
-                      : isDesktop
-                      ? 5
-                      : isTablet
-                      ? 4
-                      : isSmallScreen
-                      ? 3
-                      : 4,
-                ),
-                Text(
-                  'Automatically back up your data to the cloud.',
-                  style: TextStyle(
-                    color: const Color(0xFF6B7280),
-                    fontSize: isLargeDesktop
-                        ? 15
-                        : isDesktop
-                        ? 14
-                        : isTablet
-                        ? 13
-                        : isSmallScreen
-                        ? 11
-                        : 12,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Switch(
-            value: _automaticBackup,
-            onChanged: (value) => setState(() => _automaticBackup = value),
-            activeColor: const Color(0xFF6B5FFF),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildFrequencyCard() {
-    return Container(
-      padding: EdgeInsets.all(
-        isLargeDesktop
-            ? 20
-            : isDesktop
-            ? 18
-            : isTablet
-            ? 16
-            : isSmallScreen
-            ? 12
-            : 14,
-      ),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(
-          isLargeDesktop
-              ? 16
-              : isDesktop
-              ? 14
-              : isTablet
-              ? 12
-              : isSmallScreen
-              ? 10
-              : 12,
-        ),
-        border: Border.all(
-          color: const Color(0xFFE5E7EB),
-          width: isLargeDesktop || isDesktop
-              ? 1.5
-              : isTablet
-              ? 1.2
-              : isSmallScreen
-              ? 0.8
-              : 1,
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Backup Frequency',
-            style: TextStyle(
-              color: const Color(0xFF111827),
-              fontWeight: FontWeight.w600,
-              fontSize: isLargeDesktop
-                  ? 18
-                  : isDesktop
-                  ? 17
-                  : isTablet
-                  ? 16
-                  : isSmallScreen
-                  ? 14
-                  : 15,
-            ),
-          ),
-          SizedBox(
-            height: isLargeDesktop
-                ? 12
-                : isDesktop
-                ? 10
-                : isTablet
-                ? 8
-                : isSmallScreen
-                ? 6
-                : 8,
-          ),
-          DropdownButtonFormField<String>(
-            value: _backupFrequency,
-            decoration: InputDecoration(
-              contentPadding: EdgeInsets.symmetric(
-                horizontal: isLargeDesktop
-                    ? 16
-                    : isDesktop
-                    ? 14
-                    : isTablet
-                    ? 12
-                    : isSmallScreen
-                    ? 10
-                    : 12,
-                vertical: isLargeDesktop
-                    ? 12
-                    : isDesktop
-                    ? 10
-                    : isTablet
-                    ? 8
-                    : isSmallScreen
-                    ? 6
-                    : 8,
-              ),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(
-                  isLargeDesktop
-                      ? 10
-                      : isDesktop
-                      ? 9
-                      : isTablet
-                      ? 8
-                      : isSmallScreen
-                      ? 6
-                      : 8,
-                ),
-                borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(
-                  isLargeDesktop
-                      ? 10
-                      : isDesktop
-                      ? 9
-                      : isTablet
-                      ? 8
-                      : isSmallScreen
-                      ? 6
-                      : 8,
-                ),
-                borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(
-                  isLargeDesktop
-                      ? 10
-                      : isDesktop
-                      ? 9
-                      : isTablet
-                      ? 8
-                      : isSmallScreen
-                      ? 6
-                      : 8,
-                ),
-                borderSide: const BorderSide(color: Color(0xFF6B5FFF)),
-              ),
-            ),
-            items: _frequencyOptions.map((String value) {
-              return DropdownMenuItem<String>(
-                value: value,
-                child: Text(
-                  value,
-                  style: TextStyle(
-                    fontSize: isLargeDesktop
-                        ? 16
-                        : isDesktop
-                        ? 15
-                        : isTablet
-                        ? 14
-                        : isSmallScreen
-                        ? 12
-                        : 13,
-                  ),
-                ),
-              );
-            }).toList(),
-            onChanged: (String? newValue) {
-              if (newValue != null) {
-                setState(() => _backupFrequency = newValue);
-              }
-            },
-          ),
-          SizedBox(
-            height: isLargeDesktop
-                ? 12
-                : isDesktop
-                ? 10
-                : isTablet
-                ? 8
-                : isSmallScreen
-                ? 6
-                : 8,
-          ),
-          Text(
-            'How often your data is automatically backed up.',
-            style: TextStyle(
-              color: const Color(0xFF6B7280),
-              fontSize: isLargeDesktop
-                  ? 15
-                  : isDesktop
-                  ? 14
-                  : isTablet
-                  ? 13
-                  : isSmallScreen
-                  ? 11
-                  : 12,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildRetentionCard() {
-    return Container(
-      padding: EdgeInsets.all(
-        isLargeDesktop
-            ? 20
-            : isDesktop
-            ? 18
-            : isTablet
-            ? 16
-            : isSmallScreen
-            ? 12
-            : 14,
-      ),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(
-          isLargeDesktop
-              ? 16
-              : isDesktop
-              ? 14
-              : isTablet
-              ? 12
-              : isSmallScreen
-              ? 10
-              : 12,
-        ),
-        border: Border.all(
-          color: const Color(0xFFE5E7EB),
-          width: isLargeDesktop || isDesktop
-              ? 1.5
-              : isTablet
-              ? 1.2
-              : isSmallScreen
-              ? 0.8
-              : 1,
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Data Retention',
-            style: TextStyle(
-              color: const Color(0xFF111827),
-              fontWeight: FontWeight.w600,
-              fontSize: isLargeDesktop
-                  ? 18
-                  : isDesktop
-                  ? 17
-                  : isTablet
-                  ? 16
-                  : isSmallScreen
-                  ? 14
-                  : 15,
-            ),
-          ),
-          SizedBox(
-            height: isLargeDesktop
-                ? 12
-                : isDesktop
-                ? 10
-                : isTablet
-                ? 8
-                : isSmallScreen
-                ? 6
-                : 8,
-          ),
-          DropdownButtonFormField<String>(
-            value: _dataRetention,
-            decoration: InputDecoration(
-              contentPadding: EdgeInsets.symmetric(
-                horizontal: isLargeDesktop
-                    ? 16
-                    : isDesktop
-                    ? 14
-                    : isTablet
-                    ? 12
-                    : isSmallScreen
-                    ? 10
-                    : 12,
-                vertical: isLargeDesktop
-                    ? 12
-                    : isDesktop
-                    ? 10
-                    : isTablet
-                    ? 8
-                    : isSmallScreen
-                    ? 6
-                    : 8,
-              ),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(
-                  isLargeDesktop
-                      ? 10
-                      : isDesktop
-                      ? 9
-                      : isTablet
-                      ? 8
-                      : isSmallScreen
-                      ? 6
-                      : 8,
-                ),
-                borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(
-                  isLargeDesktop
-                      ? 10
-                      : isDesktop
-                      ? 9
-                      : isTablet
-                      ? 8
-                      : isSmallScreen
-                      ? 6
-                      : 8,
-                ),
-                borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(
-                  isLargeDesktop
-                      ? 10
-                      : isDesktop
-                      ? 9
-                      : isTablet
-                      ? 8
-                      : isSmallScreen
-                      ? 6
-                      : 8,
-                ),
-                borderSide: const BorderSide(color: Color(0xFF6B5FFF)),
-              ),
-            ),
-            items: _retentionOptions.map((String value) {
-              return DropdownMenuItem<String>(
-                value: value,
-                child: Text(
-                  value,
-                  style: TextStyle(
-                    fontSize: isLargeDesktop
-                        ? 16
-                        : isDesktop
-                        ? 15
-                        : isTablet
-                        ? 14
-                        : isSmallScreen
-                        ? 12
-                        : 13,
-                  ),
-                ),
-              );
-            }).toList(),
-            onChanged: (String? newValue) {
-              if (newValue != null) {
-                setState(() => _dataRetention = newValue);
-              }
-            },
-          ),
-          SizedBox(
-            height: isLargeDesktop
-                ? 12
-                : isDesktop
-                ? 10
-                : isTablet
-                ? 8
-                : isSmallScreen
-                ? 6
-                : 8,
-          ),
-          Text(
-            'How long your backed-up data is retained.',
-            style: TextStyle(
-              color: const Color(0xFF6B7280),
-              fontSize: isLargeDesktop
-                  ? 15
-                  : isDesktop
-                  ? 14
-                  : isTablet
-                  ? 13
-                  : isSmallScreen
-                  ? 11
-                  : 12,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildExportCard() {
-    return Container(
-      padding: EdgeInsets.all(
-        isLargeDesktop
-            ? 20
-            : isDesktop
-            ? 18
-            : isTablet
-            ? 16
-            : isSmallScreen
-            ? 12
-            : 14,
-      ),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(
-          isLargeDesktop
-              ? 16
-              : isDesktop
-              ? 14
-              : isTablet
-              ? 12
-              : isSmallScreen
-              ? 10
-              : 12,
-        ),
-        border: Border.all(
-          color: const Color(0xFFE5E7EB),
-          width: isLargeDesktop || isDesktop
-              ? 1.5
-              : isTablet
-              ? 1.2
-              : isSmallScreen
-              ? 0.8
-              : 1,
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Export Data',
-            style: TextStyle(
-              color: const Color(0xFF111827),
-              fontWeight: FontWeight.w600,
-              fontSize: isLargeDesktop
-                  ? 18
-                  : isDesktop
-                  ? 17
-                  : isTablet
-                  ? 16
-                  : isSmallScreen
-                  ? 14
-                  : 15,
-            ),
-          ),
-          SizedBox(
-            height: isLargeDesktop
-                ? 12
-                : isDesktop
-                ? 10
-                : isTablet
-                ? 8
-                : isSmallScreen
-                ? 6
-                : 8,
-          ),
-          Text(
-            'Download a copy of your account data.',
-            style: TextStyle(
-              color: const Color(0xFF6B7280),
-              fontSize: isLargeDesktop
-                  ? 15
-                  : isDesktop
-                  ? 14
-                  : isTablet
-                  ? 13
-                  : isSmallScreen
-                  ? 11
-                  : 12,
-            ),
-          ),
-          SizedBox(
-            height: isLargeDesktop
-                ? 16
-                : isDesktop
-                ? 14
-                : isTablet
-                ? 12
-                : isSmallScreen
-                ? 8
-                : 12,
-          ),
-          Row(
-            children: [
-              Expanded(
-                child: DropdownButtonFormField<String>(
-                  value: _exportFormat,
-                  decoration: InputDecoration(
-                    contentPadding: EdgeInsets.symmetric(
-                      horizontal: isLargeDesktop
-                          ? 16
-                          : isDesktop
-                          ? 14
-                          : isTablet
-                          ? 12
-                          : isSmallScreen
-                          ? 10
-                          : 12,
-                      vertical: isLargeDesktop
-                          ? 12
-                          : isDesktop
-                          ? 10
-                          : isTablet
-                          ? 8
-                          : isSmallScreen
-                          ? 6
-                          : 8,
-                    ),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(
-                        isLargeDesktop
-                            ? 10
-                            : isDesktop
-                            ? 9
-                            : isTablet
-                            ? 8
-                            : isSmallScreen
-                            ? 6
-                            : 8,
-                      ),
-                      borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(
-                        isLargeDesktop
-                            ? 10
-                            : isDesktop
-                            ? 9
-                            : isTablet
-                            ? 8
-                            : isSmallScreen
-                            ? 6
-                            : 8,
-                      ),
-                      borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(
-                        isLargeDesktop
-                            ? 10
-                            : isDesktop
-                            ? 9
-                            : isTablet
-                            ? 8
-                            : isSmallScreen
-                            ? 6
-                            : 8,
-                      ),
-                      borderSide: const BorderSide(color: Color(0xFF6B5FFF)),
-                    ),
-                  ),
-                  items: _exportFormats.map((String value) {
-                    return DropdownMenuItem<String>(
-                      value: value,
-                      child: Text(
-                        value,
-                        style: TextStyle(
-                          fontSize: isLargeDesktop
-                              ? 16
-                              : isDesktop
-                              ? 15
-                              : isTablet
-                              ? 14
-                              : isSmallScreen
-                              ? 12
-                              : 13,
-                        ),
-                      ),
-                    );
-                  }).toList(),
-                  onChanged: (String? newValue) {
-                    if (newValue != null) {
-                      setState(() => _exportFormat = newValue);
-                    }
-                  },
-                ),
-              ),
-              SizedBox(
-                width: isLargeDesktop
-                    ? 16
-                    : isDesktop
-                    ? 14
-                    : isTablet
-                    ? 12
-                    : isSmallScreen
-                    ? 8
-                    : 12,
-              ),
-              ElevatedButton.icon(
-                onPressed: _exportData,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF6B5FFF),
-                  foregroundColor: Colors.white,
-                  padding: EdgeInsets.symmetric(
-                    horizontal: isLargeDesktop
-                        ? 24
-                        : isDesktop
-                        ? 20
-                        : isTablet
-                        ? 16
-                        : isSmallScreen
-                        ? 12
-                        : 16,
-                    vertical: isLargeDesktop
-                        ? 16
-                        : isDesktop
-                        ? 14
-                        : isTablet
-                        ? 12
-                        : isSmallScreen
-                        ? 10
-                        : 12,
-                  ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(
-                      isLargeDesktop
-                          ? 10
-                          : isDesktop
-                          ? 9
-                          : isTablet
-                          ? 8
-                          : isSmallScreen
-                          ? 6
-                          : 8,
-                    ),
-                  ),
-                ),
-                icon: Icon(
-                  Icons.download,
-                  size: isLargeDesktop
-                      ? 20
-                      : isDesktop
-                      ? 19
-                      : isTablet
-                      ? 18
-                      : isSmallScreen
-                      ? 16
-                      : 18,
-                ),
-                label: Text(
-                  'Export',
-                  style: TextStyle(
-                    fontSize: isLargeDesktop
-                        ? 17
-                        : isDesktop
-                        ? 16
-                        : isTablet
-                        ? 15
-                        : isSmallScreen
-                        ? 13
-                        : 14,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildDeleteAccountCard() {
-    return Container(
-      padding: EdgeInsets.all(
-        isLargeDesktop
-            ? 20
-            : isDesktop
-            ? 18
-            : isTablet
-            ? 16
-            : isSmallScreen
-            ? 12
-            : 14,
-      ),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(
-          isLargeDesktop
-              ? 16
-              : isDesktop
-              ? 14
-              : isTablet
-              ? 12
-              : isSmallScreen
-              ? 10
-              : 12,
-        ),
-        border: Border.all(
-          color: Colors.red,
-          width: isLargeDesktop || isDesktop
-              ? 2.5
-              : isTablet
-              ? 2
-              : isSmallScreen
-              ? 1.5
-              : 2,
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(
-                Icons.warning,
-                color: Colors.red,
-                size: isLargeDesktop
-                    ? 26
-                    : isDesktop
-                    ? 24
-                    : isTablet
-                    ? 22
-                    : isSmallScreen
-                    ? 18
-                    : 20,
-              ),
-              SizedBox(
-                width: isLargeDesktop
-                    ? 12
-                    : isDesktop
-                    ? 10
-                    : isTablet
-                    ? 8
-                    : isSmallScreen
-                    ? 6
-                    : 8,
-              ),
-              Text(
-                'Delete Account',
-                style: TextStyle(
-                  color: const Color(0xFF111827),
-                  fontWeight: FontWeight.w600,
-                  fontSize: isLargeDesktop
-                      ? 18
-                      : isDesktop
-                      ? 17
-                      : isTablet
-                      ? 16
-                      : isSmallScreen
-                      ? 14
-                      : 15,
-                ),
-              ),
-            ],
-          ),
-          SizedBox(
-            height: isLargeDesktop
-                ? 12
-                : isDesktop
-                ? 10
-                : isTablet
-                ? 8
-                : isSmallScreen
-                ? 6
-                : 8,
-          ),
-          Text(
-            'Permanently delete your account and all associated data. This action cannot be undone.',
-            style: TextStyle(
-              color: const Color(0xFF6B7280),
-              fontSize: isLargeDesktop
-                  ? 15
-                  : isDesktop
-                  ? 14
-                  : isTablet
-                  ? 13
-                  : isSmallScreen
-                  ? 11
-                  : 12,
-            ),
-          ),
-          SizedBox(
-            height: isLargeDesktop
-                ? 20
-                : isDesktop
-                ? 18
-                : isTablet
-                ? 16
-                : isSmallScreen
-                ? 12
-                : 16,
-          ),
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton.icon(
-              onPressed: _showDeleteAccountDialog,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.red,
-                foregroundColor: Colors.white,
-                padding: EdgeInsets.symmetric(
-                  horizontal: isLargeDesktop
-                      ? 24
-                      : isDesktop
-                      ? 20
-                      : isTablet
-                      ? 16
-                      : isSmallScreen
-                      ? 12
-                      : 16,
-                  vertical: isLargeDesktop
-                      ? 16
-                      : isDesktop
-                      ? 14
-                      : isTablet
-                      ? 12
-                      : isSmallScreen
-                      ? 10
-                      : 12,
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(
-                    isLargeDesktop
-                        ? 10
-                        : isDesktop
-                        ? 9
-                        : isTablet
-                        ? 8
-                        : isSmallScreen
-                        ? 6
-                        : 8,
-                  ),
-                ),
-              ),
-              icon: Icon(
-                Icons.delete,
-                size: isLargeDesktop
-                    ? 20
-                    : isDesktop
-                    ? 19
-                    : isTablet
-                    ? 18
-                    : isSmallScreen
-                    ? 16
-                    : 18,
-              ),
-              label: Text(
-                'Delete Account',
-                style: TextStyle(
-                  fontSize: isLargeDesktop
-                      ? 17
-                      : isDesktop
-                      ? 16
-                      : isTablet
-                      ? 15
-                      : isSmallScreen
-                      ? 13
-                      : 14,
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _exportData() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Exporting data in $_exportFormat format...'),
-        backgroundColor: const Color(0xFF6B5FFF),
-        duration: const Duration(seconds: 3),
-      ),
-    );
-  }
-
-  void _showDeleteAccountDialog() {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Delete Account'),
-          content: const Text(
-            'Are you sure you want to delete your account? This action cannot be undone and all your data will be permanently lost.',
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Cancel'),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-                _deleteAccount();
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.red,
-                foregroundColor: Colors.white,
-              ),
-              child: const Text('Delete'),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  void _deleteAccount() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Account deletion initiated. This is a demo action.'),
-        backgroundColor: Colors.red,
-        duration: Duration(seconds: 3),
       ),
     );
   }
@@ -3880,6 +1817,7 @@ class _AccountSettingsPageState extends State<AccountSettingsPage> {
               : 6,
         ),
         Container(
+          width: double.infinity,
           padding: EdgeInsets.symmetric(
             horizontal: isLargeDesktop
                 ? 16

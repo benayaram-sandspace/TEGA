@@ -31,20 +31,35 @@ class _SplashScreenState extends State<SplashScreen> {
     _videoController = VideoPlayerController.asset('assets/splash_video.mp4');
 
     // Store the initialization future to use with a FutureBuilder.
-    _initializeVideoPlayerFuture = _videoController.initialize().then((_) {
-      // Ensure the video plays only once.
-      _videoController.setLooping(false);
-      // Start playback immediately.
-      _videoController.play();
-    });
+    _initializeVideoPlayerFuture = _videoController
+        .initialize()
+        .then((_) {
+          // Ensure the video plays only once.
+          _videoController.setLooping(false);
+          // Start playback immediately.
+          _videoController.play();
+        })
+        .timeout(
+          const Duration(seconds: 5),
+          onTimeout: () {
+            print('Video initialization timed out. Navigating...');
+            _navigateBasedOnSession();
+          },
+        )
+        .catchError((error) {
+          print('Video initialization failed: $error');
+          _navigateBasedOnSession();
+        });
 
     // Add a listener to navigate after the video completes.
     _videoController.addListener(() {
-      final isInitialized = _videoController.value.isInitialized;
+      // Check if controller is disposed or not initialized to avoid errors
+      if (!_videoController.value.isInitialized) return;
+
       final isFinished =
           _videoController.value.duration == _videoController.value.position;
 
-      if (isInitialized && isFinished) {
+      if (isFinished) {
         // Use a small delay to ensure the last frame is shown briefly before navigating.
         Future.delayed(const Duration(milliseconds: 500), () {
           // Check if the widget is still in the tree before navigating.

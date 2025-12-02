@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'dart:async';
@@ -260,6 +261,9 @@ class AuthService {
   DateTime? _loginTime;
   DateTime? _tokenExpiryTime;
   SharedPreferences? _prefs;
+  final _secureStorage = const FlutterSecureStorage(
+    aOptions: AndroidOptions(encryptedSharedPreferences: true),
+  );
   String? _authToken;
   String? _refreshToken;
   List<String> _userPermissions = [];
@@ -283,6 +287,34 @@ class AuthService {
 
   Future<void> _ensurePrefs() async {
     _prefs ??= await SharedPreferences.getInstance();
+  }
+
+  Future<void> _savePassword(String password) async {
+    print(
+      'DEBUG: Attempting to save password securely. Length: ${password.length}',
+    );
+    try {
+      await _secureStorage.write(key: 'user_password', value: password);
+      print('DEBUG: Password saved successfully');
+    } catch (e) {
+      print('DEBUG: Error saving password: $e');
+    }
+  }
+
+  Future<String?> getSavedPassword() async {
+    print('DEBUG: Attempting to retrieve saved password');
+    try {
+      final password = await _secureStorage.read(key: 'user_password');
+      print('DEBUG: Password retrieved. Found: ${password != null}');
+      return password;
+    } catch (e) {
+      print('DEBUG: Error retrieving password: $e');
+      return null;
+    }
+  }
+
+  Future<void> _clearSavedPassword() async {
+    await _secureStorage.delete(key: 'user_password');
   }
 
   /// Make HTTP POST request with retry logic and proper error handling
@@ -574,6 +606,9 @@ class AuthService {
               _startTokenRefreshTimer();
             }
 
+            // Save password securely for prefilling
+            await _savePassword(password);
+
             return {
               'success': true,
               'message': responseData['message'] ?? 'Login successful',
@@ -634,6 +669,7 @@ class AuthService {
   Future<void> logout() async {
     _tokenRefreshTimer?.cancel();
     await _clearSession();
+    await _clearSavedPassword();
 
     // Clear login form fields
     try {
