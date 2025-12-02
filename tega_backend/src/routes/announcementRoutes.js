@@ -1,47 +1,13 @@
 import express from 'express';
-import jwt from 'jsonwebtoken';
 import Announcement from '../models/Announcement.js';
-import Principal from '../models/Principal.js';
 import Student from '../models/Student.js';
 import Notification from '../models/Notification.js';
+import principalAuth from '../middleware/principalAuth.js';
 
 const router = express.Router();
 
-// Middleware to verify principal authentication
-const verifyPrincipal = async (req, res, next) => {
-  try {
-    const authHeader = req.header('Authorization');
-    const token = authHeader?.startsWith('Bearer ') ? authHeader.replace('Bearer ', '') : authHeader;
-    
-    if (!token) {
-      return res.status(401).json({
-        success: false,
-        message: 'Access denied. No token provided.'
-      });
-    }
-
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-super-secret-jwt-key-change-this-in-production');
-    const principal = await Principal.findById(decoded.id);
-    
-    if (!principal || !principal.isActive) {
-      return res.status(401).json({
-        success: false,
-        message: 'Principal not found or inactive.'
-      });
-    }
-
-    req.principal = principal;
-    next();
-  } catch (error) {
-    res.status(401).json({
-      success: false,
-      message: 'Invalid token.'
-    });
-  }
-};
-
 // Create announcement
-router.post('/', verifyPrincipal, async (req, res) => {
+router.post('/', principalAuth, async (req, res) => {
   try {
     const { title, message, priority, audience, targetAudience, expiresAt, attachments } = req.body;
 
@@ -123,7 +89,7 @@ router.post('/', verifyPrincipal, async (req, res) => {
 });
 
 // Get all announcements for a principal's university
-router.get('/', verifyPrincipal, async (req, res) => {
+router.get('/', principalAuth, async (req, res) => {
   try {
     const { page = 1, limit = 10, search, priority, audience } = req.query;
     const skip = (page - 1) * limit;
@@ -175,7 +141,7 @@ router.get('/', verifyPrincipal, async (req, res) => {
 });
 
 // Get single announcement
-router.get('/:id', verifyPrincipal, async (req, res) => {
+router.get('/:id', principalAuth, async (req, res) => {
   try {
     const announcement = await Announcement.findOne({
       _id: req.params.id,
@@ -203,7 +169,7 @@ router.get('/:id', verifyPrincipal, async (req, res) => {
 });
 
 // Update announcement
-router.put('/:id', verifyPrincipal, async (req, res) => {
+router.put('/:id', principalAuth, async (req, res) => {
   try {
     const { title, message, priority, audience, targetAudience, expiresAt, attachments } = req.body;
 
@@ -272,7 +238,7 @@ router.put('/:id', verifyPrincipal, async (req, res) => {
 });
 
 // Delete announcement
-router.delete('/:id', verifyPrincipal, async (req, res) => {
+router.delete('/:id', principalAuth, async (req, res) => {
   try {
     const announcement = await Announcement.findOne({
       _id: req.params.id,

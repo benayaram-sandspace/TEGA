@@ -1,6 +1,7 @@
 import Student from '../models/Student.js';
 import { inMemoryUsers } from './authController.js';
 import mongoose from 'mongoose';
+import bcrypt from 'bcryptjs';
 
 // Get student profile
 export const getStudentProfile = async (req, res) => {
@@ -293,9 +294,21 @@ export const updateStudentProfile = async (req, res) => {
       }
     }
 
+    // Prepare response data - ensure all fields including twoFactorEnabled are included
+    let responseData;
+    if (student.toObject) {
+      responseData = student.toObject();
+    } else {
+      responseData = { ...student };
+    }
+    
+    // Remove sensitive fields from response
+    if (responseData.password) delete responseData.password;
+    if (responseData.refreshToken) delete responseData.refreshToken;
+    
     res.json({
       success: true,
-      data: student,
+      data: responseData,
       message: 'Profile updated successfully'
     });
   } catch (err) {
@@ -350,8 +363,10 @@ export const updateProfilePicture = async (req, res) => {
 
     // Generate proxy URL to avoid CORS issues
     // Extract just the filename from the R2 key (remove the profile-pictures/ prefix)
-    const filename = r2Key.split('/').pop();
-    const publicUrl = `${process.env.SERVER_URL || process.env.CLIENT_URL || 'http://localhost:5001'}/api/r2/profile-picture/${filename}`;
+    const serverUrl = process.env.SERVER_URL || process.env.API_URL || 
+      (process.env.NODE_ENV === 'development' ? `http://localhost:${process.env.PORT || 5001}` : process.env.CLIENT_URL || 'http://localhost:5001');
+    const encodedKey = encodeURIComponent(r2Key);
+    const publicUrl = `${serverUrl}/api/images/proxy/${encodedKey}`;
     // Update profile picture data
     student.profilePicture = {
       url: publicUrl,
@@ -820,6 +835,181 @@ export const getSidebarCounts = async (req, res) => {
       success: false,
       message: 'Server error while fetching sidebar counts',
       error: error.message
+    });
+  }
+};
+
+// Change student password
+export const changeStudentPassword = async (req, res) => {
+  try {
+    const studentId = req.studentId;
+    const { currentPassword, newPassword } = req.body;
+
+    // Validate required fields
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({
+        success: false,
+        message: 'Current password and new password are required.'
+      });
+    }
+
+    // Validate new password strength
+    if (newPassword.length < 8) {
+      return res.status(400).json({
+        success: false,
+        message: 'New password must be at least 8 characters long.'
+      });
+    }
+
+    // Check if new password is different from current
+    if (currentPassword === newPassword) {
+      return res.status(400).json({
+        success: false,
+        message: 'New password must be different from current password.'
+      });
+    }
+
+    let student = null;
+    
+    // Check if studentId is a valid MongoDB ObjectId
+    if (/^[0-9a-fA-F]{24}$/.test(studentId)) {
+      student = await Student.findById(studentId);
+    }
+    
+    // If not found in MongoDB or not a valid ObjectId, check in-memory storage
+    if (!student) {
+      student = inMemoryUsers.find(user => user._id === studentId);
+    }
+
+    if (!student) {
+      return res.status(404).json({
+        success: false,
+        message: 'Student not found.'
+      });
+    }
+
+    // Verify current password
+    const isCurrentPasswordValid = await bcrypt.compare(currentPassword, student.password);
+    if (!isCurrentPasswordValid) {
+      return res.status(400).json({
+        success: false,
+        message: 'Current password is incorrect.'
+      });
+    }
+
+    // Hash new password
+    const saltRounds = 12;
+    const hashedNewPassword = await bcrypt.hash(newPassword, saltRounds);
+
+    // Update password
+    student.password = hashedNewPassword;
+    student.updatedAt = new Date();
+
+    // Check if this is a MongoDB user or in-memory user
+    const isValidObjectId = /^[0-9a-fA-F]{24}$/.test(studentId);
+
+    if (isValidObjectId) {
+      // MongoDB user - save to database
+      await student.save();
+    } else {
+      // In-memory user - update in memory
+      const userIndex = inMemoryUsers.findIndex(user => user._id === studentId);
+      if (userIndex !== -1) {
+        inMemoryUsers[userIndex] = { ...inMemoryUsers[userIndex], password: hashedNewPassword };
+      }
+    }
+
+    res.json({
+      success: true,
+      message: 'Password changed successfully.'
+    });
+
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Failed to change password.',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+};
+
+// Delete student account
+export const deleteStudentAccount = async (req, res) => {
+  try {
+    const studentId = req.studentId;
+
+    let student = null;
+    
+    // Check if studentId is a valid MongoDB ObjectId
+    if (/^[0-9a-fA-F]{24}$/.test(studentId)) {
+      student = await Student.findById(studentId);
+    }
+    
+    // If not found in MongoDB or not a valid ObjectId, check in-memory storage
+    if (!student) {
+      student = inMemoryUsers.find(user => user._id === studentId);
+    }
+
+    if (!student) {
+      return res.status(404).json({
+        success: false,
+        message: 'Student not found.'
+      });
+    }
+
+    // Check if this is a MongoDB user or in-memory user
+    const isValidObjectId = /^[0-9a-fA-F]{24}$/.test(studentId);
+
+    if (isValidObjectId) {
+      // MongoDB user - delete related data and then the student
+      try {
+        // Delete related notifications
+        const Notification = (await import('../models/Notification.js')).default;
+        await Notification.deleteMany({ 
+          recipient: studentId, 
+          recipientModel: 'Student' 
+        });
+
+        // Delete related enrollments
+        const Enrollment = (await import('../models/Enrollment.js')).default;
+        await Enrollment.deleteMany({ studentId: studentId });
+
+        // Delete related payments (optional - you might want to keep payment records)
+        // const Payment = (await import('../models/Payment.js')).default;
+        // await Payment.deleteMany({ userId: studentId });
+
+        // Delete the student
+        await Student.findByIdAndDelete(studentId);
+      } catch (dbError) {
+        // If MongoDB operations fail, still try to delete the student
+        try {
+          await Student.findByIdAndDelete(studentId);
+        } catch (deleteError) {
+          return res.status(500).json({
+            success: false,
+            message: 'Failed to delete account.',
+            error: process.env.NODE_ENV === 'development' ? deleteError.message : undefined
+          });
+        }
+      }
+    } else {
+      // In-memory user - remove from in-memory storage
+      const userIndex = inMemoryUsers.findIndex(user => user._id === studentId);
+      if (userIndex !== -1) {
+        inMemoryUsers.splice(userIndex, 1);
+      }
+    }
+
+    res.json({
+      success: true,
+      message: 'Account deleted successfully.'
+    });
+
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Failed to delete account.',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }
 };

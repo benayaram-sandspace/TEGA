@@ -4,9 +4,13 @@ import 'package:video_player/video_player.dart';
 import 'package:tega/features/1_authentication/data/auth_repository.dart';
 import 'package:tega/core/constants/api_constants.dart';
 import 'package:tega/features/5_student_dashboard/data/payment_service.dart';
+import 'package:tega/core/config/env_config.dart';
+import 'package:tega/core/services/video_cache_service.dart';
 import 'package:http/http.dart' as http;
 import 'package:razorpay_flutter/razorpay_flutter.dart';
 import 'dart:convert';
+import 'dart:async';
+import 'dart:io';
 
 class CourseContentPage extends StatefulWidget {
   final Map<String, dynamic> course;
@@ -32,6 +36,22 @@ class _CourseContentPageState extends State<CourseContentPage> {
   Duration _currentPosition = Duration.zero;
   Duration _totalDuration = Duration.zero;
 
+  // Progress bar dragging
+  bool _isDraggingProgress = false;
+  double? _dragProgressPosition;
+  bool _isHoveringProgress = false;
+  bool _isSeeking = false;
+
+  // Drag-up gesture for fullscreen
+  bool _isDraggingUp = false;
+  double _dragUpStartY = 0;
+  double _dragUpStartX = 0;
+  double _dragUpTotalDelta = 0;
+  double _dragUpHorizontalDelta = 0;
+
+  // Controls timer
+  Timer? _hideControlsTimer;
+
   // Module expansion state
   Map<String, bool> _expandedModules = {};
 
@@ -42,15 +62,48 @@ class _CourseContentPageState extends State<CourseContentPage> {
   final PaymentService _paymentService = PaymentService();
   bool _isPaymentLoading = false;
 
+  // Video cache service
+  final VideoCacheService _videoCacheService = VideoCacheService();
+
   @override
   void initState() {
     super.initState();
+    _initializeVideoCache();
     _loadCourseContent();
     _initializeRazorpay();
   }
 
+  Future<void> _initializeVideoCache() async {
+    await _videoCacheService.initialize();
+  }
+
+  /// Preload upcoming videos in background
+  Future<void> _preloadUpcomingVideos(int currentIndex) async {
+    // Preload next 2-3 videos for smoother playback
+    final preloadCount = 3;
+    for (int i = 1; i <= preloadCount; i++) {
+      final nextIndex = currentIndex + i;
+      if (nextIndex < _lectures.length) {
+        final nextLecture = _lectures[nextIndex];
+        if (!nextLecture['isLocked'] && nextLecture['videoKey'] != null) {
+          try {
+            final videoUrl = await _getSignedVideoUrl(
+              widget.course['id'],
+              nextLecture['id'],
+            );
+            // Preload in background (don't await)
+            _videoCacheService.preloadVideo(videoUrl);
+          } catch (e) {
+            // Silently handle preload errors
+          }
+        }
+      }
+    }
+  }
+
   @override
   void dispose() {
+    _hideControlsTimer?.cancel();
     _videoController?.removeListener(_videoListener);
     _videoController?.dispose();
     _paymentService.dispose();
@@ -73,7 +126,7 @@ class _CourseContentPageState extends State<CourseContentPage> {
       }
 
       final authService = AuthService();
-      final headers = await authService.getAuthHeaders();
+      final headers = authService.getAuthHeaders();
 
       final apiUrl = ApiEndpoints.realTimeCourseContent(courseId);
 
@@ -104,7 +157,7 @@ class _CourseContentPageState extends State<CourseContentPage> {
             final moduleLectures = module['lectures'] as List<dynamic>? ?? [];
 
             for (final lecture in moduleLectures) {
-              final isPreview = lecture['isPreview'] ?? false;
+              bool isPreview = lecture['isPreview'] ?? false;
               final isRestricted = lecture['isRestricted'] ?? false;
 
               // Extract video key for signed URL generation
@@ -113,11 +166,27 @@ class _CourseContentPageState extends State<CourseContentPage> {
                 videoKey = lecture['videoContent']?['r2Key'] ?? '';
               }
 
+              // Best-effort duration extraction
+              final dynamic durationSecondsRaw =
+                  lecture['videoContent']?['durationSeconds'] ??
+                  lecture['durationSeconds'] ??
+                  ((lecture['videoContent']?['durationMs'] ??
+                              lecture['durationMs'])
+                          is int
+                      ? ((lecture['videoContent']?['durationMs'] ??
+                                    lecture['durationMs']) /
+                                1000)
+                            .round()
+                      : null);
+
+              final dynamic durationValue =
+                  durationSecondsRaw ?? lecture['duration'] ?? '0:00';
+
               final lectureData = {
                 'id': lecture['_id'] ?? lecture['id'] ?? '',
                 'title': lecture['title'] ?? 'Untitled Lecture',
                 'description': lecture['description'] ?? '',
-                'duration': lecture['duration'] ?? '0:00',
+                'duration': durationValue,
                 'videoKey': videoKey, // Store video key instead of direct URL
                 'videoUrl': '', // Will be populated when we get signed URL
                 'isPreview': isPreview,
@@ -136,6 +205,20 @@ class _CourseContentPageState extends State<CourseContentPage> {
           _lectures.sort(
             (a, b) => (a['order'] as int).compareTo(b['order'] as int),
           );
+
+          // Ensure only Introduction is marked as preview
+          if (_lectures.isNotEmpty) {
+            // Find an introduction lecture by title; fallback to the very first lecture
+            int introIndex = _lectures.indexWhere(
+              (l) => (l['title'] as String).toLowerCase().contains('intro'),
+            );
+            if (introIndex < 0) introIndex = 0;
+            for (int i = 0; i < _lectures.length; i++) {
+              final bool isIntro = i == introIndex;
+              _lectures[i]['isPreview'] = isIntro;
+              _lectures[i]['isLocked'] = !_isEnrolled && !isIntro;
+            }
+          }
 
           // Initialize module expansion state (all expanded by default)
           _expandedModules.clear();
@@ -216,7 +299,7 @@ class _CourseContentPageState extends State<CourseContentPage> {
   Future<String> _getSignedVideoUrl(String courseId, String lectureId) async {
     try {
       final authService = AuthService();
-      final headers = await authService.getAuthHeaders();
+      final headers = authService.getAuthHeaders();
 
       final apiUrl = ApiEndpoints.videoDeliverySignedUrl(courseId, lectureId);
 
@@ -299,17 +382,50 @@ class _CourseContentPageState extends State<CourseContentPage> {
       // Dispose previous controller
       await _videoController?.dispose();
 
-      // Create new controller
-      _videoController = VideoPlayerController.networkUrl(Uri.parse(videoUrl));
+      // Check cache first - if cached, use local file, otherwise use network URL
+      String? cachedVideoPath = await _videoCacheService.getCachedVideoPath(
+        videoUrl,
+      );
+      VideoPlayerController controller;
+
+      if (cachedVideoPath != null && await File(cachedVideoPath).exists()) {
+        // Use cached video file
+        controller = VideoPlayerController.file(
+          File(cachedVideoPath),
+          videoPlayerOptions: VideoPlayerOptions(
+            mixWithOthers: false,
+            allowBackgroundPlayback: false,
+          ),
+        );
+      } else {
+        // Use network URL and cache it in background
+        controller = VideoPlayerController.networkUrl(
+          Uri.parse(videoUrl),
+          videoPlayerOptions: VideoPlayerOptions(
+            mixWithOthers: false,
+            allowBackgroundPlayback: false,
+          ),
+        );
+
+        // Start caching video in background (don't await)
+        _videoCacheService.cacheVideo(videoUrl).catchError((_) {
+          // Silently handle cache errors - video will still play from network
+          return null;
+        });
+      }
+
+      _videoController = controller;
 
       // Add listeners
       _videoController!.addListener(_videoListener);
 
       await _videoController!.initialize();
 
-      // Set initial duration
+      // Set initial duration and optimize playback
       if (_videoController!.value.isInitialized) {
         _totalDuration = _videoController!.value.duration;
+        _videoController!.setLooping(false);
+        _videoController!.setVolume(1.0);
       }
 
       setState(() {
@@ -323,6 +439,9 @@ class _CourseContentPageState extends State<CourseContentPage> {
       if (index == 0) {
         _videoController!.play();
       }
+
+      // Preload next 2-3 videos in background for smoother experience
+      _preloadUpcomingVideos(index);
     } catch (e) {
       setState(() {
         _errorMessage =
@@ -335,7 +454,18 @@ class _CourseContentPageState extends State<CourseContentPage> {
 
   void _videoListener() {
     if (_videoController!.value.hasError) {
-      _handleVideoError();
+      // Only handle error if we're not currently seeking
+      // Seek operations can sometimes trigger transient errors
+      if (!_isSeeking && !_isDraggingProgress) {
+        // Check if it's a real error or just a seek-related transient error
+        final errorDescription = _videoController!.value.errorDescription ?? '';
+
+        // Ignore transient seek errors
+        if (!errorDescription.toLowerCase().contains('seek') &&
+            !errorDescription.toLowerCase().contains('position')) {
+          _handleVideoError();
+        }
+      }
     } else {
       setState(() {
         _currentPosition = _videoController!.value.position;
@@ -345,11 +475,16 @@ class _CourseContentPageState extends State<CourseContentPage> {
   }
 
   void _handleVideoError() {
-    setState(() {
-      _errorMessage =
-          'Video file not found. The video may have been moved or is temporarily unavailable.';
-      _isVideoInitialized = false;
-    });
+    // Only set error if video is actually initialized and has a real error
+    if (_videoController != null &&
+        _videoController!.value.isInitialized &&
+        _videoController!.value.hasError) {
+      setState(() {
+        _errorMessage =
+            'Video file not found. The video may have been moved or is temporarily unavailable.';
+        _isVideoInitialized = false;
+      });
+    }
   }
 
   // Video control methods
@@ -361,10 +496,55 @@ class _CourseContentPageState extends State<CourseContentPage> {
         _videoController!.play();
       }
     });
+    _showControlsTemporarily();
   }
 
-  void _seekTo(Duration position) {
-    _videoController!.seekTo(position);
+  void _seekTo(Duration position) async {
+    if (_videoController == null || !_videoController!.value.isInitialized) {
+      return;
+    }
+
+    // Validate duration is valid
+    if (_totalDuration == Duration.zero || _totalDuration.inMilliseconds <= 0) {
+      return;
+    }
+
+    try {
+      // Ensure position is within valid range
+      final clampedPosition = position < Duration.zero
+          ? Duration.zero
+          : (position > _totalDuration ? _totalDuration : position);
+
+      // Don't seek if position is the same (within 1 second)
+      if ((clampedPosition - _currentPosition).abs().inSeconds < 1) {
+        return;
+      }
+
+      setState(() {
+        _isSeeking = true;
+      });
+
+      await _videoController!.seekTo(clampedPosition);
+
+      // Wait a bit for seek to complete before clearing the flag
+      await Future.delayed(const Duration(milliseconds: 300));
+
+      if (mounted) {
+        setState(() {
+          _isSeeking = false;
+        });
+      }
+    } catch (e) {
+      // Seek errors are not fatal - just log and continue
+      // These are usually transient network issues or buffering problems
+      if (mounted) {
+        setState(() {
+          _isSeeking = false;
+        });
+      }
+      // Don't set error message for seek failures - they're usually transient
+      // and don't indicate a course loading failure
+    }
   }
 
   void _skipForward() {
@@ -372,6 +552,7 @@ class _CourseContentPageState extends State<CourseContentPage> {
     if (newPosition <= _totalDuration) {
       _seekTo(newPosition);
     }
+    _showControlsTemporarily();
   }
 
   void _skipBackward() {
@@ -379,6 +560,7 @@ class _CourseContentPageState extends State<CourseContentPage> {
     if (newPosition >= Duration.zero) {
       _seekTo(newPosition);
     }
+    _showControlsTemporarily();
   }
 
   void _toggleFullscreen() {
@@ -422,9 +604,15 @@ class _CourseContentPageState extends State<CourseContentPage> {
       _showControls = true;
     });
 
-    // Hide controls after 3 seconds
-    Future.delayed(const Duration(seconds: 3), () {
-      if (mounted && _videoController!.value.isPlaying) {
+    // Cancel any existing timer
+    _hideControlsTimer?.cancel();
+
+    // Hide controls after 2 seconds if video is playing
+    _hideControlsTimer = Timer(const Duration(seconds: 2), () {
+      if (mounted &&
+          _showControls &&
+          _videoController != null &&
+          _videoController!.value.isPlaying) {
         _hideControls();
       }
     });
@@ -519,13 +707,29 @@ class _CourseContentPageState extends State<CourseContentPage> {
       _isPaymentLoading = false;
     });
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Payment failed: ${response.message}'),
-        backgroundColor: Colors.red,
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
+    try {
+      final int code = (response.code is int) ? response.code as int : -1;
+      final String msg = (response.message ?? '').toString();
+      final bool isCancelled =
+          code == 2 || msg.toLowerCase().contains('cancel');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            isCancelled ? 'Payment cancelled' : 'Payment failed: $msg',
+          ),
+          backgroundColor: isCancelled ? Colors.grey : Colors.red,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    } catch (_) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Payment failed'),
+          backgroundColor: Colors.red,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
   }
 
   void _handleExternalWallet(ExternalWalletResponse response) {
@@ -559,14 +763,22 @@ class _CourseContentPageState extends State<CourseContentPage> {
         final user = authService.currentUser;
 
         // Open Razorpay payment
+        // Backend returns amount in paise, so use it directly
+        final amountPaise = orderResult['amount'] is int
+            ? orderResult['amount'] as int
+            : ((orderResult['chargedAmount'] ?? 0) is num
+                  ? ((orderResult['chargedAmount'] as num) * 100).round()
+                  : 0);
+
         _paymentService.openPayment(
           orderId: orderResult['orderId'],
-          keyId: orderResult['keyId'], // Get key from backend response
+          keyId: EnvConfig
+              .razorpayKeyId, // Backend doesn't return keyId, use env config
           name: 'TEGA Learning Platform',
           description:
               'Course Enrollment - ${widget.course['title'] ?? 'Course'}',
-          amount: orderResult['chargedAmount'],
-          currency: 'INR',
+          amount: amountPaise,
+          currency: orderResult['currency'] ?? 'INR',
           prefillEmail: user?.email ?? '',
           prefillContact: user?.phone ?? '',
           notes: {
@@ -770,6 +982,24 @@ class _CourseContentPageState extends State<CourseContentPage> {
 
                       const SizedBox(height: 24),
 
+                      // Title and description
+                      const Text(
+                        'This lecture is locked',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF1A1A1A),
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Buy the course to unlock all premium videos or go back.',
+                        style: TextStyle(fontSize: 14, color: Colors.grey),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 16),
+
                       // Action button
                       Container(
                         width: double.infinity,
@@ -794,7 +1024,19 @@ class _CourseContentPageState extends State<CourseContentPage> {
                           child: InkWell(
                             onTap: () {
                               Navigator.of(context).pop();
-                              _startPayment();
+                              if (_isEnrolled) {
+                                // Jump to first available lecture
+                                int targetIndex = 0;
+                                for (int i = 0; i < _lectures.length; i++) {
+                                  if (!_lectures[i]['isLocked']) {
+                                    targetIndex = i;
+                                    break;
+                                  }
+                                }
+                                _initializeVideo(targetIndex);
+                              } else {
+                                _startPayment();
+                              }
                             },
                             borderRadius: BorderRadius.circular(12),
                             child: Center(
@@ -822,19 +1064,21 @@ class _CourseContentPageState extends State<CourseContentPage> {
                                         ),
                                       ],
                                     )
-                                  : const Row(
+                                  : Row(
                                       mainAxisAlignment:
                                           MainAxisAlignment.center,
                                       children: [
-                                        Icon(
+                                        const Icon(
                                           Icons.shopping_cart_rounded,
                                           color: Colors.white,
                                           size: 20,
                                         ),
-                                        SizedBox(width: 8),
+                                        const SizedBox(width: 8),
                                         Text(
-                                          'Enroll Now',
-                                          style: TextStyle(
+                                          _isEnrolled
+                                              ? 'Continue Learning'
+                                              : 'Buy Course',
+                                          style: const TextStyle(
                                             fontSize: 16,
                                             fontWeight: FontWeight.w600,
                                             color: Colors.white,
@@ -842,6 +1086,30 @@ class _CourseContentPageState extends State<CourseContentPage> {
                                         ),
                                       ],
                                     ),
+                            ),
+                          ),
+                        ),
+                      ),
+
+                      const SizedBox(height: 12),
+
+                      SizedBox(
+                        width: double.infinity,
+                        height: 48,
+                        child: OutlinedButton(
+                          onPressed: () => Navigator.of(context).pop(),
+                          style: OutlinedButton.styleFrom(
+                            side: const BorderSide(color: Color(0xFF6B5FFF)),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            foregroundColor: const Color(0xFF6B5FFF),
+                          ),
+                          child: const Text(
+                            'Go Back',
+                            style: TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w600,
                             ),
                           ),
                         ),
@@ -928,16 +1196,62 @@ class _CourseContentPageState extends State<CourseContentPage> {
     );
   }
 
-  Widget _buildHeader() {
-    final screenWidth = MediaQuery.of(context).size.width;
-    final isTablet = screenWidth > 600;
+  // Responsive breakpoints
+  double get mobileBreakpoint => 600;
+  double get tabletBreakpoint => 1024;
+  double get desktopBreakpoint => 1440;
+  bool get isMobile => MediaQuery.of(context).size.width < mobileBreakpoint;
+  bool get isTablet =>
+      MediaQuery.of(context).size.width >= mobileBreakpoint &&
+      MediaQuery.of(context).size.width < tabletBreakpoint;
+  bool get isDesktop =>
+      MediaQuery.of(context).size.width >= tabletBreakpoint &&
+      MediaQuery.of(context).size.width < desktopBreakpoint;
+  bool get isLargeDesktop =>
+      MediaQuery.of(context).size.width >= desktopBreakpoint;
+  bool get isSmallScreen => MediaQuery.of(context).size.width < 400;
 
+  Widget _buildHeader() {
     return Container(
       padding: EdgeInsets.only(
-        left: isTablet ? 24 : 16,
-        right: isTablet ? 24 : 16,
-        top: MediaQuery.of(context).padding.top + (isTablet ? 16 : 12),
-        bottom: isTablet ? 16 : 12,
+        left: isLargeDesktop
+            ? 32
+            : isDesktop
+            ? 24
+            : isTablet
+            ? 20
+            : isSmallScreen
+            ? 12
+            : 16,
+        right: isLargeDesktop
+            ? 32
+            : isDesktop
+            ? 24
+            : isTablet
+            ? 20
+            : isSmallScreen
+            ? 12
+            : 16,
+        top:
+            MediaQuery.of(context).padding.top +
+            (isLargeDesktop
+                ? 20
+                : isDesktop
+                ? 16
+                : isTablet
+                ? 14
+                : isSmallScreen
+                ? 8
+                : 12),
+        bottom: isLargeDesktop
+            ? 20
+            : isDesktop
+            ? 16
+            : isTablet
+            ? 14
+            : isSmallScreen
+            ? 8
+            : 12,
       ),
       decoration: const BoxDecoration(
         color: Colors.white,
@@ -949,8 +1263,29 @@ class _CourseContentPageState extends State<CourseContentPage> {
         children: [
           IconButton(
             onPressed: () => Navigator.pop(context),
-            icon: Icon(Icons.arrow_back, size: isTablet ? 28 : 24),
-            padding: EdgeInsets.all(isTablet ? 8 : 4),
+            icon: Icon(
+              Icons.arrow_back,
+              size: isLargeDesktop
+                  ? 32
+                  : isDesktop
+                  ? 28
+                  : isTablet
+                  ? 26
+                  : isSmallScreen
+                  ? 20
+                  : 24,
+            ),
+            padding: EdgeInsets.all(
+              isLargeDesktop
+                  ? 12
+                  : isDesktop
+                  ? 10
+                  : isTablet
+                  ? 8
+                  : isSmallScreen
+                  ? 4
+                  : 6,
+            ),
           ),
           Expanded(
             child: Column(
@@ -959,40 +1294,106 @@ class _CourseContentPageState extends State<CourseContentPage> {
                 Text(
                   widget.course['title'] ?? 'Course',
                   style: TextStyle(
-                    fontSize: isTablet ? 20 : 16,
+                    fontSize: isLargeDesktop
+                        ? 24
+                        : isDesktop
+                        ? 22
+                        : isTablet
+                        ? 20
+                        : isSmallScreen
+                        ? 14
+                        : 16,
                     fontWeight: FontWeight.bold,
                   ),
-                  maxLines: isTablet ? 2 : 1,
+                  maxLines: isLargeDesktop || isDesktop
+                      ? 3
+                      : isTablet
+                      ? 2
+                      : 1,
                   overflow: TextOverflow.ellipsis,
                 ),
-                if (_lectures.isNotEmpty)
+                if (_lectures.isNotEmpty) ...[
+                  SizedBox(
+                    height: isLargeDesktop || isDesktop
+                        ? 6
+                        : isTablet
+                        ? 4
+                        : 2,
+                  ),
                   Text(
                     _lectures[_currentLectureIndex]['title'],
                     style: TextStyle(
-                      fontSize: isTablet ? 14 : 12,
+                      fontSize: isLargeDesktop
+                          ? 16
+                          : isDesktop
+                          ? 15
+                          : isTablet
+                          ? 14
+                          : isSmallScreen
+                          ? 10
+                          : 12,
                       color: Colors.grey,
                     ),
-                    maxLines: isTablet ? 2 : 1,
+                    maxLines: isLargeDesktop || isDesktop
+                        ? 3
+                        : isTablet
+                        ? 2
+                        : 1,
                     overflow: TextOverflow.ellipsis,
                   ),
+                ],
               ],
             ),
           ),
           if (!_isEnrolled)
             Container(
               padding: EdgeInsets.symmetric(
-                horizontal: isTablet ? 12 : 8,
-                vertical: isTablet ? 6 : 4,
+                horizontal: isLargeDesktop
+                    ? 16
+                    : isDesktop
+                    ? 14
+                    : isTablet
+                    ? 12
+                    : isSmallScreen
+                    ? 6
+                    : 8,
+                vertical: isLargeDesktop
+                    ? 8
+                    : isDesktop
+                    ? 7
+                    : isTablet
+                    ? 6
+                    : isSmallScreen
+                    ? 3
+                    : 4,
               ),
               decoration: BoxDecoration(
                 color: Colors.orange,
-                borderRadius: BorderRadius.circular(isTablet ? 12 : 8),
+                borderRadius: BorderRadius.circular(
+                  isLargeDesktop
+                      ? 14
+                      : isDesktop
+                      ? 12
+                      : isTablet
+                      ? 10
+                      : isSmallScreen
+                      ? 6
+                      : 8,
+                ),
               ),
               child: Text(
                 'Preview',
                 style: TextStyle(
                   color: Colors.white,
-                  fontSize: isTablet ? 12 : 10,
+                  fontSize: isLargeDesktop
+                      ? 14
+                      : isDesktop
+                      ? 13
+                      : isTablet
+                      ? 12
+                      : isSmallScreen
+                      ? 9
+                      : 10,
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -1037,9 +1438,15 @@ class _CourseContentPageState extends State<CourseContentPage> {
             ? Container(
                 height: _isFullscreen
                     ? double.infinity
+                    : isLargeDesktop
+                    ? 500
+                    : isDesktop
+                    ? 450
                     : isTablet
-                    ? 300
-                    : 200,
+                    ? 350
+                    : isSmallScreen
+                    ? 180
+                    : 220,
                 color: Colors.black,
                 child: Center(
                   child: Column(
@@ -1224,30 +1631,74 @@ class _CourseContentPageState extends State<CourseContentPage> {
   }
 
   Widget _buildAdvancedVideoPlayer() {
-    final screenWidth = MediaQuery.of(context).size.width;
-    final isTablet = screenWidth > 600;
-
     return GestureDetector(
       onTap: () {
-        _showControlsTemporarily();
+        if (!_isDraggingUp) {
+          _showControlsTemporarily();
+        }
       },
       onDoubleTapDown: (details) {
-        final screenWidth = MediaQuery.of(context).size.width;
-        final tapPosition = details.globalPosition.dx;
+        if (!_isDraggingUp) {
+          final screenWidth = MediaQuery.of(context).size.width;
+          final tapPosition = details.globalPosition.dx;
 
-        if (tapPosition < screenWidth / 2) {
-          // Double tap left side - rewind 10 seconds
-          _skipBackward();
-        } else {
-          // Double tap right side - forward 10 seconds
-          _skipForward();
+          if (tapPosition < screenWidth / 2) {
+            // Double tap left side - rewind 10 seconds
+            _skipBackward();
+          } else {
+            // Double tap right side - forward 10 seconds
+            _skipForward();
+          }
+        }
+      },
+      onPanStart: (details) {
+        // Track drag gesture for fullscreen toggle
+        // Only start tracking if not dragging on progress bar
+        if (!_isDraggingProgress) {
+          _isDraggingUp = true;
+          _dragUpStartY = details.globalPosition.dy;
+          _dragUpStartX = details.globalPosition.dx;
+          _dragUpTotalDelta = 0;
+          _dragUpHorizontalDelta = 0;
         }
       },
       onPanUpdate: (details) {
-        // Drag up gesture for fullscreen
-        if (details.delta.dy < -10) {
-          _toggleFullscreen();
+        if (_isDraggingUp && !_isDraggingProgress) {
+          final currentY = details.globalPosition.dy;
+          final currentX = details.globalPosition.dx;
+          _dragUpTotalDelta =
+              _dragUpStartY -
+              currentY; // Positive when dragging up, negative when dragging down
+          _dragUpHorizontalDelta = (currentX - _dragUpStartX).abs();
+
+          // Cancel vertical drag if horizontal movement is too large (user is seeking)
+          if (_dragUpHorizontalDelta > 30) {
+            _isDraggingUp = false;
+          }
         }
+      },
+      onPanEnd: (details) {
+        if (_isDraggingUp && !_isDraggingProgress) {
+          // Only trigger if vertical movement is significant and horizontal movement is minimal
+          if (_dragUpHorizontalDelta < 30) {
+            // Drag up to enter fullscreen (when not in fullscreen)
+            if (!_isFullscreen && _dragUpTotalDelta > 50) {
+              _toggleFullscreen();
+            }
+            // Drag down to exit fullscreen (when in fullscreen)
+            else if (_isFullscreen && _dragUpTotalDelta < -50) {
+              _toggleFullscreen();
+            }
+          }
+          _isDraggingUp = false;
+          _dragUpTotalDelta = 0;
+          _dragUpHorizontalDelta = 0;
+        }
+      },
+      onPanCancel: () {
+        _isDraggingUp = false;
+        _dragUpTotalDelta = 0;
+        _dragUpHorizontalDelta = 0;
       },
       child: Container(
         height: _isFullscreen
@@ -1368,7 +1819,7 @@ class _CourseContentPageState extends State<CourseContentPage> {
                 const SizedBox(width: 8),
                 // Time Display
                 Text(
-                  '${_formatTime(_currentPosition)} / ${_formatTime(_totalDuration)}',
+                  '${_formatTime(_isDraggingProgress && _dragProgressPosition != null ? Duration(milliseconds: _dragProgressPosition!.round()) : _currentPosition)} / ${_formatTime(_totalDuration)}',
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 12,
@@ -1415,63 +1866,156 @@ class _CourseContentPageState extends State<CourseContentPage> {
   }
 
   Widget _buildYouTubeProgressBar() {
-    return GestureDetector(
-      onTapDown: (details) {
-        final RenderBox renderBox = context.findRenderObject() as RenderBox;
-        final localPosition = renderBox.globalToLocal(details.globalPosition);
-        final progress = localPosition.dx / renderBox.size.width;
-        final newPosition = Duration(
-          milliseconds: (_totalDuration.inMilliseconds * progress).round(),
+    final position = _isDraggingProgress && _dragProgressPosition != null
+        ? Duration(milliseconds: _dragProgressPosition!.round())
+        : _currentPosition;
+
+    final progress = _totalDuration.inMilliseconds > 0
+        ? position.inMilliseconds / _totalDuration.inMilliseconds
+        : 0.0;
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return MouseRegion(
+          onEnter: (_) {
+            setState(() {
+              _isHoveringProgress = true;
+            });
+          },
+          onExit: (_) {
+            if (!_isDraggingProgress) {
+              setState(() {
+                _isHoveringProgress = false;
+              });
+            }
+          },
+          child: GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onHorizontalDragStart: (details) {
+              setState(() {
+                _isDraggingProgress = true;
+                _isHoveringProgress = true;
+                _showControls = true;
+              });
+            },
+            onHorizontalDragUpdate: (details) {
+              final localPosition = details.localPosition.dx;
+              final newProgress = (localPosition / constraints.maxWidth).clamp(
+                0.0,
+                1.0,
+              );
+
+              setState(() {
+                _dragProgressPosition =
+                    _totalDuration.inMilliseconds * newProgress;
+              });
+            },
+            onHorizontalDragEnd: (details) {
+              if (_dragProgressPosition != null &&
+                  _totalDuration.inMilliseconds > 0) {
+                final seekPosition = Duration(
+                  milliseconds: _dragProgressPosition!.round().clamp(
+                    0,
+                    _totalDuration.inMilliseconds,
+                  ),
+                );
+                _seekTo(seekPosition);
+              }
+              setState(() {
+                _isDraggingProgress = false;
+                _dragProgressPosition = null;
+              });
+              _showControlsTemporarily();
+            },
+            onTapDown: (details) {
+              final localPosition = details.localPosition.dx;
+              final newProgress = (localPosition / constraints.maxWidth).clamp(
+                0.0,
+                1.0,
+              );
+              final newPosition = Duration(
+                milliseconds: (_totalDuration.inMilliseconds * newProgress)
+                    .round()
+                    .clamp(0, _totalDuration.inMilliseconds),
+              );
+              _seekTo(newPosition);
+              _showControlsTemporarily();
+            },
+            child: Container(
+              height: _isHoveringProgress || _isDraggingProgress ? 8 : 4,
+              padding: EdgeInsets.symmetric(
+                vertical: _isHoveringProgress || _isDraggingProgress ? 2 : 0,
+              ),
+              child: Stack(
+                alignment: Alignment.centerLeft,
+                children: [
+                  // Background track - YouTube style (very thin)
+                  Container(
+                    height: _isHoveringProgress || _isDraggingProgress ? 4 : 3,
+                    width: constraints.maxWidth,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.3),
+                      borderRadius: BorderRadius.circular(1.5),
+                    ),
+                  ),
+                  // Played progress - YouTube red
+                  AnimatedContainer(
+                    duration: const Duration(milliseconds: 50),
+                    height: _isHoveringProgress || _isDraggingProgress ? 4 : 3,
+                    width: constraints.maxWidth * progress.clamp(0.0, 1.0),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFDC2626), // YouTube red
+                      borderRadius: BorderRadius.circular(1.5),
+                    ),
+                  ),
+                  // Thumb - YouTube style (hidden by default, shows on hover/drag)
+                  if (_isHoveringProgress ||
+                      _isDraggingProgress ||
+                      _showControls)
+                    AnimatedPositioned(
+                      duration: const Duration(milliseconds: 50),
+                      curve: Curves.easeOut,
+                      left:
+                          (constraints.maxWidth * progress.clamp(0.0, 1.0)) -
+                          (_isDraggingProgress ? 10 : 8),
+                      child: AnimatedScale(
+                        scale: _isDraggingProgress ? 1.4 : 1.0,
+                        duration: const Duration(milliseconds: 150),
+                        curve: Curves.easeOut,
+                        child: Container(
+                          width: _isDraggingProgress ? 20 : 16,
+                          height: _isDraggingProgress ? 20 : 16,
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            shape: BoxShape.circle,
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.4),
+                                blurRadius: 4,
+                                offset: const Offset(0, 1),
+                                spreadRadius: 0.5,
+                              ),
+                            ],
+                          ),
+                          child: Center(
+                            child: Container(
+                              width: _isDraggingProgress ? 8 : 6,
+                              height: _isDraggingProgress ? 8 : 6,
+                              decoration: const BoxDecoration(
+                                color: Color(0xFFDC2626), // YouTube red center
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ),
         );
-        _seekTo(newPosition);
       },
-      child: Container(
-        height: 4,
-        margin: const EdgeInsets.symmetric(horizontal: 12),
-        child: Stack(
-          children: [
-            // Background
-            Container(
-              height: 4,
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.3),
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-            // Progress
-            Container(
-              height: 4,
-              width: _totalDuration.inMilliseconds > 0
-                  ? (MediaQuery.of(context).size.width - 24) *
-                        (_currentPosition.inMilliseconds /
-                            _totalDuration.inMilliseconds)
-                  : 0,
-              decoration: BoxDecoration(
-                color: Colors.red, // YouTube red color
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-            // Thumb (only visible on hover/touch)
-            Positioned(
-              left: _totalDuration.inMilliseconds > 0
-                  ? (MediaQuery.of(context).size.width - 24) *
-                            (_currentPosition.inMilliseconds /
-                                _totalDuration.inMilliseconds) -
-                        6
-                  : -6,
-              top: -2,
-              child: Container(
-                width: 12,
-                height: 12,
-                decoration: const BoxDecoration(
-                  color: Colors.red,
-                  shape: BoxShape.circle,
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
     );
   }
 
@@ -1489,20 +2033,54 @@ class _CourseContentPageState extends State<CourseContentPage> {
   }
 
   Widget _buildScrollableContent() {
-    final screenWidth = MediaQuery.of(context).size.width;
-    final isTablet = screenWidth > 600;
-    final isDesktop = screenWidth > 1200;
-
     return SingleChildScrollView(
       padding: EdgeInsets.fromLTRB(
-        isTablet ? 24 : 16,
-        16,
-        isTablet ? 24 : 16,
-        32,
+        isLargeDesktop
+            ? 32
+            : isDesktop
+            ? 24
+            : isTablet
+            ? 20
+            : isSmallScreen
+            ? 12
+            : 16,
+        isLargeDesktop
+            ? 20
+            : isDesktop
+            ? 18
+            : isTablet
+            ? 16
+            : isSmallScreen
+            ? 10
+            : 12,
+        isLargeDesktop
+            ? 32
+            : isDesktop
+            ? 24
+            : isTablet
+            ? 20
+            : isSmallScreen
+            ? 12
+            : 16,
+        isLargeDesktop
+            ? 40
+            : isDesktop
+            ? 36
+            : isTablet
+            ? 32
+            : isSmallScreen
+            ? 20
+            : 24,
       ),
       child: ConstrainedBox(
         constraints: BoxConstraints(
-          maxWidth: isDesktop ? 800 : double.infinity,
+          maxWidth: isLargeDesktop
+              ? 1200
+              : isDesktop
+              ? 1000
+              : isTablet
+              ? 800
+              : double.infinity,
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -1545,18 +2123,44 @@ class _CourseContentPageState extends State<CourseContentPage> {
     List<Map<String, dynamic>> lectures,
   ) {
     final isExpanded = _expandedModules[moduleTitle] ?? true;
-    final screenWidth = MediaQuery.of(context).size.width;
-    final isTablet = screenWidth > 600;
 
     return Container(
-      margin: EdgeInsets.only(bottom: isTablet ? 20 : 16),
+      margin: EdgeInsets.only(
+        bottom: isLargeDesktop
+            ? 24
+            : isDesktop
+            ? 22
+            : isTablet
+            ? 20
+            : isSmallScreen
+            ? 12
+            : 16,
+      ),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(isTablet ? 16 : 12),
+        borderRadius: BorderRadius.circular(
+          isLargeDesktop
+              ? 20
+              : isDesktop
+              ? 18
+              : isTablet
+              ? 16
+              : isSmallScreen
+              ? 8
+              : 12,
+        ),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.05),
-            blurRadius: isTablet ? 12 : 8,
+            blurRadius: isLargeDesktop
+                ? 16
+                : isDesktop
+                ? 14
+                : isTablet
+                ? 12
+                : isSmallScreen
+                ? 6
+                : 8,
             offset: const Offset(0, 2),
           ),
         ],
@@ -1567,7 +2171,17 @@ class _CourseContentPageState extends State<CourseContentPage> {
           GestureDetector(
             onTap: () => _toggleModuleExpansion(moduleTitle),
             child: Container(
-              padding: EdgeInsets.all(isTablet ? 20 : 16),
+              padding: EdgeInsets.all(
+                isLargeDesktop
+                    ? 24
+                    : isDesktop
+                    ? 22
+                    : isTablet
+                    ? 20
+                    : isSmallScreen
+                    ? 12
+                    : 16,
+              ),
               decoration: BoxDecoration(
                 border: Border(bottom: BorderSide(color: Colors.grey[200]!)),
               ),
@@ -1576,14 +2190,40 @@ class _CourseContentPageState extends State<CourseContentPage> {
                   Icon(
                     Icons.playlist_play,
                     color: const Color(0xFF6B5FFF),
-                    size: isTablet ? 24 : 20,
+                    size: isLargeDesktop
+                        ? 32
+                        : isDesktop
+                        ? 28
+                        : isTablet
+                        ? 24
+                        : isSmallScreen
+                        ? 18
+                        : 20,
                   ),
-                  SizedBox(width: isTablet ? 12 : 8),
+                  SizedBox(
+                    width: isLargeDesktop
+                        ? 16
+                        : isDesktop
+                        ? 14
+                        : isTablet
+                        ? 12
+                        : isSmallScreen
+                        ? 6
+                        : 8,
+                  ),
                   Expanded(
                     child: Text(
                       moduleTitle,
                       style: TextStyle(
-                        fontSize: isTablet ? 18 : 16,
+                        fontSize: isLargeDesktop
+                            ? 22
+                            : isDesktop
+                            ? 20
+                            : isTablet
+                            ? 18
+                            : isSmallScreen
+                            ? 14
+                            : 16,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -1591,18 +2231,44 @@ class _CourseContentPageState extends State<CourseContentPage> {
                   Text(
                     '${lectures.length} lectures',
                     style: TextStyle(
-                      fontSize: isTablet ? 14 : 12,
+                      fontSize: isLargeDesktop
+                          ? 16
+                          : isDesktop
+                          ? 15
+                          : isTablet
+                          ? 14
+                          : isSmallScreen
+                          ? 10
+                          : 12,
                       color: Colors.grey,
                     ),
                   ),
-                  SizedBox(width: isTablet ? 12 : 8),
+                  SizedBox(
+                    width: isLargeDesktop
+                        ? 16
+                        : isDesktop
+                        ? 14
+                        : isTablet
+                        ? 12
+                        : isSmallScreen
+                        ? 6
+                        : 8,
+                  ),
                   AnimatedRotation(
                     turns: isExpanded ? 0.5 : 0,
                     duration: const Duration(milliseconds: 200),
                     child: Icon(
                       Icons.expand_more,
                       color: Colors.grey,
-                      size: isTablet ? 24 : 20,
+                      size: isLargeDesktop
+                          ? 32
+                          : isDesktop
+                          ? 28
+                          : isTablet
+                          ? 24
+                          : isSmallScreen
+                          ? 18
+                          : 20,
                     ),
                   ),
                 ],
@@ -1630,19 +2296,61 @@ class _CourseContentPageState extends State<CourseContentPage> {
                 ),
                 child: ListTile(
                   contentPadding: EdgeInsets.symmetric(
-                    horizontal: isTablet ? 20 : 16,
-                    vertical: isTablet ? 12 : 8,
+                    horizontal: isLargeDesktop
+                        ? 24
+                        : isDesktop
+                        ? 22
+                        : isTablet
+                        ? 20
+                        : isSmallScreen
+                        ? 12
+                        : 16,
+                    vertical: isLargeDesktop
+                        ? 16
+                        : isDesktop
+                        ? 14
+                        : isTablet
+                        ? 12
+                        : isSmallScreen
+                        ? 6
+                        : 8,
                   ),
                   leading: Container(
-                    width: isTablet ? 40 : 32,
-                    height: isTablet ? 40 : 32,
+                    width: isLargeDesktop
+                        ? 56
+                        : isDesktop
+                        ? 48
+                        : isTablet
+                        ? 40
+                        : isSmallScreen
+                        ? 28
+                        : 32,
+                    height: isLargeDesktop
+                        ? 56
+                        : isDesktop
+                        ? 48
+                        : isTablet
+                        ? 40
+                        : isSmallScreen
+                        ? 28
+                        : 32,
                     decoration: BoxDecoration(
                       color: isLocked
                           ? Colors.grey[300]
                           : isSelected
                           ? const Color(0xFF6B5FFF)
                           : Colors.grey[200],
-                      borderRadius: BorderRadius.circular(isTablet ? 8 : 6),
+                      borderRadius: BorderRadius.circular(
+                        isLargeDesktop
+                            ? 12
+                            : isDesktop
+                            ? 10
+                            : isTablet
+                            ? 8
+                            : isSmallScreen
+                            ? 5
+                            : 6,
+                      ),
                     ),
                     child: Icon(
                       isLocked
@@ -1655,7 +2363,15 @@ class _CourseContentPageState extends State<CourseContentPage> {
                           : isSelected
                           ? Colors.white
                           : Colors.grey[600],
-                      size: isTablet ? 20 : 16,
+                      size: isLargeDesktop
+                          ? 28
+                          : isDesktop
+                          ? 24
+                          : isTablet
+                          ? 20
+                          : isSmallScreen
+                          ? 14
+                          : 16,
                     ),
                   ),
                   title: Text(
@@ -1669,67 +2385,189 @@ class _CourseContentPageState extends State<CourseContentPage> {
                           : isSelected
                           ? const Color(0xFF6B5FFF)
                           : Colors.black87,
-                      fontSize: isTablet ? 16 : 14,
+                      fontSize: isLargeDesktop
+                          ? 20
+                          : isDesktop
+                          ? 18
+                          : isTablet
+                          ? 16
+                          : isSmallScreen
+                          ? 12
+                          : 14,
                     ),
-                    maxLines: isTablet ? 3 : 2,
+                    maxLines: isLargeDesktop || isDesktop
+                        ? 4
+                        : isTablet
+                        ? 3
+                        : 2,
                     overflow: TextOverflow.ellipsis,
                   ),
                   subtitle: Row(
                     children: [
                       Icon(
                         Icons.access_time,
-                        size: isTablet ? 14 : 12,
+                        size: isLargeDesktop
+                            ? 18
+                            : isDesktop
+                            ? 16
+                            : isTablet
+                            ? 14
+                            : isSmallScreen
+                            ? 10
+                            : 12,
                         color: Colors.grey[500],
                       ),
-                      SizedBox(width: isTablet ? 6 : 4),
+                      SizedBox(
+                        width: isLargeDesktop
+                            ? 8
+                            : isDesktop
+                            ? 7
+                            : isTablet
+                            ? 6
+                            : isSmallScreen
+                            ? 3
+                            : 4,
+                      ),
                       Text(
                         _formatDuration(lecture['duration']),
                         style: TextStyle(
-                          fontSize: isTablet ? 14 : 12,
+                          fontSize: isLargeDesktop
+                              ? 16
+                              : isDesktop
+                              ? 15
+                              : isTablet
+                              ? 14
+                              : isSmallScreen
+                              ? 10
+                              : 12,
                           color: Colors.grey[500],
                         ),
                       ),
                       if (isPreview) ...[
-                        SizedBox(width: isTablet ? 10 : 8),
+                        SizedBox(
+                          width: isLargeDesktop
+                              ? 12
+                              : isDesktop
+                              ? 11
+                              : isTablet
+                              ? 10
+                              : isSmallScreen
+                              ? 6
+                              : 8,
+                        ),
                         Container(
                           padding: EdgeInsets.symmetric(
-                            horizontal: isTablet ? 8 : 6,
-                            vertical: isTablet ? 3 : 2,
+                            horizontal: isLargeDesktop
+                                ? 10
+                                : isDesktop
+                                ? 9
+                                : isTablet
+                                ? 8
+                                : isSmallScreen
+                                ? 5
+                                : 6,
+                            vertical: isLargeDesktop
+                                ? 4
+                                : isDesktop
+                                ? 3.5
+                                : isTablet
+                                ? 3
+                                : isSmallScreen
+                                ? 1.5
+                                : 2,
                           ),
                           decoration: BoxDecoration(
                             color: Colors.orange,
                             borderRadius: BorderRadius.circular(
-                              isTablet ? 8 : 6,
+                              isLargeDesktop
+                                  ? 10
+                                  : isDesktop
+                                  ? 9
+                                  : isTablet
+                                  ? 8
+                                  : isSmallScreen
+                                  ? 5
+                                  : 6,
                             ),
                           ),
                           child: Text(
                             'Preview',
                             style: TextStyle(
                               color: Colors.white,
-                              fontSize: isTablet ? 12 : 10,
+                              fontSize: isLargeDesktop
+                                  ? 14
+                                  : isDesktop
+                                  ? 13
+                                  : isTablet
+                                  ? 12
+                                  : isSmallScreen
+                                  ? 8
+                                  : 10,
                               fontWeight: FontWeight.w600,
                             ),
                           ),
                         ),
                       ],
                       if (isLocked) ...[
-                        SizedBox(width: isTablet ? 10 : 8),
+                        SizedBox(
+                          width: isLargeDesktop
+                              ? 12
+                              : isDesktop
+                              ? 11
+                              : isTablet
+                              ? 10
+                              : isSmallScreen
+                              ? 6
+                              : 8,
+                        ),
                         Container(
                           padding: EdgeInsets.symmetric(
-                            horizontal: isTablet ? 8 : 6,
-                            vertical: isTablet ? 3 : 2,
+                            horizontal: isLargeDesktop
+                                ? 10
+                                : isDesktop
+                                ? 9
+                                : isTablet
+                                ? 8
+                                : isSmallScreen
+                                ? 5
+                                : 6,
+                            vertical: isLargeDesktop
+                                ? 4
+                                : isDesktop
+                                ? 3.5
+                                : isTablet
+                                ? 3
+                                : isSmallScreen
+                                ? 1.5
+                                : 2,
                           ),
                           decoration: BoxDecoration(
                             color: Colors.grey[600],
                             borderRadius: BorderRadius.circular(
-                              isTablet ? 8 : 6,
+                              isLargeDesktop
+                                  ? 10
+                                  : isDesktop
+                                  ? 9
+                                  : isTablet
+                                  ? 8
+                                  : isSmallScreen
+                                  ? 5
+                                  : 6,
                             ),
                           ),
                           child: Text(
                             'Locked',
                             style: TextStyle(
                               color: Colors.white,
-                              fontSize: isTablet ? 12 : 10,
+                              fontSize: isLargeDesktop
+                                  ? 14
+                                  : isDesktop
+                                  ? 13
+                                  : isTablet
+                                  ? 12
+                                  : isSmallScreen
+                                  ? 8
+                                  : 10,
                               fontWeight: FontWeight.w600,
                             ),
                           ),

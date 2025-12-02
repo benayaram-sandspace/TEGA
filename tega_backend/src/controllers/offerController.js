@@ -693,6 +693,7 @@ export const getAvailableTegaExams = async (req, res) => {
       isTegaExam: true,
       isActive: true 
     }).select('_id title price effectivePrice description duration').sort({ createdAt: -1 });
+
     res.json({
       success: true,
       data: tegaExams
@@ -788,6 +789,433 @@ export const getOfferStats = async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Failed to fetch offer statistics',
+      error: error.message
+    });
+  }
+};
+
+// ============ PACKAGE OFFERS ============
+
+// Create package offer
+export const createPackageOffer = async (req, res) => {
+  try {
+    const {
+      packageName,
+      description,
+      includedCourses,
+      includedExam,
+      price,
+      validUntil,
+      instituteName
+    } = req.body;
+
+    // Get admin ID
+    let createdBy = null;
+    if (req.adminId) {
+      createdBy = req.adminId;
+    } else if (req.admin && req.admin._id) {
+      createdBy = req.admin._id;
+    } else if (req.user && req.user.id) {
+      createdBy = req.user.id;
+    } else if (req.user && req.user._id) {
+      createdBy = req.user._id;
+    }
+
+    if (!createdBy) {
+      return res.status(400).json({
+        success: false,
+        message: 'Admin authentication required'
+      });
+    }
+
+    // Validate required fields
+    if (!packageName || !instituteName || !price || !validUntil) {
+      return res.status(400).json({
+        success: false,
+        message: 'Package name, institute name, price, and valid until date are required'
+      });
+    }
+
+    if (!includedCourses || !Array.isArray(includedCourses) || includedCourses.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'At least one course must be included in the package'
+      });
+    }
+
+    // Validate courses exist
+    const validCourses = [];
+    for (const courseData of includedCourses) {
+      const courseId = courseData.courseId || courseData;
+      const courseName = courseData.courseName || courseData;
+      
+      if (!courseId.startsWith('default-')) {
+        const course = await RealTimeCourse.findById(courseId);
+        if (!course) {
+          continue; // Skip invalid courses
+        }
+        if (course.status !== 'published') {
+          continue; // Skip unpublished courses
+        }
+        validCourses.push({
+          courseId: courseId.toString(),
+          courseName: course.title || courseName
+        });
+      } else {
+        validCourses.push({
+          courseId: courseId,
+          courseName: courseName || 'Default Course'
+        });
+      }
+    }
+
+    if (validCourses.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'No valid courses found for this package'
+      });
+    }
+
+    // Validate exam if provided
+    let examData = null;
+    if (includedExam && includedExam.examId) {
+      const exam = await Exam.findById(includedExam.examId);
+      if (!exam) {
+        return res.status(400).json({
+          success: false,
+          message: 'TEGA exam not found'
+        });
+      }
+      if (!exam.isTegaExam) {
+        return res.status(400).json({
+          success: false,
+          message: 'Selected exam is not a TEGA exam'
+        });
+      }
+      examData = {
+        examId: exam._id,
+        examTitle: exam.title
+      };
+    }
+
+    // Find or create an offer document for this institute
+    let offer = await Offer.findOne({ instituteName });
+    
+    if (!offer) {
+      // Create a new offer document with just package offers
+      offer = new Offer({
+        instituteName,
+        courseOffers: [],
+        tegaExamOffers: [],
+        validUntil: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000), // 1 year default
+        createdBy,
+        description: 'Package offers for ' + instituteName
+      });
+    }
+
+    // Validate validUntil date
+    const validUntilDate = new Date(validUntil);
+    if (isNaN(validUntilDate.getTime())) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid valid until date format'
+      });
+    }
+
+    if (validUntilDate <= new Date()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Valid until date must be in the future'
+      });
+    }
+
+    // Add package offer
+    const newPackageOffer = {
+      packageName,
+      description: description || '',
+      includedCourses: validCourses,
+      includedExam: examData,
+      price: Number(price),
+      validUntil: validUntilDate,
+      instituteName,
+      isActive: true
+    };
+
+    offer.packageOffers.push(newPackageOffer);
+    await offer.save();
+
+    res.status(201).json({
+      success: true,
+      message: 'Package offer created successfully',
+      data: newPackageOffer
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Failed to create package offer',
+      error: error.message
+    });
+  }
+};
+
+// Get all package offers for an institute (for students)
+export const getPackageOffersForInstitute = async (req, res) => {
+  try {
+    const { instituteName } = req.params;
+
+    if (!instituteName) {
+      return res.status(400).json({
+        success: false,
+        message: 'Institute name is required'
+      });
+    }
+
+    // Find active offers with package offers for this institute
+    const offers = await Offer.find({
+      instituteName: { $regex: new RegExp(`^${instituteName}$`, 'i') },
+      'packageOffers.isActive': true
+    });
+
+    // Extract active package offers
+    const packageOffers = [];
+    offers.forEach(offer => {
+      offer.packageOffers.forEach(pkg => {
+        if (pkg.isActive && pkg.instituteName === instituteName) {
+          packageOffers.push({
+            packageId: pkg._id.toString(),
+            packageName: pkg.packageName,
+            description: pkg.description,
+            includedCourses: pkg.includedCourses,
+            includedExam: pkg.includedExam,
+            price: pkg.price,
+            validUntil: pkg.validUntil,
+            instituteName: pkg.instituteName
+          });
+        }
+      });
+    });
+
+    res.json({
+      success: true,
+      data: packageOffers
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch package offers',
+      error: error.message
+    });
+  }
+};
+
+// Get all package offers (admin)
+export const getAllPackageOffers = async (req, res) => {
+  try {
+    const offers = await Offer.find({
+      'packageOffers.0': { $exists: true } // Has at least one package offer
+    }).sort({ createdAt: -1 });
+
+    const packageOffers = [];
+    offers.forEach(offer => {
+      offer.packageOffers.forEach(pkg => {
+        packageOffers.push({
+          _id: pkg._id.toString(),
+          packageId: pkg._id.toString(),
+          packageName: pkg.packageName,
+          description: pkg.description,
+          includedCourses: pkg.includedCourses,
+          includedExam: pkg.includedExam,
+          price: pkg.price,
+          validUntil: pkg.validUntil,
+          instituteName: pkg.instituteName,
+          isActive: pkg.isActive,
+          createdAt: pkg.createdAt,
+          parentOfferId: offer._id
+        });
+      });
+    });
+
+    res.json({
+      success: true,
+      data: packageOffers
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch package offers',
+      error: error.message
+    });
+  }
+};
+
+// Update package offer
+export const updatePackageOffer = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const updateData = req.body;
+
+    // Find the offer containing this package
+    const offer = await Offer.findOne({ 'packageOffers._id': id });
+
+    if (!offer) {
+      return res.status(404).json({
+        success: false,
+        message: 'Package offer not found'
+      });
+    }
+
+    const packageOffer = offer.packageOffers.id(id);
+    if (!packageOffer) {
+      return res.status(404).json({
+        success: false,
+        message: 'Package offer not found'
+      });
+    }
+
+    // Update fields
+    if (updateData.packageName) packageOffer.packageName = updateData.packageName;
+    if (updateData.description !== undefined) packageOffer.description = updateData.description;
+    if (updateData.price) packageOffer.price = Number(updateData.price);
+    if (updateData.validUntil) {
+      const validUntilDate = new Date(updateData.validUntil);
+      if (isNaN(validUntilDate.getTime())) {
+        return res.status(400).json({
+          success: false,
+          message: 'Invalid valid until date format'
+        });
+      }
+      if (validUntilDate <= new Date()) {
+        return res.status(400).json({
+          success: false,
+          message: 'Valid until date must be in the future'
+        });
+      }
+      packageOffer.validUntil = validUntilDate;
+    }
+    if (updateData.isActive !== undefined) packageOffer.isActive = updateData.isActive;
+
+    // Update courses if provided
+    if (updateData.includedCourses && Array.isArray(updateData.includedCourses)) {
+      const validCourses = [];
+      for (const courseData of updateData.includedCourses) {
+        const courseId = courseData.courseId || courseData;
+        const courseName = courseData.courseName || courseData;
+        
+        if (!courseId.startsWith('default-')) {
+          const course = await RealTimeCourse.findById(courseId);
+          if (course && course.status === 'published') {
+            validCourses.push({
+              courseId: courseId.toString(),
+              courseName: course.title || courseName
+            });
+          }
+        } else {
+          validCourses.push({
+            courseId: courseId,
+            courseName: courseName || 'Default Course'
+          });
+        }
+      }
+      if (validCourses.length > 0) {
+        packageOffer.includedCourses = validCourses;
+      }
+    }
+
+    // Update exam if provided
+    if (updateData.includedExam !== undefined) {
+      if (updateData.includedExam && updateData.includedExam.examId) {
+        const exam = await Exam.findById(updateData.includedExam.examId);
+        if (exam && exam.isTegaExam) {
+          packageOffer.includedExam = {
+            examId: exam._id,
+            examTitle: exam.title
+          };
+        }
+      } else {
+        packageOffer.includedExam = null;
+      }
+    }
+
+    await offer.save();
+
+    res.json({
+      success: true,
+      message: 'Package offer updated successfully',
+      data: packageOffer
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Failed to update package offer',
+      error: error.message
+    });
+  }
+};
+
+// Delete package offer
+export const deletePackageOffer = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const offer = await Offer.findOne({ 'packageOffers._id': id });
+
+    if (!offer) {
+      return res.status(404).json({
+        success: false,
+        message: 'Package offer not found'
+      });
+    }
+
+    offer.packageOffers.id(id).remove();
+    await offer.save();
+
+    res.json({
+      success: true,
+      message: 'Package offer deleted successfully'
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Failed to delete package offer',
+      error: error.message
+    });
+  }
+};
+
+// Toggle package offer status
+export const togglePackageOfferStatus = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const offer = await Offer.findOne({ 'packageOffers._id': id });
+
+    if (!offer) {
+      return res.status(404).json({
+        success: false,
+        message: 'Package offer not found'
+      });
+    }
+
+    const packageOffer = offer.packageOffers.id(id);
+    if (!packageOffer) {
+      return res.status(404).json({
+        success: false,
+        message: 'Package offer not found'
+      });
+    }
+
+    packageOffer.isActive = !packageOffer.isActive;
+    await offer.save();
+
+    res.json({
+      success: true,
+      message: `Package offer ${packageOffer.isActive ? 'activated' : 'deactivated'} successfully`,
+      data: packageOffer
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Failed to toggle package offer status',
       error: error.message
     });
   }

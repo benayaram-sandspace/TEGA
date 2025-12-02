@@ -68,6 +68,56 @@ class NotificationService {
       throw Exception('Network error: ${e.toString()}');
     }
   }
+
+  /// Mark a single notification as read (placeholder for future backend)
+  /// TODO: Replace with actual backend endpoint when available
+  Future<bool> markNotificationAsRead(String notificationId) async {
+    try {
+      // Placeholder: For now, just return true
+      // In the future, this will call: POST /api/student/notifications/:id/mark-read
+      // final headers = await _authService.getAuthHeaders();
+      // final response = await http.patch(
+      //   Uri.parse('${EnvConfig.baseUrl}/api/student/notifications/$notificationId/mark-read'),
+      //   headers: headers,
+      // );
+      // if (response.statusCode == 200) {
+      //   final data = json.decode(response.body);
+      //   return data['success'] == true;
+      // }
+      // return false;
+
+      // For now, simulate success
+      await Future.delayed(const Duration(milliseconds: 300));
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  /// Delete a notification (placeholder for future backend)
+  /// TODO: Replace with actual backend endpoint when available
+  Future<bool> deleteNotification(String notificationId) async {
+    try {
+      // Placeholder: For now, just return true
+      // In the future, this will call: DELETE /api/student/notifications/:id
+      // final headers = await _authService.getAuthHeaders();
+      // final response = await http.delete(
+      //   Uri.parse('${EnvConfig.baseUrl}/api/student/notifications/$notificationId'),
+      //   headers: headers,
+      // );
+      // if (response.statusCode == 200) {
+      //   final data = json.decode(response.body);
+      //   return data['success'] == true;
+      // }
+      // return false;
+
+      // For now, simulate success
+      await Future.delayed(const Duration(milliseconds: 300));
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
 }
 
 /// Notification data model

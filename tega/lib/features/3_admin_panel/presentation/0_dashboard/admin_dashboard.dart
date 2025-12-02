@@ -13,7 +13,10 @@ import 'package:tega/features/3_admin_panel/presentation/1_management/principals
 import 'package:tega/features/3_admin_panel/presentation/1_management/courses/course_management_page.dart';
 import 'package:tega/features/3_admin_panel/presentation/1_management/jobs/job_management_page.dart';
 import 'package:tega/features/3_admin_panel/presentation/4_settings_and_misc/notification_manager_page.dart';
-import 'package:tega/features/3_admin_panel/presentation/placeholder_pages/placeholder_page.dart';
+import 'package:tega/features/3_admin_panel/presentation/1_management/assessments/schedule_assessment_page.dart';
+import 'package:tega/features/3_admin_panel/presentation/1_management/assessments/exam_results_page.dart';
+import 'package:tega/features/3_admin_panel/presentation/1_management/placement_prep/placement_prep_page.dart';
+import 'package:tega/features/3_admin_panel/presentation/1_management/company_questions/company_questions_page.dart';
 
 class AdminDashboard extends StatefulWidget {
   const AdminDashboard({super.key});
@@ -69,29 +72,11 @@ class _AdminDashboardState extends State<AdminDashboard>
       const StudentsPage(),
       const PrincipalsPage(),
       const NotificationManagerPage(),
-      const PlaceholderPage(
-        title: 'Schedule Assessment',
-        description: 'Schedule and manage assessments, exams, and evaluations.',
-        icon: Icons.calendar_today,
-      ),
+      const ScheduleAssessmentPage(),
       const JobManagementPage(),
-      const PlaceholderPage(
-        title: 'Placement Prep',
-        description: 'Manage placement preparation materials and resources.',
-        icon: Icons.gps_fixed,
-      ),
-      const PlaceholderPage(
-        title: 'Company Questions',
-        description:
-            'Manage company-specific interview questions and practice materials.',
-        icon: Icons.quiz_outlined,
-      ),
-      const PlaceholderPage(
-        title: 'Exam Results',
-        description:
-            'View and manage exam results, scores, and performance analytics.',
-        icon: Icons.emoji_events_outlined,
-      ),
+      const PlacementPrepPage(),
+      const CompanyQuestionsPage(),
+      const ExamResultsPage(),
     ];
 
     _pageTitles = [

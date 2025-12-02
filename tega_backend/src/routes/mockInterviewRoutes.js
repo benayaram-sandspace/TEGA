@@ -3,9 +3,9 @@ import { studentAuth } from '../middleware/studentAuth.js';
 import {
   startInterview,
   submitAnswer,
-  submitCode,
-  completeInterview,
-  getInterviewStats,
+  completeInterview
+} from '../controllers/interviewController.js';
+import {
   getLeaderboard
 } from '../controllers/mockInterviewController.js';
 
@@ -14,20 +14,10 @@ const router = express.Router();
 // All routes require student authentication
 router.use(studentAuth);
 
-// Start a new interview
-router.post('/start', startInterview);
-
-// Submit an answer to a question
-router.post('/submit-answer', submitAnswer);
-
-// Submit code solution
-router.post('/submit-code', submitCode);
-
-// Complete interview and generate report
-router.post('/complete', completeInterview);
-
-// Get interview statistics for a user
-router.get('/stats/:userId', getInterviewStats);
+// Conversational interview routes (using real interviewController)
+router.post('/conversational/start', startInterview);
+router.post('/conversational/submit-answer', submitAnswer);
+router.post('/conversational/complete', completeInterview);
 
 // Get leaderboard
 router.get('/leaderboard', getLeaderboard);

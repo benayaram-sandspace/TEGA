@@ -942,4 +942,100 @@ class AdminDashboardService {
       throw Exception('Failed to load course analytics: $e');
     }
   }
+
+  /// Get payment statistics (for admin)
+  Future<Map<String, dynamic>> getPaymentStats() async {
+    try {
+      final headers = await _authService.getAuthHeaders();
+
+      final response = await http
+          .get(Uri.parse(ApiEndpoints.adminPaymentStatsAdmin), headers: headers)
+          .timeout(
+            const Duration(seconds: 30),
+            onTimeout: () {
+              throw Exception(
+                'Request timeout. Please check your internet connection.',
+              );
+            },
+          );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+
+        if (data['success'] == true) {
+          return {'success': true, 'data': data['data']};
+        } else {
+          throw Exception(
+            data['message'] ?? 'Failed to load payment statistics',
+          );
+        }
+      } else if (response.statusCode == 401) {
+        throw Exception('Authentication required. Please log in again.');
+      } else if (response.statusCode == 403) {
+        throw Exception('Access denied. You may not have admin permissions.');
+      } else if (response.statusCode >= 500) {
+        throw Exception('Server error. Please try again later.');
+      } else {
+        try {
+          final errorData = json.decode(response.body);
+          throw Exception(
+            errorData['message'] ?? 'Failed to load payment statistics',
+          );
+        } catch (e) {
+          throw Exception(
+            'Failed to load payment statistics (${response.statusCode})',
+          );
+        }
+      }
+    } catch (e) {
+      throw Exception('Failed to load payment statistics: $e');
+    }
+  }
+
+  /// Get all payments for admin (includes totals with totalRevenue)
+  Future<Map<String, dynamic>> getAllPayments() async {
+    try {
+      final headers = await _authService.getAuthHeaders();
+
+      final response = await http
+          .get(Uri.parse(ApiEndpoints.adminPaymentsAll), headers: headers)
+          .timeout(
+            const Duration(seconds: 30),
+            onTimeout: () {
+              throw Exception(
+                'Request timeout. Please check your internet connection.',
+              );
+            },
+          );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+
+        if (data['success'] == true) {
+          return {
+            'success': true,
+            'data': data['data'],
+            'totals': data['totals'],
+          };
+        } else {
+          throw Exception(data['message'] ?? 'Failed to load payments');
+        }
+      } else if (response.statusCode == 401) {
+        throw Exception('Authentication required. Please log in again.');
+      } else if (response.statusCode == 403) {
+        throw Exception('Access denied. You may not have admin permissions.');
+      } else if (response.statusCode >= 500) {
+        throw Exception('Server error. Please try again later.');
+      } else {
+        try {
+          final errorData = json.decode(response.body);
+          throw Exception(errorData['message'] ?? 'Failed to load payments');
+        } catch (e) {
+          throw Exception('Failed to load payments (${response.statusCode})');
+        }
+      }
+    } catch (e) {
+      throw Exception('Failed to load payments: $e');
+    }
+  }
 }

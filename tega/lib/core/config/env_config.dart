@@ -106,6 +106,9 @@ class EnvConfig {
   /// Add GOOGLE_CLIENT_ID=your_google_client_id_here to your .env file
   static String get googleClientId => getString('GOOGLE_CLIENT_ID');
 
+  /// Razorpay Key ID for client checkout
+  static String get razorpayKeyId => getString('RAZORPAY_KEY_ID');
+
   // ==================== UTILITY METHODS ====================
 
   /// Check if running in development mode

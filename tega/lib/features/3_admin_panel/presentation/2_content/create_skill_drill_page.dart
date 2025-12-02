@@ -33,7 +33,7 @@ class _CreateSkillDrillPageState extends State<CreateSkillDrillPage> {
         correctAnswers: [2],
         explanations: ['Paris is the capital and largest city of France.'],
         imageUrls: [
-            'https://images.unsplash.com/photo-1502602898536-47ad22581b52?w=400'
+          'https://images.unsplash.com/photo-1502602898536-47ad22581b52?w=400',
         ],
         isActive: true,
         createdAt: DateTime.parse('2024-01-15'),
@@ -55,7 +55,7 @@ class _CreateSkillDrillPageState extends State<CreateSkillDrillPage> {
         correctAnswers: [1],
         explanations: ['2x + 3 = 7, so 2x = 4, therefore x = 2'],
         imageUrls: [
-            'https://images.unsplash.com/photo-1635070041078-e363dbe005cb?w=400'
+          'https://images.unsplash.com/photo-1635070041078-e363dbe005cb?w=400',
         ],
         isActive: true,
         createdAt: DateTime.parse('2024-01-16'),
@@ -81,10 +81,10 @@ class _CreateSkillDrillPageState extends State<CreateSkillDrillPage> {
         ],
         correctAnswers: [1],
         explanations: [
-            'William Shakespeare wrote the famous tragedy \'Romeo and Juliet\'.'
+          'William Shakespeare wrote the famous tragedy \'Romeo and Juliet\'.',
         ],
         imageUrls: [
-            'https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=400',
+          'https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=400',
         ],
         isActive: true,
         createdAt: DateTime.parse('2024-01-17'),

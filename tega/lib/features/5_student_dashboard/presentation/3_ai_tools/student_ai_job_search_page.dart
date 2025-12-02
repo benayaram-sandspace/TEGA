@@ -1,7 +1,10 @@
+import 'dart:io';
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:tega/features/5_student_dashboard/data/student_dashboard_service.dart';
+import 'package:tega/core/services/jobs_cache_service.dart';
 
 class JobRecommendationScreen extends StatefulWidget {
   const JobRecommendationScreen({super.key});
@@ -15,6 +18,7 @@ class _JobRecommendationScreenState extends State<JobRecommendationScreen>
     with AutomaticKeepAliveClientMixin {
   final TextEditingController _searchController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
+  final JobsCacheService _cacheService = JobsCacheService();
 
   bool _isLoading = true;
   String? _errorMessage;
@@ -57,7 +61,24 @@ class _JobRecommendationScreenState extends State<JobRecommendationScreen>
   @override
   void initState() {
     super.initState();
+    _initializeCache();
+  }
+
+  Future<void> _initializeCache() async {
+    await _cacheService.initialize();
     _loadJobData();
+  }
+
+  bool _isNoInternetError(dynamic error) {
+    return error is SocketException ||
+        error is TimeoutException ||
+        (error.toString().toLowerCase().contains('network') ||
+            error.toString().toLowerCase().contains('connection') ||
+            error.toString().toLowerCase().contains('internet') ||
+            error.toString().toLowerCase().contains('failed host lookup') ||
+            error.toString().toLowerCase().contains(
+              'no address associated with hostname',
+            ));
   }
 
   @override
@@ -67,14 +88,37 @@ class _JobRecommendationScreenState extends State<JobRecommendationScreen>
     super.dispose();
   }
 
-  Future<void> _loadJobData() async {
+  Future<void> _loadJobData({bool forceRefresh = false}) async {
     if (!mounted) return;
+
+    // Try to load from cache first (unless force refresh)
+    if (!forceRefresh) {
+      final cachedJobs = await _cacheService.getJobsData();
+      if (cachedJobs != null && cachedJobs.isNotEmpty && mounted) {
+        setState(() {
+          _allJobs = cachedJobs;
+          _calculateStats();
+          _filteredJobs = List.from(_allJobs);
+          _applyFilters();
+          _isLoading = false;
+          _errorMessage = null;
+        });
+        // Still fetch in background to update cache
+        _fetchJobsInBackground();
+        return;
+      }
+    }
 
     setState(() {
       _isLoading = true;
       _errorMessage = null;
     });
 
+    // Fetch from API
+    await _fetchJobsInBackground();
+  }
+
+  Future<void> _fetchJobsInBackground() async {
     try {
       final dashboardService = StudentDashboardService();
 
@@ -82,7 +126,7 @@ class _JobRecommendationScreenState extends State<JobRecommendationScreen>
       final jobs = await dashboardService.getJobs({});
 
       // Transform backend data to match UI needs
-      _allJobs = jobs.map<Map<String, dynamic>>((job) {
+      final transformedJobs = jobs.map<Map<String, dynamic>>((job) {
         // Extract work type from jobType field (backend uses: full-time, part-time, contract, internship)
         String workType = 'Full Time';
         final jobTypeRaw = job['jobType'] ?? '';
@@ -149,29 +193,58 @@ class _JobRecommendationScreenState extends State<JobRecommendationScreen>
         };
       }).toList();
 
-      // Calculate stats from actual data
-      if (_allJobs.isNotEmpty) {
-        _activeJobs = _allJobs.length;
-        _companies = _allJobs.map((job) => job['company']).toSet().length;
-      } else {
-        _activeJobs = 0;
-        _companies = 0;
-      }
+      // Cache jobs data
+      await _cacheService.setJobsData(transformedJobs);
 
       if (mounted) {
         setState(() {
+          _allJobs = transformedJobs;
+          _calculateStats();
           _filteredJobs = List.from(_allJobs);
+          _applyFilters();
           _errorMessage = null;
           _isLoading = false;
         });
       }
     } catch (e) {
       if (mounted) {
-        setState(() {
-          _errorMessage = 'Unable to load jobs. Please try again. Error: $e';
-          _isLoading = false;
-        });
+        // Check if it's a network/internet error
+        if (_isNoInternetError(e)) {
+          // Try to load from cache if available
+          final cachedJobs = await _cacheService.getJobsData();
+          if (cachedJobs != null && cachedJobs.isNotEmpty) {
+            setState(() {
+              _allJobs = cachedJobs;
+              _calculateStats();
+              _filteredJobs = List.from(_allJobs);
+              _applyFilters();
+              _errorMessage = null; // Clear error since we have cached data
+              _isLoading = false;
+            });
+            return;
+          }
+          // No cache available, show error
+          setState(() {
+            _errorMessage = 'No internet connection';
+            _isLoading = false;
+          });
+        } else {
+          setState(() {
+            _errorMessage = 'Unable to load jobs. Please try again.';
+            _isLoading = false;
+          });
+        }
       }
+    }
+  }
+
+  void _calculateStats() {
+    if (_allJobs.isNotEmpty) {
+      _activeJobs = _allJobs.length;
+      _companies = _allJobs.map((job) => job['company']).toSet().length;
+    } else {
+      _activeJobs = 0;
+      _companies = 0;
     }
   }
 
@@ -197,63 +270,133 @@ class _JobRecommendationScreenState extends State<JobRecommendationScreen>
     });
   }
 
+  // Responsive breakpoints
+  double get mobileBreakpoint => 600;
+  double get tabletBreakpoint => 1024;
+  double get desktopBreakpoint => 1440;
+  bool get isMobile => MediaQuery.of(context).size.width < mobileBreakpoint;
+  bool get isTablet =>
+      MediaQuery.of(context).size.width >= mobileBreakpoint &&
+      MediaQuery.of(context).size.width < tabletBreakpoint;
+  bool get isDesktop =>
+      MediaQuery.of(context).size.width >= tabletBreakpoint &&
+      MediaQuery.of(context).size.width < desktopBreakpoint;
+  bool get isLargeDesktop =>
+      MediaQuery.of(context).size.width >= desktopBreakpoint;
+  bool get isSmallScreen => MediaQuery.of(context).size.width < 400;
+
   @override
   Widget build(BuildContext context) {
     super.build(context);
-    final screenWidth = MediaQuery.of(context).size.width;
-    final isTablet = screenWidth >= 600;
-    final isDesktop = screenWidth >= 1024;
 
     return SingleChildScrollView(
       padding: EdgeInsets.all(
-        isDesktop
+        isLargeDesktop
+            ? 32.0
+            : isDesktop
             ? 24.0
             : isTablet
             ? 20.0
+            : isSmallScreen
+            ? 12.0
             : 16.0,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Header Card
-          _buildHeaderCard(isDesktop, isTablet),
-          SizedBox(height: isDesktop ? 24 : 20),
+          _buildHeaderCard(),
+          SizedBox(
+            height: isLargeDesktop
+                ? 28
+                : isDesktop
+                ? 24
+                : isTablet
+                ? 22
+                : isSmallScreen
+                ? 16
+                : 20,
+          ),
 
           // Stats Cards
-          _buildStatsCards(isDesktop, isTablet),
-          SizedBox(height: isDesktop ? 32 : 24),
+          _buildStatsCards(),
+          SizedBox(
+            height: isLargeDesktop
+                ? 36
+                : isDesktop
+                ? 32
+                : isTablet
+                ? 28
+                : isSmallScreen
+                ? 20
+                : 24,
+          ),
 
           // Search and Filters Section
-          _buildSearchAndFilters(isDesktop, isTablet),
-          SizedBox(height: isDesktop ? 32 : 24),
+          _buildSearchAndFilters(),
+          SizedBox(
+            height: isLargeDesktop
+                ? 36
+                : isDesktop
+                ? 32
+                : isTablet
+                ? 28
+                : isSmallScreen
+                ? 20
+                : 24,
+          ),
 
           // Jobs Section
           _isLoading
               ? _buildLoadingState()
               : _errorMessage != null
-              ? _buildErrorState(isDesktop, isTablet)
+              ? _buildErrorState()
               : _filteredJobs.isEmpty
-              ? _buildEmptyState(isDesktop, isTablet)
-              : _buildJobsList(isDesktop, isTablet),
+              ? _buildEmptyState()
+              : _buildJobsList(),
 
-          SizedBox(height: isDesktop ? 40 : 32),
+          SizedBox(
+            height: isLargeDesktop
+                ? 48
+                : isDesktop
+                ? 40
+                : isTablet
+                ? 32
+                : isSmallScreen
+                ? 24
+                : 32,
+          ),
 
           // Newsletter Section
-          _buildNewsletterSection(isDesktop, isTablet),
-          SizedBox(height: isDesktop ? 24 : 20),
+          _buildNewsletterSection(),
+          SizedBox(
+            height: isLargeDesktop
+                ? 28
+                : isDesktop
+                ? 24
+                : isTablet
+                ? 22
+                : isSmallScreen
+                ? 16
+                : 20,
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildHeaderCard(bool isDesktop, bool isTablet) {
+  Widget _buildHeaderCard() {
     return Container(
       padding: EdgeInsets.all(
-        isDesktop
+        isLargeDesktop
+            ? 32
+            : isDesktop
             ? 24
             : isTablet
-            ? 20
-            : 18,
+            ? 22
+            : isSmallScreen
+            ? 16
+            : 20,
       ),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
@@ -261,12 +404,41 @@ class _JobRecommendationScreenState extends State<JobRecommendationScreen>
           end: Alignment.bottomRight,
           colors: [Color(0xFF6B5FFF), Color(0xFF8F7FFF)],
         ),
-        borderRadius: BorderRadius.circular(isDesktop ? 20 : 16),
+        borderRadius: BorderRadius.circular(
+          isLargeDesktop
+              ? 24
+              : isDesktop
+              ? 20
+              : isTablet
+              ? 18
+              : isSmallScreen
+              ? 12
+              : 16,
+        ),
         boxShadow: [
           BoxShadow(
             color: const Color(0xFF6B5FFF).withOpacity(0.3),
-            blurRadius: 20,
-            offset: const Offset(0, 8),
+            blurRadius: isLargeDesktop
+                ? 24
+                : isDesktop
+                ? 20
+                : isTablet
+                ? 18
+                : isSmallScreen
+                ? 10
+                : 16,
+            offset: Offset(
+              0,
+              isLargeDesktop
+                  ? 10
+                  : isDesktop
+                  ? 8
+                  : isTablet
+                  ? 7
+                  : isSmallScreen
+                  ? 4
+                  : 6,
+            ),
           ),
         ],
       ),
@@ -279,30 +451,56 @@ class _JobRecommendationScreenState extends State<JobRecommendationScreen>
                 Text(
                   'Find Your Dream Job',
                   style: TextStyle(
-                    fontSize: isDesktop
+                    fontSize: isLargeDesktop
+                        ? 32
+                        : isDesktop
                         ? 28
                         : isTablet
-                        ? 24
-                        : 22,
+                        ? 26
+                        : isSmallScreen
+                        ? 20
+                        : 24,
                     fontWeight: FontWeight.w800,
                     color: Colors.white,
                   ),
                 ),
-                SizedBox(height: isDesktop ? 8 : 6),
+                SizedBox(
+                  height: isLargeDesktop || isDesktop
+                      ? 10
+                      : isTablet
+                      ? 8
+                      : isSmallScreen
+                      ? 4
+                      : 6,
+                ),
                 Text(
                   'Discover opportunities that match your skills',
                   style: TextStyle(
-                    fontSize: isDesktop ? 15 : 14,
+                    fontSize: isLargeDesktop
+                        ? 17
+                        : isDesktop
+                        ? 15
+                        : isTablet
+                        ? 14
+                        : isSmallScreen
+                        ? 11
+                        : 13,
                     color: Colors.white.withOpacity(0.9),
                   ),
                 ),
               ],
             ),
           ),
-          if (isDesktop || isTablet)
+          if (isLargeDesktop || isDesktop || isTablet)
             Icon(
               Icons.work_outline_rounded,
-              size: isDesktop ? 60 : 50,
+              size: isLargeDesktop
+                  ? 72
+                  : isDesktop
+                  ? 60
+                  : isTablet
+                  ? 54
+                  : 50,
               color: Colors.white.withOpacity(0.3),
             ),
         ],
@@ -310,17 +508,41 @@ class _JobRecommendationScreenState extends State<JobRecommendationScreen>
     );
   }
 
-  Widget _buildStatsCards(bool isDesktop, bool isTablet) {
+  Widget _buildStatsCards() {
     return GridView.count(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
-      crossAxisCount: 2,
-      crossAxisSpacing: isDesktop ? 16 : 12,
-      mainAxisSpacing: isDesktop ? 16 : 12,
-      childAspectRatio: isDesktop
+      crossAxisCount: isLargeDesktop || isDesktop
+          ? 2
+          : isTablet
+          ? 2
+          : 2,
+      crossAxisSpacing: isLargeDesktop
+          ? 20
+          : isDesktop
+          ? 16
+          : isTablet
+          ? 14
+          : isSmallScreen
+          ? 8
+          : 12,
+      mainAxisSpacing: isLargeDesktop
+          ? 20
+          : isDesktop
+          ? 16
+          : isTablet
+          ? 14
+          : isSmallScreen
+          ? 8
+          : 12,
+      childAspectRatio: isLargeDesktop
+          ? 2.8
+          : isDesktop
           ? 2.5
           : isTablet
-          ? 2.0
+          ? 2.2
+          : isSmallScreen
+          ? 1.6
           : 1.8,
       children: [
         _buildStatCard(
@@ -331,8 +553,6 @@ class _JobRecommendationScreenState extends State<JobRecommendationScreen>
           gradient: const LinearGradient(
             colors: [Color(0xFF4CAF50), Color(0xFF66BB6A)],
           ),
-          isDesktop: isDesktop,
-          isTablet: isTablet,
         ),
         _buildStatCard(
           title: 'Companies',
@@ -342,8 +562,6 @@ class _JobRecommendationScreenState extends State<JobRecommendationScreen>
           gradient: const LinearGradient(
             colors: [Color(0xFF2196F3), Color(0xFF42A5F5)],
           ),
-          isDesktop: isDesktop,
-          isTablet: isTablet,
         ),
       ],
     );
@@ -355,47 +573,112 @@ class _JobRecommendationScreenState extends State<JobRecommendationScreen>
     required IconData icon,
     required Color color,
     required Gradient gradient,
-    required bool isDesktop,
-    required bool isTablet,
   }) {
     return Container(
       padding: EdgeInsets.all(
-        isDesktop
+        isLargeDesktop
+            ? 24
+            : isDesktop
             ? 20
             : isTablet
             ? 18
+            : isSmallScreen
+            ? 12
             : 16,
       ),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(isDesktop ? 16 : 14),
+        borderRadius: BorderRadius.circular(
+          isLargeDesktop
+              ? 20
+              : isDesktop
+              ? 16
+              : isTablet
+              ? 15
+              : isSmallScreen
+              ? 10
+              : 14,
+        ),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+            blurRadius: isLargeDesktop
+                ? 14
+                : isDesktop
+                ? 10
+                : isTablet
+                ? 9
+                : isSmallScreen
+                ? 6
+                : 8,
+            offset: Offset(
+              0,
+              isLargeDesktop
+                  ? 6
+                  : isDesktop
+                  ? 4
+                  : isTablet
+                  ? 3
+                  : isSmallScreen
+                  ? 2
+                  : 3,
+            ),
           ),
         ],
       ),
       child: Row(
         children: [
           Container(
-            padding: EdgeInsets.all(isDesktop ? 12 : 10),
+            padding: EdgeInsets.all(
+              isLargeDesktop
+                  ? 16
+                  : isDesktop
+                  ? 12
+                  : isTablet
+                  ? 11
+                  : isSmallScreen
+                  ? 8
+                  : 10,
+            ),
             decoration: BoxDecoration(
               gradient: gradient,
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(
+                isLargeDesktop
+                    ? 16
+                    : isDesktop
+                    ? 12
+                    : isTablet
+                    ? 11
+                    : isSmallScreen
+                    ? 8
+                    : 10,
+              ),
             ),
             child: Icon(
               icon,
               color: Colors.white,
-              size: isDesktop
+              size: isLargeDesktop
+                  ? 32
+                  : isDesktop
                   ? 28
                   : isTablet
-                  ? 24
-                  : 22,
+                  ? 26
+                  : isSmallScreen
+                  ? 20
+                  : 24,
             ),
           ),
-          SizedBox(width: isDesktop ? 16 : 12),
+          SizedBox(
+            width: isLargeDesktop
+                ? 20
+                : isDesktop
+                ? 16
+                : isTablet
+                ? 14
+                : isSmallScreen
+                ? 8
+                : 12,
+          ),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -404,23 +687,39 @@ class _JobRecommendationScreenState extends State<JobRecommendationScreen>
                 Text(
                   value,
                   style: TextStyle(
-                    fontSize: isDesktop
+                    fontSize: isLargeDesktop
+                        ? 32
+                        : isDesktop
                         ? 28
                         : isTablet
-                        ? 24
-                        : 22,
+                        ? 26
+                        : isSmallScreen
+                        ? 20
+                        : 24,
                     fontWeight: FontWeight.w700,
                     color: color,
                   ),
                 ),
-                const SizedBox(height: 2),
+                SizedBox(
+                  height: isLargeDesktop || isDesktop
+                      ? 4
+                      : isTablet
+                      ? 3
+                      : isSmallScreen
+                      ? 1
+                      : 2,
+                ),
                 Text(
                   title,
                   style: TextStyle(
-                    fontSize: isDesktop
+                    fontSize: isLargeDesktop
+                        ? 15
+                        : isDesktop
                         ? 13
                         : isTablet
                         ? 12
+                        : isSmallScreen
+                        ? 9
                         : 11,
                     color: Colors.grey[600],
                     fontWeight: FontWeight.w500,
@@ -434,7 +733,7 @@ class _JobRecommendationScreenState extends State<JobRecommendationScreen>
     );
   }
 
-  Widget _buildSearchAndFilters(bool isDesktop, bool isTablet) {
+  Widget _buildSearchAndFilters() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -442,21 +741,58 @@ class _JobRecommendationScreenState extends State<JobRecommendationScreen>
         TextField(
           controller: _searchController,
           onChanged: (_) => _applyFilters(),
-          style: TextStyle(fontSize: isDesktop ? 16 : 14),
+          style: TextStyle(
+            fontSize: isLargeDesktop
+                ? 18
+                : isDesktop
+                ? 16
+                : isTablet
+                ? 15
+                : isSmallScreen
+                ? 12
+                : 14,
+          ),
           decoration: InputDecoration(
             hintText: 'Search jobs by title or company...',
             hintStyle: TextStyle(
               color: Colors.grey[400],
-              fontSize: isDesktop ? 16 : 14,
+              fontSize: isLargeDesktop
+                  ? 18
+                  : isDesktop
+                  ? 16
+                  : isTablet
+                  ? 15
+                  : isSmallScreen
+                  ? 12
+                  : 14,
             ),
             prefixIcon: Icon(
               Icons.search,
               color: const Color(0xFF6B5FFF),
-              size: isDesktop ? 24 : 20,
+              size: isLargeDesktop
+                  ? 28
+                  : isDesktop
+                  ? 24
+                  : isTablet
+                  ? 22
+                  : isSmallScreen
+                  ? 18
+                  : 20,
             ),
             suffixIcon: _searchController.text.isNotEmpty
                 ? IconButton(
-                    icon: const Icon(Icons.clear_rounded, size: 20),
+                    icon: Icon(
+                      Icons.clear_rounded,
+                      size: isLargeDesktop
+                          ? 24
+                          : isDesktop
+                          ? 20
+                          : isTablet
+                          ? 19
+                          : isSmallScreen
+                          ? 16
+                          : 20,
+                    ),
                     onPressed: () {
                       _searchController.clear();
                       _applyFilters();
@@ -467,24 +803,80 @@ class _JobRecommendationScreenState extends State<JobRecommendationScreen>
             filled: true,
             fillColor: Colors.white,
             border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(isDesktop ? 14 : 12),
+              borderRadius: BorderRadius.circular(
+                isLargeDesktop
+                    ? 16
+                    : isDesktop
+                    ? 14
+                    : isTablet
+                    ? 13
+                    : isSmallScreen
+                    ? 10
+                    : 12,
+              ),
               borderSide: BorderSide.none,
             ),
             enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(isDesktop ? 14 : 12),
+              borderRadius: BorderRadius.circular(
+                isLargeDesktop
+                    ? 16
+                    : isDesktop
+                    ? 14
+                    : isTablet
+                    ? 13
+                    : isSmallScreen
+                    ? 10
+                    : 12,
+              ),
               borderSide: BorderSide(color: Colors.grey[200]!),
             ),
             focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(isDesktop ? 14 : 12),
+              borderRadius: BorderRadius.circular(
+                isLargeDesktop
+                    ? 16
+                    : isDesktop
+                    ? 14
+                    : isTablet
+                    ? 13
+                    : isSmallScreen
+                    ? 10
+                    : 12,
+              ),
               borderSide: const BorderSide(color: Color(0xFF6B5FFF), width: 2),
             ),
             contentPadding: EdgeInsets.symmetric(
-              horizontal: isDesktop ? 20 : 16,
-              vertical: isDesktop ? 16 : 14,
+              horizontal: isLargeDesktop
+                  ? 24
+                  : isDesktop
+                  ? 20
+                  : isTablet
+                  ? 18
+                  : isSmallScreen
+                  ? 12
+                  : 16,
+              vertical: isLargeDesktop
+                  ? 20
+                  : isDesktop
+                  ? 16
+                  : isTablet
+                  ? 15
+                  : isSmallScreen
+                  ? 10
+                  : 14,
             ),
           ),
         ),
-        SizedBox(height: isDesktop ? 16 : 14),
+        SizedBox(
+          height: isLargeDesktop
+              ? 20
+              : isDesktop
+              ? 16
+              : isTablet
+              ? 14
+              : isSmallScreen
+              ? 10
+              : 14,
+        ),
 
         // Filter Dropdowns
         Row(
@@ -502,11 +894,19 @@ class _JobRecommendationScreenState extends State<JobRecommendationScreen>
                   });
                 },
                 icon: Icons.work_outline_rounded,
-                isDesktop: isDesktop,
-                isTablet: isTablet,
               ),
             ),
-            SizedBox(width: isDesktop ? 16 : 12),
+            SizedBox(
+              width: isLargeDesktop
+                  ? 20
+                  : isDesktop
+                  ? 16
+                  : isTablet
+                  ? 14
+                  : isSmallScreen
+                  ? 8
+                  : 12,
+            ),
             // Location Filter
             Expanded(
               child: _buildDropdownFilter(
@@ -520,8 +920,6 @@ class _JobRecommendationScreenState extends State<JobRecommendationScreen>
                   });
                 },
                 icon: Icons.location_on_outlined,
-                isDesktop: isDesktop,
-                isTablet: isTablet,
               ),
             ),
           ],
@@ -536,22 +934,52 @@ class _JobRecommendationScreenState extends State<JobRecommendationScreen>
     required List<String> items,
     required ValueChanged<String?> onChanged,
     required IconData icon,
-    required bool isDesktop,
-    required bool isTablet,
   }) {
     return Container(
       padding: EdgeInsets.symmetric(
-        horizontal: isDesktop ? 16 : 12,
-        vertical: 4,
+        horizontal: isLargeDesktop
+            ? 20
+            : isDesktop
+            ? 16
+            : isTablet
+            ? 14
+            : isSmallScreen
+            ? 10
+            : 12,
+        vertical: isLargeDesktop || isDesktop
+            ? 6
+            : isTablet
+            ? 5
+            : isSmallScreen
+            ? 2
+            : 4,
       ),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(isDesktop ? 14 : 12),
+        borderRadius: BorderRadius.circular(
+          isLargeDesktop
+              ? 16
+              : isDesktop
+              ? 14
+              : isTablet
+              ? 13
+              : isSmallScreen
+              ? 10
+              : 12,
+        ),
         border: Border.all(color: Colors.grey[200]!),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.03),
-            blurRadius: 8,
+            blurRadius: isLargeDesktop
+                ? 12
+                : isDesktop
+                ? 8
+                : isTablet
+                ? 7
+                : isSmallScreen
+                ? 4
+                : 6,
             offset: const Offset(0, 2),
           ),
         ],
@@ -564,10 +992,26 @@ class _JobRecommendationScreenState extends State<JobRecommendationScreen>
           icon: Icon(
             Icons.keyboard_arrow_down_rounded,
             color: const Color(0xFF6B5FFF),
-            size: isDesktop ? 24 : 20,
+            size: isLargeDesktop
+                ? 28
+                : isDesktop
+                ? 24
+                : isTablet
+                ? 22
+                : isSmallScreen
+                ? 18
+                : 20,
           ),
           style: TextStyle(
-            fontSize: isDesktop ? 15 : 14,
+            fontSize: isLargeDesktop
+                ? 17
+                : isDesktop
+                ? 15
+                : isTablet
+                ? 14
+                : isSmallScreen
+                ? 11
+                : 13,
             color: const Color(0xFF333333),
             fontWeight: FontWeight.w500,
           ),
@@ -578,13 +1022,45 @@ class _JobRecommendationScreenState extends State<JobRecommendationScreen>
                 children: [
                   Icon(
                     icon,
-                    size: isDesktop ? 18 : 16,
+                    size: isLargeDesktop
+                        ? 20
+                        : isDesktop
+                        ? 18
+                        : isTablet
+                        ? 17
+                        : isSmallScreen
+                        ? 14
+                        : 16,
                     color: value == item
                         ? const Color(0xFF6B5FFF)
                         : Colors.grey[600],
                   ),
-                  const SizedBox(width: 8),
-                  Expanded(child: Text(item, overflow: TextOverflow.ellipsis)),
+                  SizedBox(
+                    width: isLargeDesktop || isDesktop
+                        ? 10
+                        : isTablet
+                        ? 9
+                        : isSmallScreen
+                        ? 6
+                        : 8,
+                  ),
+                  Expanded(
+                    child: Text(
+                      item,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: isLargeDesktop
+                            ? 17
+                            : isDesktop
+                            ? 15
+                            : isTablet
+                            ? 14
+                            : isSmallScreen
+                            ? 11
+                            : 13,
+                      ),
+                    ),
+                  ),
                 ],
               ),
             );
@@ -595,7 +1071,7 @@ class _JobRecommendationScreenState extends State<JobRecommendationScreen>
     );
   }
 
-  Widget _buildJobsList(bool isDesktop, bool isTablet) {
+  Widget _buildJobsList() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -604,26 +1080,77 @@ class _JobRecommendationScreenState extends State<JobRecommendationScreen>
             Text(
               'Available Jobs',
               style: TextStyle(
-                fontSize: isDesktop
+                fontSize: isLargeDesktop
+                    ? 28
+                    : isDesktop
                     ? 24
                     : isTablet
-                    ? 20
-                    : 18,
+                    ? 22
+                    : isSmallScreen
+                    ? 18
+                    : 20,
                 fontWeight: FontWeight.w700,
                 color: const Color(0xFF333333),
               ),
             ),
-            const SizedBox(width: 12),
+            SizedBox(
+              width: isLargeDesktop
+                  ? 16
+                  : isDesktop
+                  ? 12
+                  : isTablet
+                  ? 11
+                  : isSmallScreen
+                  ? 8
+                  : 10,
+            ),
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+              padding: EdgeInsets.symmetric(
+                horizontal: isLargeDesktop
+                    ? 14
+                    : isDesktop
+                    ? 12
+                    : isTablet
+                    ? 11
+                    : isSmallScreen
+                    ? 8
+                    : 10,
+                vertical: isLargeDesktop
+                    ? 6
+                    : isDesktop
+                    ? 4
+                    : isTablet
+                    ? 3.5
+                    : isSmallScreen
+                    ? 2
+                    : 3,
+              ),
               decoration: BoxDecoration(
                 color: const Color(0xFF6B5FFF).withOpacity(0.1),
-                borderRadius: BorderRadius.circular(20),
+                borderRadius: BorderRadius.circular(
+                  isLargeDesktop
+                      ? 24
+                      : isDesktop
+                      ? 20
+                      : isTablet
+                      ? 18
+                      : isSmallScreen
+                      ? 14
+                      : 16,
+                ),
               ),
               child: Text(
                 '${_filteredJobs.length} Jobs',
                 style: TextStyle(
-                  fontSize: isDesktop ? 14 : 13,
+                  fontSize: isLargeDesktop
+                      ? 16
+                      : isDesktop
+                      ? 14
+                      : isTablet
+                      ? 13
+                      : isSmallScreen
+                      ? 10
+                      : 12,
                   fontWeight: FontWeight.w600,
                   color: const Color(0xFF6B5FFF),
                 ),
@@ -631,26 +1158,31 @@ class _JobRecommendationScreenState extends State<JobRecommendationScreen>
             ),
           ],
         ),
-        SizedBox(height: isDesktop ? 20 : 16),
+        SizedBox(
+          height: isLargeDesktop
+              ? 24
+              : isDesktop
+              ? 20
+              : isTablet
+              ? 18
+              : isSmallScreen
+              ? 12
+              : 16,
+        ),
         ListView.builder(
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
           itemCount: _filteredJobs.length,
           itemBuilder: (context, index) {
             final job = _filteredJobs[index];
-            return _buildJobCard(job, index, isDesktop, isTablet);
+            return _buildJobCard(job, index);
           },
         ),
       ],
     );
   }
 
-  Widget _buildJobCard(
-    Map<String, dynamic> job,
-    int index,
-    bool isDesktop,
-    bool isTablet,
-  ) {
+  Widget _buildJobCard(Map<String, dynamic> job, int index) {
     return TweenAnimationBuilder<double>(
       tween: Tween(begin: 0.0, end: 1.0),
       duration: Duration(milliseconds: 300 + (index * 50)),
@@ -661,15 +1193,54 @@ class _JobRecommendationScreenState extends State<JobRecommendationScreen>
           child: Opacity(
             opacity: value,
             child: Container(
-              margin: EdgeInsets.only(bottom: isDesktop ? 16 : 14),
+              margin: EdgeInsets.only(
+                bottom: isLargeDesktop
+                    ? 20
+                    : isDesktop
+                    ? 16
+                    : isTablet
+                    ? 15
+                    : isSmallScreen
+                    ? 10
+                    : 14,
+              ),
               decoration: BoxDecoration(
                 color: Colors.white,
-                borderRadius: BorderRadius.circular(isDesktop ? 16 : 14),
+                borderRadius: BorderRadius.circular(
+                  isLargeDesktop
+                      ? 20
+                      : isDesktop
+                      ? 16
+                      : isTablet
+                      ? 15
+                      : isSmallScreen
+                      ? 10
+                      : 14,
+                ),
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black.withOpacity(0.05),
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
+                    blurRadius: isLargeDesktop
+                        ? 14
+                        : isDesktop
+                        ? 10
+                        : isTablet
+                        ? 9
+                        : isSmallScreen
+                        ? 6
+                        : 8,
+                    offset: Offset(
+                      0,
+                      isLargeDesktop
+                          ? 6
+                          : isDesktop
+                          ? 4
+                          : isTablet
+                          ? 3
+                          : isSmallScreen
+                          ? 2
+                          : 3,
+                    ),
                   ),
                 ],
               ),
@@ -684,13 +1255,27 @@ class _JobRecommendationScreenState extends State<JobRecommendationScreen>
                       ),
                     );
                   },
-                  borderRadius: BorderRadius.circular(isDesktop ? 16 : 14),
+                  borderRadius: BorderRadius.circular(
+                    isLargeDesktop
+                        ? 20
+                        : isDesktop
+                        ? 16
+                        : isTablet
+                        ? 15
+                        : isSmallScreen
+                        ? 10
+                        : 14,
+                  ),
                   child: Padding(
                     padding: EdgeInsets.all(
-                      isDesktop
+                      isLargeDesktop
+                          ? 24
+                          : isDesktop
                           ? 20
                           : isTablet
                           ? 18
+                          : isSmallScreen
+                          ? 12
                           : 16,
                     ),
                     child: Column(
@@ -700,7 +1285,17 @@ class _JobRecommendationScreenState extends State<JobRecommendationScreen>
                         Row(
                           children: [
                             Container(
-                              padding: const EdgeInsets.all(12),
+                              padding: EdgeInsets.all(
+                                isLargeDesktop
+                                    ? 16
+                                    : isDesktop
+                                    ? 12
+                                    : isTablet
+                                    ? 11
+                                    : isSmallScreen
+                                    ? 8
+                                    : 10,
+                              ),
                               decoration: BoxDecoration(
                                 gradient: const LinearGradient(
                                   colors: [
@@ -708,15 +1303,43 @@ class _JobRecommendationScreenState extends State<JobRecommendationScreen>
                                     Color(0xFF8F7FFF),
                                   ],
                                 ),
-                                borderRadius: BorderRadius.circular(12),
+                                borderRadius: BorderRadius.circular(
+                                  isLargeDesktop
+                                      ? 16
+                                      : isDesktop
+                                      ? 12
+                                      : isTablet
+                                      ? 11
+                                      : isSmallScreen
+                                      ? 8
+                                      : 10,
+                                ),
                               ),
                               child: Icon(
                                 Icons.work_rounded,
                                 color: Colors.white,
-                                size: isDesktop ? 28 : 24,
+                                size: isLargeDesktop
+                                    ? 32
+                                    : isDesktop
+                                    ? 28
+                                    : isTablet
+                                    ? 26
+                                    : isSmallScreen
+                                    ? 20
+                                    : 24,
                               ),
                             ),
-                            const SizedBox(width: 16),
+                            SizedBox(
+                              width: isLargeDesktop
+                                  ? 20
+                                  : isDesktop
+                                  ? 16
+                                  : isTablet
+                                  ? 14
+                                  : isSmallScreen
+                                  ? 8
+                                  : 12,
+                            ),
                             Expanded(
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -724,22 +1347,46 @@ class _JobRecommendationScreenState extends State<JobRecommendationScreen>
                                   Text(
                                     job['title'],
                                     style: TextStyle(
-                                      fontSize: isDesktop
+                                      fontSize: isLargeDesktop
+                                          ? 24
+                                          : isDesktop
                                           ? 20
                                           : isTablet
-                                          ? 18
-                                          : 16,
+                                          ? 19
+                                          : isSmallScreen
+                                          ? 16
+                                          : 18,
                                       fontWeight: FontWeight.w700,
                                       color: const Color(0xFF333333),
                                     ),
-                                    maxLines: 1,
+                                    maxLines: isLargeDesktop || isDesktop
+                                        ? 2
+                                        : isTablet
+                                        ? 2
+                                        : 1,
                                     overflow: TextOverflow.ellipsis,
                                   ),
-                                  const SizedBox(height: 4),
+                                  SizedBox(
+                                    height: isLargeDesktop || isDesktop
+                                        ? 6
+                                        : isTablet
+                                        ? 5
+                                        : isSmallScreen
+                                        ? 2
+                                        : 4,
+                                  ),
                                   Text(
                                     job['company'],
                                     style: TextStyle(
-                                      fontSize: isDesktop ? 14 : 13,
+                                      fontSize: isLargeDesktop
+                                          ? 16
+                                          : isDesktop
+                                          ? 14
+                                          : isTablet
+                                          ? 13
+                                          : isSmallScreen
+                                          ? 11
+                                          : 12,
                                       color: Colors.grey[600],
                                       fontWeight: FontWeight.w500,
                                     ),
@@ -748,18 +1395,52 @@ class _JobRecommendationScreenState extends State<JobRecommendationScreen>
                               ),
                             ),
                             Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 6,
+                              padding: EdgeInsets.symmetric(
+                                horizontal: isLargeDesktop
+                                    ? 14
+                                    : isDesktop
+                                    ? 12
+                                    : isTablet
+                                    ? 11
+                                    : isSmallScreen
+                                    ? 8
+                                    : 10,
+                                vertical: isLargeDesktop
+                                    ? 8
+                                    : isDesktop
+                                    ? 6
+                                    : isTablet
+                                    ? 5.5
+                                    : isSmallScreen
+                                    ? 4
+                                    : 5,
                               ),
                               decoration: BoxDecoration(
                                 color: const Color(0xFF4CAF50).withOpacity(0.1),
-                                borderRadius: BorderRadius.circular(8),
+                                borderRadius: BorderRadius.circular(
+                                  isLargeDesktop
+                                      ? 10
+                                      : isDesktop
+                                      ? 8
+                                      : isTablet
+                                      ? 7.5
+                                      : isSmallScreen
+                                      ? 6
+                                      : 7,
+                                ),
                               ),
                               child: Text(
                                 job['workType'],
                                 style: TextStyle(
-                                  fontSize: isDesktop ? 12 : 11,
+                                  fontSize: isLargeDesktop
+                                      ? 14
+                                      : isDesktop
+                                      ? 12
+                                      : isTablet
+                                      ? 11
+                                      : isSmallScreen
+                                      ? 9
+                                      : 10,
                                   fontWeight: FontWeight.w600,
                                   color: const Color(0xFF4CAF50),
                                 ),
@@ -767,36 +1448,66 @@ class _JobRecommendationScreenState extends State<JobRecommendationScreen>
                             ),
                           ],
                         ),
-                        SizedBox(height: isDesktop ? 16 : 14),
+                        SizedBox(
+                          height: isLargeDesktop
+                              ? 20
+                              : isDesktop
+                              ? 16
+                              : isTablet
+                              ? 15
+                              : isSmallScreen
+                              ? 10
+                              : 14,
+                        ),
 
                         // Job Details
                         Wrap(
-                          spacing: 16,
-                          runSpacing: 8,
+                          spacing: isLargeDesktop
+                              ? 20
+                              : isDesktop
+                              ? 16
+                              : isTablet
+                              ? 14
+                              : isSmallScreen
+                              ? 8
+                              : 12,
+                          runSpacing: isLargeDesktop || isDesktop
+                              ? 10
+                              : isTablet
+                              ? 9
+                              : isSmallScreen
+                              ? 6
+                              : 8,
                           children: [
                             _buildJobDetail(
                               Icons.location_on_outlined,
                               job['location'],
-                              isDesktop,
                             ),
                             _buildJobDetail(
                               Icons.attach_money_rounded,
                               job['salary'],
-                              isDesktop,
                             ),
                             _buildJobDetail(
                               Icons.access_time_rounded,
                               job['postedDate'],
-                              isDesktop,
                             ),
                             _buildJobDetail(
                               Icons.people_outline_rounded,
                               '${job['applicants']} applicants',
-                              isDesktop,
                             ),
                           ],
                         ),
-                        SizedBox(height: isDesktop ? 16 : 14),
+                        SizedBox(
+                          height: isLargeDesktop
+                              ? 20
+                              : isDesktop
+                              ? 16
+                              : isTablet
+                              ? 15
+                              : isSmallScreen
+                              ? 10
+                              : 14,
+                        ),
 
                         // Apply Button
                         SizedBox(
@@ -892,17 +1603,43 @@ class _JobRecommendationScreenState extends State<JobRecommendationScreen>
                               backgroundColor: const Color(0xFF6B5FFF),
                               foregroundColor: Colors.white,
                               padding: EdgeInsets.symmetric(
-                                vertical: isDesktop ? 14 : 12,
+                                vertical: isLargeDesktop
+                                    ? 18
+                                    : isDesktop
+                                    ? 14
+                                    : isTablet
+                                    ? 13
+                                    : isSmallScreen
+                                    ? 10
+                                    : 12,
                               ),
                               shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
+                                borderRadius: BorderRadius.circular(
+                                  isLargeDesktop
+                                      ? 16
+                                      : isDesktop
+                                      ? 12
+                                      : isTablet
+                                      ? 11
+                                      : isSmallScreen
+                                      ? 8
+                                      : 10,
+                                ),
                               ),
                               elevation: 0,
                             ),
                             child: Text(
                               'Apply Now',
                               style: TextStyle(
-                                fontSize: isDesktop ? 16 : 15,
+                                fontSize: isLargeDesktop
+                                    ? 18
+                                    : isDesktop
+                                    ? 16
+                                    : isTablet
+                                    ? 15
+                                    : isSmallScreen
+                                    ? 12
+                                    : 14,
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
@@ -920,16 +1657,44 @@ class _JobRecommendationScreenState extends State<JobRecommendationScreen>
     );
   }
 
-  Widget _buildJobDetail(IconData icon, String text, bool isDesktop) {
+  Widget _buildJobDetail(IconData icon, String text) {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(icon, size: isDesktop ? 16 : 14, color: const Color(0xFF6B5FFF)),
-        const SizedBox(width: 4),
+        Icon(
+          icon,
+          size: isLargeDesktop
+              ? 18
+              : isDesktop
+              ? 16
+              : isTablet
+              ? 15
+              : isSmallScreen
+              ? 12
+              : 14,
+          color: const Color(0xFF6B5FFF),
+        ),
+        SizedBox(
+          width: isLargeDesktop || isDesktop
+              ? 6
+              : isTablet
+              ? 5
+              : isSmallScreen
+              ? 3
+              : 4,
+        ),
         Text(
           text,
           style: TextStyle(
-            fontSize: isDesktop ? 13 : 12,
+            fontSize: isLargeDesktop
+                ? 15
+                : isDesktop
+                ? 13
+                : isTablet
+                ? 12
+                : isSmallScreen
+                ? 10
+                : 11,
             color: Colors.grey[600],
             fontWeight: FontWeight.w500,
           ),
@@ -938,13 +1703,17 @@ class _JobRecommendationScreenState extends State<JobRecommendationScreen>
     );
   }
 
-  Widget _buildNewsletterSection(bool isDesktop, bool isTablet) {
+  Widget _buildNewsletterSection() {
     return Container(
       padding: EdgeInsets.all(
-        isDesktop
+        isLargeDesktop
+            ? 40
+            : isDesktop
             ? 32
             : isTablet
             ? 28
+            : isSmallScreen
+            ? 20
             : 24,
       ),
       decoration: BoxDecoration(
@@ -956,7 +1725,17 @@ class _JobRecommendationScreenState extends State<JobRecommendationScreen>
             const Color(0xFF8F7FFF).withOpacity(0.05),
           ],
         ),
-        borderRadius: BorderRadius.circular(isDesktop ? 20 : 16),
+        borderRadius: BorderRadius.circular(
+          isLargeDesktop
+              ? 24
+              : isDesktop
+              ? 20
+              : isTablet
+              ? 18
+              : isSmallScreen
+              ? 12
+              : 16,
+        ),
         border: Border.all(
           color: const Color(0xFF6B5FFF).withOpacity(0.2),
           width: 1.5,
@@ -966,74 +1745,210 @@ class _JobRecommendationScreenState extends State<JobRecommendationScreen>
         children: [
           Icon(
             Icons.email_outlined,
-            size: isDesktop ? 48 : 40,
+            size: isLargeDesktop
+                ? 56
+                : isDesktop
+                ? 48
+                : isTablet
+                ? 44
+                : isSmallScreen
+                ? 32
+                : 40,
             color: const Color(0xFF6B5FFF),
           ),
-          SizedBox(height: isDesktop ? 16 : 14),
+          SizedBox(
+            height: isLargeDesktop
+                ? 20
+                : isDesktop
+                ? 16
+                : isTablet
+                ? 15
+                : isSmallScreen
+                ? 10
+                : 14,
+          ),
           Text(
             'Subscribe to Job Updates',
             style: TextStyle(
-              fontSize: isDesktop
+              fontSize: isLargeDesktop
+                  ? 28
+                  : isDesktop
                   ? 24
                   : isTablet
-                  ? 20
-                  : 18,
+                  ? 22
+                  : isSmallScreen
+                  ? 18
+                  : 20,
               fontWeight: FontWeight.w700,
               color: const Color(0xFF333333),
             ),
             textAlign: TextAlign.center,
           ),
-          SizedBox(height: isDesktop ? 8 : 6),
+          SizedBox(
+            height: isLargeDesktop || isDesktop
+                ? 10
+                : isTablet
+                ? 8
+                : isSmallScreen
+                ? 4
+                : 6,
+          ),
           Text(
             'Get the latest job opportunities delivered to your inbox',
             style: TextStyle(
-              fontSize: isDesktop ? 15 : 14,
+              fontSize: isLargeDesktop
+                  ? 17
+                  : isDesktop
+                  ? 15
+                  : isTablet
+                  ? 14
+                  : isSmallScreen
+                  ? 11
+                  : 13,
               color: Colors.grey[600],
             ),
             textAlign: TextAlign.center,
+            maxLines: isLargeDesktop || isDesktop
+                ? 2
+                : isTablet
+                ? 2
+                : 2,
           ),
-          SizedBox(height: isDesktop ? 24 : 20),
+          SizedBox(
+            height: isLargeDesktop
+                ? 28
+                : isDesktop
+                ? 24
+                : isTablet
+                ? 22
+                : isSmallScreen
+                ? 16
+                : 20,
+          ),
           Row(
             children: [
               Expanded(
                 child: TextField(
                   controller: _emailController,
+                  style: TextStyle(
+                    fontSize: isLargeDesktop
+                        ? 17
+                        : isDesktop
+                        ? 15
+                        : isTablet
+                        ? 14
+                        : isSmallScreen
+                        ? 12
+                        : 13,
+                  ),
                   decoration: InputDecoration(
                     hintText: 'Enter your email address',
                     hintStyle: TextStyle(
                       color: Colors.grey[400],
-                      fontSize: isDesktop ? 15 : 14,
+                      fontSize: isLargeDesktop
+                          ? 17
+                          : isDesktop
+                          ? 15
+                          : isTablet
+                          ? 14
+                          : isSmallScreen
+                          ? 12
+                          : 13,
                     ),
                     prefixIcon: Icon(
                       Icons.email_outlined,
                       color: const Color(0xFF6B5FFF),
-                      size: isDesktop ? 22 : 20,
+                      size: isLargeDesktop
+                          ? 26
+                          : isDesktop
+                          ? 22
+                          : isTablet
+                          ? 21
+                          : isSmallScreen
+                          ? 18
+                          : 20,
                     ),
                     filled: true,
                     fillColor: Colors.white,
                     border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(
+                        isLargeDesktop
+                            ? 16
+                            : isDesktop
+                            ? 12
+                            : isTablet
+                            ? 11
+                            : isSmallScreen
+                            ? 8
+                            : 10,
+                      ),
                       borderSide: BorderSide.none,
                     ),
                     enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(
+                        isLargeDesktop
+                            ? 16
+                            : isDesktop
+                            ? 12
+                            : isTablet
+                            ? 11
+                            : isSmallScreen
+                            ? 8
+                            : 10,
+                      ),
                       borderSide: BorderSide(color: Colors.grey[200]!),
                     ),
                     focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(
+                        isLargeDesktop
+                            ? 16
+                            : isDesktop
+                            ? 12
+                            : isTablet
+                            ? 11
+                            : isSmallScreen
+                            ? 8
+                            : 10,
+                      ),
                       borderSide: const BorderSide(
                         color: Color(0xFF6B5FFF),
                         width: 2,
                       ),
                     ),
                     contentPadding: EdgeInsets.symmetric(
-                      horizontal: isDesktop ? 20 : 16,
-                      vertical: isDesktop ? 16 : 14,
+                      horizontal: isLargeDesktop
+                          ? 24
+                          : isDesktop
+                          ? 20
+                          : isTablet
+                          ? 18
+                          : isSmallScreen
+                          ? 12
+                          : 16,
+                      vertical: isLargeDesktop
+                          ? 20
+                          : isDesktop
+                          ? 16
+                          : isTablet
+                          ? 15
+                          : isSmallScreen
+                          ? 10
+                          : 14,
                     ),
                   ),
                 ),
               ),
-              SizedBox(width: isDesktop ? 16 : 12),
+              SizedBox(
+                width: isLargeDesktop
+                    ? 20
+                    : isDesktop
+                    ? 16
+                    : isTablet
+                    ? 14
+                    : isSmallScreen
+                    ? 8
+                    : 12,
+              ),
               ElevatedButton(
                 onPressed: () {
                   if (_emailController.text.isNotEmpty) {
@@ -1052,18 +1967,52 @@ class _JobRecommendationScreenState extends State<JobRecommendationScreen>
                   backgroundColor: const Color(0xFF6B5FFF),
                   foregroundColor: Colors.white,
                   padding: EdgeInsets.symmetric(
-                    horizontal: isDesktop ? 32 : 24,
-                    vertical: isDesktop ? 16 : 14,
+                    horizontal: isLargeDesktop
+                        ? 40
+                        : isDesktop
+                        ? 32
+                        : isTablet
+                        ? 28
+                        : isSmallScreen
+                        ? 20
+                        : 24,
+                    vertical: isLargeDesktop
+                        ? 18
+                        : isDesktop
+                        ? 16
+                        : isTablet
+                        ? 15
+                        : isSmallScreen
+                        ? 10
+                        : 14,
                   ),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(
+                      isLargeDesktop
+                          ? 16
+                          : isDesktop
+                          ? 12
+                          : isTablet
+                          ? 11
+                          : isSmallScreen
+                          ? 8
+                          : 10,
+                    ),
                   ),
                   elevation: 0,
                 ),
                 child: Text(
                   'Subscribe',
                   style: TextStyle(
-                    fontSize: isDesktop ? 16 : 15,
+                    fontSize: isLargeDesktop
+                        ? 18
+                        : isDesktop
+                        ? 16
+                        : isTablet
+                        ? 15
+                        : isSmallScreen
+                        ? 12
+                        : 14,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -1076,61 +2025,263 @@ class _JobRecommendationScreenState extends State<JobRecommendationScreen>
   }
 
   Widget _buildLoadingState() {
-    return const Center(
+    return Center(
       child: Padding(
-        padding: EdgeInsets.all(40.0),
-        child: CircularProgressIndicator(
-          valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF6B5FFF)),
+        padding: EdgeInsets.all(
+          isLargeDesktop
+              ? 64.0
+              : isDesktop
+              ? 48.0
+              : isTablet
+              ? 40.0
+              : isSmallScreen
+              ? 24.0
+              : 32.0,
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const CircularProgressIndicator(
+              valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF6B5FFF)),
+            ),
+            SizedBox(
+              height: isLargeDesktop
+                  ? 24
+                  : isDesktop
+                  ? 20
+                  : isTablet
+                  ? 18
+                  : isSmallScreen
+                  ? 12
+                  : 16,
+            ),
+            Text(
+              'Loading jobs...',
+              style: TextStyle(
+                fontSize: isLargeDesktop
+                    ? 20
+                    : isDesktop
+                    ? 18
+                    : isTablet
+                    ? 17
+                    : isSmallScreen
+                    ? 14
+                    : 16,
+                color: Colors.grey[600],
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
         ),
       ),
     );
   }
 
-  Widget _buildErrorState(bool isDesktop, bool isTablet) {
+  Widget _buildErrorState() {
+    final isNoInternet = _errorMessage == 'No internet connection';
+
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(32.0),
+        padding: EdgeInsets.all(
+          isLargeDesktop
+              ? 64.0
+              : isDesktop
+              ? 48.0
+              : isTablet
+              ? 40.0
+              : isSmallScreen
+              ? 24.0
+              : 32.0,
+        ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
-              Icons.error_outline_rounded,
-              size: isDesktop ? 64 : 56,
-              color: Colors.red,
+              Icons.cloud_off,
+              size: isLargeDesktop
+                  ? 80
+                  : isDesktop
+                  ? 64
+                  : isTablet
+                  ? 60
+                  : isSmallScreen
+                  ? 48
+                  : 56,
+              color: Colors.grey[400],
             ),
-            const SizedBox(height: 16),
+            SizedBox(
+              height: isLargeDesktop
+                  ? 28
+                  : isDesktop
+                  ? 24
+                  : isTablet
+                  ? 22
+                  : isSmallScreen
+                  ? 16
+                  : 20,
+            ),
             Text(
-              'Oops! Something went wrong',
+              isNoInternet
+                  ? 'No internet connection'
+                  : 'Oops! Something went wrong',
               style: TextStyle(
-                fontSize: isDesktop ? 20 : 18,
-                fontWeight: FontWeight.w700,
-                color: const Color(0xFF333333),
+                fontSize: isLargeDesktop
+                    ? 24
+                    : isDesktop
+                    ? 20
+                    : isTablet
+                    ? 19
+                    : isSmallScreen
+                    ? 16
+                    : 18,
+                fontWeight: FontWeight.bold,
+                color: Colors.grey[700],
               ),
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 8),
-            Text(
-              _errorMessage ?? 'Unable to load jobs',
-              style: TextStyle(
-                fontSize: isDesktop ? 15 : 14,
-                color: Colors.grey[600],
+            if (isNoInternet) ...[
+              SizedBox(
+                height: isLargeDesktop
+                    ? 14
+                    : isDesktop
+                    ? 12
+                    : isTablet
+                    ? 11
+                    : isSmallScreen
+                    ? 8
+                    : 10,
               ),
-              textAlign: TextAlign.center,
+              Text(
+                'Please check your connection and try again',
+                style: TextStyle(
+                  fontSize: isLargeDesktop
+                      ? 16
+                      : isDesktop
+                      ? 15
+                      : isTablet
+                      ? 14
+                      : isSmallScreen
+                      ? 11
+                      : 13,
+                  color: Colors.grey[600],
+                ),
+                textAlign: TextAlign.center,
+                maxLines: isLargeDesktop || isDesktop
+                    ? 3
+                    : isTablet
+                    ? 2
+                    : 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ] else ...[
+              SizedBox(
+                height: isLargeDesktop
+                    ? 14
+                    : isDesktop
+                    ? 12
+                    : isTablet
+                    ? 11
+                    : isSmallScreen
+                    ? 8
+                    : 10,
+              ),
+              Text(
+                _errorMessage ?? 'Unable to load jobs',
+                style: TextStyle(
+                  fontSize: isLargeDesktop
+                      ? 16
+                      : isDesktop
+                      ? 15
+                      : isTablet
+                      ? 14
+                      : isSmallScreen
+                      ? 11
+                      : 13,
+                  color: Colors.grey[600],
+                ),
+                textAlign: TextAlign.center,
+                maxLines: isLargeDesktop || isDesktop
+                    ? 3
+                    : isTablet
+                    ? 2
+                    : 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
+            SizedBox(
+              height: isLargeDesktop
+                  ? 32
+                  : isDesktop
+                  ? 28
+                  : isTablet
+                  ? 26
+                  : isSmallScreen
+                  ? 20
+                  : 24,
             ),
-            const SizedBox(height: 24),
             ElevatedButton.icon(
-              onPressed: _loadJobData,
-              icon: const Icon(Icons.refresh_rounded, size: 20),
-              label: const Text('Retry'),
+              onPressed: () => _loadJobData(forceRefresh: true),
+              icon: Icon(
+                Icons.refresh_rounded,
+                size: isLargeDesktop
+                    ? 24
+                    : isDesktop
+                    ? 22
+                    : isTablet
+                    ? 20
+                    : isSmallScreen
+                    ? 18
+                    : 20,
+              ),
+              label: Text(
+                'Retry',
+                style: TextStyle(
+                  fontSize: isLargeDesktop
+                      ? 18
+                      : isDesktop
+                      ? 16
+                      : isTablet
+                      ? 15
+                      : isSmallScreen
+                      ? 12
+                      : 14,
+                ),
+              ),
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF6B5FFF),
                 foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 24,
-                  vertical: 14,
+                padding: EdgeInsets.symmetric(
+                  horizontal: isLargeDesktop
+                      ? 40
+                      : isDesktop
+                      ? 32
+                      : isTablet
+                      ? 28
+                      : isSmallScreen
+                      ? 20
+                      : 24,
+                  vertical: isLargeDesktop
+                      ? 18
+                      : isDesktop
+                      ? 16
+                      : isTablet
+                      ? 15
+                      : isSmallScreen
+                      ? 10
+                      : 14,
                 ),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(
+                    isLargeDesktop
+                        ? 16
+                        : isDesktop
+                        ? 12
+                        : isTablet
+                        ? 11
+                        : isSmallScreen
+                        ? 8
+                        : 10,
+                  ),
                 ),
               ),
             ),
@@ -1140,7 +2291,7 @@ class _JobRecommendationScreenState extends State<JobRecommendationScreen>
     );
   }
 
-  Widget _buildEmptyState(bool isDesktop, bool isTablet) {
+  Widget _buildEmptyState() {
     // Check if filters are active
     final hasActiveSearch = _searchController.text.isNotEmpty;
     final hasActiveFilters =
@@ -1150,12 +2301,32 @@ class _JobRecommendationScreenState extends State<JobRecommendationScreen>
 
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(32.0),
+        padding: EdgeInsets.all(
+          isLargeDesktop
+              ? 64.0
+              : isDesktop
+              ? 48.0
+              : isTablet
+              ? 40.0
+              : isSmallScreen
+              ? 24.0
+              : 32.0,
+        ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Container(
-              padding: const EdgeInsets.all(24),
+              padding: EdgeInsets.all(
+                isLargeDesktop
+                    ? 32
+                    : isDesktop
+                    ? 24
+                    : isTablet
+                    ? 22
+                    : isSmallScreen
+                    ? 16
+                    : 20,
+              ),
               decoration: BoxDecoration(
                 color: const Color(0xFF6B5FFF).withOpacity(0.1),
                 shape: BoxShape.circle,
@@ -1164,34 +2335,93 @@ class _JobRecommendationScreenState extends State<JobRecommendationScreen>
                 isFilteredEmpty
                     ? Icons.search_off_rounded
                     : Icons.work_outline_rounded,
-                size: isDesktop ? 64 : 56,
+                size: isLargeDesktop
+                    ? 80
+                    : isDesktop
+                    ? 64
+                    : isTablet
+                    ? 60
+                    : isSmallScreen
+                    ? 48
+                    : 56,
                 color: const Color(0xFF6B5FFF),
               ),
             ),
-            const SizedBox(height: 24),
+            SizedBox(
+              height: isLargeDesktop
+                  ? 32
+                  : isDesktop
+                  ? 24
+                  : isTablet
+                  ? 22
+                  : isSmallScreen
+                  ? 16
+                  : 20,
+            ),
             Text(
               isFilteredEmpty ? 'No Jobs Found' : 'No Jobs Available',
               style: TextStyle(
-                fontSize: isDesktop ? 24 : 20,
+                fontSize: isLargeDesktop
+                    ? 28
+                    : isDesktop
+                    ? 24
+                    : isTablet
+                    ? 22
+                    : isSmallScreen
+                    ? 18
+                    : 20,
                 fontWeight: FontWeight.w700,
                 color: const Color(0xFF333333),
               ),
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 12),
+            SizedBox(
+              height: isLargeDesktop
+                  ? 16
+                  : isDesktop
+                  ? 12
+                  : isTablet
+                  ? 11
+                  : isSmallScreen
+                  ? 8
+                  : 10,
+            ),
             Text(
               isFilteredEmpty
                   ? 'Try adjusting your search or filter criteria to find more opportunities'
                   : 'There are currently no job postings available. Check back soon for new opportunities!',
               style: TextStyle(
-                fontSize: isDesktop ? 15 : 14,
+                fontSize: isLargeDesktop
+                    ? 17
+                    : isDesktop
+                    ? 15
+                    : isTablet
+                    ? 14
+                    : isSmallScreen
+                    ? 11
+                    : 13,
                 color: Colors.grey[600],
                 height: 1.5,
               ),
               textAlign: TextAlign.center,
-              maxLines: 3,
+              maxLines: isLargeDesktop || isDesktop
+                  ? 3
+                  : isTablet
+                  ? 2
+                  : 2,
+              overflow: TextOverflow.ellipsis,
             ),
-            const SizedBox(height: 32),
+            SizedBox(
+              height: isLargeDesktop
+                  ? 40
+                  : isDesktop
+                  ? 32
+                  : isTablet
+                  ? 28
+                  : isSmallScreen
+                  ? 20
+                  : 24,
+            ),
             if (isFilteredEmpty)
               ElevatedButton.icon(
                 onPressed: () {
@@ -1202,35 +2432,135 @@ class _JobRecommendationScreenState extends State<JobRecommendationScreen>
                     _applyFilters();
                   });
                 },
-                icon: const Icon(Icons.clear_all_rounded, size: 20),
-                label: const Text('Clear All Filters'),
+                icon: Icon(
+                  Icons.clear_all_rounded,
+                  size: isLargeDesktop
+                      ? 24
+                      : isDesktop
+                      ? 22
+                      : isTablet
+                      ? 20
+                      : isSmallScreen
+                      ? 18
+                      : 20,
+                ),
+                label: Text(
+                  'Clear All Filters',
+                  style: TextStyle(
+                    fontSize: isLargeDesktop
+                        ? 18
+                        : isDesktop
+                        ? 16
+                        : isTablet
+                        ? 15
+                        : isSmallScreen
+                        ? 12
+                        : 14,
+                  ),
+                ),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF6B5FFF),
                   foregroundColor: Colors.white,
                   padding: EdgeInsets.symmetric(
-                    horizontal: isDesktop ? 32 : 24,
-                    vertical: isDesktop ? 16 : 14,
+                    horizontal: isLargeDesktop
+                        ? 40
+                        : isDesktop
+                        ? 32
+                        : isTablet
+                        ? 28
+                        : isSmallScreen
+                        ? 20
+                        : 24,
+                    vertical: isLargeDesktop
+                        ? 18
+                        : isDesktop
+                        ? 16
+                        : isTablet
+                        ? 15
+                        : isSmallScreen
+                        ? 10
+                        : 14,
                   ),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(
+                      isLargeDesktop
+                          ? 16
+                          : isDesktop
+                          ? 12
+                          : isTablet
+                          ? 11
+                          : isSmallScreen
+                          ? 8
+                          : 10,
+                    ),
                   ),
                   elevation: 0,
                 ),
               )
             else
               OutlinedButton.icon(
-                onPressed: _loadJobData,
-                icon: const Icon(Icons.refresh_rounded, size: 20),
-                label: const Text('Refresh'),
+                onPressed: () => _loadJobData(forceRefresh: true),
+                icon: Icon(
+                  Icons.refresh_rounded,
+                  size: isLargeDesktop
+                      ? 24
+                      : isDesktop
+                      ? 22
+                      : isTablet
+                      ? 20
+                      : isSmallScreen
+                      ? 18
+                      : 20,
+                ),
+                label: Text(
+                  'Refresh',
+                  style: TextStyle(
+                    fontSize: isLargeDesktop
+                        ? 18
+                        : isDesktop
+                        ? 16
+                        : isTablet
+                        ? 15
+                        : isSmallScreen
+                        ? 12
+                        : 14,
+                  ),
+                ),
                 style: OutlinedButton.styleFrom(
                   foregroundColor: const Color(0xFF6B5FFF),
                   side: const BorderSide(color: Color(0xFF6B5FFF), width: 1.5),
                   padding: EdgeInsets.symmetric(
-                    horizontal: isDesktop ? 32 : 24,
-                    vertical: isDesktop ? 16 : 14,
+                    horizontal: isLargeDesktop
+                        ? 40
+                        : isDesktop
+                        ? 32
+                        : isTablet
+                        ? 28
+                        : isSmallScreen
+                        ? 20
+                        : 24,
+                    vertical: isLargeDesktop
+                        ? 18
+                        : isDesktop
+                        ? 16
+                        : isTablet
+                        ? 15
+                        : isSmallScreen
+                        ? 10
+                        : 14,
                   ),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(
+                      isLargeDesktop
+                          ? 16
+                          : isDesktop
+                          ? 12
+                          : isTablet
+                          ? 11
+                          : isSmallScreen
+                          ? 8
+                          : 10,
+                    ),
                   ),
                 ),
               ),

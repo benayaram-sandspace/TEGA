@@ -19,7 +19,7 @@ class ThemeProvider extends ChangeNotifier {
     final prefs = await SharedPreferences.getInstance();
     final savedPreference = prefs.getString('themePreference') ?? 'system';
     _themePreference = savedPreference;
-    
+
     switch (savedPreference) {
       case 'light':
         _themeMode = ThemeMode.light;
@@ -39,7 +39,7 @@ class ThemeProvider extends ChangeNotifier {
     _themePreference = preference;
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('themePreference', preference);
-    
+
     switch (preference) {
       case 'light':
         _themeMode = ThemeMode.light;

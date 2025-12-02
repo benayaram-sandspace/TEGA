@@ -1,10 +1,11 @@
 import express from 'express';
 import multer from 'multer';
-import path from 'path';
-import { fileURLToPath } from 'url';
 import {
   getAllExams,
   getAvailableExams,
+  testDatabase,
+  emergencyReactivateExams,
+  emergencyReactivateExamsGet,
   createExam,
   registerForExam,
   getExamRegistrations,
@@ -31,22 +32,8 @@ import { studentAuth } from '../middleware/studentAuth.js';
 
 const router = express.Router();
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-// Configure multer for file uploads
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, 'uploads/excel/');
-  },
-  filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
-  }
-});
-
 const upload = multer({
-  storage: storage,
+  storage: multer.memoryStorage(),
   fileFilter: (req, file, cb) => {
     if (file.mimetype === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' ||
         file.mimetype === 'application/vnd.ms-excel') {
@@ -75,6 +62,9 @@ router.post('/admin/reactivate-incorrectly-inactive', adminAuth, reactivateIncor
 router.get('/available/:studentId', studentAuth, getAvailableExams);
 router.get('/student/all', studentAuth, getAvailableExams); // Alias for payment page
 router.get('/my-results', studentAuth, getAllUserExamResults); // Get all user exam results
+router.get('/test-database', testDatabase); // Test endpoint to check database
+router.post('/emergency-reactivate', emergencyReactivateExams); // Emergency reactivation endpoint
+router.get('/emergency-reactivate', emergencyReactivateExamsGet); // Emergency reactivation GET endpoint
 
 // Exam payment attempt routes (must be before generic /:examId routes)
 router.post('/payment-attempt', studentAuth, createExamPaymentAttempt);

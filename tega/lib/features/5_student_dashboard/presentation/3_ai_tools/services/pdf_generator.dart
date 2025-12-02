@@ -53,8 +53,7 @@ class PDFGenerator {
   static Future<void> sharePDF(String filePath) async {
     try {
       await Share.shareXFiles([XFile(filePath)], text: 'My Resume');
-    } catch (e) {
-    }
+    } catch (e) {}
   }
 
   static Future<bool> saveToDownloads(String filePath) async {

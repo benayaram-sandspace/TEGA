@@ -134,6 +134,7 @@ codeSubmissionSchema.statics.getUserStats = async function(userId) {
   };
 };
 
+
 // Pre-save middleware
 codeSubmissionSchema.pre('save', function(next) {
   const now = new Date();

@@ -17,7 +17,7 @@ class _OnboardingQuizManagerPageState extends State<OnboardingQuizManagerPage>
   final ContentQuizRepository _contentQuizService = ContentQuizRepository();
   OnboardingQuiz? _onboardingQuiz;
   bool _isLoading = true;
-  
+
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
   late Animation<Offset> _slideAnimation;
@@ -32,11 +32,14 @@ class _OnboardingQuizManagerPageState extends State<OnboardingQuizManagerPage>
     _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
     );
-    _slideAnimation = Tween<Offset>(
-      begin: const Offset(0, 0.3),
-      end: Offset.zero,
-    ).animate(CurvedAnimation(parent: _animationController, curve: Curves.easeOutCubic));
-    
+    _slideAnimation =
+        Tween<Offset>(begin: const Offset(0, 0.3), end: Offset.zero).animate(
+          CurvedAnimation(
+            parent: _animationController,
+            curve: Curves.easeOutCubic,
+          ),
+        );
+
     _animationController.forward();
     _loadOnboardingQuiz();
   }
@@ -78,38 +81,41 @@ class _OnboardingQuizManagerPageState extends State<OnboardingQuizManagerPage>
         child: SlideTransition(
           position: _slideAnimation,
           child: _isLoading
-          ? const Center(
-              child: CircularProgressIndicator(color: AppColors.primary),
-            )
-          : _onboardingQuiz == null
-          ? const Center(
-              child: Text(
-                'No onboarding quiz found',
-                style: TextStyle(color: AppColors.textSecondary, fontSize: 16),
-              ),
-            )
-          : SingleChildScrollView(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Quiz overview
-                  _buildQuizOverview(),
-                  const SizedBox(height: 24),
+              ? const Center(
+                  child: CircularProgressIndicator(color: AppColors.primary),
+                )
+              : _onboardingQuiz == null
+              ? const Center(
+                  child: Text(
+                    'No onboarding quiz found',
+                    style: TextStyle(
+                      color: AppColors.textSecondary,
+                      fontSize: 16,
+                    ),
+                  ),
+                )
+              : SingleChildScrollView(
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Quiz overview
+                      _buildQuizOverview(),
+                      const SizedBox(height: 24),
 
-                  // Quiz settings
-                  _buildQuizSettings(),
-                  const SizedBox(height: 24),
+                      // Quiz settings
+                      _buildQuizSettings(),
+                      const SizedBox(height: 24),
 
-                  // Questions list
-                  _buildQuestionsList(),
-                  const SizedBox(height: 24),
+                      // Questions list
+                      _buildQuestionsList(),
+                      const SizedBox(height: 24),
 
-                  // Action buttons
-                  _buildActionButtons(),
-                ],
-              ),
-            ),
+                      // Action buttons
+                      _buildActionButtons(),
+                    ],
+                  ),
+                ),
         ),
       ),
     );
@@ -548,5 +554,5 @@ class _OnboardingQuizManagerPageState extends State<OnboardingQuizManagerPage>
         backgroundColor: AppColors.success,
       ),
     );
-}
+  }
 }

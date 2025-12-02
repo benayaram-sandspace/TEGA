@@ -19,7 +19,7 @@ class _FlaggedUsersPageState extends State<FlaggedUsersPage>
   String _selectedDateRange = 'Select Date Range';
 
   List<FlaggedUser> _flaggedUsers = [];
-  
+
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
   late Animation<Offset> _slideAnimation;
@@ -34,11 +34,14 @@ class _FlaggedUsersPageState extends State<FlaggedUsersPage>
     _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
     );
-    _slideAnimation = Tween<Offset>(
-      begin: const Offset(0, 0.3),
-      end: Offset.zero,
-    ).animate(CurvedAnimation(parent: _animationController, curve: Curves.easeOutCubic));
-    
+    _slideAnimation =
+        Tween<Offset>(begin: const Offset(0, 0.3), end: Offset.zero).animate(
+          CurvedAnimation(
+            parent: _animationController,
+            curve: Curves.easeOutCubic,
+          ),
+        );
+
     _animationController.forward();
     _loadFlaggedUsers();
   }
@@ -51,20 +54,36 @@ class _FlaggedUsersPageState extends State<FlaggedUsersPage>
 
   void _loadFlaggedUsers() {
     _flaggedUsers = [
-      FlaggedUser(name: 'Aarav Sharma', college: 'College of Engineering', status: 'Pending Review'),
+      FlaggedUser(
+        name: 'Aarav Sharma',
+        college: 'College of Engineering',
+        status: 'Pending Review',
+      ),
       FlaggedUser(
         name: 'Anika Verma',
         college: 'College of Arts and Sciences',
         status: 'Pending Review',
       ),
-      FlaggedUser(name: 'Rohan Kapoor', college: 'School of Business', status: 'Pending Review'),
-      FlaggedUser(name: 'Ishaan Singh', college: 'College of Engineering', status: 'Pending Review'),
+      FlaggedUser(
+        name: 'Rohan Kapoor',
+        college: 'School of Business',
+        status: 'Pending Review',
+      ),
+      FlaggedUser(
+        name: 'Ishaan Singh',
+        college: 'College of Engineering',
+        status: 'Pending Review',
+      ),
       FlaggedUser(
         name: 'Diya Patel',
         college: 'College of Arts and Sciences',
         status: 'Pending Review',
       ),
-      FlaggedUser(name: 'Arjun Malhotra', college: 'School of Business', status: 'Pending Review'),
+      FlaggedUser(
+        name: 'Arjun Malhotra',
+        college: 'School of Business',
+        status: 'Pending Review',
+      ),
     ];
   }
 
@@ -77,11 +96,11 @@ class _FlaggedUsersPageState extends State<FlaggedUsersPage>
         child: SlideTransition(
           position: _slideAnimation,
           child: SingleChildScrollView(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Count
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Count
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
@@ -227,41 +246,41 @@ class _FlaggedUsersPageState extends State<FlaggedUsersPage>
         Text(
           label,
           style: const TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
-                color: AppColors.textPrimary,
+            fontSize: 14,
+            fontWeight: FontWeight.w500,
+            color: AppColors.textPrimary,
           ),
         ),
         const SizedBox(height: 8),
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
           decoration: BoxDecoration(
-                color: AppColors.surface,
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: AppColors.borderLight),
+            color: AppColors.surface,
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: AppColors.borderLight),
           ),
           child: Row(
-                children: [
-                  Expanded(
-                    child: DropdownButtonHideUnderline(
-                      child: DropdownButton<String>(
-                        value: value,
-                        isExpanded: true,
-                        items: items.map((String item) {
-                          return DropdownMenuItem<String>(
-                                value: item,
-                                child: Text(
-                                  item,
-                                  style: const TextStyle(color: AppColors.textPrimary),
-                                ),
-                          );
-                        }).toList(),
-                        onChanged: onChanged,
-                      ),
-                    ),
+            children: [
+              Expanded(
+                child: DropdownButtonHideUnderline(
+                  child: DropdownButton<String>(
+                    value: value,
+                    isExpanded: true,
+                    items: items.map((String item) {
+                      return DropdownMenuItem<String>(
+                        value: item,
+                        child: Text(
+                          item,
+                          style: const TextStyle(color: AppColors.textPrimary),
+                        ),
+                      );
+                    }).toList(),
+                    onChanged: onChanged,
                   ),
-                  Icon(Icons.keyboard_arrow_down, color: AppColors.textSecondary),
-                ],
+                ),
+              ),
+              Icon(Icons.keyboard_arrow_down, color: AppColors.textSecondary),
+            ],
           ),
         ),
       ],
@@ -281,56 +300,56 @@ class _FlaggedUsersPageState extends State<FlaggedUsersPage>
         children: [
           // User Avatar
           Container(
-                width: 50,
-                height: 50,
-                decoration: BoxDecoration(
-                  color: AppColors.primary.withOpacity(0.1),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(Icons.person, color: AppColors.primary, size: 24),
+            width: 50,
+            height: 50,
+            decoration: BoxDecoration(
+              color: AppColors.primary.withOpacity(0.1),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(Icons.person, color: AppColors.primary, size: 24),
           ),
           const SizedBox(width: 16),
 
           // User Info
           Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      user.name,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.textPrimary,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      user.college,
-                      style: TextStyle(fontSize: 14, color: AppColors.info),
-                    ),
-                  ],
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  user.name,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.textPrimary,
+                  ),
                 ),
+                const SizedBox(height: 4),
+                Text(
+                  user.college,
+                  style: TextStyle(fontSize: 14, color: AppColors.info),
+                ),
+              ],
+            ),
           ),
 
           // View Profile Button
           TextButton(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => StudentProfilePage(
-                        student: Student.basic(
-                          user.name,
-                          user.college,
-                          user.status,
-                        ),
-                      ),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => StudentProfilePage(
+                    student: Student.basic(
+                      user.name,
+                      user.college,
+                      user.status,
                     ),
-                  );
-                },
-                style: TextButton.styleFrom(foregroundColor: AppColors.primary),
-                child: const Text('View Profile'),
+                  ),
+                ),
+              );
+            },
+            style: TextButton.styleFrom(foregroundColor: AppColors.primary),
+            child: const Text('View Profile'),
           ),
         ],
       ),

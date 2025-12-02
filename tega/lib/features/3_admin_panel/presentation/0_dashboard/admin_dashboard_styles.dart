@@ -3,7 +3,9 @@ import 'package:tega/core/constants/app_colors.dart';
 
 class AdminDashboardStyles {
   // Admin-specific color palette with orange theme
-  static const Color background = Color(0xFFFEF7F0); // Warm orange-tinted background
+  static const Color background = Color(
+    0xFFFEF7F0,
+  ); // Warm orange-tinted background
   static const Color cardBackground = Colors.white;
   static const Color primary = AppColors.warmOrange;
   static const Color primaryLight = AppColors.orangeShade1;
@@ -44,30 +46,27 @@ class AdminDashboardStyles {
     fontWeight: FontWeight.bold,
     color: textDark,
   );
-  
+
   static const TextStyle sectionTitle = TextStyle(
     fontSize: 18,
     fontWeight: FontWeight.bold,
     color: textDark,
   );
-  
+
   static const TextStyle statValue = TextStyle(
     fontSize: 18,
     fontWeight: FontWeight.bold,
     color: textDark,
   );
-  
-  static const TextStyle statTitle = TextStyle(
-    color: textLight, 
-    fontSize: 13,
-  );
-  
+
+  static const TextStyle statTitle = TextStyle(color: textLight, fontSize: 13);
+
   static const TextStyle insightTitle = TextStyle(
     fontWeight: FontWeight.w500,
     color: textDark,
     fontSize: 14,
   );
-  
+
   static const TextStyle priorityTag = TextStyle(
     fontSize: 11,
     fontWeight: FontWeight.bold,
@@ -86,8 +85,10 @@ class AdminDashboardStyles {
       ),
       borderRadius: BorderRadius.circular(20),
       border: Border.all(
-        color: borderColor?.withValues(alpha: 0.2) ?? primary.withValues(alpha: 0.2), 
-        width: 1
+        color:
+            borderColor?.withValues(alpha: 0.2) ??
+            primary.withValues(alpha: 0.2),
+        width: 1,
       ),
       boxShadow: [
         BoxShadow(
@@ -107,9 +108,7 @@ class AdminDashboardStyles {
       foregroundColor: Colors.white,
       elevation: 4,
       shadowColor: primary.withValues(alpha: 0.3),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
     );
   }
@@ -118,9 +117,7 @@ class AdminDashboardStyles {
     return OutlinedButton.styleFrom(
       side: BorderSide(color: primary),
       foregroundColor: primary,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
     );
   }

@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:tega/features/4_college_panel/presentation/0_dashboard/dashboard_styles.dart';
 import 'package:tega/features/4_college_panel/presentation/0_dashboard/tabs/student_detailed_progress_page.dart';
 
-
 class ProgressPage extends StatefulWidget {
   const ProgressPage({super.key});
 

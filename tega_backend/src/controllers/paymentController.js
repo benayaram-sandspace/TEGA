@@ -246,6 +246,7 @@ export const getAvailableTegaExams = async (req, res) => {
       isActive: true,
       requiresPayment: true
     });
+    
     // Filter exams based on payment deadline (5 minutes before exam start)
     const availableExams = [];
     
@@ -798,7 +799,7 @@ export const verifyUPIPayment = async (req, res) => {
       const studentNotification = new Notification({
         recipient: student._id,
         recipientModel: 'Student',
-        message: `✅ Payment Successful!\n\nYou are now enrolled in ${course.courseName}\nAmount Paid: ₹${amount}\nTransaction ID: ${transactionId}\nAccess granted for 1 year\n\nYou can now access course content and exams!`,
+        message: `   Payment Successful!\n\nYou are now enrolled in ${course.courseName}\nAmount Paid: ₹${amount}\nTransaction ID: ${transactionId}\nAccess granted for 1 year\n\nYou can now access course content and exams!`,
         type: 'info'
       });
       await studentNotification.save();
@@ -1041,173 +1042,93 @@ export const checkCourseAccess = async (req, res) => {
 // Get user's paid courses (unified from both Payment and RazorpayPayment models)
 // Check if user has paid for Tega exam
 // Utility function to check TEGA exam payment (can be called from other controllers)
-export const checkTegaExamPaymentUtil = async (userId) => {
+export const checkTegaExamPaymentUtil = async (userId, examId = null) => {
   try {
     let hasPaidForTegaExam = false;
     let paymentSource = null;
     let paymentDetails = null;
     
-    // Debug: Check all payments for this user to see what's in the database
     const RazorpayPayment = (await import('../models/RazorpayPayment.js')).default;
-    const allPayments = await RazorpayPayment.find({ studentId: userId });
-    allPayments.forEach((payment, index) => {
-    });
     
     if (isMongoConnected()) {
       try {
-        // Check Payment model for Tega exam payments (where examAccess is true and courseId is null)
-        const tegaPayment = await Payment.findOne({
-          studentId: userId,
-          examAccess: true,
-          courseId: null, // Tega exam has no courseId
-          status: 'completed'
-        });
+        // First, check RazorpayPayment for TEGA exam payments (new system)
+        // Check for direct exam payments first
+        let razorpayTegaPayment = null;
         
-        if (tegaPayment) {
-          hasPaidForTegaExam = true;
-          paymentSource = 'payment';
-          paymentDetails = {
-            paymentId: tegaPayment._id,
-            amount: tegaPayment.amount,
-            paymentDate: tegaPayment.paymentDate,
-            validUntil: tegaPayment.validUntil
-          };
-        }
-        
-        // Also check RazorpayPayment model for Tega exam payments
-        if (!hasPaidForTegaExam) {
-          const RazorpayPayment = (await import('../models/RazorpayPayment.js')).default;
+        if (examId) {
+          // Check for direct exam payment
+          razorpayTegaPayment = await RazorpayPayment.findOne({
+            studentId: userId,
+            examId: new mongoose.Types.ObjectId(examId),
+            status: 'completed',
+            $or: [
+              { isTegaExam: true },
+              { examAccess: true }
+            ]
+          });
           
-          // First, check for explicit Tega exam payments using isTegaExam flag
-          const tegaRazorpayPayment = await RazorpayPayment.findOne({
+          // If not found, check package payments that include this exam
+          if (!razorpayTegaPayment) {
+            const packagePayments = await RazorpayPayment.find({
+              studentId: userId,
+              isPackage: true,
+              status: 'completed'
+            });
+            
+            // Check each package to see if it includes this exam
+            for (const pkgPayment of packagePayments) {
+              if (pkgPayment.packageData?.includedExam?.examId) {
+                const packageExamId = pkgPayment.packageData.includedExam.examId.toString();
+                const targetExamId = new mongoose.Types.ObjectId(examId).toString();
+                if (packageExamId === targetExamId) {
+                  razorpayTegaPayment = pkgPayment;
+                  break;
+                }
+              }
+            }
+          }
+        } else {
+          // No specific examId - check for any TEGA exam payment
+          razorpayTegaPayment = await RazorpayPayment.findOne({
             studentId: userId,
             isTegaExam: true,
             status: 'completed'
           });
-          // Also check for any completed payments that might be TEGA exam payments
-          const anyCompletedPayment = await RazorpayPayment.findOne({
+        }
+        
+        if (razorpayTegaPayment) {
+          hasPaidForTegaExam = true;
+          paymentSource = razorpayTegaPayment.isPackage ? 'package_payment' : 'razorpay_payment';
+          paymentDetails = {
+            paymentId: razorpayTegaPayment._id,
+            examId: razorpayTegaPayment.examId || (razorpayTegaPayment.packageData?.includedExam?.examId),
+            amount: razorpayTegaPayment.amount,
+            paymentDate: razorpayTegaPayment.paymentDate,
+            isPackage: razorpayTegaPayment.isPackage || false,
+            packageName: razorpayTegaPayment.isPackage ? razorpayTegaPayment.packageData?.packageName : null
+          };
+        }
+        
+        // Also check Payment model for Tega exam payments (old system)
+        if (!hasPaidForTegaExam) {
+          const Payment = (await import('../models/Payment.js')).default;
+          const tegaPayment = await Payment.findOne({
             studentId: userId,
+            examAccess: true,
+            courseId: null, // Tega exam has no courseId
             status: 'completed'
           });
-          if (anyCompletedPayment) {
-          }
-          
-          if (tegaRazorpayPayment) {
+        
+          if (tegaPayment) {
             hasPaidForTegaExam = true;
-            paymentSource = 'razorpay';
+            paymentSource = 'payment';
             paymentDetails = {
-              paymentId: tegaRazorpayPayment._id,
-              amount: tegaRazorpayPayment.amount,
-              paymentDate: tegaRazorpayPayment.paymentDate,
-              validUntil: tegaRazorpayPayment.validUntil
+              paymentId: tegaPayment._id,
+              amount: tegaPayment.amount,
+              paymentDate: tegaPayment.paymentDate,
+              validUntil: tegaPayment.validUntil
             };
-          } else {
-            // Fallback: Check for payments with examAccess=true and no courseId (legacy TEGA exam payments)
-            const legacyTegaPayment = await RazorpayPayment.findOne({
-              studentId: userId,
-              examAccess: true,
-              courseId: null,
-              status: 'completed'
-            });
-            if (legacyTegaPayment) {
-              hasPaidForTegaExam = true;
-              paymentSource = 'razorpay_legacy';
-              paymentDetails = {
-                paymentId: legacyTegaPayment._id,
-                amount: legacyTegaPayment.amount,
-                paymentDate: legacyTegaPayment.paymentDate,
-                validUntil: legacyTegaPayment.validUntil
-              };
-            } else {
-              // Additional fallback: Check for payments with examAccess=true but only if they're specifically for TEGA exams
-              // This is more restrictive to avoid false positives from regular course payments
-              const anyExamAccessPayment = await RazorpayPayment.findOne({
-                studentId: userId,
-                examAccess: true,
-                status: 'completed',
-                $or: [
-                  { courseId: null }, // Standalone TEGA exam payments
-                  { courseName: { $regex: /tega|TEGA/i } } // Payments to courses with "TEGA" in the name
-                ]
-              });
-              if (anyExamAccessPayment) {
-              }
-          
-              if (anyExamAccessPayment) {
-                // Double-check: Make sure this is actually a TEGA exam payment, not a regular course
-                if (!anyExamAccessPayment.courseId || 
-                    (anyExamAccessPayment.courseName && anyExamAccessPayment.courseName.toLowerCase().includes('tega'))) {
-                  hasPaidForTegaExam = true;
-                  paymentSource = 'razorpay_exam_access';
-                  paymentDetails = {
-                    paymentId: anyExamAccessPayment._id,
-                    amount: anyExamAccessPayment.amount,
-                    paymentDate: anyExamAccessPayment.paymentDate,
-                    validUntil: anyExamAccessPayment.validUntil,
-                    courseName: anyExamAccessPayment.courseName
-                  };
-                } else {
-                }
-              } else {
-              }
-            }
-          }
-          
-          // Note: Removed high-amount payment check as it was incorrectly treating 
-          // any payment ≥₹799 as TEGA exam payment, even if it was for a regular course
-          // Now checking for the correct TEGA exam price of ₹1
-          
-          // If still no payment found, check for payments to "Tega Exam" course
-          if (!hasPaidForTegaExam) {
-            const Course = (await import('../models/Course.js')).default;
-            const tegaExamCourse = await Course.findOne({ 
-              courseName: { $in: ['Tega Exam', 'TEGA Exam', 'tega exam', 'Tega Main Exam', 'TEGA Main Exam', 'tega main exam'] } // Match both TEGA exam courses
-            });
-            
-            if (tegaExamCourse) {
-              // Check RazorpayPayment with more flexible criteria
-              const tegaCoursePayment = await RazorpayPayment.findOne({
-                studentId: userId,
-                courseId: tegaExamCourse._id,
-                status: 'completed'
-                // Remove amount restriction to catch all payments
-              });
-              
-              if (tegaCoursePayment) {
-                hasPaidForTegaExam = true;
-                paymentSource = 'razorpay_tega_course';
-                paymentDetails = {
-                  paymentId: tegaCoursePayment._id,
-                  amount: tegaCoursePayment.amount,
-                  paymentDate: tegaCoursePayment.paymentDate,
-                  validUntil: tegaCoursePayment.validUntil,
-                  courseName: tegaCoursePayment.courseName
-                };
-              } else {
-                // Also check Payment model for this course
-                const Payment = (await import('../models/Payment.js')).default;
-                const tegaCoursePaymentLegacy = await Payment.findOne({
-                  studentId: userId,
-                  courseId: tegaExamCourse._id,
-                  status: 'completed'
-                  // Remove amount restriction to catch all payments
-                });
-                
-                if (tegaCoursePaymentLegacy) {
-                  hasPaidForTegaExam = true;
-                  paymentSource = 'payment_tega_course';
-                  paymentDetails = {
-                    paymentId: tegaCoursePaymentLegacy._id,
-                    amount: tegaCoursePaymentLegacy.amount,
-                    paymentDate: tegaCoursePaymentLegacy.paymentDate,
-                    validUntil: tegaCoursePaymentLegacy.validUntil,
-                    note: 'Payment for TEGA exam course (legacy)'
-                  };
-                } else {
-                }
-              }
-            } else {
-            }
           }
         }
         
@@ -1267,7 +1188,29 @@ export const getUserPaidCourses = async (req, res) => {
           studentId: userId, 
           status: 'completed' 
         });
-        razorpayPaidCourses = razorpayPayments.map(payment => payment.courseId);
+        
+        // Extract course IDs from direct course payments
+        razorpayPaidCourses = razorpayPayments
+          .filter(payment => payment.courseId && !payment.isPackage)
+          .map(payment => payment.courseId);
+        
+        // Extract course IDs from package payments
+        const packagePayments = razorpayPayments.filter(payment => payment.isPackage && payment.packageData?.includedCourses);
+        const packageCourseIds = [];
+        packagePayments.forEach(payment => {
+          if (payment.packageData?.includedCourses && Array.isArray(payment.packageData.includedCourses)) {
+            payment.packageData.includedCourses.forEach(course => {
+              const courseId = course.courseId || course._id || course;
+              if (courseId) {
+                packageCourseIds.push(courseId);
+              }
+            });
+          }
+        });
+        
+        // Combine direct course payments and package course IDs
+        razorpayPaidCourses = [...razorpayPaidCourses, ...packageCourseIds];
+        
         // Get paid courses from UserCourse model
         const UserCourse = (await import('../models/UserCourse.js')).default;
         const userCourses = await UserCourse.getActiveCourses(userId);
@@ -1445,7 +1388,10 @@ export const processRefund = async (req, res) => {
 // Get payment statistics (for admin)
 export const getPaymentStats = async (req, res) => {
   try {
-    const stats = await Payment.aggregate([
+    // RazorpayPayment is already imported at the top of the file
+    
+    // Get stats from Payment model (old payments)
+    const paymentStats = await Payment.aggregate([
       {
         $group: {
           _id: '$status',
@@ -1455,24 +1401,132 @@ export const getPaymentStats = async (req, res) => {
       }
     ]);
 
-    const totalPayments = await Payment.countDocuments();
-    const totalRevenue = await Payment.aggregate([
-      { $match: { status: 'completed' } },
-      { $group: { _id: null, total: { $sum: '$amount' } } }
+    // Get stats from RazorpayPayment model (new payments including packages)
+    const razorpayStats = await RazorpayPayment.aggregate([
+      {
+        $group: {
+          _id: '$status',
+          count: { $sum: 1 },
+          totalAmount: { $sum: '$amount' }
+        }
+      }
     ]);
+
+    // Combine stats from both models
+    const combinedStats = {};
+    [...paymentStats, ...razorpayStats].forEach(stat => {
+      if (!combinedStats[stat._id]) {
+        combinedStats[stat._id] = { count: 0, totalAmount: 0 };
+      }
+      combinedStats[stat._id].count += stat.count;
+      combinedStats[stat._id].totalAmount += stat.totalAmount || 0;
+    });
+
+    // Convert back to array format
+    const stats = Object.entries(combinedStats).map(([status, data]) => ({
+      _id: status,
+      count: data.count,
+      totalAmount: data.totalAmount
+    }));
+
+    // Get total payments count from both models
+    const [paymentCount, razorpayCount] = await Promise.all([
+      Payment.countDocuments(),
+      RazorpayPayment.countDocuments()
+    ]);
+    const totalPayments = paymentCount + razorpayCount;
+
+    // Calculate total revenue from both models (only completed payments)
+    const [paymentRevenue, razorpayRevenue] = await Promise.all([
+      Payment.aggregate([
+        { $match: { status: 'completed' } },
+        { $group: { _id: null, total: { $sum: '$amount' } } }
+      ]),
+      RazorpayPayment.aggregate([
+        { $match: { status: 'completed' } },
+        { $group: { _id: null, total: { $sum: '$amount' } } }
+      ])
+    ]);
+
+    const paymentRevenueAmount = paymentRevenue[0]?.total || 0;
+    const razorpayRevenueAmount = razorpayRevenue[0]?.total || 0;
+    const totalRevenue = paymentRevenueAmount + razorpayRevenueAmount;
+
+    // Calculate monthly revenue (last 30 days)
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+    const [monthlyPaymentRevenue, monthlyRazorpayRevenue] = await Promise.all([
+      Payment.aggregate([
+        { 
+          $match: { 
+            status: 'completed',
+            paymentDate: { $gte: thirtyDaysAgo }
+          } 
+        },
+        { $group: { _id: null, total: { $sum: '$amount' } } }
+      ]),
+      RazorpayPayment.aggregate([
+        { 
+          $match: { 
+            status: 'completed',
+            paymentDate: { $gte: thirtyDaysAgo }
+          } 
+        },
+        { $group: { _id: null, total: { $sum: '$amount' } } }
+      ])
+    ]);
+
+    const monthlyRevenue = (monthlyPaymentRevenue[0]?.total || 0) + (monthlyRazorpayRevenue[0]?.total || 0);
+
+    // Calculate daily revenue (today)
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+
+    const [dailyPaymentRevenue, dailyRazorpayRevenue] = await Promise.all([
+      Payment.aggregate([
+        { 
+          $match: { 
+            status: 'completed',
+            paymentDate: { $gte: todayStart }
+          } 
+        },
+        { $group: { _id: null, total: { $sum: '$amount' } } }
+      ]),
+      RazorpayPayment.aggregate([
+        { 
+          $match: { 
+            status: 'completed',
+            paymentDate: { $gte: todayStart }
+          } 
+        },
+        { $group: { _id: null, total: { $sum: '$amount' } } }
+      ])
+    ]);
+
+    const dailyRevenue = (dailyPaymentRevenue[0]?.total || 0) + (dailyRazorpayRevenue[0]?.total || 0);
+
+    // Calculate success rate
+    const completedPayments = (combinedStats['completed']?.count || 0);
+    const successRate = totalPayments > 0 ? Math.round((completedPayments / totalPayments) * 100) : 0;
 
     res.json({
       success: true,
       data: {
         stats: stats,
         totalPayments: totalPayments,
-        totalRevenue: totalRevenue[0]?.total || 0
+        totalRevenue: totalRevenue,
+        monthlyRevenue: monthlyRevenue,
+        dailyRevenue: dailyRevenue,
+        successRate: successRate,
+        totalTransactions: totalPayments
       }
     });
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: 'Failed to fetch payment statistics'
+      message: 'Failed to fetch payment statistics',
+      error: error.message
     });
   }
 };
@@ -1838,22 +1892,60 @@ export const checkSlotPayment = async (req, res) => {
 export const getTegaExamPayments = async (req, res) => {
   try {
     const studentId = req.studentId;
-    const payments = await RazorpayPayment.find({
+    const RazorpayPayment = (await import('../models/RazorpayPayment.js')).default;
+    
+    // Get direct TEGA exam payments
+    const directPayments = await RazorpayPayment.find({
       studentId,
       isTegaExam: true,
       status: 'completed'
     }).populate('examId', 'title examDate');
     
-    const paymentDetails = payments.map(p => ({
-      examId: p.examId?._id,
+    // Get package payments that include exams
+    const packagePayments = await RazorpayPayment.find({
+      studentId,
+      isPackage: true,
+      status: 'completed',
+      'packageData.includedExam.examId': { $exists: true, $ne: null }
+    });
+    
+    // Process direct payments
+    const paymentDetails = directPayments.map(p => ({
+      examId: p.examId?._id?.toString() || p.examId?.toString(),
       examTitle: p.examId?.title,
       examDate: p.examId?.examDate,
-      slotId: p.slotId,
-      slotDateTime: p.slotDateTime,
+      slotId: p.slotId || null,
+      slotDateTime: p.slotDateTime || null,
       amount: p.amount,
       paymentDate: p.paymentDate,
-      transactionId: p.razorpayPaymentId
+      transactionId: p.razorpayPaymentId,
+      isPackage: false
     }));
+    
+    // Process package payments that include exams
+    packagePayments.forEach(pkgPayment => {
+      if (pkgPayment.packageData?.includedExam?.examId) {
+        const examId = pkgPayment.packageData.includedExam.examId.toString();
+        // Check if we already have this exam from direct payment
+        const existingPayment = paymentDetails.find(p => p.examId === examId);
+        if (!existingPayment) {
+          // Add package payment as exam access
+          paymentDetails.push({
+            examId: examId,
+            examTitle: pkgPayment.packageData.includedExam.examTitle || 'TEGA Exam',
+            examDate: null, // Package exams don't have specific exam date
+            slotId: null, // Package payments don't have specific slots
+            slotDateTime: null,
+            amount: 0, // Free via package
+            paymentDate: pkgPayment.paymentDate,
+            transactionId: pkgPayment.razorpayPaymentId || `package-${pkgPayment._id}`,
+            isPackage: true,
+            packageName: pkgPayment.packageData.packageName
+          });
+        }
+      }
+    });
+    
     res.json({
       success: true,
       data: paymentDetails,

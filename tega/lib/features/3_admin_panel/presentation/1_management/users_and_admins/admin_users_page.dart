@@ -141,8 +141,6 @@ class _AdminUsersPageState extends State<AdminUsersPage>
     _startStaggeredAnimations();
   }
 
-  
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(

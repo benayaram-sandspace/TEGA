@@ -238,4 +238,121 @@ class OfferRepository {
       'Failed to load available institutes. Status code: ${response.statusCode}',
     );
   }
+
+  // Create package offer
+  Future<Map<String, dynamic>> createPackageOffer(
+    Map<String, dynamic> packageData,
+  ) async {
+    final headers = _authService.getAuthHeaders();
+    headers['Content-Type'] = 'application/json';
+
+    final response = await http.post(
+      Uri.parse(ApiEndpoints.adminPackageOffers),
+      headers: headers,
+      body: json.encode(packageData),
+    );
+
+    if (response.statusCode == 201) {
+      final data = json.decode(response.body);
+      if (data['success'] == true) {
+        return data;
+      }
+    }
+
+    final errorData = json.decode(response.body);
+    throw Exception(
+      errorData['message'] ??
+          'Failed to create package offer. Status code: ${response.statusCode}',
+    );
+  }
+
+  // Update package offer
+  Future<Map<String, dynamic>> updatePackageOffer(
+    String id,
+    Map<String, dynamic> packageData,
+  ) async {
+    final headers = _authService.getAuthHeaders();
+    headers['Content-Type'] = 'application/json';
+
+    final response = await http.put(
+      Uri.parse(ApiEndpoints.adminUpdatePackageOffer(id)),
+      headers: headers,
+      body: json.encode(packageData),
+    );
+
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+      if (data['success'] == true) {
+        return data;
+      }
+    }
+
+    final errorData = json.decode(response.body);
+    throw Exception(
+      errorData['message'] ??
+          'Failed to update package offer. Status code: ${response.statusCode}',
+    );
+  }
+
+  // Get all package offers
+  Future<List<Map<String, dynamic>>> getPackageOffers() async {
+    final headers = _authService.getAuthHeaders();
+
+    final response = await http.get(
+      Uri.parse(ApiEndpoints.adminPackageOffers),
+      headers: headers,
+    );
+
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+      if (data['success'] == true) {
+        return List<Map<String, dynamic>>.from(data['data']);
+      }
+    }
+
+    throw Exception(
+      'Failed to load package offers. Status code: ${response.statusCode}',
+    );
+  }
+
+  // Delete package offer
+  Future<void> deletePackageOffer(String id) async {
+    final headers = _authService.getAuthHeaders();
+
+    final response = await http.delete(
+      Uri.parse(ApiEndpoints.adminDeletePackageOffer(id)),
+      headers: headers,
+    );
+
+    if (response.statusCode != 200) {
+      final errorData = json.decode(response.body);
+      throw Exception(
+        errorData['message'] ??
+            'Failed to delete package offer. Status code: ${response.statusCode}',
+      );
+    }
+  }
+
+  // Toggle package offer status
+  Future<Map<String, dynamic>> togglePackageOfferStatus(String id) async {
+    final headers = _authService.getAuthHeaders();
+
+    final response = await http.patch(
+      Uri.parse(ApiEndpoints.adminTogglePackageOffer(id)),
+      headers: headers,
+    );
+
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+      if (data['success'] == true) {
+        return data;
+      }
+    }
+
+    final errorData = json.decode(response.body);
+    throw Exception(
+      errorData['message'] ??
+          'Failed to toggle package offer status. Status code: ${response.statusCode}',
+    );
+  }
 }

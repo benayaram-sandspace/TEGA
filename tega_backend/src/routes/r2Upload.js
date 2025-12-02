@@ -87,7 +87,9 @@ router.post('/fix-profile-picture', async (req, res) => {
     }
     
     // Update the profile picture with the correct R2 key
-    const publicUrl = `${process.env.SERVER_URL || process.env.CLIENT_URL || 'http://localhost:5001'}/api/r2/profile-picture/${correctR2Key}`;
+    const serverUrl = process.env.SERVER_URL || process.env.API_URL || 
+      (process.env.NODE_ENV === 'development' ? `http://localhost:${process.env.PORT || 5001}` : process.env.CLIENT_URL || 'http://localhost:5001');
+    const publicUrl = `${serverUrl}/api/r2/profile-picture/${correctR2Key}`;
     
     student.profilePicture = {
       url: publicUrl,
@@ -242,6 +244,118 @@ router.get('/profile-picture/:r2Key', async (req, res) => {
       success: false,
       message: 'Profile picture not found',
       error: 'Image not found in R2 bucket'
+    });
+  }
+});
+
+// Proxy route to serve resumes and other documents
+router.get('/resume/:r2Key', async (req, res) => {
+  try {
+    const rawKey = req.params.r2Key;
+    let decodedKey;
+    try {
+      decodedKey = decodeURIComponent(rawKey);
+    } catch (decodeError) {
+      decodedKey = rawKey;
+    }
+    res.header('Access-Control-Allow-Origin', '*');
+    res.header('Access-Control-Allow-Methods', 'GET, HEAD');
+    res.header('Access-Control-Allow-Headers', '*');
+
+    const { getR2Client, getR2BucketName } = await import('../config/r2.js');
+    const r2Client = getR2Client();
+    const R2_BUCKET_NAME = getR2BucketName();
+
+    if (!r2Client || !R2_BUCKET_NAME) {
+      return res.status(503).json({
+        success: false,
+        message: 'R2 storage is not configured'
+      });
+    }
+
+    const { GetObjectCommand } = await import('@aws-sdk/client-s3');
+
+    const command = new GetObjectCommand({
+      Bucket: R2_BUCKET_NAME,
+      Key: decodedKey
+    });
+
+    const response = await r2Client.send(command);
+
+    // Check if download parameter is set
+    const shouldDownload = req.query.download === '1' || req.query.download === 'true';
+    const requestedFilename = req.query.filename ? decodeURIComponent(req.query.filename) : null;
+    const filename = requestedFilename || decodedKey.split('/').pop() || 'resume';
+    
+    res.set({
+      'Content-Type': response.ContentType || 'application/octet-stream',
+      'Content-Length': response.ContentLength,
+      'Cache-Control': 'private, max-age=60',
+      'Content-Disposition': shouldDownload 
+        ? `attachment; filename="${encodeURIComponent(filename)}"`
+        : `inline; filename="${encodeURIComponent(filename)}"`,
+    });
+
+    response.Body.pipe(res);
+  } catch (error) {
+    res.header('Access-Control-Allow-Origin', '*');
+    res.header('Access-Control-Allow-Methods', 'GET, HEAD');
+    res.header('Access-Control-Allow-Headers', '*');
+
+    if (error.Code === 'NoSuchKey' || error.name === 'NoSuchKey') {
+      try {
+        const possibleKeys = [
+          `resumes/${decodedKey}`,
+          `uploads/resumes/${decodedKey}`,
+          decodedKey
+        ];
+
+        const { getR2Client, getR2BucketName } = await import('../config/r2.js');
+        const r2Client = getR2Client();
+        const R2_BUCKET_NAME = getR2BucketName();
+
+        if (!r2Client || !R2_BUCKET_NAME) {
+          throw new Error('R2 storage not configured');
+        }
+
+        const { GetObjectCommand } = await import('@aws-sdk/client-s3');
+
+        for (const key of possibleKeys) {
+          try {
+            const command = new GetObjectCommand({
+              Bucket: R2_BUCKET_NAME,
+              Key: key
+            });
+            const response = await r2Client.send(command);
+
+            // Check if download parameter is set
+            const shouldDownload = req.query.download === '1' || req.query.download === 'true';
+            const requestedFilename = req.query.filename ? decodeURIComponent(req.query.filename) : null;
+            const filename = requestedFilename || key.split('/').pop() || 'resume';
+
+            res.set({
+              'Content-Type': response.ContentType || 'application/octet-stream',
+              'Content-Length': response.ContentLength,
+              'Cache-Control': 'private, max-age=60',
+              'Content-Disposition': shouldDownload 
+                ? `attachment; filename="${encodeURIComponent(filename)}"`
+                : `inline; filename="${encodeURIComponent(filename)}"`,
+            });
+
+            response.Body.pipe(res);
+            return;
+          } catch (innerError) {
+            continue;
+          }
+        }
+      } catch (fallbackError) {
+      }
+    }
+
+    res.status(404).json({
+      success: false,
+      message: 'Resume file not found',
+      error: 'Document not found in R2 bucket'
     });
   }
 });

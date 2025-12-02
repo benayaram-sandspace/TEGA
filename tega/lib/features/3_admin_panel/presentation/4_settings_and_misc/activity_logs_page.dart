@@ -14,7 +14,7 @@ class ActivityLogsPage extends StatefulWidget {
 class _ActivityLogsPageState extends State<ActivityLogsPage>
     with TickerProviderStateMixin {
   final AdminRepository _adminService = AdminRepository.instance;
-  
+
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
   late Animation<Offset> _slideAnimation;
@@ -38,11 +38,14 @@ class _ActivityLogsPageState extends State<ActivityLogsPage>
     _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
     );
-    _slideAnimation = Tween<Offset>(
-      begin: const Offset(0, 0.3),
-      end: Offset.zero,
-    ).animate(CurvedAnimation(parent: _animationController, curve: Curves.easeOutCubic));
-    
+    _slideAnimation =
+        Tween<Offset>(begin: const Offset(0, 0.3), end: Offset.zero).animate(
+          CurvedAnimation(
+            parent: _animationController,
+            curve: Curves.easeOutCubic,
+          ),
+        );
+
     _animationController.forward();
     _loadActivityLogs();
   }
@@ -110,154 +113,161 @@ class _ActivityLogsPageState extends State<ActivityLogsPage>
         child: SlideTransition(
           position: _slideAnimation,
           child: _isLoading
-          ? const Center(
-              child: CircularProgressIndicator(color: AdminDashboardStyles.primary),
-            )
-          : Column(
-              children: [
-                // Filters Section
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Filters',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: AdminDashboardStyles.textDark,
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-
-                      // Date Range Filters
-                      Row(
-                        children: [
-                          Expanded(
-                            child: _buildDateField('Start Date', _startDate, (
-                              date,
-                            ) {
-                              setState(() => _startDate = date);
-                              _applyFilters();
-                            }),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: _buildDateField('End Date', _endDate, (
-                              date,
-                            ) {
-                              setState(() => _endDate = date);
-                              _applyFilters();
-                            }),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 16),
-
-                      // Admin and Action Type Filters
-                      Row(
-                        children: [
-                          Expanded(
-                            child: _buildFilterDropdown(
-                              'Filter by Admin',
-                              _selectedAdmin,
-                              _getAdminNames(),
-                              (value) {
-                                setState(() => _selectedAdmin = value ?? '');
-                                _applyFilters();
-                              },
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: _buildFilterDropdown(
-                              'Filter by Action Type',
-                              _selectedActionType,
-                              _adminService.getAvailableActionTypes(),
-                              (value) {
-                                setState(
-                                  () => _selectedActionType = value ?? '',
-                                );
-                                _applyFilters();
-                              },
-                            ),
-                          ),
-                        ],
-                      ),
-
-                      // Clear Filters Button
-                      if (_startDate != null ||
-                          _endDate != null ||
-                          _selectedAdmin.isNotEmpty ||
-                          _selectedActionType.isNotEmpty)
-                        Padding(
-                          padding: const EdgeInsets.only(top: 12),
-                          child: TextButton(
-                            onPressed: _clearFilters,
-                            child: const Text(
-                              'Clear Filters',
-                              style: TextStyle(color: AppColors.primary),
-                            ),
-                          ),
-                        ),
-                    ],
+              ? const Center(
+                  child: CircularProgressIndicator(
+                    color: AdminDashboardStyles.primary,
                   ),
-                ),
-
-                // Activity Log Section
-                Expanded(
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'Activity Log',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: AppColors.textPrimary,
+                )
+              : Column(
+                  children: [
+                    // Filters Section
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Filters',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: AdminDashboardStyles.textDark,
+                            ),
                           ),
-                        ),
-                        const SizedBox(height: 16),
+                          const SizedBox(height: 16),
 
-                        Expanded(
-                          child: _filteredLogs.isEmpty
-                              ? Center(
-                                  child: Column(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Icon(
-                                        Icons.history,
-                                        size: 64,
-                                        color: AppColors.textSecondary,
-                                      ),
-                                      const SizedBox(height: 16),
-                                      Text(
-                                        'No activity logs found',
-                                        style: TextStyle(
-                                          fontSize: 18,
-                                          color: AppColors.textSecondary,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                )
-                              : ListView.builder(
-                                  itemCount: _filteredLogs.length,
-                                  itemBuilder: (context, index) {
-                                    final log = _filteredLogs[index];
-                                    return _buildActivityLogCard(log);
+                          // Date Range Filters
+                          Row(
+                            children: [
+                              Expanded(
+                                child: _buildDateField(
+                                  'Start Date',
+                                  _startDate,
+                                  (date) {
+                                    setState(() => _startDate = date);
+                                    _applyFilters();
                                   },
                                 ),
-                        ),
-                      ],
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: _buildDateField('End Date', _endDate, (
+                                  date,
+                                ) {
+                                  setState(() => _endDate = date);
+                                  _applyFilters();
+                                }),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 16),
+
+                          // Admin and Action Type Filters
+                          Row(
+                            children: [
+                              Expanded(
+                                child: _buildFilterDropdown(
+                                  'Filter by Admin',
+                                  _selectedAdmin,
+                                  _getAdminNames(),
+                                  (value) {
+                                    setState(
+                                      () => _selectedAdmin = value ?? '',
+                                    );
+                                    _applyFilters();
+                                  },
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: _buildFilterDropdown(
+                                  'Filter by Action Type',
+                                  _selectedActionType,
+                                  _adminService.getAvailableActionTypes(),
+                                  (value) {
+                                    setState(
+                                      () => _selectedActionType = value ?? '',
+                                    );
+                                    _applyFilters();
+                                  },
+                                ),
+                              ),
+                            ],
+                          ),
+
+                          // Clear Filters Button
+                          if (_startDate != null ||
+                              _endDate != null ||
+                              _selectedAdmin.isNotEmpty ||
+                              _selectedActionType.isNotEmpty)
+                            Padding(
+                              padding: const EdgeInsets.only(top: 12),
+                              child: TextButton(
+                                onPressed: _clearFilters,
+                                child: const Text(
+                                  'Clear Filters',
+                                  style: TextStyle(color: AppColors.primary),
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
                     ),
-                  ),
+
+                    // Activity Log Section
+                    Expanded(
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'Activity Log',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.textPrimary,
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+
+                            Expanded(
+                              child: _filteredLogs.isEmpty
+                                  ? Center(
+                                      child: Column(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
+                                        children: [
+                                          Icon(
+                                            Icons.history,
+                                            size: 64,
+                                            color: AppColors.textSecondary,
+                                          ),
+                                          const SizedBox(height: 16),
+                                          Text(
+                                            'No activity logs found',
+                                            style: TextStyle(
+                                              fontSize: 18,
+                                              color: AppColors.textSecondary,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    )
+                                  : ListView.builder(
+                                      itemCount: _filteredLogs.length,
+                                      itemBuilder: (context, index) {
+                                        final log = _filteredLogs[index];
+                                        return _buildActivityLogCard(log);
+                                      },
+                                    ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-              ],
-            ),
         ),
       ),
     );
@@ -492,5 +502,5 @@ class _ActivityLogsPageState extends State<ActivityLogsPage>
       default:
         return AppColors.textSecondary;
     }
-}
   }
+}

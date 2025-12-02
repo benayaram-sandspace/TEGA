@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:tega/features/5_student_dashboard/presentation/1_home/student_home_page.dart';
 import 'package:tega/main.dart'; // for cameras
 
-
 class AiInterviewPage extends StatefulWidget {
   const AiInterviewPage({super.key});
 
@@ -184,8 +183,7 @@ class _AiInterviewPageState extends State<AiInterviewPage>
       try {
         await _controller!.initialize();
         if (mounted) setState(() {});
-      } catch (e) {
-      }
+      } catch (e) {}
     }
   }
 

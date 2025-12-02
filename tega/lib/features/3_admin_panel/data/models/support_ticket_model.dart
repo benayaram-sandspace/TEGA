@@ -7,13 +7,7 @@ enum TicketStatus {
   cancelled,
 }
 
-enum TicketPriority {
-  low,
-  medium,
-  high,
-  urgent,
-  critical,
-}
+enum TicketPriority { low, medium, high, urgent, critical }
 
 enum TicketCategory {
   bug,
@@ -33,7 +27,8 @@ class TicketEvent {
   final String performedByName;
   final String description;
   final Map<String, dynamic> metadata;
-  final String eventType; // status_change, assignment, message, escalation, etc.
+  final String
+  eventType; // status_change, assignment, message, escalation, etc.
 
   TicketEvent({
     required this.id,
@@ -169,26 +164,38 @@ class SupportTicket {
       userEmail: json['userEmail'],
       userPhone: json['userPhone'] ?? '',
       createdAt: DateTime.parse(json['createdAt']),
-      updatedAt: json['updatedAt'] != null ? DateTime.parse(json['updatedAt']) : null,
-      firstResponseAt: json['firstResponseAt'] != null ? DateTime.parse(json['firstResponseAt']) : null,
-      lastCustomerResponseAt: json['lastCustomerResponseAt'] != null ? DateTime.parse(json['lastCustomerResponseAt']) : null,
-      messages: (json['messages'] as List<dynamic>?)
-          ?.map((message) => SupportMessage.fromJson(message))
-          .toList() ?? [],
+      updatedAt: json['updatedAt'] != null
+          ? DateTime.parse(json['updatedAt'])
+          : null,
+      firstResponseAt: json['firstResponseAt'] != null
+          ? DateTime.parse(json['firstResponseAt'])
+          : null,
+      lastCustomerResponseAt: json['lastCustomerResponseAt'] != null
+          ? DateTime.parse(json['lastCustomerResponseAt'])
+          : null,
+      messages:
+          (json['messages'] as List<dynamic>?)
+              ?.map((message) => SupportMessage.fromJson(message))
+              .toList() ??
+          [],
       tags: List<String>.from(json['tags'] ?? []),
       attachments: List<String>.from(json['attachments'] ?? []),
       assignedTo: json['assignedTo'] ?? '',
       assignedByName: json['assignedByName'] ?? '',
       department: json['department'] ?? '',
-      history: (json['history'] as List<dynamic>?)
-          ?.map((event) => TicketEvent.fromJson(event))
-          .toList() ?? [],
+      history:
+          (json['history'] as List<dynamic>?)
+              ?.map((event) => TicketEvent.fromJson(event))
+              .toList() ??
+          [],
       metadata: Map<String, dynamic>.from(json['metadata'] ?? {}),
       satisfactionRating: json['satisfactionRating'] ?? 0,
       satisfactionComments: json['satisfactionComments'] ?? '',
       relatedTickets: List<String>.from(json['relatedTickets'] ?? []),
       escalationLevel: json['escalationLevel'] ?? 'level1',
-      slaDeadline: json['slaDeadline'] != null ? DateTime.parse(json['slaDeadline']) : null,
+      slaDeadline: json['slaDeadline'] != null
+          ? DateTime.parse(json['slaDeadline'])
+          : null,
       isEscalated: json['isEscalated'] ?? false,
       source: json['source'] ?? 'web',
       customFields: Map<String, dynamic>.from(json['customFields'] ?? {}),
@@ -234,12 +241,7 @@ class SupportTicket {
   }
 }
 
-enum MessageType {
-  user,
-  support,
-  system,
-  automated,
-}
+enum MessageType { user, support, system, automated }
 
 class MessageAttachment {
   final String id;
@@ -358,9 +360,11 @@ class SupportMessage {
       timestamp: DateTime.parse(json['timestamp']),
       readAt: json['readAt'] != null ? DateTime.parse(json['readAt']) : null,
       attachments: List<String>.from(json['attachments'] ?? []),
-      attachmentDetails: (json['attachmentDetails'] as List<dynamic>?)
-          ?.map((att) => MessageAttachment.fromJson(att))
-          .toList() ?? [],
+      attachmentDetails:
+          (json['attachmentDetails'] as List<dynamic>?)
+              ?.map((att) => MessageAttachment.fromJson(att))
+              .toList() ??
+          [],
       isInternal: json['isInternal'] ?? false,
       isRead: json['isRead'] ?? false,
       replyToMessageId: json['replyToMessageId'] ?? '',
@@ -385,7 +389,9 @@ class SupportMessage {
       'timestamp': timestamp.toIso8601String(),
       'readAt': readAt?.toIso8601String(),
       'attachments': attachments,
-      'attachmentDetails': attachmentDetails.map((att) => att.toJson()).toList(),
+      'attachmentDetails': attachmentDetails
+          .map((att) => att.toJson())
+          .toList(),
       'isInternal': isInternal,
       'isRead': isRead,
       'replyToMessageId': replyToMessageId,

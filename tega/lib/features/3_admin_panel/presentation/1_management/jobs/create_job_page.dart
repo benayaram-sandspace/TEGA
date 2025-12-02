@@ -465,10 +465,14 @@ class _CreateJobPageState extends State<CreateJobPage> {
         filled: true,
         fillColor: const Color(0xFFF7F8FC),
       ),
+      style: const TextStyle(color: Colors.black),
       items: items.map((item) {
         return DropdownMenuItem<String>(
           value: item,
-          child: Text(item.toUpperCase()),
+          child: Text(
+            item.toUpperCase(),
+            style: const TextStyle(color: Colors.black),
+          ),
         );
       }).toList(),
     );

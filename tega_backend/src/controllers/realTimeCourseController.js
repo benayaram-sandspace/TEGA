@@ -573,13 +573,37 @@ export const updateLectureDuration = async (req, res) => {
       });
     }
 
+    // Recalculate course total duration after lecture duration update
+    let totalDuration = 0;
+    if (course.modules && course.modules.length > 0) {
+      course.modules.forEach(module => {
+        if (module.lectures && module.lectures.length > 0) {
+          module.lectures.forEach(lecture => {
+            totalDuration += lecture.duration || 0;
+          });
+        }
+      });
+    }
+
+    // Update formattedDuration
+    const hours = Math.max(0, Math.floor(totalDuration / 3600));
+    const minutes = Math.max(0, Math.floor((totalDuration % 3600) / 60));
+    course.formattedDuration = hours > 0 
+      ? `${hours} hour${hours > 1 ? 's' : ''} ${minutes > 0 ? `${minutes} min` : ''}`
+      : `${minutes} min`;
+    course.estimatedDuration = {
+      hours: hours,
+      minutes: minutes
+    };
+
     // Save the course
     await course.save();
 
     res.json({
       success: true,
       message: 'Lecture duration updated successfully',
-      duration: duration
+      duration: duration,
+      courseDuration: course.formattedDuration
     });
 
   } catch (error) {
@@ -615,7 +639,21 @@ export const updateLectureProgress = async (req, res) => {
     }
 
     // CRITICAL: Verify enrollment and payment before allowing progress update
-    const course = await RealTimeCourse.findById(courseId);
+    // Check both RealTimeCourse and regular Course
+    let course = await RealTimeCourse.findById(courseId);
+    let courseType = 'real-time';
+    
+    if (!course) {
+      // Try regular Course model
+      try {
+        const Course = mongoose.model('Course');
+        course = await Course.findById(courseId);
+        courseType = 'regular';
+      } catch (modelError) {
+        // Course model doesn't exist
+      }
+    }
+    
     if (!course) {
       return res.status(404).json({
         success: false,
@@ -623,80 +661,403 @@ export const updateLectureProgress = async (req, res) => {
       });
     }
 
-    const enrollment = await checkCourseAccess(studentId, courseId, course);
+    let enrollment = await checkCourseAccess(studentId, courseId, course);
 
-    if (!enrollment) {
-      return res.status(403).json({
-        success: false,
-        message: 'Access denied: You are not enrolled in this course'
-      });
+    // CRITICAL FIX: Auto-enroll students for free courses (similar to getCourseContent)
+    if (!enrollment && course.isFree && course.price === 0) {
+      try {
+        const autoEnrollment = new Enrollment({
+          studentId,
+          courseId,
+          isPaid: true, // Free courses are considered "paid"
+          enrolledAt: new Date(),
+          status: 'active'
+        });
+        await autoEnrollment.save();
+        enrollment = {
+          studentId,
+          courseId,
+          isPaid: true,
+          status: 'active'
+        };
+      } catch (enrollmentError) {
+        // Auto-enrollment failed - continue to check if lecture is preview/first
+      }
     }
 
-    // For paid courses, verify payment
-    if (!course.isFree && course.price > 0 && !enrollment.isPaid) {
-      return res.status(403).json({
-        success: false,
-        message: 'Access denied: Payment required to access this course'
-      });
+    // Don't immediately deny if no enrollment - check if it's a preview/first lecture first
+    // We'll handle access denial later after checking the lecture
+    if (!enrollment) {
+      // Create a temporary enrollment object to check lecture access
+      enrollment = {
+        studentId,
+        courseId,
+        isPaid: false,
+        status: 'pending'
+      };
+    }
+
+    // For paid courses with existing enrollment, verify payment
+    if (!course.isFree && course.price > 0 && enrollment.isPaid === false) {
+      // Check Payment/UserCourse models as fallback before denying
+      let hasPaid = false;
+      
+      try {
+        const Payment = mongoose.model('Payment');
+        const payment = await Payment.findOne({
+          studentId,
+          courseId,
+          status: 'completed'
+        });
+        if (payment) {
+          hasPaid = true;
+          enrollment.isPaid = true;
+          enrollment.status = 'active';
+        }
+      } catch (modelError) {
+        // Payment model doesn't exist
+      }
+      
+      if (!hasPaid) {
+        try {
+          const UserCourse = (await import('../models/UserCourse.js')).default;
+          const userCourse = await UserCourse.findOne({
+            studentId,
+            courseId,
+            isActive: true
+          });
+          if (userCourse) {
+            hasPaid = true;
+            enrollment.isPaid = true;
+            enrollment.status = 'active';
+          }
+        } catch (modelError) {
+          // UserCourse model doesn't exist
+        }
+      }
+      
+      if (!hasPaid) {
+        try {
+          const RazorpayPayment = (await import('../models/RazorpayPayment.js')).default;
+          const razorpayPayment = await RazorpayPayment.findOne({
+            studentId,
+            courseId,
+            status: 'completed'
+          });
+          if (razorpayPayment) {
+            hasPaid = true;
+            enrollment.isPaid = true;
+            enrollment.status = 'active';
+          }
+        } catch (modelError) {
+          // RazorpayPayment model doesn't exist
+        }
+      }
+      
+      // Only deny if truly no payment found AND it's not a free/preview lecture
+      // We'll check this after finding the lecture below
     }
 
     // Check if the lecture is a preview/free lecture
     let lecture = null;
     let isFirstLecture = false;
-    for (const [moduleIndex, module] of course.modules.entries()) {
-      const lectureIndex = module.lectures.findIndex(l => l.id === lectureId);
-      if (lectureIndex !== -1) {
-        lecture = module.lectures[lectureIndex];
-        isFirstLecture = moduleIndex === 0 && lectureIndex === 0;
-        break;
+    
+    if (courseType === 'real-time') {
+      for (const [moduleIndex, module] of course.modules.entries()) {
+        const lectureIndex = module.lectures?.findIndex(l => l.id === lectureId || l._id?.toString() === lectureId);
+        if (lectureIndex !== -1) {
+          lecture = module.lectures[lectureIndex];
+          isFirstLecture = moduleIndex === 0 && lectureIndex === 0;
+          break;
+        }
+      }
+    } else {
+      // Regular course - check videos in modules
+      for (const [moduleIndex, module] of course.modules.entries()) {
+        const videoIndex = module.videos?.findIndex(v => (v._id || v.id)?.toString() === lectureId);
+        if (videoIndex !== -1) {
+          lecture = module.videos[videoIndex];
+          isFirstLecture = moduleIndex === 0 && videoIndex === 0;
+          break;
+        }
       }
     }
 
     // If not enrolled or not paid, only allow progress on preview/first lecture
+    // Also allow progress if user has access via UserCourse or Payment models
     if (!enrollment.isPaid && !lecture?.isPreview && !isFirstLecture) {
-      return res.status(403).json({
-        success: false,
-        message: 'Access denied: This lecture requires course enrollment'
-      });
+      // Double-check access via Payment/UserCourse systems before denying
+      let hasAccess = false;
+      
+      // Check Payment model
+      try {
+        const Payment = mongoose.model('Payment');
+        const hasPaidOld = await Payment.findOne({
+          studentId,
+          courseId,
+          status: 'completed'
+        });
+        if (hasPaidOld) {
+          hasAccess = true;
+        }
+      } catch (modelError) {
+        // Payment model doesn't exist
+      }
+      
+      // Check UserCourse model
+      if (!hasAccess) {
+        try {
+          const UserCourse = (await import('../models/UserCourse.js')).default;
+          const userCourse = await UserCourse.findOne({
+            studentId,
+            courseId,
+            isActive: true
+          });
+          if (userCourse) {
+            hasAccess = true;
+            // Update enrollment object
+            enrollment.isPaid = true;
+            enrollment.status = 'active';
+          }
+        } catch (modelError) {
+          // UserCourse model doesn't exist
+        }
+      }
+      
+      // Check RazorpayPayment as final fallback
+      if (!hasAccess) {
+        try {
+          const RazorpayPayment = (await import('../models/RazorpayPayment.js')).default;
+          const razorpayPayment = await RazorpayPayment.findOne({
+            studentId,
+            courseId,
+            status: 'completed'
+          });
+          if (razorpayPayment) {
+            hasAccess = true;
+            enrollment.isPaid = true;
+            enrollment.status = 'active';
+          }
+        } catch (modelError) {
+          // RazorpayPayment model doesn't exist
+        }
+      }
+      
+      // If still no access, deny for non-preview/non-first lectures
+      if (!hasAccess) {
+        return res.status(403).json({
+          success: false,
+          message: 'Access denied: This lecture requires course enrollment. Please enroll to continue.'
+        });
+      }
     }
 
-    const progressDoc = await RealTimeProgress.findOne({ studentId, courseId });
-    if (!progressDoc) {
-      return res.status(404).json({
-        success: false,
-        message: 'Progress not found'
+    // Update progress based on course type
+    if (courseType === 'real-time') {
+      // Real-time course progress update
+      let progressDoc = await RealTimeProgress.findOne({ studentId, courseId });
+      
+      if (!progressDoc) {
+        // Create progress if it doesn't exist
+        const totalModules = course.modules?.length || 0;
+        const totalLectures = course.modules?.reduce((total, module) => total + (module.lectures?.length || 0), 0) || 0;
+        
+        progressDoc = new RealTimeProgress({
+          studentId,
+          courseId,
+          overallProgress: {
+            totalModules,
+            totalLectures,
+            completedModules: 0,
+            completedLectures: 0,
+            percentage: 0
+          }
+        });
+        await progressDoc.save();
+      }
+
+      // Update lecture progress
+      await progressDoc.updateLectureProgress(lectureId, {
+        moduleId,
+        title,
+        type,
+        progress: progress || 0,
+        timeSpent: timeSpent || 0,
+        lastPosition: lastPosition || 0,
+        isCompleted: isCompleted || false,
+        videoProgress
       });
+
+      // Recalculate overall progress (production-ready: includes module progress)
+      await progressDoc.calculateOverallProgress();
+
+      // Get updated progress after calculation
+      const updatedProgress = await RealTimeProgress.findById(progressDoc._id);
+
+      // Emit real-time progress update with complete data
+      const io = req.app.get('io');
+      if (io) {
+        // Emit to course room for real-time updates
+        io.to(`course-${courseId}`).emit('course-progress-update', {
+          studentId,
+          courseId,
+          lectureId,
+          progress: progress || updatedProgress.lectureProgress.find(l => l.lectureId === lectureId)?.progress || 0,
+          progressPercentage: updatedProgress.overallProgress.percentage,
+          completedLectures: updatedProgress.overallProgress.completedLectures,
+          totalLectures: updatedProgress.overallProgress.totalLectures,
+          completedModules: updatedProgress.overallProgress.completedModules,
+          totalModules: updatedProgress.overallProgress.totalModules,
+          timeSpent: updatedProgress.overallProgress.timeSpent,
+          isCompleted: updatedProgress.isCompleted,
+          isLectureCompleted: isCompleted,
+          timestamp: new Date()
+        });
+        
+        // Emit to user's personal room for cross-device sync
+        io.to(`user-${studentId}`).emit('course-progress-update', {
+          studentId,
+          courseId,
+          lectureId,
+          progress: progress || updatedProgress.lectureProgress.find(l => l.lectureId === lectureId)?.progress || 0,
+          progressPercentage: updatedProgress.overallProgress.percentage,
+          completedLectures: updatedProgress.overallProgress.completedLectures,
+          totalLectures: updatedProgress.overallProgress.totalLectures,
+          completedModules: updatedProgress.overallProgress.completedModules,
+          totalModules: updatedProgress.overallProgress.totalModules,
+          timeSpent: updatedProgress.overallProgress.timeSpent,
+          isCompleted: updatedProgress.isCompleted,
+          isLectureCompleted: isCompleted,
+          timestamp: new Date()
+        });
+      }
+
+      res.json({
+        success: true,
+        message: 'Progress updated successfully',
+        progress: progressDoc.overallProgress
+      });
+    } else {
+      // Regular course progress update
+      try {
+        const StudentProgress = mongoose.model('StudentProgress');
+        
+        // Find or create StudentProgress record
+        let studentProgress = await StudentProgress.findOne({ studentId, courseId, lectureId });
+        
+        if (!studentProgress) {
+          studentProgress = new StudentProgress({
+            studentId,
+            courseId,
+            lectureId,
+            progress: progress || 0,
+            timeSpent: timeSpent || 0,
+            lastPosition: lastPosition || 0,
+            isCompleted: isCompleted || false
+          });
+        } else {
+          // Update existing progress
+          studentProgress.progress = progress || studentProgress.progress || 0;
+          studentProgress.timeSpent = timeSpent || studentProgress.timeSpent || 0;
+          studentProgress.lastPosition = lastPosition || studentProgress.lastPosition || 0;
+          studentProgress.isCompleted = isCompleted !== undefined ? isCompleted : studentProgress.isCompleted || false;
+        }
+        
+        await studentProgress.save();
+
+        try {
+          const PlacementProgress = (await import('../models/PlacementProgress.js')).default;
+          let placementProgress = await PlacementProgress.findOne({ studentId });
+          
+          if (!placementProgress) {
+            placementProgress = new PlacementProgress({ studentId });
+          }
+          
+          // Update lastActivityDate to trigger streak calculation
+          placementProgress.lastActivityDate = new Date();
+          await placementProgress.save();
+        } catch (streakError) {
+          // If PlacementProgress doesn't exist or fails, continue without updating streak
+        }
+
+        // Emit real-time progress update
+        const io = req.app.get('io');
+        if (io) {
+          io.to(`course-${courseId}`).emit('progressUpdated', {
+            studentId,
+            lectureId,
+            progress,
+            isCompleted,
+            timestamp: new Date()
+          });
+        }
+
+        res.json({
+          success: true,
+          message: 'Progress updated successfully',
+          progress: {
+            percentage: progress || 0,
+            isCompleted: isCompleted || false
+          }
+        });
+      } catch (modelError) {
+        // StudentProgress model doesn't exist, fallback to creating RealTimeProgress
+        // This allows regular courses to use real-time progress tracking
+        let progressDoc = await RealTimeProgress.findOne({ studentId, courseId });
+        
+        if (!progressDoc) {
+          const totalModules = course.modules?.length || 0;
+          const totalLectures = course.modules?.reduce((total, module) => total + (module.videos?.length || 0), 0) || 0;
+          
+          progressDoc = new RealTimeProgress({
+            studentId,
+            courseId,
+            overallProgress: {
+              totalModules,
+              totalLectures,
+              completedModules: 0,
+              completedLectures: 0,
+              percentage: 0
+            }
+          });
+          await progressDoc.save();
+        }
+
+        await progressDoc.updateLectureProgress(lectureId, {
+          moduleId,
+          title: title || lecture?.title,
+          type: type || 'video',
+          progress: progress || 0,
+          timeSpent: timeSpent || 0,
+          lastPosition: lastPosition || 0,
+          isCompleted: isCompleted || false,
+          videoProgress
+        });
+
+        await progressDoc.calculateOverallProgress();
+        
+        try {
+          const PlacementProgress = (await import('../models/PlacementProgress.js')).default;
+          let placementProgress = await PlacementProgress.findOne({ studentId });
+          
+          if (!placementProgress) {
+            placementProgress = new PlacementProgress({ studentId });
+          }
+          
+          // Update lastActivityDate to trigger streak calculation
+          placementProgress.lastActivityDate = new Date();
+          await placementProgress.save();
+        } catch (streakError) {
+          // If PlacementProgress doesn't exist or fails, continue without updating streak
+        }
+
+        res.json({
+          success: true,
+          message: 'Progress updated successfully',
+          progress: progressDoc.overallProgress
+        });
+      }
     }
-
-    // Update lecture progress
-    await progressDoc.updateLectureProgress(lectureId, {
-      moduleId,
-      title,
-      type,
-      progress: progress || 0,
-      timeSpent: timeSpent || 0,
-      lastPosition: lastPosition || 0,
-      isCompleted: isCompleted || false,
-      videoProgress
-    });
-
-    // Recalculate overall progress
-    await progressDoc.calculateOverallProgress();
-
-    // Emit real-time progress update
-    io.to(`course-${courseId}`).emit('progressUpdated', {
-      studentId,
-      lectureId,
-      progress,
-      isCompleted,
-      timestamp: new Date()
-    });
-
-    res.json({
-      success: true,
-      message: 'Progress updated successfully',
-      progress: progressDoc.overallProgress
-    });
 
   } catch (error) {
     res.status(500).json({
@@ -796,6 +1157,21 @@ export const submitQuiz = async (req, res) => {
       });
 
       await progressDoc.calculateOverallProgress();
+      
+      try {
+        const PlacementProgress = (await import('../models/PlacementProgress.js')).default;
+        let placementProgress = await PlacementProgress.findOne({ studentId });
+        
+        if (!placementProgress) {
+          placementProgress = new PlacementProgress({ studentId });
+        }
+        
+        // Update lastActivityDate to trigger streak calculation
+        placementProgress.lastActivityDate = new Date();
+        await placementProgress.save();
+      } catch (streakError) {
+        // If PlacementProgress doesn't exist or fails, continue without updating streak
+      }
     }
 
     // Emit real-time quiz completion
@@ -954,7 +1330,7 @@ export const updateHeartbeat = async (req, res) => {
   }
 };
 
-// Get student's course progress
+// Get student's course progress (works for both real-time and regular courses)
 export const getStudentProgress = async (req, res) => {
   try {
     const { courseId } = req.params;
@@ -967,17 +1343,276 @@ export const getStudentProgress = async (req, res) => {
       });
     }
 
-    const progress = await RealTimeProgress.findOne({ studentId, courseId });
-    if (!progress) {
+    // Check if student is enrolled
+    const enrollment = await checkCourseAccess(studentId, courseId, null);
+    
+    // Try to find course - check both RealTimeCourse and regular Course
+    let course = await RealTimeCourse.findById(courseId);
+    let courseType = 'real-time';
+    
+    if (!course) {
+      // Try regular Course model
+      try {
+        const Course = mongoose.model('Course');
+        course = await Course.findById(courseId);
+        courseType = 'regular';
+      } catch (modelError) {
+        // Course model doesn't exist
+      }
+    }
+    
+    if (!course) {
       return res.status(404).json({
         success: false,
-        message: 'Progress not found'
+        message: 'Course not found'
       });
+    }
+
+    // If not enrolled, return success with null progress (not 404)
+    if (!enrollment) {
+      return res.json({
+        success: true,
+        progress: null,
+        enrolled: false,
+        courseType
+      });
+    }
+
+    // Get progress based on course type
+    let progress = null;
+    
+    if (courseType === 'real-time') {
+      // Real-time course progress
+      progress = await RealTimeProgress.findOne({ studentId, courseId });
+    
+      // If no progress exists but student is enrolled, create it
+      if (!progress) {
+        const totalModules = course.modules?.length || 0;
+        const totalLectures = course.modules?.reduce((total, module) => total + (module.lectures?.length || 0), 0) || 0;
+        
+        progress = new RealTimeProgress({
+          studentId,
+          courseId,
+          overallProgress: {
+            totalModules,
+            totalLectures,
+            completedModules: 0,
+            completedLectures: 0,
+            percentage: 0
+          }
+        });
+        await progress.save();
+      }
+    } else {
+      // Regular course progress - convert StudentProgress to unified format
+      try {
+        const StudentProgress = mongoose.model('StudentProgress');
+        const studentProgressRecords = await StudentProgress.find({ studentId, courseId });
+        
+        // Calculate progress from StudentProgress records
+        const totalLectures = course.modules?.reduce((total, module) => total + (module.videos?.length || 0), 0) || 0;
+        const completedLectures = studentProgressRecords.filter(p => p.isCompleted).length || 0;
+        const overallProgressPercentage = totalLectures > 0 ? (completedLectures / totalLectures) * 100 : 0;
+        const timeSpent = studentProgressRecords.reduce((sum, p) => sum + (p.timeSpent || 0), 0);
+        
+        // Get lecture progress (convert StudentProgress to unified format)
+        const lectureProgress = studentProgressRecords.map(p => ({
+          lectureId: p.lectureId?.toString() || p.lectureId,
+          moduleId: p.moduleId?.toString() || p.moduleId,
+          title: p.title || course.modules
+            ?.find(m => m.videos?.some(v => (v._id || v.id)?.toString() === (p.lectureId?.toString() || p.lectureId)))
+            ?.videos?.find(v => (v._id || v.id)?.toString() === (p.lectureId?.toString() || p.lectureId))?.title || 'Lecture',
+          progress: p.isCompleted ? 100 : (p.progress || 0),
+          isCompleted: p.isCompleted || false,
+          lastPosition: p.lastPosition || 0,
+          timeSpent: p.timeSpent || 0,
+          lastAccessedAt: p.updatedAt || p.createdAt
+        }));
+        
+        // Create unified progress object
+        progress = {
+          studentId,
+          courseId,
+          courseType: 'regular',
+          overallProgress: {
+            percentage: Math.round(overallProgressPercentage),
+            completedModules: 0, // Regular courses don't track modules separately
+            totalModules: course.modules?.length || 0,
+            completedLectures,
+            totalLectures,
+            timeSpent,
+            lastAccessedAt: studentProgressRecords.length > 0
+              ? studentProgressRecords.sort((a, b) => new Date(b.updatedAt || 0) - new Date(a.updatedAt || 0))[0]?.updatedAt
+              : new Date()
+          },
+          lectureProgress,
+          isCompleted: overallProgressPercentage >= 100
+        };
+      } catch (modelError) {
+        // StudentProgress model doesn't exist, create empty progress
+        const totalLectures = course.modules?.reduce((total, module) => total + (module.videos?.length || 0), 0) || 0;
+        progress = {
+          studentId,
+          courseId,
+          courseType: 'regular',
+          overallProgress: {
+            percentage: 0,
+            completedModules: 0,
+            totalModules: course.modules?.length || 0,
+            completedLectures: 0,
+            totalLectures,
+            timeSpent: 0,
+            lastAccessedAt: new Date()
+          },
+          lectureProgress: [],
+          isCompleted: false
+        };
+      }
     }
 
     res.json({
       success: true,
-      progress
+      progress,
+      enrolled: true,
+      courseType
+    });
+
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch progress',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+};
+
+// Get all course progress for a student (for Courses Page)
+export const getAllStudentProgress = async (req, res) => {
+  try {
+    const studentId = req.studentId;
+
+    if (!studentId) {
+      return res.status(401).json({
+        success: false,
+        message: 'Authentication required'
+      });
+    }
+
+    const formattedProgress = [];
+
+    // 1. Get all RealTimeCourse progress
+    try {
+      const realTimeProgress = await RealTimeProgress.find({ studentId })
+        .populate('courseId', 'title thumbnail image category level')
+        .sort({ 'overallProgress.lastAccessedAt': -1 });
+
+      realTimeProgress.forEach(progress => {
+        formattedProgress.push({
+          courseId: progress.courseId._id || progress.courseId,
+          courseTitle: progress.courseId.title || 'Course',
+          thumbnail: progress.courseId.thumbnail || progress.courseId.image,
+          category: progress.courseId.category,
+          level: progress.courseId.level,
+          overallProgress: progress.overallProgress?.percentage || 0,
+          completedLectures: progress.overallProgress?.completedLectures || 0,
+          totalLectures: progress.overallProgress?.totalLectures || 0,
+          timeSpent: progress.overallProgress?.timeSpent || 0,
+          lastAccessedAt: progress.overallProgress?.lastAccessedAt || progress.updatedAt,
+          isCompleted: progress.isCompleted || false,
+          courseType: 'real-time',
+          lastWatchedLecture: progress.lectureProgress
+            ?.filter(l => l.lastPosition > 0)
+            .sort((a, b) => new Date(b.lastAccessedAt || 0) - new Date(a.lastAccessedAt || 0))[0] || null
+        });
+      });
+    } catch (realTimeError) {
+      // Silent fail - continue with regular courses
+    }
+
+    // 2. Get regular Course progress (if StudentProgress model exists)
+    try {
+      const Course = mongoose.model('Course');
+      let StudentProgress = null;
+      
+      try {
+        StudentProgress = mongoose.model('StudentProgress');
+      } catch (modelError) {
+        // StudentProgress model doesn't exist, skip regular course progress
+      }
+
+      if (StudentProgress) {
+        // Get enrollments for regular courses
+        const Enrollment = mongoose.model('Enrollment');
+        const enrollments = await Enrollment.find({
+          studentId,
+          status: { $in: ['active', 'enrolled'] }
+        }).populate('courseId');
+
+        // Get all RealTimeCourse IDs to exclude them
+        const realTimeCourseIds = await RealTimeCourse.find({}).select('_id').lean();
+        const realTimeCourseIdSet = new Set(realTimeCourseIds.map(c => c._id.toString()));
+
+        // Get progress for each enrolled regular course
+        for (const enrollment of enrollments) {
+          const courseId = enrollment.courseId?._id || enrollment.courseId;
+          const courseIdString = courseId?.toString() || String(courseId);
+          
+          // Skip if this is a RealTimeCourse (already handled above)
+          if (realTimeCourseIdSet.has(courseIdString)) {
+            continue;
+          }
+          
+          // Check if this is a regular Course (not RealTimeCourse)
+          try {
+            const regularCourse = await Course.findById(courseId);
+            if (!regularCourse) continue; // Skip if not found
+            
+            // Get progress for this course
+            const courseProgress = await StudentProgress.find({
+              studentId,
+              courseId
+            });
+
+            // Calculate progress statistics
+            const totalLectures = courseProgress.length || 0;
+            const completedLectures = courseProgress.filter(p => p.isCompleted).length || 0;
+            const overallProgress = totalLectures > 0 ? (completedLectures / totalLectures) * 100 : 0;
+            const timeSpent = courseProgress.reduce((sum, p) => sum + (p.timeSpent || 0), 0);
+            const lastAccessed = courseProgress.length > 0 
+              ? courseProgress.sort((a, b) => new Date(b.updatedAt || 0) - new Date(a.updatedAt || 0))[0]?.updatedAt 
+              : enrollment.updatedAt;
+
+            formattedProgress.push({
+              courseId: courseIdString,
+              courseTitle: regularCourse.courseName || 'Course',
+              thumbnail: regularCourse.thumbnail || regularCourse.image,
+              category: regularCourse.category,
+              level: regularCourse.level,
+              overallProgress: Math.round(overallProgress),
+              completedLectures,
+              totalLectures,
+              timeSpent,
+              lastAccessedAt: lastAccessed,
+              isCompleted: overallProgress >= 100,
+              courseType: 'regular',
+              lastWatchedLecture: null // Regular courses may not have lecture-level tracking
+            });
+          } catch (courseError) {
+            // Skip this course if error
+            continue;
+          }
+        }
+      }
+    } catch (regularError) {
+      // Silent fail - continue with response
+    }
+
+    // Sort by lastAccessedAt
+    formattedProgress.sort((a, b) => new Date(b.lastAccessedAt) - new Date(a.lastAccessedAt));
+
+    res.json({
+      success: true,
+      progress: formattedProgress
     });
 
   } catch (error) {
@@ -1260,8 +1895,36 @@ export const updateRealTimeCourse = async (req, res) => {
       updateData.previewVideo = '';
     }
 
-    // Calculate total duration if modules are updated
-    if (updateData.modules && updateData.modules.length > 0) {
+    // Always recalculate total duration from current course modules (ensures accuracy when modules/lectures are added/updated)
+    const existingCourse = await RealTimeCourse.findById(courseId);
+    if (existingCourse) {
+      // Use updated modules if provided, otherwise use existing modules from database
+      const modulesToCalculate = updateData.modules && updateData.modules.length > 0 
+        ? updateData.modules 
+        : (existingCourse.modules || []);
+      
+      if (modulesToCalculate && modulesToCalculate.length > 0) {
+        let totalDuration = 0;
+        modulesToCalculate.forEach(module => {
+          if (module.lectures && module.lectures.length > 0) {
+            module.lectures.forEach(lecture => {
+              totalDuration += lecture.duration || 0;
+            });
+          }
+        });
+
+        const hours = Math.max(0, Math.floor(totalDuration / 3600));
+        const minutes = Math.max(0, Math.floor((totalDuration % 3600) / 60));
+        updateData.formattedDuration = hours > 0 
+          ? `${hours} hour${hours > 1 ? 's' : ''} ${minutes > 0 ? `${minutes} min` : ''}`
+          : `${minutes} min`;
+        updateData.estimatedDuration = {
+          hours: hours,
+          minutes: minutes
+        };
+      }
+    } else if (updateData.modules && updateData.modules.length > 0) {
+      // Fallback: calculate from updateData if course not found (shouldn't happen, but safety check)
       let totalDuration = 0;
       updateData.modules.forEach(module => {
         if (module.lectures && module.lectures.length > 0) {

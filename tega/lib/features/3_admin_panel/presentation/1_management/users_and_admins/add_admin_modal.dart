@@ -429,7 +429,6 @@ class _AddAdminModalState extends State<AddAdminModal> {
     );
   }
 
-
   Future<void> _sendInvitation() async {
     if (!_formKey.currentState!.validate()) return;
 

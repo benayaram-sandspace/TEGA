@@ -2,6 +2,7 @@ import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:tega/core/config/env_config.dart';
+import 'package:tega/core/widgets/keyboard_dismisser.dart';
 import 'package:tega/features/2_shared_ui/presentation/screens/splash_screen.dart';
 
 /// Store available cameras globally so any page can use them
@@ -65,6 +66,11 @@ class MyApp extends StatelessWidget {
 
       // Force light theme only
       themeMode: ThemeMode.light,
+
+      // Wrap with KeyboardDismisser to auto-dismiss keyboard on tap outside
+      builder: (context, child) {
+        return KeyboardDismisser(child: child ?? const SizedBox.shrink());
+      },
 
       // Start with splash screen
       home: const SplashScreen(),

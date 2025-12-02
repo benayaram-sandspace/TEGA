@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
-class ProfilePictureWidget extends StatelessWidget {
+class ProfilePictureWidget extends StatefulWidget {
   final String? profilePhotoUrl;
   final String? username;
   final String? firstName;
@@ -25,21 +26,54 @@ class ProfilePictureWidget extends StatelessWidget {
   });
 
   @override
+  State<ProfilePictureWidget> createState() => _ProfilePictureWidgetState();
+}
+
+class _ProfilePictureWidgetState extends State<ProfilePictureWidget> {
+  bool _imageError = false;
+
+  @override
+  void didUpdateWidget(ProfilePictureWidget oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Reset error state if URL changes
+    if (oldWidget.profilePhotoUrl != widget.profilePhotoUrl) {
+      _imageError = false;
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     final initials = _getInitials();
-    final effectiveBorderColor = borderColor ?? const Color(0xFF6B5FFF);
+    final effectiveBorderColor = widget.borderColor ?? const Color(0xFF6B5FFF);
+
+    // Determine if we should show image or initials
+    final shouldShowImage =
+        widget.profilePhotoUrl != null &&
+        widget.profilePhotoUrl!.isNotEmpty &&
+        !_imageError;
 
     Widget avatarWidget = CircleAvatar(
-      radius: radius,
+      radius: widget.radius,
       backgroundColor: const Color(0xFF6B5FFF).withOpacity(0.1),
-      backgroundImage: profilePhotoUrl != null && profilePhotoUrl!.isNotEmpty
-          ? NetworkImage(profilePhotoUrl!)
+      backgroundImage: shouldShowImage
+          ? CachedNetworkImageProvider(widget.profilePhotoUrl!)
           : null,
-      child: profilePhotoUrl == null || profilePhotoUrl!.isEmpty
+      // Only set onBackgroundImageError when backgroundImage is not null
+      onBackgroundImageError: shouldShowImage
+          ? (exception, stackTrace) {
+              // Handle image loading errors (404, network errors, etc.)
+              if (mounted) {
+                setState(() {
+                  _imageError = true;
+                });
+              }
+            }
+          : null,
+      child: !shouldShowImage
           ? Text(
               initials,
               style: TextStyle(
-                fontSize: radius * 0.6,
+                fontSize: widget.radius * 0.6,
                 fontWeight: FontWeight.bold,
                 color: const Color(0xFF6B5FFF),
               ),
@@ -47,15 +81,18 @@ class ProfilePictureWidget extends StatelessWidget {
           : null,
     );
 
-    if (showBorder) {
+    if (widget.showBorder) {
       avatarWidget = Container(
-        padding: EdgeInsets.all(borderWidth),
+        padding: EdgeInsets.all(widget.borderWidth),
         decoration: BoxDecoration(
           shape: BoxShape.circle,
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [effectiveBorderColor, effectiveBorderColor.withOpacity(0.8)],
+            colors: [
+              effectiveBorderColor,
+              effectiveBorderColor.withOpacity(0.8),
+            ],
           ),
           boxShadow: [
             BoxShadow(
@@ -71,17 +108,14 @@ class ProfilePictureWidget extends StatelessWidget {
             shape: BoxShape.circle,
             color: Colors.white,
           ),
-          padding: EdgeInsets.all(borderWidth),
+          padding: EdgeInsets.all(widget.borderWidth),
           child: avatarWidget,
         ),
       );
     }
 
-    if (onTap != null) {
-      return GestureDetector(
-        onTap: onTap,
-        child: avatarWidget,
-      );
+    if (widget.onTap != null) {
+      return GestureDetector(onTap: widget.onTap, child: avatarWidget);
     }
 
     return avatarWidget;
@@ -89,9 +123,13 @@ class ProfilePictureWidget extends StatelessWidget {
 
   String _getInitials() {
     // Try to get initials from firstName and lastName first
-    if (firstName != null && lastName != null) {
-      final firstInitial = firstName!.isNotEmpty ? firstName![0].toUpperCase() : '';
-      final lastInitial = lastName!.isNotEmpty ? lastName![0].toUpperCase() : '';
+    if (widget.firstName != null && widget.lastName != null) {
+      final firstInitial = widget.firstName!.isNotEmpty
+          ? widget.firstName![0].toUpperCase()
+          : '';
+      final lastInitial = widget.lastName!.isNotEmpty
+          ? widget.lastName![0].toUpperCase()
+          : '';
       if (firstInitial.isNotEmpty && lastInitial.isNotEmpty) {
         return '$firstInitial$lastInitial';
       }
@@ -100,7 +138,7 @@ class ProfilePictureWidget extends StatelessWidget {
     }
 
     // Fallback to username/email
-    final name = username ?? 'U';
+    final name = widget.username ?? 'U';
     if (name.isEmpty) return 'U';
 
     // Extract name from email if it's an email

@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:local_auth/local_auth.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'dart:convert';
@@ -67,7 +66,6 @@ class SimpleGoogleCredentialManager {
     try {
       // Check if Google Client ID is configured
       if (_googleClientId.isEmpty) {
-        debugPrint('⚠️ Google Client ID not configured in environment');
         _isInitialized = false;
         return;
       }
@@ -77,7 +75,6 @@ class SimpleGoogleCredentialManager {
 
       _isInitialized = true;
     } catch (e) {
-      debugPrint('❌ Error initializing Simple Google Credential Manager: $e');
       _isInitialized = false;
     }
   }

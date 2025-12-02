@@ -95,6 +95,7 @@ class _StudentManagementPageState extends State<StudentManagementPage>
     });
     _animationController.forward();
   }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(

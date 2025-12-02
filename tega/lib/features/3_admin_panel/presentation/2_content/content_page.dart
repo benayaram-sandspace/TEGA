@@ -65,7 +65,10 @@ class ContentPage extends StatelessWidget {
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [AdminDashboardStyles.primary, AdminDashboardStyles.primaryLight],
+          colors: [
+            AdminDashboardStyles.primary,
+            AdminDashboardStyles.primaryLight,
+          ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),

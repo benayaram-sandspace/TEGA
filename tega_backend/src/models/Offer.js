@@ -102,7 +102,63 @@ const offerSchema = new mongoose.Schema({
   enrolledStudents: {
     type: Number,
     default: 0
-  }
+  },
+  packageOffers: [{
+    packageName: {
+      type: String,
+      required: true,
+      trim: true
+    },
+    description: {
+      type: String,
+      trim: true,
+      maxlength: 1000
+    },
+    includedCourses: [{
+      courseId: {
+        type: String, // Support both ObjectId and default courses
+        required: true
+      },
+      courseName: {
+        type: String,
+        required: true,
+        trim: true
+      }
+    }],
+    includedExam: {
+      examId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Exam',
+        default: null
+      },
+      examTitle: {
+        type: String,
+        trim: true
+      }
+    },
+    price: {
+      type: Number,
+      required: true,
+      min: 0
+    },
+    validUntil: {
+      type: Date, // Expiry date for the package
+      required: true
+    },
+    instituteName: {
+      type: String,
+      required: true,
+      trim: true
+    },
+    isActive: {
+      type: Boolean,
+      default: true
+    },
+    createdAt: {
+      type: Date,
+      default: Date.now
+    }
+  }]
 }, {
   timestamps: true
 });
@@ -112,6 +168,7 @@ offerSchema.index({ instituteName: 1, isActive: 1 });
 offerSchema.index({ validUntil: 1 });
 offerSchema.index({ 'courseOffers.courseId': 1 });
 offerSchema.index({ 'tegaExamOffers.examId': 1 });
+offerSchema.index({ 'packageOffers.instituteName': 1, 'packageOffers.isActive': 1 });
 
 // Virtual for checking if offer is currently valid
 offerSchema.virtual('isValid').get(function() {

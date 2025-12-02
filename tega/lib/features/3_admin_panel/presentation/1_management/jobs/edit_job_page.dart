@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:tega/core/constants/api_constants.dart';
 import 'package:tega/features/1_authentication/data/auth_repository.dart';
+import 'package:tega/features/3_admin_panel/presentation/0_dashboard/admin_dashboard_styles.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
@@ -123,7 +124,7 @@ class _EditJobPageState extends State<EditJobPage> {
     });
 
     try {
-      final headers = _authService.getAuthHeaders();
+      final headers = await _authService.getAuthHeaders();
       final jobData = {
         'title': _titleController.text.trim(),
         'company': _companyController.text.trim(),
@@ -223,219 +224,596 @@ class _EditJobPageState extends State<EditJobPage> {
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isMobile = screenWidth < 600;
+    final isTablet = screenWidth >= 600 && screenWidth < 1024;
+    final isDesktop = screenWidth >= 1024;
+
     return Scaffold(
       backgroundColor: const Color(0xFFF7F8FC),
       appBar: AppBar(
-        title: const Text('Edit Job'),
+        title: Text(
+          'Edit Job',
+          style: TextStyle(
+            fontSize: isMobile
+                ? 18
+                : isTablet
+                ? 19
+                : 20,
+          ),
+        ),
         backgroundColor: Colors.white,
         foregroundColor: const Color(0xFF2D3748),
         elevation: 0,
       ),
-      body: Form(
-        key: _formKey,
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Basic Information Card
-              _buildCard('Basic Information', [
-                _buildTextField(
-                  controller: _titleController,
-                  label: 'Job Title',
-                  hint: 'e.g., Software Engineer',
-                  validator: (value) {
-                    if (value == null || value.trim().isEmpty) {
-                      return 'Job title is required';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 16),
-                _buildTextField(
-                  controller: _companyController,
-                  label: 'Company',
-                  hint: 'e.g., Tech Corp',
-                  validator: (value) {
-                    if (value == null || value.trim().isEmpty) {
-                      return 'Company name is required';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 16),
-                _buildTextField(
-                  controller: _locationController,
-                  label: 'Location',
-                  hint: 'e.g., Mumbai, India',
-                ),
-                const SizedBox(height: 16),
-                _buildDropdown(
-                  label: 'Job Type',
-                  value: _selectedJobType,
-                  items: _jobTypes,
-                  onChanged: (value) {
-                    setState(() {
-                      _selectedJobType = value!;
-                    });
-                  },
-                ),
-                const SizedBox(height: 16),
-                _buildDropdown(
-                  label: 'Posting Type',
-                  value: _selectedPostingType,
-                  items: _postingTypes,
-                  onChanged: (value) {
-                    setState(() {
-                      _selectedPostingType = value!;
-                    });
-                  },
-                ),
-              ]),
-              const SizedBox(height: 16),
-              // Job Details Card
-              _buildCard('Job Details', [
-                _buildTextField(
-                  controller: _descriptionController,
-                  label: 'Description',
-                  hint: 'Describe the role and responsibilities...',
-                  maxLines: 4,
-                  validator: (value) {
-                    if (value == null || value.trim().isEmpty) {
-                      return 'Job description is required';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 16),
-                _buildTextField(
-                  controller: _experienceController,
-                  label: 'Experience Required',
-                  hint: 'e.g., 2-3 years',
-                ),
-                const SizedBox(height: 16),
-                _buildTextField(
-                  controller: _salaryController,
-                  label: 'Salary (₹)',
-                  hint: 'e.g., 500000',
-                  keyboardType: TextInputType.number,
-                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                ),
-                const SizedBox(height: 16),
-                _buildTextField(
-                  controller: _applicationLinkController,
-                  label: 'Application Link',
-                  hint: 'https://company.com/apply',
-                ),
-              ]),
-              const SizedBox(height: 16),
-              // Requirements & Benefits Card
-              _buildCard('Requirements & Benefits', [
-                _buildTextField(
-                  controller: _requirementsController,
-                  label: 'Requirements (one per line)',
-                  hint:
-                      'Bachelor\'s degree in Computer Science\n2+ years of experience\n...',
-                  maxLines: 4,
-                ),
-                const SizedBox(height: 16),
-                _buildTextField(
-                  controller: _benefitsController,
-                  label: 'Benefits (one per line)',
-                  hint: 'Health insurance\nFlexible working hours\n...',
-                  maxLines: 4,
-                ),
-              ]),
-              const SizedBox(height: 16),
-              // Status & Settings Card
-              _buildCard('Status & Settings', [
-                _buildDropdown(
-                  label: 'Status',
-                  value: _selectedStatus,
-                  items: _statuses,
-                  onChanged: (value) {
-                    setState(() {
-                      _selectedStatus = value!;
-                    });
-                  },
-                ),
-                const SizedBox(height: 16),
-                _buildTextField(
-                  controller: _deadlineController,
-                  label: 'Deadline',
-                  hint: 'Select a date',
-                  readOnly: true,
-                  onTap: _selectDeadline,
-                  suffixIcon: Icons.calendar_today,
-                ),
-                const SizedBox(height: 16),
-                SwitchListTile(
-                  title: const Text('Active'),
-                  subtitle: const Text('Job will be visible to students'),
-                  value: _isActive,
-                  onChanged: (value) {
-                    setState(() {
-                      _isActive = value;
-                    });
-                  },
-                  activeColor: const Color(0xFF6B5FFF),
-                  contentPadding: EdgeInsets.zero,
-                ),
-              ]),
-              const SizedBox(height: 32),
-              // Action Buttons
-              Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton(
-                      onPressed: _isLoading
-                          ? null
-                          : () => Navigator.pop(context),
-                      style: OutlinedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        side: const BorderSide(color: Color(0xFFE2E8F0)),
-                      ),
-                      child: const Text('Cancel'),
+      body: SafeArea(
+        child: Form(
+          key: _formKey,
+          child: SingleChildScrollView(
+            padding: EdgeInsets.all(
+              isMobile
+                  ? 12
+                  : isTablet
+                  ? 14
+                  : 16,
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Basic Information Card
+                _buildCard(
+                  'Basic Information',
+                  [
+                    _buildTextField(
+                      controller: _titleController,
+                      label: 'Job Title',
+                      hint: 'e.g., Software Engineer',
+                      validator: (value) {
+                        if (value == null || value.trim().isEmpty) {
+                          return 'Job title is required';
+                        }
+                        return null;
+                      },
+                      isMobile: isMobile,
+                      isTablet: isTablet,
+                      isDesktop: isDesktop,
                     ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: _isLoading ? null : _updateJob,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF6B5FFF),
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
+                    SizedBox(
+                      height: isMobile
+                          ? 12
+                          : isTablet
+                          ? 14
+                          : 16,
+                    ),
+                    _buildTextField(
+                      controller: _companyController,
+                      label: 'Company',
+                      hint: 'e.g., Tech Corp',
+                      validator: (value) {
+                        if (value == null || value.trim().isEmpty) {
+                          return 'Company name is required';
+                        }
+                        return null;
+                      },
+                      isMobile: isMobile,
+                      isTablet: isTablet,
+                      isDesktop: isDesktop,
+                    ),
+                    SizedBox(
+                      height: isMobile
+                          ? 12
+                          : isTablet
+                          ? 14
+                          : 16,
+                    ),
+                    _buildTextField(
+                      controller: _locationController,
+                      label: 'Location',
+                      hint: 'e.g., Mumbai, India',
+                      isMobile: isMobile,
+                      isTablet: isTablet,
+                      isDesktop: isDesktop,
+                    ),
+                    SizedBox(
+                      height: isMobile
+                          ? 12
+                          : isTablet
+                          ? 14
+                          : 16,
+                    ),
+                    _buildDropdown(
+                      label: 'Job Type',
+                      value: _selectedJobType,
+                      items: _jobTypes,
+                      onChanged: (value) {
+                        setState(() {
+                          _selectedJobType = value!;
+                        });
+                      },
+                      isMobile: isMobile,
+                      isTablet: isTablet,
+                      isDesktop: isDesktop,
+                    ),
+                    SizedBox(
+                      height: isMobile
+                          ? 12
+                          : isTablet
+                          ? 14
+                          : 16,
+                    ),
+                    _buildDropdown(
+                      label: 'Posting Type',
+                      value: _selectedPostingType,
+                      items: _postingTypes,
+                      onChanged: (value) {
+                        setState(() {
+                          _selectedPostingType = value!;
+                        });
+                      },
+                      isMobile: isMobile,
+                      isTablet: isTablet,
+                      isDesktop: isDesktop,
+                    ),
+                  ],
+                  isMobile,
+                  isTablet,
+                  isDesktop,
+                ),
+                SizedBox(
+                  height: isMobile
+                      ? 12
+                      : isTablet
+                      ? 14
+                      : 16,
+                ),
+                // Job Details Card
+                _buildCard(
+                  'Job Details',
+                  [
+                    _buildTextField(
+                      controller: _descriptionController,
+                      label: 'Description',
+                      hint: 'Describe the role and responsibilities...',
+                      maxLines: 4,
+                      validator: (value) {
+                        if (value == null || value.trim().isEmpty) {
+                          return 'Job description is required';
+                        }
+                        return null;
+                      },
+                      isMobile: isMobile,
+                      isTablet: isTablet,
+                      isDesktop: isDesktop,
+                    ),
+                    SizedBox(
+                      height: isMobile
+                          ? 12
+                          : isTablet
+                          ? 14
+                          : 16,
+                    ),
+                    _buildTextField(
+                      controller: _experienceController,
+                      label: 'Experience Required',
+                      hint: 'e.g., 2-3 years',
+                      isMobile: isMobile,
+                      isTablet: isTablet,
+                      isDesktop: isDesktop,
+                    ),
+                    SizedBox(
+                      height: isMobile
+                          ? 12
+                          : isTablet
+                          ? 14
+                          : 16,
+                    ),
+                    _buildTextField(
+                      controller: _salaryController,
+                      label: 'Salary (₹)',
+                      hint: 'e.g., 500000',
+                      keyboardType: TextInputType.number,
+                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                      isMobile: isMobile,
+                      isTablet: isTablet,
+                      isDesktop: isDesktop,
+                    ),
+                    SizedBox(
+                      height: isMobile
+                          ? 12
+                          : isTablet
+                          ? 14
+                          : 16,
+                    ),
+                    _buildTextField(
+                      controller: _applicationLinkController,
+                      label: 'Application Link',
+                      hint: 'https://company.com/apply',
+                      isMobile: isMobile,
+                      isTablet: isTablet,
+                      isDesktop: isDesktop,
+                    ),
+                  ],
+                  isMobile,
+                  isTablet,
+                  isDesktop,
+                ),
+                SizedBox(
+                  height: isMobile
+                      ? 12
+                      : isTablet
+                      ? 14
+                      : 16,
+                ),
+                // Requirements & Benefits Card
+                _buildCard(
+                  'Requirements & Benefits',
+                  [
+                    _buildTextField(
+                      controller: _requirementsController,
+                      label: 'Requirements (one per line)',
+                      hint:
+                          'Bachelor\'s degree in Computer Science\n2+ years of experience\n...',
+                      maxLines: 4,
+                      isMobile: isMobile,
+                      isTablet: isTablet,
+                      isDesktop: isDesktop,
+                    ),
+                    SizedBox(
+                      height: isMobile
+                          ? 12
+                          : isTablet
+                          ? 14
+                          : 16,
+                    ),
+                    _buildTextField(
+                      controller: _benefitsController,
+                      label: 'Benefits (one per line)',
+                      hint: 'Health insurance\nFlexible working hours\n...',
+                      maxLines: 4,
+                      isMobile: isMobile,
+                      isTablet: isTablet,
+                      isDesktop: isDesktop,
+                    ),
+                  ],
+                  isMobile,
+                  isTablet,
+                  isDesktop,
+                ),
+                SizedBox(
+                  height: isMobile
+                      ? 12
+                      : isTablet
+                      ? 14
+                      : 16,
+                ),
+                // Status & Settings Card
+                _buildCard(
+                  'Status & Settings',
+                  [
+                    _buildDropdown(
+                      label: 'Status',
+                      value: _selectedStatus,
+                      items: _statuses,
+                      onChanged: (value) {
+                        setState(() {
+                          _selectedStatus = value!;
+                        });
+                      },
+                      isMobile: isMobile,
+                      isTablet: isTablet,
+                      isDesktop: isDesktop,
+                    ),
+                    SizedBox(
+                      height: isMobile
+                          ? 12
+                          : isTablet
+                          ? 14
+                          : 16,
+                    ),
+                    _buildTextField(
+                      controller: _deadlineController,
+                      label: 'Deadline',
+                      hint: 'Select a date',
+                      readOnly: true,
+                      onTap: _selectDeadline,
+                      suffixIcon: Icons.calendar_today,
+                      isMobile: isMobile,
+                      isTablet: isTablet,
+                      isDesktop: isDesktop,
+                    ),
+                    SizedBox(
+                      height: isMobile
+                          ? 12
+                          : isTablet
+                          ? 14
+                          : 16,
+                    ),
+                    SwitchListTile(
+                      title: Text(
+                        'Active',
+                        style: TextStyle(
+                          fontSize: isMobile
+                              ? 14
+                              : isTablet
+                              ? 14.5
+                              : 15,
+                        ),
                       ),
-                      child: _isLoading
-                          ? const SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                valueColor: AlwaysStoppedAnimation<Color>(
-                                  Colors.white,
+                      subtitle: Text(
+                        'Job will be visible to students',
+                        style: TextStyle(
+                          fontSize: isMobile
+                              ? 12
+                              : isTablet
+                              ? 12.5
+                              : 13,
+                        ),
+                      ),
+                      value: _isActive,
+                      onChanged: (value) {
+                        setState(() {
+                          _isActive = value;
+                        });
+                      },
+                      activeColor: AdminDashboardStyles.primary,
+                      contentPadding: EdgeInsets.zero,
+                    ),
+                  ],
+                  isMobile,
+                  isTablet,
+                  isDesktop,
+                ),
+                SizedBox(
+                  height: isMobile
+                      ? 24
+                      : isTablet
+                      ? 28
+                      : 32,
+                ),
+                // Action Buttons
+                isMobile
+                    ? Column(
+                        children: [
+                          SizedBox(
+                            width: double.infinity,
+                            child: ElevatedButton(
+                              onPressed: _isLoading ? null : _updateJob,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AdminDashboardStyles.primary,
+                                foregroundColor: Colors.white,
+                                padding: EdgeInsets.symmetric(
+                                  vertical: isMobile
+                                      ? 14
+                                      : isTablet
+                                      ? 15
+                                      : 16,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(
+                                    isMobile
+                                        ? 8
+                                        : isTablet
+                                        ? 9
+                                        : 10,
+                                  ),
                                 ),
                               ),
-                            )
-                          : const Text('Update'),
-                    ),
-                  ),
-                ],
-              ),
-            ],
+                              child: _isLoading
+                                  ? SizedBox(
+                                      width: isMobile
+                                          ? 18
+                                          : isTablet
+                                          ? 19
+                                          : 20,
+                                      height: isMobile
+                                          ? 18
+                                          : isTablet
+                                          ? 19
+                                          : 20,
+                                      child: const CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        valueColor:
+                                            AlwaysStoppedAnimation<Color>(
+                                              Colors.white,
+                                            ),
+                                      ),
+                                    )
+                                  : Text(
+                                      'Update',
+                                      style: TextStyle(
+                                        fontSize: isMobile
+                                            ? 14
+                                            : isTablet
+                                            ? 15
+                                            : 16,
+                                      ),
+                                    ),
+                            ),
+                          ),
+                          SizedBox(
+                            height: isMobile
+                                ? 12
+                                : isTablet
+                                ? 14
+                                : 16,
+                          ),
+                          SizedBox(
+                            width: double.infinity,
+                            child: OutlinedButton(
+                              onPressed: _isLoading
+                                  ? null
+                                  : () => Navigator.pop(context),
+                              style: OutlinedButton.styleFrom(
+                                padding: EdgeInsets.symmetric(
+                                  vertical: isMobile
+                                      ? 14
+                                      : isTablet
+                                      ? 15
+                                      : 16,
+                                ),
+                                side: const BorderSide(
+                                  color: Color(0xFFE2E8F0),
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(
+                                    isMobile
+                                        ? 8
+                                        : isTablet
+                                        ? 9
+                                        : 10,
+                                  ),
+                                ),
+                              ),
+                              child: Text(
+                                'Cancel',
+                                style: TextStyle(
+                                  fontSize: isMobile
+                                      ? 14
+                                      : isTablet
+                                      ? 15
+                                      : 16,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      )
+                    : Row(
+                        children: [
+                          Expanded(
+                            child: OutlinedButton(
+                              onPressed: _isLoading
+                                  ? null
+                                  : () => Navigator.pop(context),
+                              style: OutlinedButton.styleFrom(
+                                padding: EdgeInsets.symmetric(
+                                  vertical: isMobile
+                                      ? 14
+                                      : isTablet
+                                      ? 15
+                                      : 16,
+                                ),
+                                side: const BorderSide(
+                                  color: Color(0xFFE2E8F0),
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(
+                                    isMobile
+                                        ? 8
+                                        : isTablet
+                                        ? 9
+                                        : 10,
+                                  ),
+                                ),
+                              ),
+                              child: Text(
+                                'Cancel',
+                                style: TextStyle(
+                                  fontSize: isMobile
+                                      ? 14
+                                      : isTablet
+                                      ? 15
+                                      : 16,
+                                ),
+                              ),
+                            ),
+                          ),
+                          SizedBox(
+                            width: isMobile
+                                ? 12
+                                : isTablet
+                                ? 14
+                                : 16,
+                          ),
+                          Expanded(
+                            child: ElevatedButton(
+                              onPressed: _isLoading ? null : _updateJob,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AdminDashboardStyles.primary,
+                                foregroundColor: Colors.white,
+                                padding: EdgeInsets.symmetric(
+                                  vertical: isMobile
+                                      ? 14
+                                      : isTablet
+                                      ? 15
+                                      : 16,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(
+                                    isMobile
+                                        ? 8
+                                        : isTablet
+                                        ? 9
+                                        : 10,
+                                  ),
+                                ),
+                              ),
+                              child: _isLoading
+                                  ? SizedBox(
+                                      width: isMobile
+                                          ? 18
+                                          : isTablet
+                                          ? 19
+                                          : 20,
+                                      height: isMobile
+                                          ? 18
+                                          : isTablet
+                                          ? 19
+                                          : 20,
+                                      child: const CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        valueColor:
+                                            AlwaysStoppedAnimation<Color>(
+                                              Colors.white,
+                                            ),
+                                      ),
+                                    )
+                                  : Text(
+                                      'Update',
+                                      style: TextStyle(
+                                        fontSize: isMobile
+                                            ? 14
+                                            : isTablet
+                                            ? 15
+                                            : 16,
+                                      ),
+                                    ),
+                            ),
+                          ),
+                        ],
+                      ),
+              ],
+            ),
           ),
         ),
       ),
     );
   }
 
-  Widget _buildCard(String title, List<Widget> children) {
+  Widget _buildCard(
+    String title,
+    List<Widget> children,
+    bool isMobile,
+    bool isTablet,
+    bool isDesktop,
+  ) {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: EdgeInsets.all(
+        isMobile
+            ? 16
+            : isTablet
+            ? 18
+            : 20,
+      ),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(
+          isMobile
+              ? 10
+              : isTablet
+              ? 11
+              : 12,
+        ),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.05),
@@ -449,22 +827,43 @@ class _EditJobPageState extends State<EditJobPage> {
         children: [
           Text(
             title,
-            style: const TextStyle(
-              fontSize: 18,
+            style: TextStyle(
+              fontSize: isMobile
+                  ? 16
+                  : isTablet
+                  ? 17
+                  : 18,
               fontWeight: FontWeight.bold,
-              color: Color(0xFF2D3748),
+              color: const Color(0xFF2D3748),
             ),
           ),
-          const SizedBox(height: 16),
+          SizedBox(
+            height: isMobile
+                ? 12
+                : isTablet
+                ? 14
+                : 16,
+          ),
           ...children,
         ],
       ),
     );
   }
 
-  OutlineInputBorder _buildOutlineBorder(Color color) {
+  OutlineInputBorder _buildOutlineBorder(
+    Color color,
+    bool isMobile,
+    bool isTablet,
+    bool isDesktop,
+  ) {
     return OutlineInputBorder(
-      borderRadius: BorderRadius.circular(8),
+      borderRadius: BorderRadius.circular(
+        isMobile
+            ? 8
+            : isTablet
+            ? 8.5
+            : 9,
+      ),
       borderSide: BorderSide(color: color, width: 1),
     );
   }
@@ -480,6 +879,9 @@ class _EditJobPageState extends State<EditJobPage> {
     bool readOnly = false,
     VoidCallback? onTap,
     IconData? suffixIcon,
+    required bool isMobile,
+    required bool isTablet,
+    required bool isDesktop,
   }) {
     return TextFormField(
       controller: controller,
@@ -489,15 +891,72 @@ class _EditJobPageState extends State<EditJobPage> {
       validator: validator,
       readOnly: readOnly,
       onTap: onTap,
+      style: TextStyle(
+        fontSize: isMobile
+            ? 13
+            : isTablet
+            ? 13.5
+            : 14,
+      ),
       decoration: InputDecoration(
         labelText: label,
         hintText: hint,
-        suffixIcon: suffixIcon != null ? Icon(suffixIcon, size: 20) : null,
-        border: _buildOutlineBorder(const Color(0xFFE2E8F0)),
-        enabledBorder: _buildOutlineBorder(const Color(0xFFE2E8F0)),
-        focusedBorder: _buildOutlineBorder(const Color(0xFF6B5FFF)),
+        labelStyle: TextStyle(
+          fontSize: isMobile
+              ? 13
+              : isTablet
+              ? 13.5
+              : 14,
+        ),
+        hintStyle: TextStyle(
+          fontSize: isMobile
+              ? 13
+              : isTablet
+              ? 13.5
+              : 14,
+        ),
+        suffixIcon: suffixIcon != null
+            ? Icon(
+                suffixIcon,
+                size: isMobile
+                    ? 18
+                    : isTablet
+                    ? 19
+                    : 20,
+              )
+            : null,
+        border: _buildOutlineBorder(
+          const Color(0xFFE2E8F0),
+          isMobile,
+          isTablet,
+          isDesktop,
+        ),
+        enabledBorder: _buildOutlineBorder(
+          const Color(0xFFE2E8F0),
+          isMobile,
+          isTablet,
+          isDesktop,
+        ),
+        focusedBorder: _buildOutlineBorder(
+          AdminDashboardStyles.primary,
+          isMobile,
+          isTablet,
+          isDesktop,
+        ),
         filled: true,
         fillColor: const Color(0xFFF7F8FC),
+        contentPadding: EdgeInsets.symmetric(
+          horizontal: isMobile
+              ? 14
+              : isTablet
+              ? 15
+              : 16,
+          vertical: isMobile
+              ? 14
+              : isTablet
+              ? 15
+              : 16,
+        ),
       ),
     );
   }
@@ -507,6 +966,9 @@ class _EditJobPageState extends State<EditJobPage> {
     required String value,
     required List<String> items,
     required Function(String?) onChanged,
+    required bool isMobile,
+    required bool isTablet,
+    required bool isDesktop,
   }) {
     // Ensure the value exists in the items list, otherwise default to the first item
     final String? currentValue = items.contains(value) ? value : null;
@@ -516,18 +978,78 @@ class _EditJobPageState extends State<EditJobPage> {
       onChanged: onChanged,
       decoration: InputDecoration(
         labelText: label,
-        border: _buildOutlineBorder(const Color(0xFFE2E8F0)),
-        enabledBorder: _buildOutlineBorder(const Color(0xFFE2E8F0)),
-        focusedBorder: _buildOutlineBorder(const Color(0xFF6B5FFF)),
+        labelStyle: TextStyle(
+          fontSize: isMobile
+              ? 13
+              : isTablet
+              ? 13.5
+              : 14,
+        ),
+        border: _buildOutlineBorder(
+          const Color(0xFFE2E8F0),
+          isMobile,
+          isTablet,
+          isDesktop,
+        ),
+        enabledBorder: _buildOutlineBorder(
+          const Color(0xFFE2E8F0),
+          isMobile,
+          isTablet,
+          isDesktop,
+        ),
+        focusedBorder: _buildOutlineBorder(
+          AdminDashboardStyles.primary,
+          isMobile,
+          isTablet,
+          isDesktop,
+        ),
         filled: true,
         fillColor: const Color(0xFFF7F8FC),
+        contentPadding: EdgeInsets.symmetric(
+          horizontal: isMobile
+              ? 14
+              : isTablet
+              ? 15
+              : 16,
+          vertical: isMobile
+              ? 14
+              : isTablet
+              ? 15
+              : 16,
+        ),
+      ),
+      style: TextStyle(
+        fontSize: isMobile
+            ? 13
+            : isTablet
+            ? 13.5
+            : 14,
+        color: Colors.black,
       ),
       items: items.map((item) {
         return DropdownMenuItem<String>(
           value: item,
-          child: Text(item.toUpperCase()),
+          child: Text(
+            item.toUpperCase(),
+            style: TextStyle(
+              fontSize: isMobile
+                  ? 13
+                  : isTablet
+                  ? 13.5
+                  : 14,
+              color: Colors.black,
+            ),
+          ),
         );
       }).toList(),
+      icon: Icon(
+        Icons.keyboard_arrow_down,
+        size: isMobile
+            ? 20
+            : isTablet
+            ? 22
+            : 24,
+      ),
       validator: (value) => value == null ? 'Please select an option' : null,
     );
   }

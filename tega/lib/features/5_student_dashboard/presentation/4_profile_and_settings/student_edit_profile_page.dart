@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:cached_network_image/cached_network_image.dart';
 import '../../../1_authentication/data/auth_repository.dart';
 import '../../../../core/constants/api_constants.dart';
 
@@ -483,8 +484,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
               CircleAvatar(
                 radius: 50,
                 backgroundImage: _profileData?['profilePhoto'] != null
-                    ? NetworkImage(_profileData!['profilePhoto'])
-                    : const NetworkImage(
+                    ? CachedNetworkImageProvider(_profileData!['profilePhoto'])
+                    : CachedNetworkImageProvider(
                         'https://randomuser.me/api/portraits/men/32.jpg',
                       ),
               ),

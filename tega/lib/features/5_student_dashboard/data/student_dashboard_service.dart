@@ -59,14 +59,19 @@ class StudentDashboardService {
   }
 
   Future<List<dynamic>> getEnrolledCourses(Map<String, String> headers) async {
-    final uri = Uri.parse(ApiEndpoints.studentDashboard);
-    final res = await http.get(uri, headers: headers);
     try {
-      final body = json.decode(res.body);
-      if (res.statusCode == 200 && body['success'] == true) {
-        final data = body['data'] as Map<String, dynamic>;
-        return data['enrolledCourses'] as List<dynamic>? ?? [];
+      // Use paid-courses endpoint
+      final paidCoursesUri = Uri.parse(ApiEndpoints.paymentPaidCourses);
+      final paidCoursesRes = await http.get(paidCoursesUri, headers: headers);
+
+      if (paidCoursesRes.statusCode == 200) {
+        final paidCoursesBody = json.decode(paidCoursesRes.body);
+        if (paidCoursesBody['success'] == true &&
+            paidCoursesBody['data'] != null) {
+          return paidCoursesBody['data'] as List<dynamic>;
+        }
       }
+
       return [];
     } catch (_) {
       return [];
@@ -235,6 +240,119 @@ class StudentDashboardService {
       return {'success': false, 'message': 'Failed to apply'};
     } catch (_) {
       return {'success': false, 'message': 'Error applying for job'};
+    }
+  }
+
+  Future<List<dynamic>> getAllProgress(Map<String, String> headers) async {
+    try {
+      final uri = Uri.parse(ApiEndpoints.realTimeCoursesProgressAll);
+      final res = await http.get(uri, headers: headers);
+
+      if (res.statusCode == 200) {
+        final body = json.decode(res.body);
+        if (body['success'] == true && body['progress'] != null) {
+          return body['progress'] as List<dynamic>;
+        }
+      }
+      return [];
+    } catch (_) {
+      return [];
+    }
+  }
+
+  Future<Map<String, dynamic>> getSkillAssessments(
+    Map<String, String> headers,
+  ) async {
+    try {
+      final uri = Uri.parse(ApiEndpoints.studentSkillAssessments);
+      final res = await http.get(uri, headers: headers);
+
+      if (res.statusCode == 200) {
+        final body = json.decode(res.body);
+        if (body['success'] == true) {
+          return {
+            'questions': body['questions'] ?? [],
+            'questionsByTopic': body['questionsByTopic'] ?? {},
+            'modules': body['modules'] ?? [],
+            'totalQuestions': body['totalQuestions'] ?? 0,
+          };
+        }
+      }
+      return {
+        'questions': [],
+        'questionsByTopic': {},
+        'modules': [],
+        'totalQuestions': 0,
+      };
+    } catch (_) {
+      return {
+        'questions': [],
+        'questionsByTopic': {},
+        'modules': [],
+        'totalQuestions': 0,
+      };
+    }
+  }
+
+  Future<List<dynamic>> getAvailableExams(
+    String studentId,
+    Map<String, String> headers,
+  ) async {
+    try {
+      final uri = Uri.parse(ApiEndpoints.studentAvailableExams(studentId));
+      final res = await http.get(uri, headers: headers);
+
+      if (res.statusCode == 200) {
+        final body = json.decode(res.body);
+        if (body['success'] == true && body['exams'] != null) {
+          return body['exams'] as List<dynamic>;
+        }
+      }
+      return [];
+    } catch (_) {
+      return [];
+    }
+  }
+
+  Future<Map<String, dynamic>> registerForExam(
+    String examId,
+    String slotId,
+    Map<String, String> headers,
+  ) async {
+    try {
+      final uri = Uri.parse(ApiEndpoints.studentRegisterExam(examId));
+      final requestHeaders = {...headers, 'Content-Type': 'application/json'};
+      final res = await http.post(
+        uri,
+        headers: requestHeaders,
+        body: json.encode({'slotId': slotId}),
+      );
+
+      final body = json.decode(res.body);
+      if (res.statusCode == 200 || res.statusCode == 201) {
+        return body as Map<String, dynamic>;
+      }
+      return body as Map<String, dynamic>;
+    } catch (e) {
+      return {'success': false, 'message': 'Error registering for exam'};
+    }
+  }
+
+  Future<Map<String, dynamic>> startExam(
+    String examId,
+    Map<String, String> headers,
+  ) async {
+    try {
+      final uri = Uri.parse(ApiEndpoints.studentStartExam(examId));
+      final res = await http.get(uri, headers: headers);
+
+      final body = json.decode(res.body);
+      if (res.statusCode == 200) {
+        return body as Map<String, dynamic>;
+      }
+      return body as Map<String, dynamic>;
+    } catch (e) {
+      return {'success': false, 'message': 'Error starting exam'};
     }
   }
 }

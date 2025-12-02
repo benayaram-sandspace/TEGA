@@ -11,6 +11,7 @@ import {
   getCourseAnalytics,
   updateHeartbeat,
   getStudentProgress,
+  getAllStudentProgress,
   createRealTimeCourse,
   updateRealTimeCourse,
   deleteRealTimeCourse,
@@ -30,15 +31,16 @@ router.post('/', adminAuth, createRealTimeCourse);
 router.get('/', getRealTimeCourses);
 
 // Student routes (require authentication) - specific routes must come before generic ones
+router.get('/progress/all', studentAuth, getAllStudentProgress); // Must come before :courseId routes
 router.get('/:courseId/content', studentAuth, getCourseContent);
-router.get('/:courseId', studentAuth, getRealTimeCourse);
 router.get('/:courseId/enrollment-status', studentAuth, getEnrollmentStatus);
+router.get('/:courseId/progress', studentAuth, getStudentProgress); // Must come before :courseId route
 router.post('/:courseId/enroll', studentAuth, enrollInCourse);
 router.put('/:courseId/lectures/:lectureId/progress', studentAuth, updateLectureProgress);
 router.put('/:courseId/lectures/:lectureId/duration', studentAuth, updateLectureDuration);
 router.post('/:courseId/lectures/:lectureId/quiz', studentAuth, submitQuiz);
 router.put('/:courseId/heartbeat', studentAuth, updateHeartbeat);
-router.get('/:courseId/progress', studentAuth, getStudentProgress);
+router.get('/:courseId', studentAuth, getRealTimeCourse); // Generic route must come last
 
 // Admin routes - course management
 router.put('/:courseId', adminAuth, updateRealTimeCourse);

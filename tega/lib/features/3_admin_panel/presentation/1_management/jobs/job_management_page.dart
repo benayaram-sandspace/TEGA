@@ -1,7 +1,11 @@
+import 'dart:async';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:tega/core/services/admin_dashboard_cache_service.dart';
 import 'package:tega/core/constants/api_constants.dart';
 import 'package:tega/features/1_authentication/data/auth_repository.dart';
+import 'package:tega/features/3_admin_panel/presentation/0_dashboard/admin_dashboard_styles.dart';
 import 'package:tega/features/3_admin_panel/presentation/1_management/jobs/create_job_page.dart';
 import 'package:tega/features/3_admin_panel/presentation/1_management/jobs/edit_job_page.dart';
 import 'package:tega/features/3_admin_panel/presentation/1_management/jobs/job_details_page.dart';
@@ -21,11 +25,14 @@ class JobManagementPage extends StatefulWidget {
 class _JobManagementPageState extends State<JobManagementPage>
     with TickerProviderStateMixin {
   final AuthService _authService = AuthService();
+  final AdminDashboardCacheService _cacheService = AdminDashboardCacheService();
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
 
   List<Map<String, dynamic>> _jobs = [];
   bool _isLoading = true;
+  bool _isLoadingFromCache = false;
+  String? _errorMessage;
   String _searchQuery = '';
   String _selectedStatus = 'all';
   String _selectedType = 'all';
@@ -52,9 +59,68 @@ class _JobManagementPageState extends State<JobManagementPage>
     _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
     );
-    _loadJobs();
-    _loadStats();
+    _initializeCacheAndLoadData();
+  }
+
+  Future<void> _initializeCacheAndLoadData() async {
+    // Initialize cache service
+    await _cacheService.initialize();
+
+    // Try to load from cache first
+    await _loadFromCache();
+
+    // Then load fresh data
+    await _loadJobs();
+    await _loadStats();
     _animationController.forward();
+  }
+
+  Future<void> _loadFromCache() async {
+    try {
+      setState(() => _isLoadingFromCache = true);
+
+      // Load jobs from cache
+      final cachedJobsData = await _cacheService.getJobsData(
+        searchQuery: _searchQuery.isEmpty ? null : _searchQuery,
+        status: _selectedStatus == 'all' ? null : _selectedStatus,
+        type: _selectedType == 'all' ? null : _selectedType,
+        page: _currentPage,
+      );
+
+      if (cachedJobsData != null) {
+        setState(() {
+          _jobs = List<Map<String, dynamic>>.from(cachedJobsData['data'] ?? []);
+          _totalPages = cachedJobsData['pagination']?['totalPages'] ?? 1;
+          _totalJobs = cachedJobsData['pagination']?['totalJobs'] ?? 0;
+          _isLoadingFromCache = false;
+        });
+      }
+
+      // Load stats from cache
+      final cachedStats = await _cacheService.getJobsStats();
+      if (cachedStats != null && cachedStats.isNotEmpty) {
+        setState(() {
+          _stats = cachedStats;
+          _isLoadingFromCache = false;
+        });
+      } else {
+        setState(() => _isLoadingFromCache = false);
+      }
+    } catch (e) {
+      setState(() => _isLoadingFromCache = false);
+    }
+  }
+
+  bool _isNoInternetError(dynamic error) {
+    return error is SocketException ||
+        error is TimeoutException ||
+        (error.toString().toLowerCase().contains('network') ||
+            error.toString().toLowerCase().contains('connection') ||
+            error.toString().toLowerCase().contains('internet') ||
+            error.toString().toLowerCase().contains('failed host lookup') ||
+            error.toString().toLowerCase().contains(
+              'no address associated with hostname',
+            ));
   }
 
   @override
@@ -63,19 +129,30 @@ class _JobManagementPageState extends State<JobManagementPage>
     super.dispose();
   }
 
-  Future<void> _loadJobs({bool refresh = false}) async {
+  Future<void> _loadJobs({
+    bool refresh = false,
+    bool forceRefresh = false,
+  }) async {
     if (refresh) {
       setState(() {
         _currentPage = 1;
       });
-    } else {
+    }
+
+    // If we have cached data and not forcing refresh, load in background
+    if (!forceRefresh && !refresh && _jobs.isNotEmpty) {
+      _loadJobsInBackground();
+      return;
+    }
+
+    if (!refresh) {
       setState(() {
         _isLoading = true;
       });
     }
 
     try {
-      final headers = _authService.getAuthHeaders();
+      final headers = await _authService.getAuthHeaders();
       final queryParams = <String, String>{
         'page': _currentPage.toString(),
         'limit': '10',
@@ -100,28 +177,143 @@ class _JobManagementPageState extends State<JobManagementPage>
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         if (data['success'] == true) {
+          final jobsList = List<Map<String, dynamic>>.from(data['data']);
+          final pagination = data['pagination'] as Map<String, dynamic>;
+
           setState(() {
             if (refresh || _currentPage == 1) {
-              _jobs = List<Map<String, dynamic>>.from(data['data']);
+              _jobs = jobsList;
             } else {
-              _jobs.addAll(List<Map<String, dynamic>>.from(data['data']));
+              _jobs.addAll(jobsList);
             }
-            _totalPages = data['pagination']['totalPages'];
-            _totalJobs = data['pagination']['totalJobs'];
-            _loadStats();
+            _totalPages = pagination['totalPages'] ?? 1;
+            _totalJobs = pagination['totalJobs'] ?? 0;
+            _isLoading = false;
           });
+
+          // Cache the data
+          await _cacheService.setJobsData(
+            jobs: jobsList,
+            pagination: pagination,
+            searchQuery: _searchQuery.isEmpty ? null : _searchQuery,
+            status: _selectedStatus == 'all' ? null : _selectedStatus,
+            type: _selectedType == 'all' ? null : _selectedType,
+            page: _currentPage,
+          );
+
+          // Reset toast flag on successful load (internet is back)
+          _cacheService.resetNoInternetToastFlag();
+
+          if (refresh || _currentPage == 1) {
+            _loadStats();
+          }
         } else {
-          _showErrorSnackBar(data['message'] ?? 'Failed to load jobs');
+          setState(() {
+            _isLoading = false;
+            _errorMessage = data['message'] ?? 'Failed to load jobs';
+          });
         }
       } else {
-        _showErrorSnackBar('Failed to load jobs (${response.statusCode})');
+        setState(() {
+          _isLoading = false;
+          _errorMessage = 'Failed to load jobs (${response.statusCode})';
+        });
       }
     } catch (e) {
-      _showErrorSnackBar('Error loading jobs: $e');
-    } finally {
-      setState(() {
-        _isLoading = false;
-      });
+      // Check if it's a network/internet error
+      if (_isNoInternetError(e)) {
+        // Try to load from cache if available
+        final cachedJobsData = await _cacheService.getJobsData(
+          searchQuery: _searchQuery.isEmpty ? null : _searchQuery,
+          status: _selectedStatus == 'all' ? null : _selectedStatus,
+          type: _selectedType == 'all' ? null : _selectedType,
+          page: _currentPage,
+        );
+        if (cachedJobsData != null) {
+          // Load from cache
+          setState(() {
+            _jobs = List<Map<String, dynamic>>.from(
+              cachedJobsData['data'] ?? [],
+            );
+            _totalPages = cachedJobsData['pagination']?['totalPages'] ?? 1;
+            _totalJobs = cachedJobsData['pagination']?['totalJobs'] ?? 0;
+            _isLoading = false;
+            _errorMessage = null; // Clear error since we have cached data
+          });
+          return;
+        }
+
+        // No cache available, show error
+        setState(() {
+          _isLoading = false;
+          _errorMessage = 'No internet connection';
+        });
+      } else {
+        // Other errors
+        setState(() {
+          _isLoading = false;
+          _errorMessage = e.toString();
+        });
+      }
+    }
+  }
+
+  Future<void> _loadJobsInBackground() async {
+    try {
+      final headers = await _authService.getAuthHeaders();
+      final queryParams = <String, String>{
+        'page': _currentPage.toString(),
+        'limit': '10',
+      };
+
+      if (_searchQuery.isNotEmpty) {
+        queryParams['search'] = _searchQuery;
+      }
+      if (_selectedStatus != 'all') {
+        queryParams['status'] = _selectedStatus;
+      }
+      if (_selectedType != 'all') {
+        queryParams['postingType'] = _selectedType;
+      }
+
+      final uri = Uri.parse(
+        ApiEndpoints.adminJobsAll,
+      ).replace(queryParameters: queryParams);
+
+      final response = await http.get(uri, headers: headers);
+
+      if (response.statusCode == 200 && mounted) {
+        final data = json.decode(response.body);
+        if (data['success'] == true) {
+          final jobsList = List<Map<String, dynamic>>.from(data['data']);
+          final pagination = data['pagination'] as Map<String, dynamic>;
+
+          setState(() {
+            if (_currentPage == 1) {
+              _jobs = jobsList;
+            } else {
+              _jobs.addAll(jobsList);
+            }
+            _totalPages = pagination['totalPages'] ?? 1;
+            _totalJobs = pagination['totalJobs'] ?? 0;
+          });
+
+          // Cache the data
+          await _cacheService.setJobsData(
+            jobs: jobsList,
+            pagination: pagination,
+            searchQuery: _searchQuery.isEmpty ? null : _searchQuery,
+            status: _selectedStatus == 'all' ? null : _selectedStatus,
+            type: _selectedType == 'all' ? null : _selectedType,
+            page: _currentPage,
+          );
+
+          // Reset toast flag on successful load (internet is back)
+          _cacheService.resetNoInternetToastFlag();
+        }
+      }
+    } catch (e) {
+      // Silently fail in background refresh
     }
   }
 
@@ -144,9 +336,15 @@ class _JobManagementPageState extends State<JobManagementPage>
     };
   }
 
-  Future<void> _loadStats() async {
+  Future<void> _loadStats({bool forceRefresh = false}) async {
+    // If we have cached stats and not forcing refresh, load in background
+    if (!forceRefresh && _stats['total']! > 0) {
+      _loadStatsInBackground();
+      return;
+    }
+
     try {
-      final headers = _authService.getAuthHeaders();
+      final headers = await _authService.getAuthHeaders();
       final response = await http.get(
         Uri.parse(ApiEndpoints.adminJobsAll),
         headers: headers,
@@ -156,47 +354,103 @@ class _JobManagementPageState extends State<JobManagementPage>
         final data = json.decode(response.body);
         if (data['success'] == true) {
           final allJobs = List<Map<String, dynamic>>.from(data['data']);
-          // Debug: Print job statuses to see actual values
-          print('Job statuses in database:');
-          for (var job in allJobs) {
-            print('Job: ${job['title']} - Status: ${job['status']}');
-          }
+          final stats = {
+            'total': allJobs.length,
+            'active': allJobs
+                .where(
+                  (job) => job['status'] == 'open' || job['status'] == 'active',
+                )
+                .length,
+            'expired': allJobs
+                .where(
+                  (job) =>
+                      job['status'] == 'expired' || job['status'] == 'closed',
+                )
+                .length,
+            'jobs': allJobs.where((job) => job['postingType'] == 'job').length,
+            'internships': allJobs
+                .where((job) => job['postingType'] == 'internship')
+                .length,
+          };
+
           setState(() {
-            _stats = {
-              'total': allJobs.length,
-              'active': allJobs
-                  .where(
-                    (job) =>
-                        job['status'] == 'open' || job['status'] == 'active',
-                  )
-                  .length,
-              'expired': allJobs
-                  .where(
-                    (job) =>
-                        job['status'] == 'expired' || job['status'] == 'closed',
-                  )
-                  .length,
-              'jobs': allJobs
-                  .where((job) => job['postingType'] == 'job')
-                  .length,
-              'internships': allJobs
-                  .where((job) => job['postingType'] == 'internship')
-                  .length,
-            };
-            // Debug: Print calculated stats
-            print('Calculated stats: $_stats');
+            _stats = stats;
           });
+
+          // Cache the stats
+          await _cacheService.setJobsStats(stats);
+
+          // Reset toast flag on successful load (internet is back)
+          _cacheService.resetNoInternetToastFlag();
         }
       }
     } catch (e) {
+      // Check if it's a network/internet error
+      if (_isNoInternetError(e)) {
+        // Try to load from cache if available
+        final cachedStats = await _cacheService.getJobsStats();
+        if (cachedStats != null && cachedStats.isNotEmpty) {
+          setState(() {
+            _stats = cachedStats;
+          });
+          return;
+        }
+      }
       // If stats loading fails, fall back to calculating from current jobs
       _calculateStats();
     }
   }
 
+  Future<void> _loadStatsInBackground() async {
+    try {
+      final headers = await _authService.getAuthHeaders();
+      final response = await http.get(
+        Uri.parse(ApiEndpoints.adminJobsAll),
+        headers: headers,
+      );
+
+      if (response.statusCode == 200 && mounted) {
+        final data = json.decode(response.body);
+        if (data['success'] == true) {
+          final allJobs = List<Map<String, dynamic>>.from(data['data']);
+          final stats = {
+            'total': allJobs.length,
+            'active': allJobs
+                .where(
+                  (job) => job['status'] == 'open' || job['status'] == 'active',
+                )
+                .length,
+            'expired': allJobs
+                .where(
+                  (job) =>
+                      job['status'] == 'expired' || job['status'] == 'closed',
+                )
+                .length,
+            'jobs': allJobs.where((job) => job['postingType'] == 'job').length,
+            'internships': allJobs
+                .where((job) => job['postingType'] == 'internship')
+                .length,
+          };
+
+          setState(() {
+            _stats = stats;
+          });
+
+          // Cache the stats
+          await _cacheService.setJobsStats(stats);
+
+          // Reset toast flag on successful load (internet is back)
+          _cacheService.resetNoInternetToastFlag();
+        }
+      }
+    } catch (e) {
+      // Silently fail in background refresh
+    }
+  }
+
   Future<void> _deleteJob(String jobId) async {
     try {
-      final headers = _authService.getAuthHeaders();
+      final headers = await _authService.getAuthHeaders();
       final response = await http.delete(
         Uri.parse(ApiEndpoints.adminDeleteJob(jobId)),
         headers: headers,
@@ -206,8 +460,8 @@ class _JobManagementPageState extends State<JobManagementPage>
         final data = json.decode(response.body);
         if (data['success'] == true) {
           _showSuccessSnackBar('Job deleted successfully');
-          _loadJobs(refresh: true);
-          _loadStats();
+          _loadJobs(refresh: true, forceRefresh: true);
+          _loadStats(forceRefresh: true);
         } else {
           _showErrorSnackBar(data['message'] ?? 'Failed to delete job');
         }
@@ -221,7 +475,7 @@ class _JobManagementPageState extends State<JobManagementPage>
 
   Future<void> _updateJobStatus(String jobId, String newStatus) async {
     try {
-      final headers = _authService.getAuthHeaders();
+      final headers = await _authService.getAuthHeaders();
       final response = await http.put(
         Uri.parse(ApiEndpoints.adminUpdateJobStatus(jobId)),
         headers: {...headers, 'Content-Type': 'application/json'},
@@ -232,8 +486,8 @@ class _JobManagementPageState extends State<JobManagementPage>
         final data = json.decode(response.body);
         if (data['success'] == true) {
           _showSuccessSnackBar('Job status updated successfully');
-          _loadJobs(refresh: true);
-          _loadStats();
+          _loadJobs(refresh: true, forceRefresh: true);
+          _loadStats(forceRefresh: true);
         } else {
           _showErrorSnackBar(data['message'] ?? 'Failed to update job status');
         }
@@ -326,19 +580,65 @@ class _JobManagementPageState extends State<JobManagementPage>
     );
   }
 
-  void _onSearchChanged(String query) {
+  void _onSearchChanged(String query) async {
     setState(() {
       _searchQuery = query;
+      _currentPage = 1;
     });
+
+    // Try to load from cache first
+    try {
+      final cachedJobsData = await _cacheService.getJobsData(
+        searchQuery: query.isEmpty ? null : query,
+        status: _selectedStatus == 'all' ? null : _selectedStatus,
+        type: _selectedType == 'all' ? null : _selectedType,
+        page: 1,
+      );
+
+      if (cachedJobsData != null) {
+        setState(() {
+          _jobs = List<Map<String, dynamic>>.from(cachedJobsData['data'] ?? []);
+          _totalPages = cachedJobsData['pagination']?['totalPages'] ?? 1;
+          _totalJobs = cachedJobsData['pagination']?['totalJobs'] ?? 0;
+        });
+      }
+    } catch (e) {
+      // Silently handle cache errors
+    }
+
+    // Then load fresh data
     _loadJobs(refresh: true);
     _loadStats();
   }
 
-  void _onFilterChanged(String status, String type) {
+  void _onFilterChanged(String status, String type) async {
     setState(() {
       _selectedStatus = status;
       _selectedType = type;
+      _currentPage = 1;
     });
+
+    // Try to load from cache first
+    try {
+      final cachedJobsData = await _cacheService.getJobsData(
+        searchQuery: _searchQuery.isEmpty ? null : _searchQuery,
+        status: status == 'all' ? null : status,
+        type: type == 'all' ? null : type,
+        page: 1,
+      );
+
+      if (cachedJobsData != null) {
+        setState(() {
+          _jobs = List<Map<String, dynamic>>.from(cachedJobsData['data'] ?? []);
+          _totalPages = cachedJobsData['pagination']?['totalPages'] ?? 1;
+          _totalJobs = cachedJobsData['pagination']?['totalJobs'] ?? 0;
+        });
+      }
+    } catch (e) {
+      // Silently handle cache errors
+    }
+
+    // Then load fresh data
     _loadJobs(refresh: true);
     _loadStats();
   }
@@ -354,6 +654,24 @@ class _JobManagementPageState extends State<JobManagementPage>
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isMobile = screenWidth < 600;
+    final isTablet = screenWidth >= 600 && screenWidth < 1024;
+    final isDesktop = screenWidth >= 1024;
+
+    if (_isLoading && !_isLoadingFromCache) {
+      return Scaffold(
+        backgroundColor: const Color(0xFFF7F8FC),
+        body: Center(
+          child: CircularProgressIndicator(
+            valueColor: AlwaysStoppedAnimation<Color>(
+              AdminDashboardStyles.primary,
+            ),
+          ),
+        ),
+      );
+    }
+
     return Scaffold(
       backgroundColor: const Color(0xFFF7F8FC),
       body: FadeTransition(
@@ -366,7 +684,12 @@ class _JobManagementPageState extends State<JobManagementPage>
               AnimatedContainer(
                 duration: const Duration(milliseconds: 300),
                 curve: Curves.easeInOut,
-                child: JobStatsWidget(stats: _stats),
+                child: JobStatsWidget(
+                  stats: _stats,
+                  isMobile: isMobile,
+                  isTablet: isTablet,
+                  isDesktop: isDesktop,
+                ),
               ),
               // Filters with animation
               AnimatedContainer(
@@ -377,25 +700,36 @@ class _JobManagementPageState extends State<JobManagementPage>
                   onFilterChanged: _onFilterChanged,
                   selectedStatus: _selectedStatus,
                   selectedType: _selectedType,
+                  isMobile: isMobile,
+                  isTablet: isTablet,
+                  isDesktop: isDesktop,
                 ),
               ),
               // Content with staggered animations
-              _isLoading
-                  ? _buildLoadingState()
+              _isLoading && !_isLoadingFromCache
+                  ? _buildLoadingState(isMobile, isTablet, isDesktop)
+                  : _errorMessage != null && !_isLoadingFromCache
+                  ? _buildErrorState(isMobile, isTablet, isDesktop)
                   : _jobs.isEmpty
-                  ? _buildEmptyState()
-                  : _buildJobsList(),
+                  ? _buildEmptyState(isMobile, isTablet, isDesktop)
+                  : _buildJobsList(isMobile, isTablet, isDesktop),
             ],
           ),
         ),
       ),
-      floatingActionButton: _buildAnimatedFAB(),
+      floatingActionButton: _buildAnimatedFAB(isMobile, isTablet, isDesktop),
     );
   }
 
-  Widget _buildLoadingState() {
+  Widget _buildLoadingState(bool isMobile, bool isTablet, bool isDesktop) {
     return Container(
-      padding: const EdgeInsets.all(32),
+      padding: EdgeInsets.all(
+        isMobile
+            ? 24
+            : isTablet
+            ? 28
+            : 32,
+      ),
       child: Column(
         children: [
           TweenAnimationBuilder<double>(
@@ -407,15 +741,23 @@ class _JobManagementPageState extends State<JobManagementPage>
                 child: Opacity(
                   opacity: value.clamp(0.0, 1.0),
                   child: Container(
-                    width: 50,
-                    height: 50,
+                    width: isMobile
+                        ? 40
+                        : isTablet
+                        ? 45
+                        : 50,
+                    height: isMobile
+                        ? 40
+                        : isTablet
+                        ? 45
+                        : 50,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       gradient: LinearGradient(
                         colors: [
-                          const Color(0xFF6B5FFF).withValues(alpha: 0.3),
-                          const Color(0xFF6B5FFF),
-                          const Color(0xFF6B5FFF).withValues(alpha: 0.3),
+                          AdminDashboardStyles.primary.withValues(alpha: 0.3),
+                          AdminDashboardStyles.primary,
+                          AdminDashboardStyles.primary.withValues(alpha: 0.3),
                         ],
                         stops: const [0.0, 0.5, 1.0],
                       ),
@@ -429,7 +771,13 @@ class _JobManagementPageState extends State<JobManagementPage>
               );
             },
           ),
-          const SizedBox(height: 16),
+          SizedBox(
+            height: isMobile
+                ? 12
+                : isTablet
+                ? 14
+                : 16,
+          ),
           TweenAnimationBuilder<double>(
             tween: Tween(begin: 0.0, end: 1.0),
             duration: const Duration(milliseconds: 1000),
@@ -439,11 +787,15 @@ class _JobManagementPageState extends State<JobManagementPage>
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Text(
+                    Text(
                       'Loading jobs',
                       style: TextStyle(
-                        fontSize: 16,
-                        color: Color(0xFF718096),
+                        fontSize: isMobile
+                            ? 14
+                            : isTablet
+                            ? 15
+                            : 16,
+                        color: const Color(0xFF718096),
                         fontWeight: FontWeight.w500,
                       ),
                     ),
@@ -453,9 +805,13 @@ class _JobManagementPageState extends State<JobManagementPage>
                       builder: (context, dotValue, child) {
                         return Text(
                           '.' * (3 * dotValue).round(),
-                          style: const TextStyle(
-                            fontSize: 16,
-                            color: Color(0xFF6B5FFF),
+                          style: TextStyle(
+                            fontSize: isMobile
+                                ? 14
+                                : isTablet
+                                ? 15
+                                : 16,
+                            color: AdminDashboardStyles.primary,
                             fontWeight: FontWeight.bold,
                           ),
                         );
@@ -471,7 +827,132 @@ class _JobManagementPageState extends State<JobManagementPage>
     );
   }
 
-  Widget _buildEmptyState() {
+  Widget _buildErrorState(bool isMobile, bool isTablet, bool isDesktop) {
+    return Container(
+      padding: EdgeInsets.all(
+        isMobile
+            ? 24
+            : isTablet
+            ? 28
+            : 32,
+      ),
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.cloud_off,
+              size: isMobile
+                  ? 56
+                  : isTablet
+                  ? 64
+                  : 72,
+              color: Colors.grey[400],
+            ),
+            SizedBox(
+              height: isMobile
+                  ? 16
+                  : isTablet
+                  ? 18
+                  : 20,
+            ),
+            Text(
+              'Failed to load jobs',
+              style: TextStyle(
+                fontSize: isMobile
+                    ? 18
+                    : isTablet
+                    ? 19
+                    : 20,
+                fontWeight: FontWeight.w600,
+                color: Colors.grey[700],
+              ),
+            ),
+            SizedBox(
+              height: isMobile
+                  ? 8
+                  : isTablet
+                  ? 9
+                  : 10,
+            ),
+            Text(
+              _errorMessage!,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: isMobile
+                    ? 14
+                    : isTablet
+                    ? 15
+                    : 16,
+                color: Colors.grey[600],
+              ),
+            ),
+            SizedBox(
+              height: isMobile
+                  ? 20
+                  : isTablet
+                  ? 24
+                  : 28,
+            ),
+            ElevatedButton.icon(
+              onPressed: () {
+                setState(() {
+                  _errorMessage = null;
+                });
+                _loadJobs(refresh: true, forceRefresh: true);
+                _loadStats(forceRefresh: true);
+              },
+              icon: Icon(
+                Icons.refresh,
+                size: isMobile
+                    ? 18
+                    : isTablet
+                    ? 20
+                    : 22,
+              ),
+              label: Text(
+                'Retry',
+                style: TextStyle(
+                  fontSize: isMobile
+                      ? 14
+                      : isTablet
+                      ? 15
+                      : 16,
+                ),
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AdminDashboardStyles.primary,
+                foregroundColor: Colors.white,
+                padding: EdgeInsets.symmetric(
+                  horizontal: isMobile
+                      ? 20
+                      : isTablet
+                      ? 24
+                      : 28,
+                  vertical: isMobile
+                      ? 12
+                      : isTablet
+                      ? 14
+                      : 16,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(
+                    isMobile
+                        ? 8
+                        : isTablet
+                        ? 9
+                        : 10,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEmptyState(bool isMobile, bool isTablet, bool isDesktop) {
     return TweenAnimationBuilder<double>(
       tween: Tween(begin: 0.0, end: 1.0),
       duration: const Duration(milliseconds: 600),
@@ -481,7 +962,13 @@ class _JobManagementPageState extends State<JobManagementPage>
           child: Opacity(
             opacity: value.clamp(0.0, 1.0),
             child: Container(
-              padding: const EdgeInsets.all(32),
+              padding: EdgeInsets.all(
+                isMobile
+                    ? 24
+                    : isTablet
+                    ? 28
+                    : 32,
+              ),
               child: Center(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -494,25 +981,47 @@ class _JobManagementPageState extends State<JobManagementPage>
                           scale: scaleValue,
                           child: Icon(
                             Icons.work_outline,
-                            size: 80,
+                            size: isMobile
+                                ? 60
+                                : isTablet
+                                ? 70
+                                : 80,
                             color: Colors.grey[400],
                           ),
                         );
                       },
                     ),
-                    const SizedBox(height: 16),
+                    SizedBox(
+                      height: isMobile
+                          ? 12
+                          : isTablet
+                          ? 14
+                          : 16,
+                    ),
                     Text(
                       'No jobs found',
                       style: TextStyle(
-                        fontSize: 18,
+                        fontSize: isMobile
+                            ? 16
+                            : isTablet
+                            ? 17
+                            : 18,
                         fontWeight: FontWeight.w500,
                         color: Colors.grey[600],
                       ),
                     ),
-                    const SizedBox(height: 8),
+                    SizedBox(height: isMobile ? 6 : 8),
                     Text(
                       'Create your first job posting to get started',
-                      style: TextStyle(fontSize: 14, color: Colors.grey[500]),
+                      style: TextStyle(
+                        fontSize: isMobile
+                            ? 13
+                            : isTablet
+                            ? 13.5
+                            : 14,
+                        color: Colors.grey[500],
+                      ),
+                      textAlign: TextAlign.center,
                     ),
                   ],
                 ),
@@ -524,9 +1033,15 @@ class _JobManagementPageState extends State<JobManagementPage>
     );
   }
 
-  Widget _buildJobsList() {
+  Widget _buildJobsList(bool isMobile, bool isTablet, bool isDesktop) {
     return Padding(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(
+        isMobile
+            ? 12
+            : isTablet
+            ? 14
+            : 16,
+      ),
       child: Column(
         children: [
           ..._jobs.asMap().entries.map((entry) {
@@ -557,7 +1072,8 @@ class _JobManagementPageState extends State<JobManagementPage>
                             ),
                           );
                           if (result == true) {
-                            _loadJobs(refresh: true);
+                            _loadJobs(refresh: true, forceRefresh: true);
+                            _loadStats(forceRefresh: true);
                           }
                         },
                         onView: () {
@@ -577,6 +1093,9 @@ class _JobManagementPageState extends State<JobManagementPage>
                           HapticFeedback.lightImpact();
                           _showStatusUpdateDialog(job['_id'], job['status']);
                         },
+                        isMobile: isMobile,
+                        isTablet: isTablet,
+                        isDesktop: isDesktop,
                       ),
                     ),
                   ),
@@ -593,7 +1112,7 @@ class _JobManagementPageState extends State<JobManagementPage>
                   scale: value,
                   child: Opacity(
                     opacity: value.clamp(0.0, 1.0),
-                    child: _buildLoadMoreButton(),
+                    child: _buildLoadMoreButton(isMobile, isTablet, isDesktop),
                   ),
                 );
               },
@@ -603,7 +1122,7 @@ class _JobManagementPageState extends State<JobManagementPage>
     );
   }
 
-  Widget _buildAnimatedFAB() {
+  Widget _buildAnimatedFAB(bool isMobile, bool isTablet, bool isDesktop) {
     return TweenAnimationBuilder<double>(
       tween: Tween(begin: 0.0, end: 1.0),
       duration: const Duration(milliseconds: 800),
@@ -619,12 +1138,29 @@ class _JobManagementPageState extends State<JobManagementPage>
                 MaterialPageRoute(builder: (context) => const CreateJobPage()),
               );
               if (result == true) {
-                _loadJobs(refresh: true);
+                _loadJobs(refresh: true, forceRefresh: true);
+                _loadStats(forceRefresh: true);
               }
             },
-            icon: const Icon(Icons.add),
-            label: const Text('Add Job'),
-            backgroundColor: const Color(0xFF6B5FFF),
+            icon: Icon(
+              Icons.add,
+              size: isMobile
+                  ? 20
+                  : isTablet
+                  ? 22
+                  : 24,
+            ),
+            label: Text(
+              'Add Job',
+              style: TextStyle(
+                fontSize: isMobile
+                    ? 14
+                    : isTablet
+                    ? 15
+                    : 16,
+              ),
+            ),
+            backgroundColor: AdminDashboardStyles.primary,
             foregroundColor: Colors.white,
             elevation: 8,
             hoverElevation: 12,
@@ -636,21 +1172,53 @@ class _JobManagementPageState extends State<JobManagementPage>
     );
   }
 
-  Widget _buildLoadMoreButton() {
+  Widget _buildLoadMoreButton(bool isMobile, bool isTablet, bool isDesktop) {
     return Container(
-      margin: const EdgeInsets.symmetric(vertical: 16),
+      margin: EdgeInsets.symmetric(
+        vertical: isMobile
+            ? 12
+            : isTablet
+            ? 14
+            : 16,
+      ),
       child: Center(
         child: ElevatedButton(
           onPressed: _loadMoreJobs,
           style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFF6B5FFF),
+            backgroundColor: AdminDashboardStyles.primary,
             foregroundColor: Colors.white,
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+            padding: EdgeInsets.symmetric(
+              horizontal: isMobile
+                  ? 20
+                  : isTablet
+                  ? 22
+                  : 24,
+              vertical: isMobile
+                  ? 10
+                  : isTablet
+                  ? 11
+                  : 12,
+            ),
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(
+                isMobile
+                    ? 6
+                    : isTablet
+                    ? 7
+                    : 8,
+              ),
             ),
           ),
-          child: const Text('Load More Jobs'),
+          child: Text(
+            'Load More Jobs',
+            style: TextStyle(
+              fontSize: isMobile
+                  ? 13
+                  : isTablet
+                  ? 14
+                  : 15,
+            ),
+          ),
         ),
       ),
     );

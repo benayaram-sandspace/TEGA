@@ -74,10 +74,7 @@ class _AdminProfilePageState extends State<AdminProfilePage>
               delegate: SliverChildListDelegate([
                 _buildAnimatedCard(index: 0, child: _buildStatsCard()),
                 const SizedBox(height: 20),
-                _buildAnimatedCard(
-                  index: 1,
-                  child: _buildPermissionsCard(),
-                ),
+                _buildAnimatedCard(index: 1, child: _buildPermissionsCard()),
                 const SizedBox(height: 20),
                 _buildAnimatedCard(index: 2, child: _buildRecentActivityCard()),
                 const SizedBox(height: 20),
@@ -100,7 +97,10 @@ class _AdminProfilePageState extends State<AdminProfilePage>
       surfaceTintColor: Colors.transparent,
       centerTitle: false,
       leading: IconButton(
-        icon: const Icon(Icons.arrow_back, color: AdminDashboardStyles.textDark),
+        icon: const Icon(
+          Icons.arrow_back,
+          color: AdminDashboardStyles.textDark,
+        ),
         onPressed: () => Navigator.pop(context),
       ),
       actions: [
@@ -120,7 +120,9 @@ class _AdminProfilePageState extends State<AdminProfilePage>
               radius: 18,
               backgroundColor: AdminDashboardStyles.primary,
               child: Text(
-                widget.admin.name.isNotEmpty ? widget.admin.name[0].toUpperCase() : 'A',
+                widget.admin.name.isNotEmpty
+                    ? widget.admin.name[0].toUpperCase()
+                    : 'A',
                 style: const TextStyle(
                   color: Colors.white,
                   fontWeight: FontWeight.bold,
@@ -162,7 +164,9 @@ class _AdminProfilePageState extends State<AdminProfilePage>
                     radius: 42,
                     backgroundColor: AdminDashboardStyles.primary,
                     child: Text(
-                      widget.admin.name.isNotEmpty ? widget.admin.name[0].toUpperCase() : 'A',
+                      widget.admin.name.isNotEmpty
+                          ? widget.admin.name[0].toUpperCase()
+                          : 'A',
                       style: const TextStyle(
                         color: Colors.white,
                         fontWeight: FontWeight.bold,
@@ -223,7 +227,10 @@ class _AdminProfilePageState extends State<AdminProfilePage>
         color: AdminDashboardStyles.cardBackground,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
-          BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 15),
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 15,
+          ),
         ],
       ),
       child: Row(
@@ -237,12 +244,16 @@ class _AdminProfilePageState extends State<AdminProfilePage>
           _buildStatItem(
             Icons.business,
             'Department',
-            widget.admin.department.isNotEmpty ? widget.admin.department : 'General',
+            widget.admin.department.isNotEmpty
+                ? widget.admin.department
+                : 'General',
           ),
           _buildStatItem(
             Icons.work,
             'Designation',
-            widget.admin.designation.isNotEmpty ? widget.admin.designation : 'Admin',
+            widget.admin.designation.isNotEmpty
+                ? widget.admin.designation
+                : 'Admin',
           ),
         ],
       ),
@@ -278,7 +289,10 @@ class _AdminProfilePageState extends State<AdminProfilePage>
         color: AdminDashboardStyles.cardBackground,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
-          BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 15),
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 15,
+          ),
         ],
       ),
       child: Column(
@@ -289,11 +303,31 @@ class _AdminProfilePageState extends State<AdminProfilePage>
             style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 16),
-          _buildPermissionItem('User Management', _hasPermission('user_management'), Icons.people),
-          _buildPermissionItem('Content Management', _hasPermission('content_management'), Icons.content_copy),
-          _buildPermissionItem('College Management', _hasPermission('college_management'), Icons.school),
-          _buildPermissionItem('Analytics Access', _hasPermission('analytics'), Icons.analytics),
-          _buildPermissionItem('System Settings', _hasPermission('system_settings'), Icons.settings),
+          _buildPermissionItem(
+            'User Management',
+            _hasPermission('user_management'),
+            Icons.people,
+          ),
+          _buildPermissionItem(
+            'Content Management',
+            _hasPermission('content_management'),
+            Icons.content_copy,
+          ),
+          _buildPermissionItem(
+            'College Management',
+            _hasPermission('college_management'),
+            Icons.school,
+          ),
+          _buildPermissionItem(
+            'Analytics Access',
+            _hasPermission('analytics'),
+            Icons.analytics,
+          ),
+          _buildPermissionItem(
+            'System Settings',
+            _hasPermission('system_settings'),
+            Icons.settings,
+          ),
         ],
       ),
     );
@@ -333,7 +367,10 @@ class _AdminProfilePageState extends State<AdminProfilePage>
         color: AdminDashboardStyles.cardBackground,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
-          BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 15),
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 15,
+          ),
         ],
       ),
       child: Column(
@@ -362,7 +399,10 @@ class _AdminProfilePageState extends State<AdminProfilePage>
         color: AdminDashboardStyles.cardBackground,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
-          BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 15),
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 15,
+          ),
         ],
       ),
       child: Column(
@@ -450,7 +490,11 @@ class _AdminProfilePageState extends State<AdminProfilePage>
     );
   }
 
-  Widget _buildPermissionItem(String permission, bool hasPermission, IconData icon) {
+  Widget _buildPermissionItem(
+    String permission,
+    bool hasPermission,
+    IconData icon,
+  ) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: Row(
@@ -519,7 +563,7 @@ class _AdminProfilePageState extends State<AdminProfilePage>
     if (date == null) return 'Never';
     final now = DateTime.now();
     final difference = now.difference(date);
-    
+
     if (difference.inDays > 0) {
       return '${difference.inDays} days ago';
     } else if (difference.inHours > 0) {

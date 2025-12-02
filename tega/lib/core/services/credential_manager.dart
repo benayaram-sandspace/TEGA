@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:flutter/foundation.dart';
 
 /// Model representing a saved account credential
 class SavedAccount {
@@ -113,14 +112,11 @@ class CredentialManager {
         _savedAccounts = accountsList
             .map((json) => SavedAccount.fromJson(json as Map<String, dynamic>))
             .toList();
-        
+
         // Sort by last used date (most recent first)
         _savedAccounts.sort((a, b) => b.lastUsed.compareTo(a.lastUsed));
-        
-        debugPrint('✅ Loaded ${_savedAccounts.length} saved accounts');
       }
     } catch (e) {
-      debugPrint('⚠️ Error loading saved accounts: $e');
       _savedAccounts = [];
     }
   }
@@ -132,9 +128,8 @@ class CredentialManager {
         _savedAccounts.map((account) => account.toJson()).toList(),
       );
       await _prefs?.setString(_savedAccountsKey, accountsJson);
-      debugPrint('💾 Saved ${_savedAccounts.length} accounts to storage');
     } catch (e) {
-      debugPrint('⚠️ Error saving accounts: $e');
+      // Silently handle errors
     }
   }
 
@@ -144,10 +139,12 @@ class CredentialManager {
   /// Get accounts matching a partial email
   List<SavedAccount> getAccountsForEmail(String partialEmail) {
     if (partialEmail.isEmpty) return [];
-    
+
     return _savedAccounts
-        .where((account) => 
-            account.email.toLowerCase().contains(partialEmail.toLowerCase()))
+        .where(
+          (account) =>
+              account.email.toLowerCase().contains(partialEmail.toLowerCase()),
+        )
         .take(3) // Limit suggestions to 3
         .toList();
   }
@@ -160,15 +157,15 @@ class CredentialManager {
   }) async {
     try {
       final normalizedEmail = email.toLowerCase().trim();
-      
+
       // Check if account already exists
       final existingIndex = _savedAccounts.indexWhere(
         (account) => account.email.toLowerCase() == normalizedEmail,
       );
 
       final now = DateTime.now();
-      final accountId = existingIndex >= 0 
-          ? _savedAccounts[existingIndex].id 
+      final accountId = existingIndex >= 0
+          ? _savedAccounts[existingIndex].id
           : DateTime.now().millisecondsSinceEpoch.toString();
 
       final savedAccount = SavedAccount(
@@ -176,8 +173,8 @@ class CredentialManager {
         email: normalizedEmail,
         password: password,
         accountName: accountName?.trim(),
-        savedAt: existingIndex >= 0 
-            ? _savedAccounts[existingIndex].savedAt 
+        savedAt: existingIndex >= 0
+            ? _savedAccounts[existingIndex].savedAt
             : now,
         lastUsed: now,
       );
@@ -185,27 +182,22 @@ class CredentialManager {
       if (existingIndex >= 0) {
         // Update existing account
         _savedAccounts[existingIndex] = savedAccount;
-        debugPrint('🔄 Updated existing account: ${savedAccount.displayName} (${savedAccount.email})');
       } else {
         // Add new account
         _savedAccounts.insert(0, savedAccount);
-        
+
         // Remove oldest account if we exceed the limit
         if (_savedAccounts.length > _maxSavedAccounts) {
-          final removedAccount = _savedAccounts.removeLast();
-          debugPrint('🗑️ Removed oldest account: ${removedAccount.email}');
+          _savedAccounts.removeLast();
         }
-        
-        debugPrint('➕ Added new account: ${savedAccount.displayName} (${savedAccount.email})');
       }
 
       // Sort by last used date
       _savedAccounts.sort((a, b) => b.lastUsed.compareTo(a.lastUsed));
-      
+
       await _saveAccounts();
       return true;
     } catch (e) {
-      debugPrint('⚠️ Error saving account: $e');
       return false;
     }
   }
@@ -216,20 +208,18 @@ class CredentialManager {
       final accountIndex = _savedAccounts.indexWhere(
         (account) => account.email.toLowerCase() == email.toLowerCase(),
       );
-      
+
       if (accountIndex >= 0) {
         _savedAccounts[accountIndex] = _savedAccounts[accountIndex].copyWith(
           lastUsed: DateTime.now(),
         );
-        
+
         // Sort by last used date
         _savedAccounts.sort((a, b) => b.lastUsed.compareTo(a.lastUsed));
         await _saveAccounts();
-        
-        debugPrint('🕒 Updated last used for: ${email}');
       }
     } catch (e) {
-      debugPrint('⚠️ Error updating last used: $e');
+      // Silently handle errors
     }
   }
 
@@ -240,15 +230,13 @@ class CredentialManager {
       _savedAccounts.removeWhere(
         (account) => account.email.toLowerCase() == email.toLowerCase(),
       );
-      
+
       if (_savedAccounts.length < initialLength) {
         await _saveAccounts();
-        debugPrint('🗑️ Deleted account: $email');
         return true;
       }
       return false;
     } catch (e) {
-      debugPrint('⚠️ Error deleting account: $e');
       return false;
     }
   }
@@ -259,23 +247,20 @@ class CredentialManager {
       final accountIndex = _savedAccounts.indexWhere(
         (account) => account.email.toLowerCase() == email.toLowerCase(),
       );
-      
+
       if (accountIndex >= 0) {
         _savedAccounts[accountIndex] = _savedAccounts[accountIndex].copyWith(
           password: newPassword,
           lastUsed: DateTime.now(),
         );
-        
+
         // Sort by last used date
         _savedAccounts.sort((a, b) => b.lastUsed.compareTo(a.lastUsed));
         await _saveAccounts();
-        
-        debugPrint('🔑 Updated password for: $email');
         return true;
       }
       return false;
     } catch (e) {
-      debugPrint('⚠️ Error updating password: $e');
       return false;
     }
   }
@@ -286,19 +271,17 @@ class CredentialManager {
       final accountIndex = _savedAccounts.indexWhere(
         (account) => account.email.toLowerCase() == email.toLowerCase(),
       );
-      
+
       if (accountIndex >= 0) {
         _savedAccounts[accountIndex] = _savedAccounts[accountIndex].copyWith(
           accountName: newName.trim(),
         );
-        
+
         await _saveAccounts();
-        debugPrint('✏️ Updated account name for $email: $newName');
         return true;
       }
       return false;
     } catch (e) {
-      debugPrint('⚠️ Error updating account name: $e');
       return false;
     }
   }
@@ -308,9 +291,8 @@ class CredentialManager {
     try {
       _savedAccounts.clear();
       await _prefs?.remove(_savedAccountsKey);
-      debugPrint('🗑️ Cleared all saved accounts');
     } catch (e) {
-      debugPrint('⚠️ Error clearing accounts: $e');
+      // Silently handle errors
     }
   }
 

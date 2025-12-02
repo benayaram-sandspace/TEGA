@@ -26,11 +26,14 @@ class _AnalyticsPageState extends State<AnalyticsPage>
     _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
     );
-    _slideAnimation = Tween<Offset>(
-      begin: const Offset(0, 0.3),
-      end: Offset.zero,
-    ).animate(CurvedAnimation(parent: _animationController, curve: Curves.easeOutCubic));
-    
+    _slideAnimation =
+        Tween<Offset>(begin: const Offset(0, 0.3), end: Offset.zero).animate(
+          CurvedAnimation(
+            parent: _animationController,
+            curve: Curves.easeOutCubic,
+          ),
+        );
+
     _animationController.forward();
   }
 
@@ -52,30 +55,34 @@ class _AnalyticsPageState extends State<AnalyticsPage>
             slivers: [
               // Using SliverPadding for consistent spacing of the content.
               SliverPadding(
-            padding: const EdgeInsets.all(20),
-            sliver: SliverList(
-              delegate: SliverChildListDelegate([
-                _buildModuleUsageCard(),
-                const SizedBox(height: 24),
-                _buildSectionHeader('Skill Growth', icon: Icons.trending_up),
-                const SizedBox(height: 16),
-                _buildSkillGrowthCard(),
-                const SizedBox(height: 24),
-                _buildSectionHeader(
-                  'Top Performing Students',
-                  icon: Icons.star_border,
+                padding: const EdgeInsets.all(20),
+                sliver: SliverList(
+                  delegate: SliverChildListDelegate([
+                    _buildModuleUsageCard(),
+                    const SizedBox(height: 24),
+                    _buildSectionHeader(
+                      'Skill Growth',
+                      icon: Icons.trending_up,
+                    ),
+                    const SizedBox(height: 16),
+                    _buildSkillGrowthCard(),
+                    const SizedBox(height: 24),
+                    _buildSectionHeader(
+                      'Top Performing Students',
+                      icon: Icons.star_border,
+                    ),
+                    const SizedBox(height: 16),
+                    _buildTopStudentsCard(),
+                  ]),
                 ),
-                const SizedBox(height: 16),
-                _buildTopStudentsCard(),
-              ]),
-            ),
+              ),
+            ],
           ),
-        ],
-      ),
         ),
       ),
     );
   }
+
   Widget _buildAnalyticsCard({
     required String title,
     required String metric,
@@ -102,7 +109,11 @@ class _AnalyticsPageState extends State<AnalyticsPage>
           Row(
             children: [
               if (headerIcon != null) ...[
-                Icon(headerIcon, color: AdminDashboardStyles.textLight, size: 18),
+                Icon(
+                  headerIcon,
+                  color: AdminDashboardStyles.textLight,
+                  size: 18,
+                ),
                 const SizedBox(width: 8),
               ],
               Text(
@@ -453,5 +464,5 @@ class _AnalyticsPageState extends State<AnalyticsPage>
         // TODO: Navigate to student's profile page
       },
     );
-}
   }
+}

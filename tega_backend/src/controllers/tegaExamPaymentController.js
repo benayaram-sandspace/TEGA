@@ -177,7 +177,7 @@ export const processTegaExamDummyPayment = async (req, res) => {
       const notification = new Notification({
         recipient: userId,
         recipientModel: 'Student',
-        message: `✅ Payment Successful!\n\nYou have successfully paid ₹${exam.price} for the Tega Exam: ${exam.title}\n\nYou can now take the exam.`,
+        message: `   Payment Successful!\n\nYou have successfully paid ₹${exam.price} for the Tega Exam: ${exam.title}\n\nYou can now take the exam.`,
         type: 'success'
       });
       await notification.save();

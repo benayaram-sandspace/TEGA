@@ -1,32 +1,11 @@
 // Enums for enhanced functionality
-enum LearningStyle {
-  visual,
-  auditory,
-  kinesthetic,
-  adaptive,
-}
+enum LearningStyle { visual, auditory, kinesthetic, adaptive }
 
-enum GradeLevel {
-  beginner,
-  intermediate,
-  advanced,
-  expert,
-}
+enum GradeLevel { beginner, intermediate, advanced, expert }
 
-enum DifficultyLevel {
-  easy,
-  medium,
-  hard,
-  expert,
-}
+enum DifficultyLevel { easy, medium, hard, expert }
 
-enum QuestionType {
-  multipleChoice,
-  trueFalse,
-  fillBlank,
-  dragDrop,
-  essay,
-}
+enum QuestionType { multipleChoice, trueFalse, fillBlank, dragDrop, essay }
 
 class ScenarioStep {
   final int stepNumber;
@@ -150,9 +129,15 @@ class SkillDrill {
       imageUrls: List<String>.from(json['imageUrls'] ?? []),
       isActive: json['isActive'] ?? true,
       isPublished: json['isPublished'] ?? false,
-      createdAt: DateTime.parse(json['createdAt'] ?? DateTime.now().toIso8601String()),
-      publishedAt: json['publishedAt'] != null ? DateTime.parse(json['publishedAt']) : null,
-      lastModified: json['lastModified'] != null ? DateTime.parse(json['lastModified']) : null,
+      createdAt: DateTime.parse(
+        json['createdAt'] ?? DateTime.now().toIso8601String(),
+      ),
+      publishedAt: json['publishedAt'] != null
+          ? DateTime.parse(json['publishedAt'])
+          : null,
+      lastModified: json['lastModified'] != null
+          ? DateTime.parse(json['lastModified'])
+          : null,
       createdBy: json['createdBy'] ?? '',
       modifiedBy: json['modifiedBy'] ?? '',
       tags: List<String>.from(json['tags'] ?? []),
@@ -274,17 +259,25 @@ class SoftSkillScenario {
       ),
       category: json['category'] ?? '',
       subCategory: json['subCategory'] ?? '',
-      steps: (json['steps'] as List<dynamic>?)
-          ?.map((step) => ScenarioStep.fromJson(step))
-          .toList() ?? [],
+      steps:
+          (json['steps'] as List<dynamic>?)
+              ?.map((step) => ScenarioStep.fromJson(step))
+              .toList() ??
+          [],
       expectedOutcome: json['expectedOutcome'] ?? '',
       keyGoals: List<String>.from(json['keyGoals'] ?? []),
       commonMistakes: List<String>.from(json['commonMistakes'] ?? []),
       isActive: json['isActive'] ?? true,
       isPublished: json['isPublished'] ?? false,
-      createdAt: DateTime.parse(json['createdAt'] ?? DateTime.now().toIso8601String()),
-      publishedAt: json['publishedAt'] != null ? DateTime.parse(json['publishedAt']) : null,
-      lastModified: json['lastModified'] != null ? DateTime.parse(json['lastModified']) : null,
+      createdAt: DateTime.parse(
+        json['createdAt'] ?? DateTime.now().toIso8601String(),
+      ),
+      publishedAt: json['publishedAt'] != null
+          ? DateTime.parse(json['publishedAt'])
+          : null,
+      lastModified: json['lastModified'] != null
+          ? DateTime.parse(json['lastModified'])
+          : null,
       createdBy: json['createdBy'] ?? '',
       modifiedBy: json['modifiedBy'] ?? '',
       imageUrl: json['imageUrl'] ?? '',
@@ -507,13 +500,17 @@ class QuizAttempt {
       quizId: json['quizId'],
       quizType: json['quizType'],
       startedAt: DateTime.parse(json['startedAt']),
-      completedAt: json['completedAt'] != null ? DateTime.parse(json['completedAt']) : null,
+      completedAt: json['completedAt'] != null
+          ? DateTime.parse(json['completedAt'])
+          : null,
       totalQuestions: json['totalQuestions'],
       correctAnswers: json['correctAnswers'],
       timeSpent: json['timeSpent'],
-      answers: (json['answers'] as List<dynamic>?)
-          ?.map((answer) => QuizAnswer.fromJson(answer))
-          .toList() ?? [],
+      answers:
+          (json['answers'] as List<dynamic>?)
+              ?.map((answer) => QuizAnswer.fromJson(answer))
+              .toList() ??
+          [],
       score: json['score'],
       isPassed: json['isPassed'],
       status: json['status'],
@@ -612,7 +609,8 @@ class ContentQuizData {
           [],
       onboardingQuiz: OnboardingQuiz.fromJson(json['onboardingQuiz'] ?? {}),
       statistics: ContentQuizStatistics.fromJson(json['statistics'] ?? {}),
-      recentAttempts: (json['recentAttempts'] as List<dynamic>?)
+      recentAttempts:
+          (json['recentAttempts'] as List<dynamic>?)
               ?.map((attempt) => QuizAttempt.fromJson(attempt))
               .toList() ??
           [],

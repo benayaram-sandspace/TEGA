@@ -1,7 +1,10 @@
+import 'dart:io';
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:tega/features/5_student_dashboard/data/student_dashboard_service.dart';
+import 'package:tega/core/services/internships_cache_service.dart';
 
 class InternshipsPage extends StatefulWidget {
   const InternshipsPage({super.key});
@@ -12,6 +15,7 @@ class InternshipsPage extends StatefulWidget {
 
 class _InternshipsPageState extends State<InternshipsPage> {
   final TextEditingController _searchController = TextEditingController();
+  final InternshipsCacheService _cacheService = InternshipsCacheService();
   List<Map<String, dynamic>> _allInternships = [];
   List<Map<String, dynamic>> _filteredInternships = [];
   bool _isLoading = true;
@@ -40,8 +44,25 @@ class _InternshipsPageState extends State<InternshipsPage> {
   @override
   void initState() {
     super.initState();
-    _loadInternshipData();
+    _initializeCache();
     _searchController.addListener(_applyFilters);
+  }
+
+  Future<void> _initializeCache() async {
+    await _cacheService.initialize();
+    _loadInternshipData();
+  }
+
+  bool _isNoInternetError(dynamic error) {
+    return error is SocketException ||
+        error is TimeoutException ||
+        (error.toString().toLowerCase().contains('network') ||
+            error.toString().toLowerCase().contains('connection') ||
+            error.toString().toLowerCase().contains('internet') ||
+            error.toString().toLowerCase().contains('failed host lookup') ||
+            error.toString().toLowerCase().contains(
+              'no address associated with hostname',
+            ));
   }
 
   @override
@@ -50,14 +71,39 @@ class _InternshipsPageState extends State<InternshipsPage> {
     super.dispose();
   }
 
-  Future<void> _loadInternshipData() async {
+  Future<void> _loadInternshipData({bool forceRefresh = false}) async {
     if (!mounted) return;
+
+    // Try to load from cache first (unless force refresh)
+    if (!forceRefresh) {
+      final cachedInternships = await _cacheService.getInternshipsData();
+      if (cachedInternships != null &&
+          cachedInternships.isNotEmpty &&
+          mounted) {
+        setState(() {
+          _allInternships = cachedInternships;
+          _calculateStats();
+          _filteredInternships = List.from(_allInternships);
+          _applyFilters();
+          _isLoading = false;
+          _errorMessage = null;
+        });
+        // Still fetch in background to update cache
+        _fetchInternshipsInBackground();
+        return;
+      }
+    }
 
     setState(() {
       _isLoading = true;
       _errorMessage = null;
     });
 
+    // Fetch from API
+    await _fetchInternshipsInBackground();
+  }
+
+  Future<void> _fetchInternshipsInBackground() async {
     try {
       final dashboardService = StudentDashboardService();
 
@@ -65,7 +111,9 @@ class _InternshipsPageState extends State<InternshipsPage> {
       final internshipData = await dashboardService.getInternships({});
 
       // Transform backend data to match UI needs
-      _allInternships = internshipData.map<Map<String, dynamic>>((internship) {
+      final transformedInternships = internshipData.map<Map<String, dynamic>>((
+        internship,
+      ) {
         // Extract work type from jobType field (backend uses: full-time, part-time, contract, internship)
         String workType = 'Internship';
         final jobTypeRaw = internship['jobType'] ?? '';
@@ -140,20 +188,13 @@ class _InternshipsPageState extends State<InternshipsPage> {
         };
       }).toList();
 
-      // Calculate stats from actual data
-      if (_allInternships.isNotEmpty) {
-        _activeInternships = _allInternships.length;
-        _companies = _allInternships
-            .map((internship) => internship['company'])
-            .toSet()
-            .length;
-      } else {
-        _activeInternships = 0;
-        _companies = 0;
-      }
+      // Cache internships data
+      await _cacheService.setInternshipsData(transformedInternships);
 
       if (mounted) {
         setState(() {
+          _allInternships = transformedInternships;
+          _calculateStats();
           _filteredInternships = List.from(_allInternships);
           _applyFilters();
           _errorMessage = null;
@@ -162,12 +203,46 @@ class _InternshipsPageState extends State<InternshipsPage> {
       }
     } catch (e) {
       if (mounted) {
-        setState(() {
-          _errorMessage =
-              'Unable to load internships. Please try again. Error: $e';
-          _isLoading = false;
-        });
+        // Check if it's a network/internet error
+        if (_isNoInternetError(e)) {
+          // Try to load from cache if available
+          final cachedInternships = await _cacheService.getInternshipsData();
+          if (cachedInternships != null && cachedInternships.isNotEmpty) {
+            setState(() {
+              _allInternships = cachedInternships;
+              _calculateStats();
+              _filteredInternships = List.from(_allInternships);
+              _applyFilters();
+              _errorMessage = null; // Clear error since we have cached data
+              _isLoading = false;
+            });
+            return;
+          }
+          // No cache available, show error
+          setState(() {
+            _errorMessage = 'No internet connection';
+            _isLoading = false;
+          });
+        } else {
+          setState(() {
+            _errorMessage = 'Unable to load internships. Please try again.';
+            _isLoading = false;
+          });
+        }
       }
+    }
+  }
+
+  void _calculateStats() {
+    if (_allInternships.isNotEmpty) {
+      _activeInternships = _allInternships.length;
+      _companies = _allInternships
+          .map((internship) => internship['company'])
+          .toSet()
+          .length;
+    } else {
+      _activeInternships = 0;
+      _companies = 0;
     }
   }
 
@@ -221,23 +296,107 @@ class _InternshipsPageState extends State<InternshipsPage> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Filter Options'),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(
+            isLargeDesktop
+                ? 24
+                : isDesktop
+                ? 20
+                : isTablet
+                ? 18
+                : isSmallScreen
+                ? 12
+                : 16,
+          ),
+        ),
+        title: Text(
+          'Filter Options',
+          style: TextStyle(
+            fontSize: isLargeDesktop
+                ? 24
+                : isDesktop
+                ? 20
+                : isTablet
+                ? 19
+                : isSmallScreen
+                ? 16
+                : 18,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        contentPadding: EdgeInsets.all(
+          isLargeDesktop
+              ? 32
+              : isDesktop
+              ? 24
+              : isTablet
+              ? 22
+              : isSmallScreen
+              ? 16
+              : 20,
+        ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
+            Text(
               'Category',
-              style: TextStyle(fontWeight: FontWeight.w600),
+              style: TextStyle(
+                fontWeight: FontWeight.w600,
+                fontSize: isLargeDesktop
+                    ? 18
+                    : isDesktop
+                    ? 16
+                    : isTablet
+                    ? 15
+                    : isSmallScreen
+                    ? 12
+                    : 14,
+              ),
             ),
-            const SizedBox(height: 8),
+            SizedBox(
+              height: isLargeDesktop || isDesktop
+                  ? 12
+                  : isTablet
+                  ? 11
+                  : isSmallScreen
+                  ? 6
+                  : 8,
+            ),
             Wrap(
-              spacing: 8,
-              runSpacing: 8,
+              spacing: isLargeDesktop
+                  ? 12
+                  : isDesktop
+                  ? 8
+                  : isTablet
+                  ? 7
+                  : isSmallScreen
+                  ? 4
+                  : 6,
+              runSpacing: isLargeDesktop || isDesktop
+                  ? 10
+                  : isTablet
+                  ? 9
+                  : isSmallScreen
+                  ? 6
+                  : 8,
               children: _categories.map((category) {
                 final isSelected = _selectedCategory == category;
                 return FilterChip(
-                  label: Text(category),
+                  label: Text(
+                    category,
+                    style: TextStyle(
+                      fontSize: isLargeDesktop
+                          ? 17
+                          : isDesktop
+                          ? 15
+                          : isTablet
+                          ? 14
+                          : isSmallScreen
+                          ? 11
+                          : 13,
+                    ),
+                  ),
                   selected: isSelected,
                   onSelected: (selected) {
                     setState(() {
@@ -249,6 +408,35 @@ class _InternshipsPageState extends State<InternshipsPage> {
                   selectedColor: const Color(0xFF6B5FFF),
                   labelStyle: TextStyle(
                     color: isSelected ? Colors.white : Colors.black87,
+                    fontSize: isLargeDesktop
+                        ? 17
+                        : isDesktop
+                        ? 15
+                        : isTablet
+                        ? 14
+                        : isSmallScreen
+                        ? 11
+                        : 13,
+                  ),
+                  padding: EdgeInsets.symmetric(
+                    horizontal: isLargeDesktop
+                        ? 16
+                        : isDesktop
+                        ? 12
+                        : isTablet
+                        ? 11
+                        : isSmallScreen
+                        ? 8
+                        : 10,
+                    vertical: isLargeDesktop
+                        ? 10
+                        : isDesktop
+                        ? 8
+                        : isTablet
+                        ? 7.5
+                        : isSmallScreen
+                        ? 5
+                        : 6,
                   ),
                 );
               }).toList(),
@@ -258,62 +446,277 @@ class _InternshipsPageState extends State<InternshipsPage> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Close'),
+            child: Text(
+              'Close',
+              style: TextStyle(
+                fontSize: isLargeDesktop
+                    ? 18
+                    : isDesktop
+                    ? 16
+                    : isTablet
+                    ? 15
+                    : isSmallScreen
+                    ? 12
+                    : 14,
+              ),
+            ),
+            style: TextButton.styleFrom(
+              padding: EdgeInsets.symmetric(
+                horizontal: isLargeDesktop
+                    ? 24
+                    : isDesktop
+                    ? 20
+                    : isTablet
+                    ? 18
+                    : isSmallScreen
+                    ? 12
+                    : 16,
+                vertical: isLargeDesktop
+                    ? 12
+                    : isDesktop
+                    ? 10
+                    : isTablet
+                    ? 9
+                    : isSmallScreen
+                    ? 6
+                    : 8,
+              ),
+            ),
           ),
         ],
       ),
     );
   }
 
+  // Responsive breakpoints
+  double get mobileBreakpoint => 600;
+  double get tabletBreakpoint => 1024;
+  double get desktopBreakpoint => 1440;
+  bool get isMobile => MediaQuery.of(context).size.width < mobileBreakpoint;
+  bool get isTablet =>
+      MediaQuery.of(context).size.width >= mobileBreakpoint &&
+      MediaQuery.of(context).size.width < tabletBreakpoint;
+  bool get isDesktop =>
+      MediaQuery.of(context).size.width >= tabletBreakpoint &&
+      MediaQuery.of(context).size.width < desktopBreakpoint;
+  bool get isLargeDesktop =>
+      MediaQuery.of(context).size.width >= desktopBreakpoint;
+  bool get isSmallScreen => MediaQuery.of(context).size.width < 400;
+
+  Widget _buildLoadingState() {
+    return Center(
+      child: Padding(
+        padding: EdgeInsets.all(
+          isLargeDesktop
+              ? 64.0
+              : isDesktop
+              ? 48.0
+              : isTablet
+              ? 40.0
+              : isSmallScreen
+              ? 24.0
+              : 32.0,
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const CircularProgressIndicator(
+              valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF6B5FFF)),
+            ),
+            SizedBox(
+              height: isLargeDesktop
+                  ? 24
+                  : isDesktop
+                  ? 20
+                  : isTablet
+                  ? 18
+                  : isSmallScreen
+                  ? 12
+                  : 16,
+            ),
+            Text(
+              'Loading internships...',
+              style: TextStyle(
+                fontSize: isLargeDesktop
+                    ? 20
+                    : isDesktop
+                    ? 18
+                    : isTablet
+                    ? 17
+                    : isSmallScreen
+                    ? 14
+                    : 16,
+                color: Colors.grey[600],
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    final screenWidth = MediaQuery.of(context).size.width;
-    final isDesktop = screenWidth > 1024;
-    final isTablet = screenWidth > 600 && screenWidth <= 1024;
-
     if (_isLoading) {
-      return const Center(child: CircularProgressIndicator());
+      return _buildLoadingState();
     }
 
     if (_errorMessage != null) {
-      return _buildErrorState(isDesktop, isTablet);
+      return _buildErrorState();
     }
 
     return SingleChildScrollView(
-      padding: EdgeInsets.all(isDesktop ? 24 : 16),
+      padding: EdgeInsets.all(
+        isLargeDesktop
+            ? 32.0
+            : isDesktop
+            ? 24.0
+            : isTablet
+            ? 20.0
+            : isSmallScreen
+            ? 12.0
+            : 16.0,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildHeader(isDesktop, isTablet),
-          const SizedBox(height: 24),
-          _buildStatsCards(isDesktop, isTablet),
-          const SizedBox(height: 24),
-          _buildSearchAndFilters(isDesktop, isTablet),
-          const SizedBox(height: 16),
-          _buildCategories(isDesktop, isTablet),
-          const SizedBox(height: 16),
-          _buildResultsCount(isDesktop),
-          const SizedBox(height: 16),
+          _buildHeader(),
+          SizedBox(
+            height: isLargeDesktop
+                ? 28
+                : isDesktop
+                ? 24
+                : isTablet
+                ? 22
+                : isSmallScreen
+                ? 16
+                : 20,
+          ),
+          _buildStatsCards(),
+          SizedBox(
+            height: isLargeDesktop
+                ? 28
+                : isDesktop
+                ? 24
+                : isTablet
+                ? 22
+                : isSmallScreen
+                ? 16
+                : 20,
+          ),
+          _buildSearchAndFilters(),
+          SizedBox(
+            height: isLargeDesktop
+                ? 20
+                : isDesktop
+                ? 16
+                : isTablet
+                ? 14
+                : isSmallScreen
+                ? 10
+                : 12,
+          ),
+          _buildCategories(),
+          SizedBox(
+            height: isLargeDesktop
+                ? 20
+                : isDesktop
+                ? 16
+                : isTablet
+                ? 14
+                : isSmallScreen
+                ? 10
+                : 12,
+          ),
+          _buildResultsCount(),
+          SizedBox(
+            height: isLargeDesktop
+                ? 20
+                : isDesktop
+                ? 16
+                : isTablet
+                ? 14
+                : isSmallScreen
+                ? 10
+                : 12,
+          ),
           _filteredInternships.isEmpty
-              ? _buildEmptyState(isDesktop, isTablet)
-              : _buildInternshipsList(isDesktop, isTablet),
-          const SizedBox(height: 24),
+              ? _buildEmptyState()
+              : _buildInternshipsList(),
+          SizedBox(
+            height: isLargeDesktop
+                ? 32
+                : isDesktop
+                ? 24
+                : isTablet
+                ? 20
+                : isSmallScreen
+                ? 16
+                : 20,
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildHeader(bool isDesktop, bool isTablet) {
+  Widget _buildHeader() {
     return Container(
       width: double.infinity,
-      padding: EdgeInsets.all(isDesktop ? 32 : 24),
+      padding: EdgeInsets.all(
+        isLargeDesktop
+            ? 40
+            : isDesktop
+            ? 32
+            : isTablet
+            ? 28
+            : isSmallScreen
+            ? 20
+            : 24,
+      ),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [Color(0xFF6B5FFF), Color(0xFF8B7FFF)],
         ),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(
+          isLargeDesktop
+              ? 24
+              : isDesktop
+              ? 20
+              : isTablet
+              ? 18
+              : isSmallScreen
+              ? 12
+              : 16,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF6B5FFF).withOpacity(0.3),
+            blurRadius: isLargeDesktop
+                ? 24
+                : isDesktop
+                ? 20
+                : isTablet
+                ? 18
+                : isSmallScreen
+                ? 10
+                : 16,
+            offset: Offset(
+              0,
+              isLargeDesktop
+                  ? 10
+                  : isDesktop
+                  ? 8
+                  : isTablet
+                  ? 7
+                  : isSmallScreen
+                  ? 4
+                  : 6,
+            ),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -323,14 +726,40 @@ class _InternshipsPageState extends State<InternshipsPage> {
               Icon(
                 Icons.work_outline_rounded,
                 color: Colors.white,
-                size: isDesktop ? 32 : 28,
+                size: isLargeDesktop
+                    ? 40
+                    : isDesktop
+                    ? 32
+                    : isTablet
+                    ? 30
+                    : isSmallScreen
+                    ? 24
+                    : 28,
               ),
-              const SizedBox(width: 12),
+              SizedBox(
+                width: isLargeDesktop
+                    ? 16
+                    : isDesktop
+                    ? 12
+                    : isTablet
+                    ? 11
+                    : isSmallScreen
+                    ? 8
+                    : 10,
+              ),
               Expanded(
                 child: Text(
                   'Internship Opportunities',
                   style: TextStyle(
-                    fontSize: isDesktop ? 28 : 24,
+                    fontSize: isLargeDesktop
+                        ? 32
+                        : isDesktop
+                        ? 28
+                        : isTablet
+                        ? 26
+                        : isSmallScreen
+                        ? 20
+                        : 24,
                     fontWeight: FontWeight.w700,
                     color: Colors.white,
                   ),
@@ -338,21 +767,42 @@ class _InternshipsPageState extends State<InternshipsPage> {
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          SizedBox(
+            height: isLargeDesktop || isDesktop
+                ? 14
+                : isTablet
+                ? 12
+                : isSmallScreen
+                ? 6
+                : 10,
+          ),
           Text(
             'Gain valuable experience and kickstart your career with exciting internship opportunities',
             style: TextStyle(
-              fontSize: isDesktop ? 16 : 14,
+              fontSize: isLargeDesktop
+                  ? 18
+                  : isDesktop
+                  ? 16
+                  : isTablet
+                  ? 15
+                  : isSmallScreen
+                  ? 11
+                  : 14,
               color: Colors.white.withOpacity(0.9),
               height: 1.5,
             ),
+            maxLines: isLargeDesktop || isDesktop
+                ? 2
+                : isTablet
+                ? 2
+                : 2,
           ),
         ],
       ),
     );
   }
 
-  Widget _buildStatsCards(bool isDesktop, bool isTablet) {
+  Widget _buildStatsCards() {
     return Row(
       children: [
         Expanded(
@@ -360,16 +810,24 @@ class _InternshipsPageState extends State<InternshipsPage> {
             icon: Icons.trending_up_rounded,
             value: '$_activeInternships',
             label: 'Active Internships',
-            isDesktop: isDesktop,
           ),
         ),
-        const SizedBox(width: 16),
+        SizedBox(
+          width: isLargeDesktop
+              ? 20
+              : isDesktop
+              ? 16
+              : isTablet
+              ? 14
+              : isSmallScreen
+              ? 8
+              : 12,
+        ),
         Expanded(
           child: _buildStatCard(
             icon: Icons.business_rounded,
             value: '$_companies',
             label: 'Companies',
-            isDesktop: isDesktop,
           ),
         ),
       ],
@@ -380,14 +838,7 @@ class _InternshipsPageState extends State<InternshipsPage> {
     required IconData icon,
     required String value,
     required String label,
-    required bool isDesktop,
   }) {
-    // Get screen width for better responsive design
-    final screenWidth = MediaQuery.of(context).size.width;
-    final isTablet = screenWidth >= 600;
-    final isLargeDesktop = screenWidth >= 1440;
-    final isSmallScreen = screenWidth < 400;
-
     return Container(
       height: isLargeDesktop
           ? 140
@@ -397,7 +848,7 @@ class _InternshipsPageState extends State<InternshipsPage> {
           ? 110
           : isSmallScreen
           ? 90
-          : 100, // Responsive height
+          : 100,
       padding: EdgeInsets.all(
         isLargeDesktop
             ? 24
@@ -411,8 +862,44 @@ class _InternshipsPageState extends State<InternshipsPage> {
       ),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(
+          isLargeDesktop
+              ? 20
+              : isDesktop
+              ? 16
+              : isTablet
+              ? 15
+              : isSmallScreen
+              ? 10
+              : 14,
+        ),
         border: Border.all(color: Colors.grey.shade200, width: 1),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: isLargeDesktop
+                ? 14
+                : isDesktop
+                ? 10
+                : isTablet
+                ? 9
+                : isSmallScreen
+                ? 6
+                : 8,
+            offset: Offset(
+              0,
+              isLargeDesktop
+                  ? 6
+                  : isDesktop
+                  ? 4
+                  : isTablet
+                  ? 3
+                  : isSmallScreen
+                  ? 2
+                  : 3,
+            ),
+          ),
+        ],
       ),
       child: Row(
         children: [
@@ -430,29 +917,39 @@ class _InternshipsPageState extends State<InternshipsPage> {
             ),
             decoration: BoxDecoration(
               color: const Color(0xFF6B5FFF).withOpacity(0.1),
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(
+                isLargeDesktop
+                    ? 16
+                    : isDesktop
+                    ? 12
+                    : isTablet
+                    ? 11
+                    : isSmallScreen
+                    ? 8
+                    : 10,
+              ),
             ),
             child: Icon(
               icon,
               color: const Color(0xFF6B5FFF),
               size: isLargeDesktop
-                  ? 28
+                  ? 32
                   : isDesktop
-                  ? 24
+                  ? 28
                   : isTablet
-                  ? 22
+                  ? 26
                   : isSmallScreen
-                  ? 18
-                  : 20,
+                  ? 20
+                  : 24,
             ),
           ),
           SizedBox(
             width: isLargeDesktop
-                ? 16
+                ? 20
                 : isDesktop
-                ? 14
+                ? 16
                 : isTablet
-                ? 12
+                ? 14
                 : isSmallScreen
                 ? 8
                 : 12,
@@ -467,14 +964,14 @@ class _InternshipsPageState extends State<InternshipsPage> {
                     value,
                     style: TextStyle(
                       fontSize: isLargeDesktop
-                          ? 28
+                          ? 32
                           : isDesktop
-                          ? 24
+                          ? 28
                           : isTablet
-                          ? 22
+                          ? 26
                           : isSmallScreen
-                          ? 18
-                          : 20,
+                          ? 20
+                          : 24,
                       fontWeight: FontWeight.w700,
                       color: const Color(0xFF333333),
                     ),
@@ -483,29 +980,27 @@ class _InternshipsPageState extends State<InternshipsPage> {
                   ),
                 ),
                 SizedBox(
-                  height: isLargeDesktop
+                  height: isLargeDesktop || isDesktop
                       ? 6
-                      : isDesktop
-                      ? 4
                       : isTablet
-                      ? 3
+                      ? 4
                       : isSmallScreen
                       ? 2
-                      : 4,
+                      : 3,
                 ),
                 Flexible(
                   child: Text(
                     label,
                     style: TextStyle(
                       fontSize: isLargeDesktop
-                          ? 16
+                          ? 17
                           : isDesktop
-                          ? 14
+                          ? 15
                           : isTablet
-                          ? 13
+                          ? 14
                           : isSmallScreen
-                          ? 10
-                          : 12,
+                          ? 11
+                          : 13,
                       color: Colors.grey[600],
                     ),
                     maxLines: 2,
@@ -520,7 +1015,7 @@ class _InternshipsPageState extends State<InternshipsPage> {
     );
   }
 
-  Widget _buildSearchAndFilters(bool isDesktop, bool isTablet) {
+  Widget _buildSearchAndFilters() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 0),
       child: Row(
@@ -529,58 +1024,219 @@ class _InternshipsPageState extends State<InternshipsPage> {
           Expanded(
             child: TextField(
               controller: _searchController,
+              style: TextStyle(
+                fontSize: isLargeDesktop
+                    ? 18
+                    : isDesktop
+                    ? 16
+                    : isTablet
+                    ? 15
+                    : isSmallScreen
+                    ? 12
+                    : 14,
+              ),
               decoration: InputDecoration(
                 hintText: 'Search by title, company, or description...',
-                prefixIcon: const Icon(
+                hintStyle: TextStyle(
+                  fontSize: isLargeDesktop
+                      ? 18
+                      : isDesktop
+                      ? 16
+                      : isTablet
+                      ? 15
+                      : isSmallScreen
+                      ? 12
+                      : 14,
+                ),
+                prefixIcon: Icon(
                   Icons.search_rounded,
                   color: Colors.grey,
+                  size: isLargeDesktop
+                      ? 28
+                      : isDesktop
+                      ? 24
+                      : isTablet
+                      ? 22
+                      : isSmallScreen
+                      ? 18
+                      : 20,
                 ),
                 filled: true,
                 fillColor: Colors.grey[50],
                 border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(
+                    isLargeDesktop
+                        ? 16
+                        : isDesktop
+                        ? 14
+                        : isTablet
+                        ? 13
+                        : isSmallScreen
+                        ? 10
+                        : 12,
+                  ),
                   borderSide: BorderSide(color: Colors.grey.shade300),
                 ),
                 enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(
+                    isLargeDesktop
+                        ? 16
+                        : isDesktop
+                        ? 14
+                        : isTablet
+                        ? 13
+                        : isSmallScreen
+                        ? 10
+                        : 12,
+                  ),
                   borderSide: BorderSide(color: Colors.grey.shade300),
                 ),
                 focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: Color(0xFF6B5FFF)),
+                  borderRadius: BorderRadius.circular(
+                    isLargeDesktop
+                        ? 16
+                        : isDesktop
+                        ? 14
+                        : isTablet
+                        ? 13
+                        : isSmallScreen
+                        ? 10
+                        : 12,
+                  ),
+                  borderSide: const BorderSide(
+                    color: Color(0xFF6B5FFF),
+                    width: 2,
+                  ),
                 ),
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 14,
+                contentPadding: EdgeInsets.symmetric(
+                  horizontal: isLargeDesktop
+                      ? 24
+                      : isDesktop
+                      ? 20
+                      : isTablet
+                      ? 18
+                      : isSmallScreen
+                      ? 12
+                      : 16,
+                  vertical: isLargeDesktop
+                      ? 20
+                      : isDesktop
+                      ? 16
+                      : isTablet
+                      ? 15
+                      : isSmallScreen
+                      ? 10
+                      : 14,
                 ),
               ),
             ),
           ),
-          const SizedBox(width: 12),
+          SizedBox(
+            width: isLargeDesktop
+                ? 16
+                : isDesktop
+                ? 12
+                : isTablet
+                ? 11
+                : isSmallScreen
+                ? 6
+                : 10,
+          ),
           // Sort dropdown
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12),
+            padding: EdgeInsets.symmetric(
+              horizontal: isLargeDesktop
+                  ? 16
+                  : isDesktop
+                  ? 12
+                  : isTablet
+                  ? 11
+                  : isSmallScreen
+                  ? 8
+                  : 10,
+            ),
             decoration: BoxDecoration(
               color: Colors.grey[50],
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(
+                isLargeDesktop
+                    ? 16
+                    : isDesktop
+                    ? 14
+                    : isTablet
+                    ? 13
+                    : isSmallScreen
+                    ? 10
+                    : 12,
+              ),
               border: Border.all(color: Colors.grey.shade300),
             ),
             child: DropdownButton<String>(
               value: _selectedSortBy,
               underline: const SizedBox(),
-              icon: const Icon(Icons.unfold_more_rounded, size: 20),
+              icon: Icon(
+                Icons.unfold_more_rounded,
+                size: isLargeDesktop
+                    ? 24
+                    : isDesktop
+                    ? 20
+                    : isTablet
+                    ? 19
+                    : isSmallScreen
+                    ? 16
+                    : 18,
+              ),
+              style: TextStyle(
+                fontSize: isLargeDesktop
+                    ? 17
+                    : isDesktop
+                    ? 15
+                    : isTablet
+                    ? 14
+                    : isSmallScreen
+                    ? 11
+                    : 13,
+              ),
               items: _sortOptions.map((option) {
                 return DropdownMenuItem(
                   value: option,
                   child: Row(
                     children: [
-                      const Icon(
+                      Icon(
                         Icons.sort_rounded,
-                        size: 18,
+                        size: isLargeDesktop
+                            ? 20
+                            : isDesktop
+                            ? 18
+                            : isTablet
+                            ? 17
+                            : isSmallScreen
+                            ? 14
+                            : 16,
                         color: Colors.grey,
                       ),
-                      const SizedBox(width: 8),
-                      Text(option, style: const TextStyle(fontSize: 14)),
+                      SizedBox(
+                        width: isLargeDesktop || isDesktop
+                            ? 10
+                            : isTablet
+                            ? 9
+                            : isSmallScreen
+                            ? 6
+                            : 8,
+                      ),
+                      Text(
+                        option,
+                        style: TextStyle(
+                          fontSize: isLargeDesktop
+                              ? 17
+                              : isDesktop
+                              ? 15
+                              : isTablet
+                              ? 14
+                              : isSmallScreen
+                              ? 11
+                              : 13,
+                        ),
+                      ),
                     ],
                   ),
                 );
@@ -595,17 +1251,60 @@ class _InternshipsPageState extends State<InternshipsPage> {
               },
             ),
           ),
-          const SizedBox(width: 12),
+          SizedBox(
+            width: isLargeDesktop
+                ? 16
+                : isDesktop
+                ? 12
+                : isTablet
+                ? 11
+                : isSmallScreen
+                ? 6
+                : 10,
+          ),
           // Filters button
           Container(
             decoration: BoxDecoration(
               color: const Color(0xFF6B5FFF),
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(
+                isLargeDesktop
+                    ? 16
+                    : isDesktop
+                    ? 14
+                    : isTablet
+                    ? 13
+                    : isSmallScreen
+                    ? 10
+                    : 12,
+              ),
             ),
             child: IconButton(
-              icon: const Icon(Icons.filter_list_rounded, color: Colors.white),
+              icon: Icon(
+                Icons.filter_list_rounded,
+                color: Colors.white,
+                size: isLargeDesktop
+                    ? 28
+                    : isDesktop
+                    ? 24
+                    : isTablet
+                    ? 22
+                    : isSmallScreen
+                    ? 18
+                    : 20,
+              ),
               onPressed: _showFiltersDialog,
               tooltip: 'Filters',
+              padding: EdgeInsets.all(
+                isLargeDesktop
+                    ? 12
+                    : isDesktop
+                    ? 10
+                    : isTablet
+                    ? 9
+                    : isSmallScreen
+                    ? 6
+                    : 8,
+              ),
             ),
           ),
         ],
@@ -613,7 +1312,7 @@ class _InternshipsPageState extends State<InternshipsPage> {
     );
   }
 
-  Widget _buildCategories(bool isDesktop, bool isTablet) {
+  Widget _buildCategories() {
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       padding: const EdgeInsets.symmetric(horizontal: 0),
@@ -621,9 +1320,32 @@ class _InternshipsPageState extends State<InternshipsPage> {
         children: _categories.map((category) {
           final isSelected = _selectedCategory == category;
           return Padding(
-            padding: const EdgeInsets.only(right: 12),
+            padding: EdgeInsets.only(
+              right: isLargeDesktop
+                  ? 16
+                  : isDesktop
+                  ? 12
+                  : isTablet
+                  ? 11
+                  : isSmallScreen
+                  ? 6
+                  : 10,
+            ),
             child: ChoiceChip(
-              label: Text(category),
+              label: Text(
+                category,
+                style: TextStyle(
+                  fontSize: isLargeDesktop
+                      ? 17
+                      : isDesktop
+                      ? 15
+                      : isTablet
+                      ? 14
+                      : isSmallScreen
+                      ? 11
+                      : 13,
+                ),
+              ),
               selected: isSelected,
               onSelected: (selected) {
                 setState(() {
@@ -635,12 +1357,49 @@ class _InternshipsPageState extends State<InternshipsPage> {
               backgroundColor: Colors.grey[100],
               labelStyle: TextStyle(
                 color: isSelected ? Colors.white : Colors.grey[700],
-                fontSize: 14,
+                fontSize: isLargeDesktop
+                    ? 17
+                    : isDesktop
+                    ? 15
+                    : isTablet
+                    ? 14
+                    : isSmallScreen
+                    ? 11
+                    : 13,
                 fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
               ),
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              padding: EdgeInsets.symmetric(
+                horizontal: isLargeDesktop
+                    ? 20
+                    : isDesktop
+                    ? 16
+                    : isTablet
+                    ? 15
+                    : isSmallScreen
+                    ? 10
+                    : 12,
+                vertical: isLargeDesktop
+                    ? 12
+                    : isDesktop
+                    ? 10
+                    : isTablet
+                    ? 9
+                    : isSmallScreen
+                    ? 6
+                    : 8,
+              ),
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(24),
+                borderRadius: BorderRadius.circular(
+                  isLargeDesktop
+                      ? 28
+                      : isDesktop
+                      ? 24
+                      : isTablet
+                      ? 22
+                      : isSmallScreen
+                      ? 18
+                      : 20,
+                ),
               ),
             ),
           );
@@ -649,13 +1408,21 @@ class _InternshipsPageState extends State<InternshipsPage> {
     );
   }
 
-  Widget _buildResultsCount(bool isDesktop) {
+  Widget _buildResultsCount() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 0),
       child: Text(
         'Showing ${_filteredInternships.length} of ${_allInternships.length} internships',
         style: TextStyle(
-          fontSize: isDesktop ? 15 : 14,
+          fontSize: isLargeDesktop
+              ? 17
+              : isDesktop
+              ? 15
+              : isTablet
+              ? 14
+              : isSmallScreen
+              ? 11
+              : 13,
           color: Colors.grey[600],
           fontWeight: FontWeight.w500,
         ),
@@ -663,35 +1430,80 @@ class _InternshipsPageState extends State<InternshipsPage> {
     );
   }
 
-  Widget _buildInternshipsList(bool isDesktop, bool isTablet) {
+  Widget _buildInternshipsList() {
     return ListView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       itemCount: _filteredInternships.length,
       itemBuilder: (context, index) {
         final internship = _filteredInternships[index];
-        return _buildInternshipCard(internship, isDesktop, isTablet);
+        return _buildInternshipCard(internship);
       },
     );
   }
 
-  Widget _buildInternshipCard(
-    Map<String, dynamic> internship,
-    bool isDesktop,
-    bool isTablet,
-  ) {
+  Widget _buildInternshipCard(Map<String, dynamic> internship) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      padding: EdgeInsets.all(isDesktop ? 24 : 20),
+      margin: EdgeInsets.only(
+        bottom: isLargeDesktop
+            ? 20
+            : isDesktop
+            ? 16
+            : isTablet
+            ? 15
+            : isSmallScreen
+            ? 10
+            : 14,
+      ),
+      padding: EdgeInsets.all(
+        isLargeDesktop
+            ? 28
+            : isDesktop
+            ? 24
+            : isTablet
+            ? 22
+            : isSmallScreen
+            ? 16
+            : 20,
+      ),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(
+          isLargeDesktop
+              ? 20
+              : isDesktop
+              ? 16
+              : isTablet
+              ? 15
+              : isSmallScreen
+              ? 10
+              : 14,
+        ),
         border: Border.all(color: Colors.grey.shade200),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.04),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
+            blurRadius: isLargeDesktop
+                ? 12
+                : isDesktop
+                ? 8
+                : isTablet
+                ? 7
+                : isSmallScreen
+                ? 4
+                : 6,
+            offset: Offset(
+              0,
+              isLargeDesktop
+                  ? 4
+                  : isDesktop
+                  ? 2
+                  : isTablet
+                  ? 2
+                  : isSmallScreen
+                  ? 1
+                  : 2,
+            ),
           ),
         ],
       ),
@@ -704,24 +1516,68 @@ class _InternshipsPageState extends State<InternshipsPage> {
             children: [
               // Company logo placeholder
               Container(
-                width: isDesktop ? 60 : 50,
-                height: isDesktop ? 60 : 50,
+                width: isLargeDesktop
+                    ? 72
+                    : isDesktop
+                    ? 60
+                    : isTablet
+                    ? 56
+                    : isSmallScreen
+                    ? 44
+                    : 50,
+                height: isLargeDesktop
+                    ? 72
+                    : isDesktop
+                    ? 60
+                    : isTablet
+                    ? 56
+                    : isSmallScreen
+                    ? 44
+                    : 50,
                 decoration: BoxDecoration(
                   color: const Color(0xFF6B5FFF).withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(
+                    isLargeDesktop
+                        ? 16
+                        : isDesktop
+                        ? 12
+                        : isTablet
+                        ? 11
+                        : isSmallScreen
+                        ? 8
+                        : 10,
+                  ),
                 ),
                 child: Center(
                   child: Text(
                     (internship['company'] ?? 'C')[0].toUpperCase(),
                     style: TextStyle(
-                      fontSize: isDesktop ? 24 : 20,
+                      fontSize: isLargeDesktop
+                          ? 28
+                          : isDesktop
+                          ? 24
+                          : isTablet
+                          ? 22
+                          : isSmallScreen
+                          ? 18
+                          : 20,
                       fontWeight: FontWeight.w700,
                       color: const Color(0xFF6B5FFF),
                     ),
                   ),
                 ),
               ),
-              const SizedBox(width: 16),
+              SizedBox(
+                width: isLargeDesktop
+                    ? 20
+                    : isDesktop
+                    ? 16
+                    : isTablet
+                    ? 14
+                    : isSmallScreen
+                    ? 8
+                    : 12,
+              ),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -729,16 +1585,46 @@ class _InternshipsPageState extends State<InternshipsPage> {
                     Text(
                       internship['title'],
                       style: TextStyle(
-                        fontSize: isDesktop ? 20 : 18,
+                        fontSize: isLargeDesktop
+                            ? 24
+                            : isDesktop
+                            ? 20
+                            : isTablet
+                            ? 19
+                            : isSmallScreen
+                            ? 16
+                            : 18,
                         fontWeight: FontWeight.w700,
                         color: const Color(0xFF333333),
                       ),
+                      maxLines: isLargeDesktop || isDesktop
+                          ? 2
+                          : isTablet
+                          ? 2
+                          : 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                    const SizedBox(height: 4),
+                    SizedBox(
+                      height: isLargeDesktop || isDesktop
+                          ? 6
+                          : isTablet
+                          ? 5
+                          : isSmallScreen
+                          ? 2
+                          : 4,
+                    ),
                     Text(
                       internship['company'],
                       style: TextStyle(
-                        fontSize: isDesktop ? 15 : 14,
+                        fontSize: isLargeDesktop
+                            ? 17
+                            : isDesktop
+                            ? 15
+                            : isTablet
+                            ? 14
+                            : isSmallScreen
+                            ? 11
+                            : 13,
                         color: Colors.grey[600],
                         fontWeight: FontWeight.w500,
                       ),
@@ -747,66 +1633,146 @@ class _InternshipsPageState extends State<InternshipsPage> {
                 ),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 6,
+                padding: EdgeInsets.symmetric(
+                  horizontal: isLargeDesktop
+                      ? 14
+                      : isDesktop
+                      ? 12
+                      : isTablet
+                      ? 11
+                      : isSmallScreen
+                      ? 8
+                      : 10,
+                  vertical: isLargeDesktop
+                      ? 8
+                      : isDesktop
+                      ? 6
+                      : isTablet
+                      ? 5.5
+                      : isSmallScreen
+                      ? 4
+                      : 5,
                 ),
                 decoration: BoxDecoration(
                   color: const Color(0xFF6B5FFF).withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(20),
+                  borderRadius: BorderRadius.circular(
+                    isLargeDesktop
+                        ? 24
+                        : isDesktop
+                        ? 20
+                        : isTablet
+                        ? 18
+                        : isSmallScreen
+                        ? 14
+                        : 16,
+                  ),
                 ),
                 child: Text(
                   internship['category'],
-                  style: const TextStyle(
-                    fontSize: 12,
+                  style: TextStyle(
+                    fontSize: isLargeDesktop
+                        ? 14
+                        : isDesktop
+                        ? 12
+                        : isTablet
+                        ? 11
+                        : isSmallScreen
+                        ? 9
+                        : 10,
                     fontWeight: FontWeight.w600,
-                    color: Color(0xFF6B5FFF),
+                    color: const Color(0xFF6B5FFF),
                   ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 16),
+          SizedBox(
+            height: isLargeDesktop
+                ? 20
+                : isDesktop
+                ? 16
+                : isTablet
+                ? 15
+                : isSmallScreen
+                ? 10
+                : 14,
+          ),
           // Description
           Text(
             internship['description'],
             style: TextStyle(
-              fontSize: isDesktop ? 15 : 14,
+              fontSize: isLargeDesktop
+                  ? 17
+                  : isDesktop
+                  ? 15
+                  : isTablet
+                  ? 14
+                  : isSmallScreen
+                  ? 11
+                  : 13,
               color: Colors.grey[700],
               height: 1.5,
             ),
-            maxLines: 2,
+            maxLines: isLargeDesktop || isDesktop
+                ? 3
+                : isTablet
+                ? 2
+                : 2,
             overflow: TextOverflow.ellipsis,
           ),
-          const SizedBox(height: 16),
+          SizedBox(
+            height: isLargeDesktop
+                ? 20
+                : isDesktop
+                ? 16
+                : isTablet
+                ? 15
+                : isSmallScreen
+                ? 10
+                : 14,
+          ),
           // Info chips
           Wrap(
-            spacing: 12,
-            runSpacing: 8,
+            spacing: isLargeDesktop
+                ? 16
+                : isDesktop
+                ? 12
+                : isTablet
+                ? 11
+                : isSmallScreen
+                ? 6
+                : 10,
+            runSpacing: isLargeDesktop || isDesktop
+                ? 10
+                : isTablet
+                ? 9
+                : isSmallScreen
+                ? 6
+                : 8,
             children: [
               _buildInfoChip(
                 Icons.location_on_outlined,
                 internship['location'],
-                isDesktop,
               ),
-              _buildInfoChip(
-                Icons.access_time_rounded,
-                internship['duration'],
-                isDesktop,
-              ),
-              _buildInfoChip(
-                Icons.payments_outlined,
-                internship['stipend'],
-                isDesktop,
-              ),
+              _buildInfoChip(Icons.access_time_rounded, internship['duration']),
+              _buildInfoChip(Icons.payments_outlined, internship['stipend']),
               _buildInfoChip(
                 Icons.people_outline_rounded,
                 '${internship['applicants']} applicants',
-                isDesktop,
               ),
             ],
           ),
-          const SizedBox(height: 16),
+          SizedBox(
+            height: isLargeDesktop
+                ? 20
+                : isDesktop
+                ? 16
+                : isTablet
+                ? 15
+                : isSmallScreen
+                ? 10
+                : 14,
+          ),
           // Footer
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -814,7 +1780,15 @@ class _InternshipsPageState extends State<InternshipsPage> {
               Text(
                 'Posted ${internship['postedDate']}',
                 style: TextStyle(
-                  fontSize: isDesktop ? 13 : 12,
+                  fontSize: isLargeDesktop
+                      ? 15
+                      : isDesktop
+                      ? 13
+                      : isTablet
+                      ? 12
+                      : isSmallScreen
+                      ? 10
+                      : 11,
                   color: Colors.grey[500],
                 ),
               ),
@@ -824,17 +1798,54 @@ class _InternshipsPageState extends State<InternshipsPage> {
                   backgroundColor: const Color(0xFF6B5FFF),
                   foregroundColor: Colors.white,
                   padding: EdgeInsets.symmetric(
-                    horizontal: isDesktop ? 24 : 20,
-                    vertical: isDesktop ? 12 : 10,
+                    horizontal: isLargeDesktop
+                        ? 32
+                        : isDesktop
+                        ? 24
+                        : isTablet
+                        ? 22
+                        : isSmallScreen
+                        ? 16
+                        : 20,
+                    vertical: isLargeDesktop
+                        ? 16
+                        : isDesktop
+                        ? 12
+                        : isTablet
+                        ? 11
+                        : isSmallScreen
+                        ? 8
+                        : 10,
                   ),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(
+                      isLargeDesktop
+                          ? 12
+                          : isDesktop
+                          ? 8
+                          : isTablet
+                          ? 7.5
+                          : isSmallScreen
+                          ? 6
+                          : 7,
+                    ),
                   ),
                   elevation: 0,
                 ),
-                child: const Text(
+                child: Text(
                   'Apply Now',
-                  style: TextStyle(fontWeight: FontWeight.w600),
+                  style: TextStyle(
+                    fontWeight: FontWeight.w600,
+                    fontSize: isLargeDesktop
+                        ? 18
+                        : isDesktop
+                        ? 16
+                        : isTablet
+                        ? 15
+                        : isSmallScreen
+                        ? 12
+                        : 14,
+                  ),
                 ),
               ),
             ],
@@ -844,22 +1855,79 @@ class _InternshipsPageState extends State<InternshipsPage> {
     );
   }
 
-  Widget _buildInfoChip(IconData icon, String label, bool isDesktop) {
+  Widget _buildInfoChip(IconData icon, String label) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      padding: EdgeInsets.symmetric(
+        horizontal: isLargeDesktop
+            ? 14
+            : isDesktop
+            ? 12
+            : isTablet
+            ? 11
+            : isSmallScreen
+            ? 8
+            : 10,
+        vertical: isLargeDesktop
+            ? 8
+            : isDesktop
+            ? 6
+            : isTablet
+            ? 5.5
+            : isSmallScreen
+            ? 4
+            : 5,
+      ),
       decoration: BoxDecoration(
         color: Colors.grey[100],
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(
+          isLargeDesktop
+              ? 24
+              : isDesktop
+              ? 20
+              : isTablet
+              ? 18
+              : isSmallScreen
+              ? 14
+              : 16,
+        ),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: isDesktop ? 16 : 14, color: Colors.grey[600]),
-          const SizedBox(width: 6),
+          Icon(
+            icon,
+            size: isLargeDesktop
+                ? 18
+                : isDesktop
+                ? 16
+                : isTablet
+                ? 15
+                : isSmallScreen
+                ? 12
+                : 14,
+            color: Colors.grey[600],
+          ),
+          SizedBox(
+            width: isLargeDesktop || isDesktop
+                ? 8
+                : isTablet
+                ? 7
+                : isSmallScreen
+                ? 4
+                : 6,
+          ),
           Text(
             label,
             style: TextStyle(
-              fontSize: isDesktop ? 13 : 12,
+              fontSize: isLargeDesktop
+                  ? 15
+                  : isDesktop
+                  ? 13
+                  : isTablet
+                  ? 12
+                  : isSmallScreen
+                  ? 10
+                  : 11,
               color: Colors.grey[700],
             ),
           ),
@@ -868,7 +1936,7 @@ class _InternshipsPageState extends State<InternshipsPage> {
     );
   }
 
-  Widget _buildEmptyState(bool isDesktop, bool isTablet) {
+  Widget _buildEmptyState() {
     // Check if filters are active
     final hasActiveSearch = _searchController.text.isNotEmpty;
     final hasActiveFilters = _selectedCategory != 'All Categories';
@@ -876,12 +1944,32 @@ class _InternshipsPageState extends State<InternshipsPage> {
 
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(32.0),
+        padding: EdgeInsets.all(
+          isLargeDesktop
+              ? 64.0
+              : isDesktop
+              ? 48.0
+              : isTablet
+              ? 40.0
+              : isSmallScreen
+              ? 24.0
+              : 32.0,
+        ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Container(
-              padding: const EdgeInsets.all(24),
+              padding: EdgeInsets.all(
+                isLargeDesktop
+                    ? 32
+                    : isDesktop
+                    ? 24
+                    : isTablet
+                    ? 22
+                    : isSmallScreen
+                    ? 16
+                    : 20,
+              ),
               decoration: BoxDecoration(
                 color: const Color(0xFF6B5FFF).withOpacity(0.1),
                 shape: BoxShape.circle,
@@ -890,36 +1978,95 @@ class _InternshipsPageState extends State<InternshipsPage> {
                 isFilteredEmpty
                     ? Icons.search_off_rounded
                     : Icons.work_outline_rounded,
-                size: isDesktop ? 64 : 56,
+                size: isLargeDesktop
+                    ? 80
+                    : isDesktop
+                    ? 64
+                    : isTablet
+                    ? 60
+                    : isSmallScreen
+                    ? 48
+                    : 56,
                 color: const Color(0xFF6B5FFF),
               ),
             ),
-            const SizedBox(height: 24),
+            SizedBox(
+              height: isLargeDesktop
+                  ? 32
+                  : isDesktop
+                  ? 24
+                  : isTablet
+                  ? 22
+                  : isSmallScreen
+                  ? 16
+                  : 20,
+            ),
             Text(
               isFilteredEmpty
                   ? 'No Internships Found'
                   : 'Internship Feature Coming Soon',
               style: TextStyle(
-                fontSize: isDesktop ? 24 : 20,
+                fontSize: isLargeDesktop
+                    ? 28
+                    : isDesktop
+                    ? 24
+                    : isTablet
+                    ? 22
+                    : isSmallScreen
+                    ? 18
+                    : 20,
                 fontWeight: FontWeight.w700,
                 color: const Color(0xFF333333),
               ),
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 12),
+            SizedBox(
+              height: isLargeDesktop
+                  ? 16
+                  : isDesktop
+                  ? 12
+                  : isTablet
+                  ? 11
+                  : isSmallScreen
+                  ? 8
+                  : 10,
+            ),
             Text(
               isFilteredEmpty
                   ? 'Try adjusting your search or filter criteria to find more opportunities'
                   : 'The internship feature is currently under development. We\'re working hard to bring you exciting internship opportunities soon!',
               style: TextStyle(
-                fontSize: isDesktop ? 15 : 14,
+                fontSize: isLargeDesktop
+                    ? 17
+                    : isDesktop
+                    ? 15
+                    : isTablet
+                    ? 14
+                    : isSmallScreen
+                    ? 11
+                    : 13,
                 color: Colors.grey[600],
                 height: 1.5,
               ),
               textAlign: TextAlign.center,
-              maxLines: 3,
+              maxLines: isLargeDesktop || isDesktop
+                  ? 3
+                  : isTablet
+                  ? 2
+                  : 2,
+              overflow: TextOverflow.ellipsis,
             ),
-            const SizedBox(height: 32),
+            SizedBox(
+              height: isLargeDesktop
+                  ? 40
+                  : isDesktop
+                  ? 32
+                  : isTablet
+                  ? 28
+                  : isSmallScreen
+                  ? 20
+                  : 24,
+            ),
             if (isFilteredEmpty)
               ElevatedButton.icon(
                 onPressed: () {
@@ -929,35 +2076,135 @@ class _InternshipsPageState extends State<InternshipsPage> {
                     _applyFilters();
                   });
                 },
-                icon: const Icon(Icons.clear_all_rounded, size: 20),
-                label: const Text('Clear All Filters'),
+                icon: Icon(
+                  Icons.clear_all_rounded,
+                  size: isLargeDesktop
+                      ? 24
+                      : isDesktop
+                      ? 22
+                      : isTablet
+                      ? 20
+                      : isSmallScreen
+                      ? 18
+                      : 20,
+                ),
+                label: Text(
+                  'Clear All Filters',
+                  style: TextStyle(
+                    fontSize: isLargeDesktop
+                        ? 18
+                        : isDesktop
+                        ? 16
+                        : isTablet
+                        ? 15
+                        : isSmallScreen
+                        ? 12
+                        : 14,
+                  ),
+                ),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF6B5FFF),
                   foregroundColor: Colors.white,
                   padding: EdgeInsets.symmetric(
-                    horizontal: isDesktop ? 32 : 24,
-                    vertical: isDesktop ? 16 : 14,
+                    horizontal: isLargeDesktop
+                        ? 40
+                        : isDesktop
+                        ? 32
+                        : isTablet
+                        ? 28
+                        : isSmallScreen
+                        ? 20
+                        : 24,
+                    vertical: isLargeDesktop
+                        ? 18
+                        : isDesktop
+                        ? 16
+                        : isTablet
+                        ? 15
+                        : isSmallScreen
+                        ? 10
+                        : 14,
                   ),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(
+                      isLargeDesktop
+                          ? 16
+                          : isDesktop
+                          ? 12
+                          : isTablet
+                          ? 11
+                          : isSmallScreen
+                          ? 8
+                          : 10,
+                    ),
                   ),
                   elevation: 0,
                 ),
               )
             else
               OutlinedButton.icon(
-                onPressed: _loadInternshipData,
-                icon: const Icon(Icons.refresh_rounded, size: 20),
-                label: const Text('Refresh'),
+                onPressed: () => _loadInternshipData(forceRefresh: true),
+                icon: Icon(
+                  Icons.refresh_rounded,
+                  size: isLargeDesktop
+                      ? 24
+                      : isDesktop
+                      ? 22
+                      : isTablet
+                      ? 20
+                      : isSmallScreen
+                      ? 18
+                      : 20,
+                ),
+                label: Text(
+                  'Refresh',
+                  style: TextStyle(
+                    fontSize: isLargeDesktop
+                        ? 18
+                        : isDesktop
+                        ? 16
+                        : isTablet
+                        ? 15
+                        : isSmallScreen
+                        ? 12
+                        : 14,
+                  ),
+                ),
                 style: OutlinedButton.styleFrom(
                   foregroundColor: const Color(0xFF6B5FFF),
                   side: const BorderSide(color: Color(0xFF6B5FFF), width: 1.5),
                   padding: EdgeInsets.symmetric(
-                    horizontal: isDesktop ? 32 : 24,
-                    vertical: isDesktop ? 16 : 14,
+                    horizontal: isLargeDesktop
+                        ? 40
+                        : isDesktop
+                        ? 32
+                        : isTablet
+                        ? 28
+                        : isSmallScreen
+                        ? 20
+                        : 24,
+                    vertical: isLargeDesktop
+                        ? 18
+                        : isDesktop
+                        ? 16
+                        : isTablet
+                        ? 15
+                        : isSmallScreen
+                        ? 10
+                        : 14,
                   ),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(
+                      isLargeDesktop
+                          ? 16
+                          : isDesktop
+                          ? 12
+                          : isTablet
+                          ? 11
+                          : isSmallScreen
+                          ? 8
+                          : 10,
+                    ),
                   ),
                 ),
               ),
@@ -967,50 +2214,209 @@ class _InternshipsPageState extends State<InternshipsPage> {
     );
   }
 
-  Widget _buildErrorState(bool isDesktop, bool isTablet) {
+  Widget _buildErrorState() {
+    final isNoInternet = _errorMessage == 'No internet connection';
+
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(32.0),
+        padding: EdgeInsets.all(
+          isLargeDesktop
+              ? 64.0
+              : isDesktop
+              ? 48.0
+              : isTablet
+              ? 40.0
+              : isSmallScreen
+              ? 24.0
+              : 32.0,
+        ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
-              Icons.error_outline_rounded,
-              size: isDesktop ? 64 : 56,
-              color: Colors.red,
+              Icons.cloud_off,
+              size: isLargeDesktop
+                  ? 80
+                  : isDesktop
+                  ? 64
+                  : isTablet
+                  ? 60
+                  : isSmallScreen
+                  ? 48
+                  : 56,
+              color: Colors.grey[400],
             ),
-            const SizedBox(height: 16),
-            Text(
-              'Something Went Wrong',
-              style: TextStyle(
-                fontSize: isDesktop ? 20 : 18,
-                fontWeight: FontWeight.w700,
-                color: const Color(0xFF333333),
-              ),
+            SizedBox(
+              height: isLargeDesktop
+                  ? 28
+                  : isDesktop
+                  ? 24
+                  : isTablet
+                  ? 22
+                  : isSmallScreen
+                  ? 16
+                  : 20,
             ),
-            const SizedBox(height: 8),
             Text(
-              _errorMessage ?? 'Please try again later',
+              isNoInternet ? 'No internet connection' : 'Something went wrong',
               style: TextStyle(
-                fontSize: isDesktop ? 15 : 14,
-                color: Colors.grey[600],
+                fontSize: isLargeDesktop
+                    ? 24
+                    : isDesktop
+                    ? 20
+                    : isTablet
+                    ? 19
+                    : isSmallScreen
+                    ? 16
+                    : 18,
+                fontWeight: FontWeight.bold,
+                color: Colors.grey[700],
               ),
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 24),
+            if (isNoInternet) ...[
+              SizedBox(
+                height: isLargeDesktop
+                    ? 14
+                    : isDesktop
+                    ? 12
+                    : isTablet
+                    ? 11
+                    : isSmallScreen
+                    ? 8
+                    : 10,
+              ),
+              Text(
+                'Please check your connection and try again',
+                style: TextStyle(
+                  fontSize: isLargeDesktop
+                      ? 16
+                      : isDesktop
+                      ? 15
+                      : isTablet
+                      ? 14
+                      : isSmallScreen
+                      ? 11
+                      : 13,
+                  color: Colors.grey[600],
+                ),
+                textAlign: TextAlign.center,
+                maxLines: isLargeDesktop || isDesktop
+                    ? 3
+                    : isTablet
+                    ? 2
+                    : 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ] else ...[
+              SizedBox(
+                height: isLargeDesktop
+                    ? 14
+                    : isDesktop
+                    ? 12
+                    : isTablet
+                    ? 11
+                    : isSmallScreen
+                    ? 8
+                    : 10,
+              ),
+              Text(
+                _errorMessage ?? 'Please try again later',
+                style: TextStyle(
+                  fontSize: isLargeDesktop
+                      ? 16
+                      : isDesktop
+                      ? 15
+                      : isTablet
+                      ? 14
+                      : isSmallScreen
+                      ? 11
+                      : 13,
+                  color: Colors.grey[600],
+                ),
+                textAlign: TextAlign.center,
+                maxLines: isLargeDesktop || isDesktop
+                    ? 3
+                    : isTablet
+                    ? 2
+                    : 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
+            SizedBox(
+              height: isLargeDesktop
+                  ? 32
+                  : isDesktop
+                  ? 28
+                  : isTablet
+                  ? 26
+                  : isSmallScreen
+                  ? 20
+                  : 24,
+            ),
             ElevatedButton.icon(
-              onPressed: _loadInternshipData,
-              icon: const Icon(Icons.refresh_rounded),
-              label: const Text('Retry'),
+              onPressed: () => _loadInternshipData(forceRefresh: true),
+              icon: Icon(
+                Icons.refresh_rounded,
+                size: isLargeDesktop
+                    ? 24
+                    : isDesktop
+                    ? 22
+                    : isTablet
+                    ? 20
+                    : isSmallScreen
+                    ? 18
+                    : 20,
+              ),
+              label: Text(
+                'Retry',
+                style: TextStyle(
+                  fontSize: isLargeDesktop
+                      ? 18
+                      : isDesktop
+                      ? 16
+                      : isTablet
+                      ? 15
+                      : isSmallScreen
+                      ? 12
+                      : 14,
+                ),
+              ),
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF6B5FFF),
                 foregroundColor: Colors.white,
                 padding: EdgeInsets.symmetric(
-                  horizontal: isDesktop ? 32 : 24,
-                  vertical: isDesktop ? 16 : 14,
+                  horizontal: isLargeDesktop
+                      ? 40
+                      : isDesktop
+                      ? 32
+                      : isTablet
+                      ? 28
+                      : isSmallScreen
+                      ? 20
+                      : 24,
+                  vertical: isLargeDesktop
+                      ? 18
+                      : isDesktop
+                      ? 16
+                      : isTablet
+                      ? 15
+                      : isSmallScreen
+                      ? 10
+                      : 14,
                 ),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(
+                    isLargeDesktop
+                        ? 16
+                        : isDesktop
+                        ? 12
+                        : isTablet
+                        ? 11
+                        : isSmallScreen
+                        ? 8
+                        : 10,
+                  ),
                 ),
               ),
             ),

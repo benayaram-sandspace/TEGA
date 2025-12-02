@@ -21,24 +21,28 @@ const markCompletedExamsAsInactive = async () => {
     const currentTime = new Date();
     
     // Find all active exams that might be completed
+    // Only check exams that are at least 2 hours past their scheduled date to avoid premature deactivation
+    const twoHoursAgo = new Date(currentTime.getTime() - (2 * 60 * 60 * 1000));
     const activeExams = await Exam.find({
       isActive: true,
-      examDate: { $exists: true },
+      examDate: { $lt: twoHoursAgo }, // Only check exams that are at least 2 hours old
       duration: { $exists: true }
     });
+
     const completedExamIds = [];
     for (const exam of activeExams) {
-      // Calculate exam end time based on the latest slot end time + duration
+      // Calculate exam end time based on the latest slot end time + duration + buffer
       let latestEndTime = null;
       
       if (exam.slots && exam.slots.length > 0) {
         // Find the latest slot end time
         for (const slot of exam.slots) {
           if (slot.isActive && slot.endTime) {
-            // Parse slot end time and add duration
+            // Parse slot end time and add duration + 30 minute buffer
             const examDateStr = exam.examDate.toISOString().split('T')[0]; // Get YYYY-MM-DD
             const slotEndTime = new Date(`${examDateStr}T${slot.endTime}:00`);
-            const slotEndTimeWithDuration = new Date(slotEndTime.getTime() + (exam.duration * 60 * 1000));
+            // Add exam duration + 30 minute buffer to avoid premature deactivation
+            const slotEndTimeWithDuration = new Date(slotEndTime.getTime() + (exam.duration * 60 * 1000) + (30 * 60 * 1000));
             
             if (!latestEndTime || slotEndTimeWithDuration > latestEndTime) {
               latestEndTime = slotEndTimeWithDuration;
@@ -47,10 +51,12 @@ const markCompletedExamsAsInactive = async () => {
         }
       }
       
-      // Fallback to simple calculation if no slots
+      // Fallback to simple calculation if no slots - add 30 minute buffer
       if (!latestEndTime) {
-        latestEndTime = new Date(exam.examDate.getTime() + (exam.duration * 60 * 1000));
+        latestEndTime = new Date(exam.examDate.getTime() + (exam.duration * 60 * 1000) + (30 * 60 * 1000));
       }
+      
+      // Only mark as inactive if we're well past the end time
       if (currentTime > latestEndTime) {
         completedExamIds.push(exam._id);
       }
@@ -62,9 +68,9 @@ const markCompletedExamsAsInactive = async () => {
         { _id: { $in: completedExamIds } },
         { isActive: false }
       );
-    } else {
     }
   } catch (error) {
+    // Error marking completed exams as inactive
   }
 };
 
@@ -196,56 +202,154 @@ export const getAllExams = async (req, res) => {
   }
 };
 
+// Simple GET endpoint for emergency reactivation (easier to test)
+export const emergencyReactivateExamsGet = async (req, res) => {
+  try {
+    // First, check current state
+    const totalExams = await Exam.countDocuments({});
+    const activeExams = await Exam.countDocuments({ isActive: true });
+    const inactiveExams = await Exam.countDocuments({ isActive: false });
+    
+    // Reactivate ALL exams regardless of status (super aggressive)
+    const result = await Exam.updateMany(
+      {}, // No filter - update ALL exams
+      { $set: { isActive: true } }
+    );
+    
+    // Verify the change
+    const newActiveExams = await Exam.countDocuments({ isActive: true });
+    const newInactiveExams = await Exam.countDocuments({ isActive: false });
+    
+    res.json({
+      success: true,
+      message: `Super aggressive reactivation: Set all ${result.modifiedCount} exams to active`,
+      reactivatedCount: result.modifiedCount,
+      before: { total: totalExams, active: activeExams, inactive: inactiveExams },
+      after: { active: newActiveExams, inactive: newInactiveExams }
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Reactivation failed',
+      error: error.message
+    });
+  }
+};
+
+// Emergency reactivation endpoint (for immediate testing)
+export const emergencyReactivateExams = async (req, res) => {
+  try {
+    // First, check how many inactive exams we have
+    const inactiveCount = await Exam.countDocuments({ isActive: false });
+    
+    // Reactivate all exams from the last 7 days
+    const sevenDaysAgo = new Date(Date.now() - (7 * 24 * 60 * 60 * 1000));
+    
+    const result = await Exam.updateMany(
+      { 
+        isActive: false,
+        createdAt: { $gte: sevenDaysAgo }
+      },
+      { $set: { isActive: true } }
+    );
+    
+    // Verify the change
+    const newActiveCount = await Exam.countDocuments({ isActive: true });
+    const newInactiveCount = await Exam.countDocuments({ isActive: false });
+    
+    res.json({
+      success: true,
+      message: `Emergency reactivated ${result.modifiedCount} recent exams`,
+      reactivatedCount: result.modifiedCount,
+      beforeReactivation: {
+        inactive: inactiveCount
+      },
+      afterReactivation: {
+        active: newActiveCount,
+        inactive: newInactiveCount
+      }
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Emergency reactivation failed',
+      error: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
+  }
+};
+
+// Simple test endpoint to check database
+export const testDatabase = async (req, res) => {
+  try {
+    const allExams = await Exam.find({}).select('_id title isTegaExam isActive requiresPayment price examDate slots createdAt').sort({ createdAt: -1 });
+    
+    // Get recent exams (last 24 hours)
+    const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    const recentExams = allExams.filter(exam => exam.createdAt >= twentyFourHoursAgo);
+    
+    // Get inactive exams
+    const inactiveExams = allExams.filter(exam => !exam.isActive);
+    
+    
+    res.json({
+      success: true,
+      count: allExams.length,
+      recentCount: recentExams.length,
+      inactiveCount: inactiveExams.length,
+      exams: allExams,
+      recentExams: recentExams,
+      inactiveExams: inactiveExams.slice(0, 10) // Limit to prevent large response
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+};
+
 // Get available exams for students
 export const getAvailableExams = async (req, res) => {
   try {
     const { studentId } = req.params;
-    // First, mark completed exams as inactive
-    await markCompletedExamsAsInactive();
+    
+    // First, let's check what's actually in the database
+    const allExamsInDB = await Exam.find({}).select('_id title isTegaExam isActive requiresPayment price examDate slots createdAt');
+    const activeExamsInDB = allExamsInDB.filter(exam => exam.isActive);
+    const inactiveExamsInDB = allExamsInDB.filter(exam => !exam.isActive);
+    
+    // TEMPORARILY DISABLED: Mark completed exams as inactive to prevent disappearing issue
+    // This will be re-enabled once we identify the root cause
+    // const shouldCheckCompletion = Math.random() < 0.1; // 10% chance
+    // if (shouldCheckCompletion) {
+    //   await markCompletedExamsAsInactive();
+    // }
+    // Exam completion check DISABLED to prevent disappearing exams
     
     // Get all exams and filter them properly
     const allExams = await Exam.find({})
       .populate('courseId', 'courseName price')
       .populate('questionPaperId', 'totalQuestions')
       .sort({ examDate: 1 });
-    // Filter out completed exams directly in the query
+    
+    allExams.forEach((exam, index) => {
+
+    });
+    
+
+    
+    // TEMPORARILY DISABLE TIME-BASED FILTERING to show all active exams
     const currentTime = new Date();
     const activeExams = allExams.filter(exam => {
-      // Check if exam is active
+      // Only check if exam is active - ignore all time-based filtering for now
       if (!exam.isActive) {
-        return false;
-      }
-      
-      // Check if exam is completed using improved logic
-      let latestEndTime = null;
-      
-      if (exam.slots && exam.slots.length > 0) {
-        // Find the latest slot end time
-        for (const slot of exam.slots) {
-          if (slot.isActive && slot.endTime) {
-            // Parse slot end time and add duration
-            const examDateStr = exam.examDate.toISOString().split('T')[0]; // Get YYYY-MM-DD
-            const slotEndTime = new Date(`${examDateStr}T${slot.endTime}:00`);
-            const slotEndTimeWithDuration = new Date(slotEndTime.getTime() + (exam.duration * 60 * 1000));
-            
-            if (!latestEndTime || slotEndTimeWithDuration > latestEndTime) {
-              latestEndTime = slotEndTimeWithDuration;
-            }
-          }
-        }
-      }
-      
-      // Fallback to simple calculation if no slots
-      if (!latestEndTime) {
-        latestEndTime = new Date(exam.examDate.getTime() + (exam.duration * 60 * 1000));
-      }
-      
-      if (currentTime > latestEndTime) {
         return false;
       }
       
       return true;
     });
+
     // Check registration status and payment status for each exam
     const examsWithRegistration = await Promise.all(
       activeExams.map(async (exam) => {
@@ -285,30 +389,30 @@ export const getAvailableExams = async (req, res) => {
           examPaymentAttempts = await checkExamPaymentAttempts(studentId, exam._id);
         }
 
-        // Filter slots - check if they're active, not full, and within registration time (1 minute before start for Exams page)
+        // Filter slots - check if they're active, not full, and within registration time
         const now = new Date();
         const availableSlots = exam.slots.filter(slot => {
-          if (!slot.isActive || slot.registeredStudents.length >= slot.maxParticipants) {
+          if (!slot.isActive) {
             return false;
           }
           
-          // Check if slot is within registration time (30 seconds before start for Exams page)
+          // Check if slot is within registration time (5 minutes before start for better UX)
           if (slot.startTime) {
             const [hours, minutes] = slot.startTime.split(':').map(Number);
             const slotDateTime = new Date(exam.examDate);
             slotDateTime.setHours(hours, minutes, 0, 0);
             
-            // Calculate registration cutoff (30 seconds before slot start for Exams page)
-            const registrationCutoff = new Date(slotDateTime.getTime() - 30 * 1000);
+            // Calculate registration cutoff (5 minutes before slot start for better UX)
+            const registrationCutoff = new Date(slotDateTime.getTime() - 5 * 60 * 1000);
             
-            if (now >= registrationCutoff) {
+            // Only filter out if registration is closed AND slot is full
+            if (now >= registrationCutoff && slot.registeredStudents.length >= slot.maxParticipants) {
               return false;
             }
           }
           
           return true;
         });
-
         return {
           ...exam.toObject(),
           isRegistered: !!registration,
@@ -322,11 +426,12 @@ export const getAvailableExams = async (req, res) => {
       })
     );
 
-    // Filter out exams with no available slots
+    // TEMPORARILY SHOW ALL EXAMS - disable slot filtering
     const examsWithSlots = examsWithRegistration.filter(exam => {
-      const hasSlots = exam.availableSlots && exam.availableSlots.length > 0;
-      return hasSlots;
+      // SHOW ALL EXAMS for debugging
+      return true;
     });
+
     res.json({
       success: true,
       exams: examsWithSlots
@@ -473,12 +578,14 @@ export const createExam = async (req, res) => {
       createdBy: adminId
     });
     await exam.save();
+
     // Update question paper to mark it as used
     if (questionPaperId) {
       await QuestionPaper.findByIdAndUpdate(questionPaperId, {
         $addToSet: { usedInExams: exam._id }
       });
     }
+
 
     res.status(201).json({
       success: true,
@@ -878,12 +985,13 @@ export const startExam = async (req, res) => {
         if (registration.paymentStatus === 'paid') {
           hasAccess = true;
         } else {
-          // Fallback to TEGA exam payment check
+          // Fallback to TEGA exam payment check - include package payments
           const tegaExamPaymentStatus = await checkTegaExamPayment(studentId, exam._id);
           hasAccess = tegaExamPaymentStatus.hasPaid;
-          // If still no access, check for any TEGA exam payment (general check)
+          // If still no access, check for any TEGA exam payment (general check) including packages
           if (!hasAccess) {
-            const generalTegaPaymentStatus = await checkTegaExamPaymentUtil(studentId);
+            const { checkTegaExamPaymentUtil } = await import('../controllers/paymentController.js');
+            const generalTegaPaymentStatus = await checkTegaExamPaymentUtil(studentId, exam._id.toString());
             if (generalTegaPaymentStatus && generalTegaPaymentStatus.hasPaidForTegaExam) {
               hasAccess = true;
             }
@@ -1285,6 +1393,31 @@ export const submitExam = async (req, res) => {
     examAttempt.isQualified = isQualified;
     await examAttempt.save();
 
+    // Emit WebSocket event for new exam completion
+    const io = req.app.get('io');
+    if (io) {
+      io.emit('exam-completed', {
+        examId,
+        studentId,
+        examTitle: exam.title,
+        score: totalScore,
+        percentage: percentage,
+        isPassed: examAttempt.isPassed,
+        timestamp: new Date()
+      });
+      
+      // Also emit a general exam result update event
+      io.emit('new-exam-attempt', {
+        examId,
+        studentId,
+        examTitle: exam.title,
+        score: totalScore,
+        percentage: percentage,
+        isPassed: examAttempt.isPassed,
+        timestamp: new Date()
+      });
+    }
+
     res.json({
       success: true,
       message: 'Exam submitted successfully',
@@ -1316,7 +1449,7 @@ export const getAllUserExamResults = async (req, res) => {
     const examAttempts = await ExamAttempt.find({
       studentId,
       status: 'completed',
-      published: true // ✅ Only return published results
+      published: true //    Only return published results
     })
     .populate('examId', 'title subject examDate duration totalMarks passingMarks')
     .populate('courseId', 'courseName')
@@ -1528,7 +1661,7 @@ export const getExamResults = async (req, res) => {
       studentId,
       examId,
       status: 'completed',
-      published: true // ✅ Only return published results
+      published: true //    Only return published results
     }).sort({ createdAt: -1 });
     const exam = await Exam.findById(examId).populate('courseId', 'courseName');
 
@@ -1772,8 +1905,10 @@ export const reactivateIncorrectlyInactiveExams = async (req, res) => {
     const inactiveExams = await Exam.find({ isActive: false });
     const examsToReactivate = [];
     
+    
     for (const exam of inactiveExams) {
-      // Calculate exam end time using improved logic
+      // Be more aggressive about reactivating exams
+      // Calculate exam end time with generous buffer
       let latestEndTime = null;
       
       if (exam.slots && exam.slots.length > 0) {
@@ -1781,7 +1916,8 @@ export const reactivateIncorrectlyInactiveExams = async (req, res) => {
           if (slot.isActive && slot.endTime) {
             const examDateStr = exam.examDate.toISOString().split('T')[0];
             const slotEndTime = new Date(`${examDateStr}T${slot.endTime}:00`);
-            const slotEndTimeWithDuration = new Date(slotEndTime.getTime() + (exam.duration * 60 * 1000));
+            // Add exam duration + 2 hour buffer for reactivation
+            const slotEndTimeWithDuration = new Date(slotEndTime.getTime() + (exam.duration * 60 * 1000) + (2 * 60 * 60 * 1000));
             
             if (!latestEndTime || slotEndTimeWithDuration > latestEndTime) {
               latestEndTime = slotEndTimeWithDuration;
@@ -1791,11 +1927,18 @@ export const reactivateIncorrectlyInactiveExams = async (req, res) => {
       }
       
       if (!latestEndTime) {
-        latestEndTime = new Date(exam.examDate.getTime() + (exam.duration * 60 * 1000));
+        // Add 2 hour buffer for exams without slots
+        latestEndTime = new Date(exam.examDate.getTime() + (exam.duration * 60 * 1000) + (2 * 60 * 60 * 1000));
       }
-      // If exam is not actually completed, mark it for reactivation
-      if (currentTime <= latestEndTime) {
+      
+      // Also reactivate any exam from the last 7 days regardless of time calculation
+      const sevenDaysAgo = new Date(currentTime.getTime() - (7 * 24 * 60 * 60 * 1000));
+      const isRecentExam = exam.createdAt >= sevenDaysAgo;
+      
+      // Reactivate if exam is not actually completed OR if it's a recent exam
+      if (currentTime <= latestEndTime || isRecentExam) {
         examsToReactivate.push(exam._id);
+      } else {
       }
     }
     
@@ -1804,10 +1947,13 @@ export const reactivateIncorrectlyInactiveExams = async (req, res) => {
         { _id: { $in: examsToReactivate } },
         { isActive: true }
       );
+      
+      
       res.json({
         success: true,
         message: `Reactivated ${result.modifiedCount} exams that were incorrectly marked as inactive`,
-        reactivatedCount: result.modifiedCount
+        reactivatedCount: result.modifiedCount,
+        reactivatedExams: examsToReactivate.length
       });
     } else {
       res.json({

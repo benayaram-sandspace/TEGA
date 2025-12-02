@@ -107,6 +107,8 @@ export const getExamResultsForAdmin = async (req, res) => {
       new Date(b.examDate) - new Date(a.examDate)
     );
 
+
+
     res.json({
       success: true,
       results,
@@ -156,7 +158,34 @@ export const publishExamResults = async (req, res) => {
       filter.published = true;
     }
 
-    const examAttempts = await ExamAttempt.find(filter);
+    let examAttempts = await ExamAttempt.find(filter);
+
+    // If no results found with startTime filtering, try with createdAt
+    if (examAttempts.length === 0) {
+      const fallbackFilter = { ...filter };
+      delete fallbackFilter.startTime;
+      fallbackFilter.createdAt = {
+        $gte: startOfDay,
+        $lte: endOfDay
+      };
+      examAttempts = await ExamAttempt.find(fallbackFilter);
+    }
+
+    // If still no results, try without date filtering
+    if (examAttempts.length === 0) {
+      const noDateFilter = {
+        examId,
+        status: 'completed'
+      };
+      if (publish) {
+        noDateFilter.published = false;
+      } else {
+        noDateFilter.published = true;
+      }
+      examAttempts = await ExamAttempt.find(noDateFilter);
+    }
+
+
 
     if (examAttempts.length === 0) {
       return res.status(404).json({
@@ -180,7 +209,59 @@ export const publishExamResults = async (req, res) => {
       updateData.publishedBy = null;
     }
 
-    const updateResult = await ExamAttempt.updateMany(filter, updateData);
+    // Try multiple update approaches to ensure we find and update the correct records
+    let updateResult = await ExamAttempt.updateMany(filter, updateData);
+
+    // If no updates with startTime filter, try with createdAt
+    if (updateResult.modifiedCount === 0) {
+      const fallbackFilter = { ...filter };
+      delete fallbackFilter.startTime;
+      fallbackFilter.createdAt = {
+        $gte: startOfDay,
+        $lte: endOfDay
+      };
+      updateResult = await ExamAttempt.updateMany(fallbackFilter, updateData);
+    }
+
+    // If still no updates, try without date filter
+    if (updateResult.modifiedCount === 0) {
+      const noDateFilter = {
+        examId,
+        status: 'completed'
+      };
+      if (publish) {
+        noDateFilter.published = false;
+      } else {
+        noDateFilter.published = true;
+      }
+      updateResult = await ExamAttempt.updateMany(noDateFilter, updateData);
+    }
+
+
+    // Emit WebSocket event for real-time updates
+    const io = req.app.get('io');
+    if (io) {
+      const eventName = publish ? 'exam-result-published' : 'exam-result-unpublished';
+      io.emit(eventName, {
+        examId,
+        examDate,
+        publishedCount: updateResult.modifiedCount,
+        adminId,
+        timestamp: new Date()
+      });
+      
+      // Also emit a general exam result update event
+      io.emit('exam-result-updated', {
+        examId,
+        examDate,
+        action: publish ? 'published' : 'unpublished',
+        count: updateResult.modifiedCount,
+        adminId,
+        timestamp: new Date()
+      });
+      
+    }
+
     res.json({
       success: true,
       message: publish
@@ -204,6 +285,7 @@ export const unpublishExamResults = async (req, res) => {
     const { examId, examDate } = req.body;
     const { adminId } = req;
 
+
     if (!examId || !examDate) {
       return res.status(400).json({
         success: false,
@@ -217,7 +299,18 @@ export const unpublishExamResults = async (req, res) => {
     const endOfDay = new Date(examDate);
     endOfDay.setHours(23, 59, 59, 999);
 
-    const examAttempts = await ExamAttempt.find({
+
+
+    // First, let's check what exam attempts exist for this exam
+    const allAttempts = await ExamAttempt.find({
+      examId,
+      status: 'completed'
+    }).select('_id startTime published examId status');
+
+
+
+    // Try multiple query approaches to find published results
+    let examAttempts = await ExamAttempt.find({
       examId,
       status: 'completed',
       startTime: {
@@ -227,15 +320,51 @@ export const unpublishExamResults = async (req, res) => {
       published: true
     });
 
+    // If no results found with startTime filtering, try with createdAt
     if (examAttempts.length === 0) {
+      examAttempts = await ExamAttempt.find({
+        examId,
+        status: 'completed',
+        createdAt: {
+          $gte: startOfDay,
+          $lte: endOfDay
+        },
+        published: true
+      });
+    }
+
+    // If still no results, try without date filtering but with published status
+    if (examAttempts.length === 0) {
+      examAttempts = await ExamAttempt.find({
+        examId,
+        status: 'completed',
+        published: true
+      });
+    }
+
+
+
+    if (examAttempts.length === 0) {
+      // Try a fallback query without date filtering to see if there are any published results
+      const fallbackAttempts = await ExamAttempt.find({
+        examId,
+        status: 'completed',
+        published: true
+      });
+
+
+
       return res.status(404).json({
         success: false,
         message: 'No published results found for this exam and date'
       });
     }
 
-    // Update all attempts to unpublished
-    const updateResult = await ExamAttempt.updateMany(
+    // Update all attempts to unpublished using the same flexible approach
+    let updateResult;
+    
+    // First try with startTime filter
+    updateResult = await ExamAttempt.updateMany(
       {
         examId,
         status: 'completed',
@@ -251,6 +380,65 @@ export const unpublishExamResults = async (req, res) => {
         publishedBy: null
       }
     );
+
+    // If no updates with startTime, try with createdAt
+    if (updateResult.modifiedCount === 0) {
+      updateResult = await ExamAttempt.updateMany(
+        {
+          examId,
+          status: 'completed',
+          createdAt: {
+            $gte: startOfDay,
+            $lte: endOfDay
+          },
+          published: true
+        },
+        {
+          published: false,
+          publishedAt: null,
+          publishedBy: null
+        }
+      );
+    }
+
+    // If still no updates, try without date filter
+    if (updateResult.modifiedCount === 0) {
+      updateResult = await ExamAttempt.updateMany(
+        {
+          examId,
+          status: 'completed',
+          published: true
+        },
+        {
+          published: false,
+          publishedAt: null,
+          publishedBy: null
+        }
+      );
+    }
+
+    // Emit WebSocket event for real-time updates
+    const io = req.app.get('io');
+    if (io) {
+      io.emit('exam-result-unpublished', {
+        examId,
+        examDate,
+        unpublishedCount: updateResult.modifiedCount,
+        adminId,
+        timestamp: new Date()
+      });
+      
+      // Also emit a general exam result update event
+      io.emit('exam-result-updated', {
+        examId,
+        examDate,
+        action: 'unpublished',
+        count: updateResult.modifiedCount,
+        adminId,
+        timestamp: new Date()
+      });
+      
+    }
 
     res.json({
       success: true,

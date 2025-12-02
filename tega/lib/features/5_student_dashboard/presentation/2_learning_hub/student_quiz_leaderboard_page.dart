@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:tega/features/5_student_dashboard/presentation/1_home/student_home_page.dart';
 
 class LeaderboardPage extends StatelessWidget {
@@ -158,9 +159,9 @@ class LeaderboardPage extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 12),
-          const CircleAvatar(
+          CircleAvatar(
             radius: 18,
-            backgroundImage: NetworkImage(
+            backgroundImage: CachedNetworkImageProvider(
               "https://randomuser.me/api/portraits/men/32.jpg",
             ),
           ),

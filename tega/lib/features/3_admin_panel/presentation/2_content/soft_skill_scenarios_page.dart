@@ -25,7 +25,7 @@ class _SoftSkillScenariosPageState extends State<SoftSkillScenariosPage>
 
   bool _isLoading = true;
   bool _isFilterExpanded = false;
-  
+
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
   late Animation<Offset> _slideAnimation;
@@ -40,11 +40,14 @@ class _SoftSkillScenariosPageState extends State<SoftSkillScenariosPage>
     _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
     );
-    _slideAnimation = Tween<Offset>(
-      begin: const Offset(0, 0.3),
-      end: Offset.zero,
-    ).animate(CurvedAnimation(parent: _animationController, curve: Curves.easeOutCubic));
-    
+    _slideAnimation =
+        Tween<Offset>(begin: const Offset(0, 0.3), end: Offset.zero).animate(
+          CurvedAnimation(
+            parent: _animationController,
+            curve: Curves.easeOutCubic,
+          ),
+        );
+
     _animationController.forward();
     _loadData();
   }
@@ -162,7 +165,6 @@ class _SoftSkillScenariosPageState extends State<SoftSkillScenariosPage>
       ),
     );
   }
-
 
   Widget _buildSearchBar() {
     return TextField(

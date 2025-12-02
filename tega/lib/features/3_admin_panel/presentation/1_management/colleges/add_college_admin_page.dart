@@ -17,7 +17,7 @@ class _AddCollegeAdminPageState extends State<AddCollegeAdminPage>
     with TickerProviderStateMixin {
   final _formKey = GlobalKey<FormState>();
   final CollegeService _collegeService = CollegeService();
-  
+
   // Animation controllers
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
@@ -51,11 +51,14 @@ class _AddCollegeAdminPageState extends State<AddCollegeAdminPage>
     _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(parent: _animationController, curve: Curves.easeOutCubic),
     );
-    _slideAnimation = Tween<Offset>(
-      begin: const Offset(0, 0.3),
-      end: Offset.zero,
-    ).animate(CurvedAnimation(parent: _animationController, curve: Curves.easeOutCubic));
-    
+    _slideAnimation =
+        Tween<Offset>(begin: const Offset(0, 0.3), end: Offset.zero).animate(
+          CurvedAnimation(
+            parent: _animationController,
+            curve: Curves.easeOutCubic,
+          ),
+        );
+
     _animationController.forward();
   }
 
@@ -181,195 +184,218 @@ class _AddCollegeAdminPageState extends State<AddCollegeAdminPage>
                 children: [
                   // College Info Card
                   Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(20),
-                decoration: AdminDashboardStyles.getCardDecoration(
-                  borderColor: AdminDashboardStyles.primary,
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(20),
+                    decoration: AdminDashboardStyles.getCardDecoration(
+                      borderColor: AdminDashboardStyles.primary,
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Container(
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: AdminDashboardStyles.primary.withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Icon(
-                            Icons.school_rounded,
-                            color: AdminDashboardStyles.primary,
-                            size: 24,
-                          ),
-                        ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text(
-                                'Adding admin for:',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  color: AdminDashboardStyles.textLight,
-                                  fontWeight: FontWeight.w500,
+                        Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: AdminDashboardStyles.primary.withValues(
+                                  alpha: 0.1,
                                 ),
+                                borderRadius: BorderRadius.circular(12),
                               ),
-                              const SizedBox(height: 4),
-                              Text(
-                                widget.college.name,
-                                style: const TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                  color: AdminDashboardStyles.textDark,
-                                ),
+                              child: Icon(
+                                Icons.school_rounded,
+                                color: AdminDashboardStyles.primary,
+                                size: 24,
                               ),
-                              Text(
-                                '${widget.college.city}, ${widget.college.state}',
-                                style: const TextStyle(
-                                  fontSize: 14,
-                                  color: AdminDashboardStyles.textLight,
-                                ),
+                            ),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text(
+                                    'Adding admin for:',
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      color: AdminDashboardStyles.textLight,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    widget.college.name,
+                                    style: const TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold,
+                                      color: AdminDashboardStyles.textDark,
+                                    ),
+                                  ),
+                                  Text(
+                                    '${widget.college.city}, ${widget.college.state}',
+                                    style: const TextStyle(
+                                      fontSize: 14,
+                                      color: AdminDashboardStyles.textLight,
+                                    ),
+                                  ),
+                                ],
                               ),
-                            ],
-                          ),
+                            ),
+                          ],
                         ),
                       ],
                     ),
-                  ],
-                ),
-              ).animate().fade(duration: 500.ms).slideY(begin: 0.3),
-              const SizedBox(height: 24),
+                  ).animate().fade(duration: 500.ms).slideY(begin: 0.3),
+                  const SizedBox(height: 24),
 
-              // Admin Name
-              _buildFormField(
-                label: 'Admin Name',
-                controller: _nameController,
-                hintText: 'Enter admin full name',
-                icon: Icons.person_outline,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter admin name';
-                  }
-                  return null;
-                },
-              ).animate().fade(duration: 500.ms).slideY(begin: 0.3, delay: 200.ms),
-              const SizedBox(height: 20),
+                  // Admin Name
+                  _buildFormField(
+                        label: 'Admin Name',
+                        controller: _nameController,
+                        hintText: 'Enter admin full name',
+                        icon: Icons.person_outline,
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Please enter admin name';
+                          }
+                          return null;
+                        },
+                      )
+                      .animate()
+                      .fade(duration: 500.ms)
+                      .slideY(begin: 0.3, delay: 200.ms),
+                  const SizedBox(height: 20),
 
-              // Email
-              _buildFormField(
-                label: 'Email Address',
-                controller: _emailController,
-                hintText: 'admin@college.edu',
-                icon: Icons.email_outlined,
-                keyboardType: TextInputType.emailAddress,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter email address';
-                  }
-                  if (!RegExp(
-                    r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
-                  ).hasMatch(value)) {
-                    return 'Please enter valid email';
-                  }
-                  return null;
-                },
-              ).animate().fade(duration: 500.ms).slideY(begin: 0.3, delay: 300.ms),
-              const SizedBox(height: 20),
+                  // Email
+                  _buildFormField(
+                        label: 'Email Address',
+                        controller: _emailController,
+                        hintText: 'admin@college.edu',
+                        icon: Icons.email_outlined,
+                        keyboardType: TextInputType.emailAddress,
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Please enter email address';
+                          }
+                          if (!RegExp(
+                            r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
+                          ).hasMatch(value)) {
+                            return 'Please enter valid email';
+                          }
+                          return null;
+                        },
+                      )
+                      .animate()
+                      .fade(duration: 500.ms)
+                      .slideY(begin: 0.3, delay: 300.ms),
+                  const SizedBox(height: 20),
 
-              // Phone
-              _buildFormField(
-                label: 'Phone Number',
-                controller: _phoneController,
-                hintText: '+91 9876543210',
-                icon: Icons.phone_outlined,
-                keyboardType: TextInputType.phone,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter phone number';
-                  }
-                  return null;
-                },
-              ).animate().fade(duration: 500.ms).slideY(begin: 0.3, delay: 400.ms),
-              const SizedBox(height: 20),
+                  // Phone
+                  _buildFormField(
+                        label: 'Phone Number',
+                        controller: _phoneController,
+                        hintText: '+91 9876543210',
+                        icon: Icons.phone_outlined,
+                        keyboardType: TextInputType.phone,
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Please enter phone number';
+                          }
+                          return null;
+                        },
+                      )
+                      .animate()
+                      .fade(duration: 500.ms)
+                      .slideY(begin: 0.3, delay: 400.ms),
+                  const SizedBox(height: 20),
 
-              // Role Dropdown
-              _buildDropdownField(
-                label: 'Role',
-                value: _selectedRole,
-                items: _roles,
-                icon: Icons.admin_panel_settings_outlined,
-                onChanged: (value) {
-                  setState(() {
-                    _selectedRole = value!;
-                  });
-                },
-              ).animate().fade(duration: 500.ms).slideY(begin: 0.3, delay: 500.ms),
-              const SizedBox(height: 20),
+                  // Role Dropdown
+                  _buildDropdownField(
+                        label: 'Role',
+                        value: _selectedRole,
+                        items: _roles,
+                        icon: Icons.admin_panel_settings_outlined,
+                        onChanged: (value) {
+                          setState(() {
+                            _selectedRole = value!;
+                          });
+                        },
+                      )
+                      .animate()
+                      .fade(duration: 500.ms)
+                      .slideY(begin: 0.3, delay: 500.ms),
+                  const SizedBox(height: 20),
 
-              // Status Dropdown
-              _buildDropdownField(
-                label: 'Status',
-                value: _selectedStatus,
-                items: _statuses,
-                icon: Icons.toggle_on_outlined,
-                onChanged: (value) {
-                  setState(() {
-                    _selectedStatus = value!;
-                  });
-                },
-              ).animate().fade(duration: 500.ms).slideY(begin: 0.3, delay: 600.ms),
-              const SizedBox(height: 32),
+                  // Status Dropdown
+                  _buildDropdownField(
+                        label: 'Status',
+                        value: _selectedStatus,
+                        items: _statuses,
+                        icon: Icons.toggle_on_outlined,
+                        onChanged: (value) {
+                          setState(() {
+                            _selectedStatus = value!;
+                          });
+                        },
+                      )
+                      .animate()
+                      .fade(duration: 500.ms)
+                      .slideY(begin: 0.3, delay: 600.ms),
+                  const SizedBox(height: 32),
 
-              // Action Buttons
-              Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton(
-                      onPressed: _isLoading
-                          ? null
-                          : () => Navigator.of(context).pop(),
-                      style: AdminDashboardStyles.getSecondaryButtonStyle(),
-                      child: const Text(
-                        'Cancel',
-                        style: TextStyle(
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: _isLoading ? null : _saveAdmin,
-                      style: AdminDashboardStyles.getPrimaryButtonStyle(),
-                      child: _isLoading
-                          ? const SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                valueColor: AlwaysStoppedAnimation<Color>(
-                                  Colors.white,
-                                ),
+                  // Action Buttons
+                  Row(
+                        children: [
+                          Expanded(
+                            child: OutlinedButton(
+                              onPressed: _isLoading
+                                  ? null
+                                  : () => Navigator.of(context).pop(),
+                              style:
+                                  AdminDashboardStyles.getSecondaryButtonStyle(),
+                              child: const Text(
+                                'Cancel',
+                                style: TextStyle(fontWeight: FontWeight.w600),
                               ),
-                            )
-                          : const Text(
-                              'Add Admin',
-                              style: TextStyle(fontWeight: FontWeight.w600),
                             ),
-                    ),
-                  ),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: ElevatedButton(
+                              onPressed: _isLoading ? null : _saveAdmin,
+                              style:
+                                  AdminDashboardStyles.getPrimaryButtonStyle(),
+                              child: _isLoading
+                                  ? const SizedBox(
+                                      width: 20,
+                                      height: 20,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        valueColor:
+                                            AlwaysStoppedAnimation<Color>(
+                                              Colors.white,
+                                            ),
+                                      ),
+                                    )
+                                  : const Text(
+                                      'Add Admin',
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                            ),
+                          ),
+                        ],
+                      )
+                      .animate()
+                      .fade(duration: 500.ms)
+                      .slideY(begin: 0.3, delay: 700.ms),
                 ],
-              ).animate().fade(duration: 500.ms).slideY(begin: 0.3, delay: 700.ms),
-            ],
+              ),
+            ),
           ),
         ),
       ),
-    ),
-    ),
-  );
+    );
   }
 
   Widget _buildFormField({
@@ -476,11 +502,7 @@ class _AddCollegeAdminPageState extends State<AddCollegeAdminPage>
                   value: item,
                   child: Row(
                     children: [
-                      Icon(
-                        icon,
-                        color: AdminDashboardStyles.primary,
-                        size: 20,
-                      ),
+                      Icon(icon, color: AdminDashboardStyles.primary, size: 20),
                       const SizedBox(width: 12),
                       Text(
                         item,

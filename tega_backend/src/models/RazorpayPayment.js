@@ -10,7 +10,7 @@ const razorpayPaymentSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Course',
     required: function() {
-      return !this.isTegaExam; // Only required if it's not a TEGA exam
+      return !this.isTegaExam && !this.isPackage; // Only required if it's not a TEGA exam and not a package
     },
     default: null
   },
@@ -103,6 +103,18 @@ const razorpayPaymentSchema = new mongoose.Schema({
   isRetake: {
     type: Boolean,
     default: false
+  },
+  isPackage: {
+    type: Boolean,
+    default: false
+  },
+  packageId: {
+    type: String,
+    default: null
+  },
+  packageData: {
+    type: mongoose.Schema.Types.Mixed,
+    default: null
   },
   isTegaExam: {
     type: Boolean,

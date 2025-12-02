@@ -43,22 +43,20 @@ class _CollegesListPageState extends State<CollegesListPage>
 
     _scaleAnimations = _animationControllers
         .map(
-          (controller) => CurvedAnimation(
-            parent: controller,
-            curve: Curves.easeOutBack,
-          ),
+          (controller) =>
+              CurvedAnimation(parent: controller, curve: Curves.easeOutBack),
         )
         .toList();
 
     _slideAnimations = _animationControllers
         .map(
-          (controller) => Tween<Offset>(
-            begin: const Offset(0, 0.3),
-            end: Offset.zero,
-          ).animate(CurvedAnimation(
-            parent: controller,
-            curve: Curves.easeOutCubic,
-          )),
+          (controller) =>
+              Tween<Offset>(
+                begin: const Offset(0, 0.3),
+                end: Offset.zero,
+              ).animate(
+                CurvedAnimation(parent: controller, curve: Curves.easeOutCubic),
+              ),
         )
         .toList();
   }
@@ -97,7 +95,11 @@ class _CollegesListPageState extends State<CollegesListPage>
   }
 
   void _startStaggeredAnimations() {
-    for (int i = 0; i < _filteredColleges.length && i < _animationControllers.length; i++) {
+    for (
+      int i = 0;
+      i < _filteredColleges.length && i < _animationControllers.length;
+      i++
+    ) {
       Future.delayed(Duration(milliseconds: i * 100), () {
         if (mounted) {
           _animationControllers[i].forward();
@@ -192,7 +194,9 @@ class _CollegesListPageState extends State<CollegesListPage>
         onChanged: _filterColleges,
         decoration: InputDecoration(
           hintText: 'Search by name, city, or ID...',
-          hintStyle: TextStyle(color: AdminDashboardStyles.textLight.withValues(alpha: 0.8)),
+          hintStyle: TextStyle(
+            color: AdminDashboardStyles.textLight.withValues(alpha: 0.8),
+          ),
           prefixIcon: const Icon(
             Icons.search,
             color: AdminDashboardStyles.textLight,
@@ -210,7 +214,10 @@ class _CollegesListPageState extends State<CollegesListPage>
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(16),
-            borderSide: const BorderSide(color: AdminDashboardStyles.primary, width: 2),
+            borderSide: const BorderSide(
+              color: AdminDashboardStyles.primary,
+              width: 2,
+            ),
           ),
         ),
       ),
@@ -223,8 +230,9 @@ class _CollegesListPageState extends State<CollegesListPage>
       itemCount: _filteredColleges.length,
       itemBuilder: (context, index) {
         final college = _filteredColleges[index];
-        if (index >= _animationControllers.length) return _buildCollegeCard(college, index);
-        
+        if (index >= _animationControllers.length)
+          return _buildCollegeCard(college, index);
+
         return AnimatedBuilder(
           animation: _scaleAnimations[index],
           builder: (context, child) {
@@ -329,7 +337,10 @@ class _CollegesListPageState extends State<CollegesListPage>
                 ),
               ),
               PopupMenuButton<String>(
-                icon: Icon(Icons.more_vert, color: AdminDashboardStyles.textLight),
+                icon: Icon(
+                  Icons.more_vert,
+                  color: AdminDashboardStyles.textLight,
+                ),
                 onSelected: (value) {
                   // Existing logic...
                 },

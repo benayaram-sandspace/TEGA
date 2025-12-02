@@ -1,5 +1,8 @@
-import 'package:fl_chart/fl_chart.dart';
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'package:tega/core/constants/api_constants.dart';
+import 'package:tega/features/1_authentication/data/auth_repository.dart';
 import 'package:tega/features/4_college_panel/presentation/0_dashboard/dashboard_styles.dart';
 
 class Student {
@@ -9,6 +12,11 @@ class Student {
   final String avatarUrl;
   final String status;
   final Color statusColor;
+  final String? studentId;
+  final String? id; // MongoDB _id (ObjectId)
+  final DateTime? registeredAt;
+  final String? email;
+  final String? phone;
 
   const Student({
     required this.name,
@@ -17,20 +25,11 @@ class Student {
     required this.avatarUrl,
     required this.status,
     required this.statusColor,
-  });
-}
-
-class _ActivityItem {
-  final IconData icon;
-  final Color color;
-  final String title;
-  final String time;
-
-  const _ActivityItem({
-    required this.icon,
-    required this.color,
-    required this.title,
-    required this.time,
+    this.studentId,
+    this.id,
+    this.registeredAt,
+    this.email,
+    this.phone,
   });
 }
 
@@ -47,7 +46,11 @@ class _StudentDetailsPageState extends State<StudentDetailsPage>
     with TickerProviderStateMixin {
   late AnimationController _animationController;
   final ScrollController _scrollController = ScrollController();
+  final AuthService _authService = AuthService();
   bool _isCollapsed = false;
+  bool _isLoadingCourses = true;
+  List<Map<String, dynamic>> _enrolledCourses = [];
+  Map<String, dynamic>? _studentDetails;
 
   @override
   void initState() {
@@ -68,6 +71,64 @@ class _StudentDetailsPageState extends State<StudentDetailsPage>
         });
       }
     });
+
+    _loadCourseEnrollments();
+  }
+
+  Future<void> _loadCourseEnrollments() async {
+    try {
+      // Use MongoDB _id for API call (required by backend)
+      // The backend expects a MongoDB ObjectId (24 char hex), not the studentId string
+      final mongoId = widget.student.id;
+      if (mongoId == null || mongoId.isEmpty) {
+        setState(() {
+          _isLoadingCourses = false;
+        });
+        return;
+      }
+
+      final headers = await _authService.getAuthHeaders();
+      final response = await http
+          .get(
+            Uri.parse(ApiEndpoints.principalStudentById(mongoId)),
+            headers: headers,
+          )
+          .timeout(
+            const Duration(seconds: 30),
+            onTimeout: () {
+              throw Exception('Request timeout');
+            },
+          );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        if (data['success'] == true) {
+          setState(() {
+            if (data['courses'] != null) {
+              _enrolledCourses = List<Map<String, dynamic>>.from(
+                data['courses'],
+              );
+            }
+            if (data['student'] != null) {
+              _studentDetails = Map<String, dynamic>.from(data['student']);
+            }
+            _isLoadingCourses = false;
+          });
+        } else {
+          setState(() {
+            _isLoadingCourses = false;
+          });
+        }
+      } else {
+        setState(() {
+          _isLoadingCourses = false;
+        });
+      }
+    } catch (e) {
+      setState(() {
+        _isLoadingCourses = false;
+      });
+    }
   }
 
   @override
@@ -93,10 +154,10 @@ class _StudentDetailsPageState extends State<StudentDetailsPage>
                 const SizedBox(height: 20),
                 _buildAnimatedCard(
                   index: 1,
-                  child: _buildPerformanceChartCard(),
+                  child: _buildCourseEnrollmentsCard(),
                 ),
                 const SizedBox(height: 20),
-                _buildAnimatedCard(index: 2, child: _buildRecentActivityCard()),
+                _buildAnimatedCard(index: 2, child: _buildCourseProgressCard()),
                 const SizedBox(height: 20),
                 _buildAnimatedCard(index: 3, child: _buildContactCard()),
               ]),
@@ -198,6 +259,18 @@ class _StudentDetailsPageState extends State<StudentDetailsPage>
   }
 
   Widget _buildStatsCard() {
+    String registeredAtText = 'N/A';
+    if (widget.student.registeredAt != null) {
+      try {
+        final date = widget.student.registeredAt!;
+        final day = date.day.toString().padLeft(2, '0');
+        final month = date.month.toString().padLeft(2, '0');
+        registeredAtText = '$day/$month/${date.year}';
+      } catch (e) {
+        registeredAtText = 'N/A';
+      }
+    }
+
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -211,16 +284,15 @@ class _StudentDetailsPageState extends State<StudentDetailsPage>
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
           _buildStatItem(
-            Icons.star_border_rounded,
-            'Grade',
-            widget.student.grade.toString(),
+            Icons.badge_outlined,
+            'Student ID',
+            widget.student.studentId ?? 'N/A',
           ),
           _buildStatItem(
-            Icons.score_rounded,
-            'GPA',
-            widget.student.gpa.toStringAsFixed(1),
+            Icons.calendar_today_outlined,
+            'Registered At',
+            registeredAtText,
           ),
-          _buildStatItem(Icons.checklist_rtl_rounded, 'Attendance', '92%'),
         ],
       ),
     );
@@ -229,22 +301,22 @@ class _StudentDetailsPageState extends State<StudentDetailsPage>
   Widget _buildStatItem(IconData icon, String title, String value) {
     return Column(
       children: [
-        Icon(icon, color: DashboardStyles.primary, size: 28),
+        Icon(icon, color: DashboardStyles.primary, size: 24),
         const SizedBox(height: 8),
         Text(
           value,
-          style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 4),
         Text(
           title,
-          style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
+          style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
         ),
       ],
     );
   }
 
-  Widget _buildPerformanceChartCard() {
+  Widget _buildCourseEnrollmentsCard() {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -257,144 +329,246 @@ class _StudentDetailsPageState extends State<StudentDetailsPage>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Semester Performance (GPA)',
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                'Course Enrollments',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              ),
+              if (_enrolledCourses.isNotEmpty)
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 6,
+                  ),
+                  decoration: BoxDecoration(
+                    color: DashboardStyles.primary.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    '${_enrolledCourses.length} ${_enrolledCourses.length == 1 ? 'Course' : 'Courses'}',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: DashboardStyles.primary,
+                    ),
+                  ),
+                ),
+            ],
           ),
           const SizedBox(height: 20),
-          AspectRatio(
-            aspectRatio: 16 / 9,
-            child: LineChart(
-              LineChartData(
-                gridData: FlGridData(
-                  show: true,
-                  drawVerticalLine: false,
-                  getDrawingHorizontalLine: (value) => FlLine(
-                    color: Colors.grey.shade200,
-                    strokeWidth: 1,
-                    dashArray: [3, 4],
-                  ),
-                ),
-                borderData: FlBorderData(show: false),
-                lineTouchData: LineTouchData(
-                  touchTooltipData: LineTouchTooltipData(
-                    getTooltipColor: (spot) => DashboardStyles.primary,
-                    getTooltipItems: (spots) => spots
-                        .map(
-                          (spot) => LineTooltipItem(
-                            'GPA: ${spot.y.toStringAsFixed(2)}',
-                            const TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        )
-                        .toList(),
-                  ),
-                ),
-                titlesData: FlTitlesData(
-                  leftTitles: const AxisTitles(
-                    sideTitles: SideTitles(showTitles: false),
-                  ),
-                  topTitles: const AxisTitles(
-                    sideTitles: SideTitles(showTitles: false),
-                  ),
-                  rightTitles: const AxisTitles(
-                    sideTitles: SideTitles(showTitles: false),
-                  ),
-                  bottomTitles: AxisTitles(
-                    sideTitles: SideTitles(
-                      showTitles: true,
-                      reservedSize: 30,
-                      interval: 1,
-                      getTitlesWidget: (value, meta) {
-                        const style = TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 12,
-                        );
-                        switch (value.toInt()) {
-                          case 1:
-                            return const Text('S1', style: style);
-                          case 3:
-                            return const Text('S2', style: style);
-                          case 5:
-                            return const Text('S3', style: style);
-                          case 7:
-                            return const Text('S4', style: style);
-                          default:
-                            return const Text('');
-                        }
-                      },
+          if (_isLoadingCourses)
+            const Center(
+              child: Padding(
+                padding: EdgeInsets.all(20.0),
+                child: CircularProgressIndicator(),
+              ),
+            )
+          else if (_enrolledCourses.isEmpty)
+            Center(
+              child: Padding(
+                padding: const EdgeInsets.all(20.0),
+                child: Column(
+                  children: [
+                    Icon(
+                      Icons.book_outlined,
+                      size: 48,
+                      color: Colors.grey.shade400,
                     ),
-                  ),
-                ),
-                lineBarsData: [
-                  LineChartBarData(
-                    spots: const [
-                      FlSpot(0, 3.1),
-                      FlSpot(2, 3.5),
-                      FlSpot(4, 3.0),
-                      FlSpot(6, 3.8),
-                      FlSpot(8, 3.7),
-                    ],
-                    isCurved: true,
-                    gradient: const LinearGradient(
-                      colors: [
-                        DashboardStyles.primary,
-                        DashboardStyles.accentGreen,
-                      ],
-                    ),
-                    barWidth: 5,
-                    isStrokeCapRound: true,
-                    dotData: FlDotData(show: false),
-                    belowBarData: BarAreaData(
-                      show: true,
-                      gradient: LinearGradient(
-                        colors: [
-                          DashboardStyles.primary.withOpacity(0.2),
-                          DashboardStyles.accentGreen.withOpacity(0.0),
-                        ],
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
+                    const SizedBox(height: 12),
+                    Text(
+                      'No enrolled courses',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.grey.shade600,
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-          ),
+            )
+          else
+            ...List.generate(_enrolledCourses.length, (index) {
+              final course = _enrolledCourses[index];
+              final courseName =
+                  course['courseName'] as String? ?? 'Unknown Course';
+              final category = course['category'] as String? ?? 'General';
+              final progressPercentage =
+                  course['progressPercentage'] as int? ?? 0;
+              final isCompleted = course['isCompleted'] as bool? ?? false;
+
+              return Container(
+                margin: EdgeInsets.only(
+                  bottom: index < _enrolledCourses.length - 1 ? 12 : 0,
+                ),
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade50,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.grey.shade200, width: 1),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 48,
+                      height: 48,
+                      decoration: BoxDecoration(
+                        color: DashboardStyles.primary.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Icon(
+                        Icons.book_rounded,
+                        color: DashboardStyles.primary,
+                        size: 24,
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            courseName,
+                            style: const TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.bold,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            category,
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey.shade600,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: ClipRRect(
+                                  borderRadius: BorderRadius.circular(4),
+                                  child: LinearProgressIndicator(
+                                    value: progressPercentage / 100,
+                                    minHeight: 6,
+                                    backgroundColor: Colors.grey.shade200,
+                                    valueColor: AlwaysStoppedAnimation<Color>(
+                                      isCompleted
+                                          ? DashboardStyles.accentGreen
+                                          : DashboardStyles.primary,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Text(
+                                '$progressPercentage%',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                  color: isCompleted
+                                      ? DashboardStyles.accentGreen
+                                      : DashboardStyles.primary,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                    if (isCompleted)
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: DashboardStyles.accentGreen.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.check_circle,
+                              size: 14,
+                              color: DashboardStyles.accentGreen,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              'Completed',
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
+                                color: DashboardStyles.accentGreen,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                  ],
+                ),
+              );
+            }),
         ],
       ),
     );
   }
 
-  Widget _buildRecentActivityCard() {
-    final activities = [
-      _ActivityItem(
-        icon: Icons.assignment_turned_in_outlined,
-        color: DashboardStyles.accentGreen,
-        title: 'Submitted "Data Structures" assignment',
-        time: 'Yesterday',
-      ),
-      _ActivityItem(
-        icon: Icons.book_outlined,
-        color: DashboardStyles.primary,
-        title: 'Attended "Algorithms" lecture',
-        time: 'Sep 15, 2025',
-      ),
-      _ActivityItem(
-        icon: Icons.cancel_outlined,
-        color: DashboardStyles.accentRed,
-        title: 'Missed "Operating Systems" class',
-        time: 'Sep 14, 2025',
-      ),
-      _ActivityItem(
-        icon: Icons.quiz_outlined,
-        color: DashboardStyles.accentOrange,
-        title: 'Completed "DBMS" quiz',
-        time: 'Sep 12, 2025',
-      ),
-    ];
+  Widget _buildCourseProgressCard() {
+    if (_isLoadingCourses) {
+      return Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: DashboardStyles.cardBackground,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 15),
+          ],
+        ),
+        child: const Center(
+          child: Padding(
+            padding: EdgeInsets.all(20.0),
+            child: CircularProgressIndicator(),
+          ),
+        ),
+      );
+    }
+
+    if (_enrolledCourses.isEmpty) {
+      return Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: DashboardStyles.cardBackground,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 15),
+          ],
+        ),
+        child: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(20.0),
+            child: Column(
+              children: [
+                Icon(
+                  Icons.trending_up_outlined,
+                  size: 48,
+                  color: Colors.grey.shade400,
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  'No course progress available',
+                  style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
 
     return Container(
       padding: const EdgeInsets.all(20),
@@ -409,14 +583,156 @@ class _StudentDetailsPageState extends State<StudentDetailsPage>
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
-            'Recent Activity',
+            'Course Progress',
             style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
           ),
-          const SizedBox(height: 16),
-          ...List.generate(activities.length, (index) {
-            return _buildActivityTimelineTile(
-              activities[index],
-              isLast: index == activities.length - 1,
+          const SizedBox(height: 20),
+          ...List.generate(_enrolledCourses.length, (index) {
+            final course = _enrolledCourses[index];
+            final courseName =
+                course['courseName'] as String? ?? 'Unknown Course';
+            final progressPercentage =
+                course['progressPercentage'] as int? ?? 0;
+            final totalLectures = course['totalLectures'] as int? ?? 0;
+            final completedLectures = course['completedLectures'] as int? ?? 0;
+            final totalModules = course['totalModules'] as int? ?? 0;
+            final completedModules = course['completedModules'] as int? ?? 0;
+            final isCompleted = course['isCompleted'] as bool? ?? false;
+
+            return Container(
+              margin: EdgeInsets.only(
+                bottom: index < _enrolledCourses.length - 1 ? 16 : 0,
+              ),
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.grey.shade50,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.grey.shade200, width: 1),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          courseName,
+                          style: const TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      if (isCompleted)
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: DashboardStyles.accentGreen.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.check_circle,
+                                size: 14,
+                                color: DashboardStyles.accentGreen,
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                'Completed',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w600,
+                                  color: DashboardStyles.accentGreen,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  // Overall Progress
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(
+                                  'Overall Progress',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.grey.shade600,
+                                  ),
+                                ),
+                                Text(
+                                  '$progressPercentage%',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w600,
+                                    color: isCompleted
+                                        ? DashboardStyles.accentGreen
+                                        : DashboardStyles.primary,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 6),
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(4),
+                              child: LinearProgressIndicator(
+                                value: progressPercentage / 100,
+                                minHeight: 8,
+                                backgroundColor: Colors.grey.shade200,
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                  isCompleted
+                                      ? DashboardStyles.accentGreen
+                                      : DashboardStyles.primary,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  // Modules and Lectures Progress
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _buildProgressStat(
+                          icon: Icons.library_books_outlined,
+                          label: 'Modules',
+                          completed: completedModules,
+                          total: totalModules,
+                          color: DashboardStyles.primary,
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: _buildProgressStat(
+                          icon: Icons.play_circle_outline,
+                          label: 'Lectures',
+                          completed: completedLectures,
+                          total: totalLectures,
+                          color: DashboardStyles.accentOrange,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             );
           }),
         ],
@@ -424,47 +740,54 @@ class _StudentDetailsPageState extends State<StudentDetailsPage>
     );
   }
 
-  Widget _buildActivityTimelineTile(
-    _ActivityItem activity, {
-    bool isLast = false,
+  Widget _buildProgressStat({
+    required IconData icon,
+    required String label,
+    required int completed,
+    required int total,
+    required Color color,
   }) {
-    return IntrinsicHeight(
-      child: Row(
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.05),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: color.withOpacity(0.2), width: 1),
+      ),
+      child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Column(
+          Row(
             children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: activity.color.withOpacity(0.1),
-                  shape: BoxShape.circle,
+              Icon(icon, size: 16, color: color),
+              const SizedBox(width: 6),
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 11,
+                  color: Colors.grey.shade600,
+                  fontWeight: FontWeight.w500,
                 ),
-                child: Icon(activity.icon, color: activity.color, size: 20),
               ),
-              if (!isLast)
-                Expanded(
-                  child: Container(width: 2, color: Colors.grey.shade200),
-                ),
             ],
           ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const SizedBox(height: 5),
-                Text(
-                  activity.title,
-                  style: const TextStyle(fontWeight: FontWeight.w600),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  activity.time,
-                  style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
-                ),
-                if (!isLast) const Divider(height: 24),
-              ],
+          const SizedBox(height: 8),
+          Text(
+            '$completed / $total',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: color,
+            ),
+          ),
+          const SizedBox(height: 4),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(2),
+            child: LinearProgressIndicator(
+              value: total > 0 ? completed / total : 0,
+              minHeight: 4,
+              backgroundColor: Colors.grey.shade200,
+              valueColor: AlwaysStoppedAnimation<Color>(color),
             ),
           ),
         ],
@@ -473,6 +796,17 @@ class _StudentDetailsPageState extends State<StudentDetailsPage>
   }
 
   Widget _buildContactCard() {
+    // Use email and phone from the Student object (from initial API call)
+    // Fallback to _studentDetails if available, otherwise use defaults
+    final email =
+        widget.student.email ??
+        _studentDetails?['email'] as String? ??
+        widget.student.name.replaceAll(' ', '.').toLowerCase() + '@tega.edu';
+    final phone =
+        widget.student.phone ??
+        _studentDetails?['phone'] as String? ??
+        _studentDetails?['contactNumber'] as String?;
+
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -495,18 +829,27 @@ class _StudentDetailsPageState extends State<StudentDetailsPage>
           ListTile(
             leading: const Icon(Icons.email_outlined),
             title: const Text('Email'),
-            subtitle: Text(
-              '${widget.student.name.replaceAll(' ', '.').toLowerCase()}@tega.edu',
-            ),
+            subtitle: Text(email),
             trailing: const Icon(Icons.copy, size: 20),
-            onTap: () {},
+            onTap: () {
+              // TODO: Implement copy to clipboard
+            },
           ),
           ListTile(
             leading: const Icon(Icons.phone_outlined),
             title: const Text('Phone'),
-            subtitle: const Text('+91 98765 43210'),
-            trailing: const Icon(Icons.copy, size: 20),
-            onTap: () {},
+            subtitle: Text(
+              phone ?? 'Not provided',
+              style: TextStyle(
+                color: phone == null ? Colors.grey.shade600 : null,
+              ),
+            ),
+            trailing: phone != null ? const Icon(Icons.copy, size: 20) : null,
+            onTap: phone != null
+                ? () {
+                    // TODO: Implement copy to clipboard
+                  }
+                : null,
           ),
         ],
       ),

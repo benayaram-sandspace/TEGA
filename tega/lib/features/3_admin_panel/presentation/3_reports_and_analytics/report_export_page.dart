@@ -53,11 +53,14 @@ class _ReportsExportCenterPageState extends State<ReportsExportCenterPage>
     _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
     );
-    _slideAnimation = Tween<Offset>(
-      begin: const Offset(0, 0.3),
-      end: Offset.zero,
-    ).animate(CurvedAnimation(parent: _animationController, curve: Curves.easeOutCubic));
-    
+    _slideAnimation =
+        Tween<Offset>(begin: const Offset(0, 0.3), end: Offset.zero).animate(
+          CurvedAnimation(
+            parent: _animationController,
+            curve: Curves.easeOutCubic,
+          ),
+        );
+
     _animationController.forward();
   }
 
@@ -185,7 +188,9 @@ class _ReportsExportCenterPageState extends State<ReportsExportCenterPage>
                                           AppColors.info,
                                         ),
                                       ),
-                                      const Expanded(child: SizedBox()), // Empty space
+                                      const Expanded(
+                                        child: SizedBox(),
+                                      ), // Empty space
                                     ],
                                   ),
                                 ],
@@ -231,8 +236,10 @@ class _ReportsExportCenterPageState extends State<ReportsExportCenterPage>
                 child: LayoutBuilder(
                   builder: (context, constraints) {
                     final crossAxisCount = constraints.maxWidth > 600 ? 2 : 1;
-                    final childAspectRatio = constraints.maxWidth > 600 ? 0.8 : 1.2;
-                    
+                    final childAspectRatio = constraints.maxWidth > 600
+                        ? 0.8
+                        : 1.2;
+
                     return GridView.builder(
                       padding: const EdgeInsets.symmetric(horizontal: 20),
                       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
@@ -269,7 +276,12 @@ class _ReportsExportCenterPageState extends State<ReportsExportCenterPage>
     );
   }
 
-  Widget _buildQuickStatCard(String title, String value, IconData icon, Color color) {
+  Widget _buildQuickStatCard(
+    String title,
+    String value,
+    IconData icon,
+    Color color,
+  ) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -367,14 +379,10 @@ class ModernReportCard extends StatelessWidget {
                   color: backgroundColor,
                   borderRadius: BorderRadius.circular(16),
                 ),
-                child: Icon(
-                  iconData,
-                  color: iconColor,
-                  size: 32,
-                ),
+                child: Icon(iconData, color: iconColor, size: 32),
               ),
               const SizedBox(height: 16),
-              
+
               // Title
               Text(
                 title,
@@ -387,7 +395,7 @@ class ModernReportCard extends StatelessWidget {
                 overflow: TextOverflow.ellipsis,
               ),
               const SizedBox(height: 8),
-              
+
               // Description
               Expanded(
                 child: Text(
@@ -402,7 +410,7 @@ class ModernReportCard extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 16),
-              
+
               // Action Button
               SizedBox(
                 width: double.infinity,
@@ -470,7 +478,10 @@ class ReportCard extends StatelessWidget {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.2), width: 1),
+        border: Border.all(
+          color: Colors.white.withValues(alpha: 0.2),
+          width: 1,
+        ),
         boxShadow: [
           BoxShadow(
             color: primaryDarkTeal.withValues(
@@ -492,7 +503,10 @@ class ReportCard extends StatelessWidget {
               width: double.infinity,
               decoration: BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [backgroundColor.withValues(alpha: 0.9), backgroundColor],
+                  colors: [
+                    backgroundColor.withValues(alpha: 0.9),
+                    backgroundColor,
+                  ],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
