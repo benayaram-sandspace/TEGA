@@ -34,7 +34,7 @@ class _SplashScreenState extends State<SplashScreen> {
     _initializeVideoPlayerFuture = _videoController
         .initialize()
         .then((_) {
-          // Ensure the video plays only once.
+          // Ensure the video plays only once.  
           _videoController.setLooping(false);
           // Start playback immediately.
           _videoController.play();
