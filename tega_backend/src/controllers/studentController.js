@@ -363,10 +363,10 @@ export const updateProfilePicture = async (req, res) => {
 
     // Generate proxy URL to avoid CORS issues
     // Extract just the filename from the R2 key (remove the profile-pictures/ prefix)
-    const filename = r2Key.split('/').pop();
     const serverUrl = process.env.SERVER_URL || process.env.API_URL || 
       (process.env.NODE_ENV === 'development' ? `http://localhost:${process.env.PORT || 5001}` : process.env.CLIENT_URL || 'http://localhost:5001');
-    const publicUrl = `${serverUrl}/api/r2/profile-picture/${filename}`;
+    const encodedKey = encodeURIComponent(r2Key);
+    const publicUrl = `${serverUrl}/api/images/proxy/${encodedKey}`;
     // Update profile picture data
     student.profilePicture = {
       url: publicUrl,
@@ -928,6 +928,87 @@ export const changeStudentPassword = async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Failed to change password.',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+};
+
+// Delete student account
+export const deleteStudentAccount = async (req, res) => {
+  try {
+    const studentId = req.studentId;
+
+    let student = null;
+    
+    // Check if studentId is a valid MongoDB ObjectId
+    if (/^[0-9a-fA-F]{24}$/.test(studentId)) {
+      student = await Student.findById(studentId);
+    }
+    
+    // If not found in MongoDB or not a valid ObjectId, check in-memory storage
+    if (!student) {
+      student = inMemoryUsers.find(user => user._id === studentId);
+    }
+
+    if (!student) {
+      return res.status(404).json({
+        success: false,
+        message: 'Student not found.'
+      });
+    }
+
+    // Check if this is a MongoDB user or in-memory user
+    const isValidObjectId = /^[0-9a-fA-F]{24}$/.test(studentId);
+
+    if (isValidObjectId) {
+      // MongoDB user - delete related data and then the student
+      try {
+        // Delete related notifications
+        const Notification = (await import('../models/Notification.js')).default;
+        await Notification.deleteMany({ 
+          recipient: studentId, 
+          recipientModel: 'Student' 
+        });
+
+        // Delete related enrollments
+        const Enrollment = (await import('../models/Enrollment.js')).default;
+        await Enrollment.deleteMany({ studentId: studentId });
+
+        // Delete related payments (optional - you might want to keep payment records)
+        // const Payment = (await import('../models/Payment.js')).default;
+        // await Payment.deleteMany({ userId: studentId });
+
+        // Delete the student
+        await Student.findByIdAndDelete(studentId);
+      } catch (dbError) {
+        // If MongoDB operations fail, still try to delete the student
+        try {
+          await Student.findByIdAndDelete(studentId);
+        } catch (deleteError) {
+          return res.status(500).json({
+            success: false,
+            message: 'Failed to delete account.',
+            error: process.env.NODE_ENV === 'development' ? deleteError.message : undefined
+          });
+        }
+      }
+    } else {
+      // In-memory user - remove from in-memory storage
+      const userIndex = inMemoryUsers.findIndex(user => user._id === studentId);
+      if (userIndex !== -1) {
+        inMemoryUsers.splice(userIndex, 1);
+      }
+    }
+
+    res.json({
+      success: true,
+      message: 'Account deleted successfully.'
+    });
+
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Failed to delete account.',
       error: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }

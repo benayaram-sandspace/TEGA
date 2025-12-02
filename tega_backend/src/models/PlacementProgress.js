@@ -98,7 +98,6 @@ const placementProgressSchema = new mongoose.Schema({
 placementProgressSchema.index({ studentId: 1 });
 placementProgressSchema.index({ 'questionAttempts.questionId': 1 });
 
-// Update learning streak on save
 placementProgressSchema.pre('save', function(next) {
   if (this.lastActivityDate) {
     const today = new Date();

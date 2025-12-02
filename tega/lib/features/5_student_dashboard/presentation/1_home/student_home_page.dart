@@ -20,7 +20,8 @@ import 'package:tega/features/5_student_dashboard/presentation/3_ai_tools/studen
 import 'package:tega/features/5_student_dashboard/presentation/3_ai_tools/student_internships_page.dart';
 // import 'package:tega/features/5_student_dashboard/presentation/3_ai_tools/resume_builder_page.dart'; // Kept for future use - removed from navbar
 import 'package:tega/features/5_student_dashboard/data/student_dashboard_service.dart';
-import 'package:tega/features/5_student_dashboard/data/notification_service.dart';
+
+import 'package:tega/features/5_student_dashboard/data/announcement_service.dart';
 import 'package:tega/features/5_student_dashboard/presentation/4_profile_and_settings/student_profile_page.dart';
 import 'package:tega/features/5_student_dashboard/presentation/4_profile_and_settings/student_setting_page.dart';
 import 'package:tega/features/5_student_dashboard/presentation/4_profile_and_settings/help_support_page.dart';
@@ -33,64 +34,360 @@ import 'package:tega/features/5_student_dashboard/presentation/3_ai_tools/ai_ass
 import 'package:tega/core/services/dashboard_cache_service.dart';
 
 // --- AnnouncementDialog widget for college announcements ---
-class AnnouncementDialog extends StatelessWidget {
-  final List<NotificationModel> announcements;
+class AnnouncementDialog extends StatefulWidget {
+  final List
+  announcements; // Accepts either NotificationModel or AnnouncementModel
   const AnnouncementDialog({super.key, required this.announcements});
 
   @override
+  State<AnnouncementDialog> createState() => _AnnouncementDialogState();
+}
+
+class _AnnouncementDialogState extends State<AnnouncementDialog> {
+  int _currentIndex = 0;
+
+  void _nextAnnouncement() {
+    if (_currentIndex < widget.announcements.length - 1) {
+      setState(() {
+        _currentIndex++;
+      });
+    }
+  }
+
+  void _previousAnnouncement() {
+    if (_currentIndex > 0) {
+      setState(() {
+        _currentIndex--;
+      });
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isSmallScreen = screenWidth < 400;
+    final isTablet = screenWidth >= 600;
+    final isDesktop = screenWidth >= 1024;
+
+    final currentAnnouncement = widget.announcements[_currentIndex];
+    final isFirst = _currentIndex == 0;
+    final isLast = _currentIndex == widget.announcements.length - 1;
+
     return Dialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: Padding(
-        padding: const EdgeInsets.all(20.0),
-        child: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Text(
-                'College Announcement',
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+      backgroundColor: Colors.transparent,
+      elevation: 0,
+      child: Container(
+        constraints: BoxConstraints(
+          maxWidth: isDesktop
+              ? 600
+              : isTablet
+              ? 500
+              : double.infinity,
+          maxHeight: MediaQuery.of(context).size.height * 0.8,
+        ),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(24),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 30,
+              offset: const Offset(0, 10),
+            ),
+            BoxShadow(
+              color: const Color(0xFF6B5FFF).withOpacity(0.1),
+              blurRadius: 20,
+              offset: const Offset(0, 5),
+            ),
+          ],
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Header with gradient
+            Container(
+              padding: EdgeInsets.all(isSmallScreen ? 20 : 24),
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [Color(0xFF6B5FFF), Color(0xFF8F7FFF)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(24),
+                  topRight: Radius.circular(24),
+                ),
               ),
-              const SizedBox(height: 12),
-              ...announcements.map(
-                (a) => Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
+              child: Row(
+                children: [
+                  Container(
+                    padding: EdgeInsets.all(isSmallScreen ? 8 : 10),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Icon(
+                      Icons.campaign_rounded,
+                      color: Colors.white,
+                      size: isSmallScreen ? 24 : 28,
+                    ),
+                  ),
+                  SizedBox(width: isSmallScreen ? 12 : 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Icon(a.icon, color: a.color),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            a.title,
-                            style: const TextStyle(fontWeight: FontWeight.w600),
+                        Text(
+                          'College Announcements',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: isSmallScreen ? 18 : 22,
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 0.5,
+                          ),
+                        ),
+                        Text(
+                          widget.announcements.length > 1
+                              ? '${_currentIndex + 1} of ${widget.announcements.length}'
+                              : 'Announcement',
+                          style: TextStyle(
+                            color: Colors.white.withOpacity(0.9),
+                            fontSize: isSmallScreen ? 12 : 14,
+                            fontWeight: FontWeight.w500,
                           ),
                         ),
                       ],
                     ),
-                    if (a.message != null && a.message!.isNotEmpty)
-                      Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 8.0),
-                        child: Text(a.message!),
-                      ),
-                    Text(
-                      a.timeAgo,
-                      style: const TextStyle(fontSize: 12, color: Colors.grey),
+                  ),
+                  IconButton(
+                    onPressed: () {
+                      // Use the dialog's context to ensure we pop the correct route
+                      if (Navigator.of(context).canPop()) {
+                        Navigator.of(context).pop();
+                      }
+                    },
+                    icon: const Icon(Icons.close_rounded, color: Colors.white),
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
+                    iconSize: isSmallScreen ? 20 : 24,
+                  ),
+                ],
+              ),
+            ),
+            // Content
+            Flexible(
+              child: SingleChildScrollView(
+                padding: EdgeInsets.all(isSmallScreen ? 16 : 20),
+                child: Container(
+                  padding: EdgeInsets.all(isSmallScreen ? 14 : 18),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF6B5FFF).withOpacity(0.05),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: const Color(0xFF6B5FFF).withOpacity(0.1),
+                      width: 1,
                     ),
-                    const Divider(),
-                  ],
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Title row with icon
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Container(
+                            padding: EdgeInsets.all(isSmallScreen ? 6 : 8),
+                            decoration: BoxDecoration(
+                              color:
+                                  (currentAnnouncement.color ??
+                                          const Color(0xFF6B5FFF))
+                                      .withOpacity(0.15),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Icon(
+                              currentAnnouncement.icon ??
+                                  Icons.campaign_rounded,
+                              color:
+                                  currentAnnouncement.color ??
+                                  const Color(0xFF6B5FFF),
+                              size: isSmallScreen ? 18 : 20,
+                            ),
+                          ),
+                          SizedBox(width: isSmallScreen ? 10 : 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  currentAnnouncement.title?.toString() ??
+                                      'Announcement',
+                                  style: TextStyle(
+                                    fontSize: isSmallScreen ? 16 : 18,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.grey[900],
+                                    height: 1.3,
+                                  ),
+                                ),
+                                SizedBox(height: isSmallScreen ? 4 : 6),
+                                Row(
+                                  children: [
+                                    Icon(
+                                      Icons.access_time_rounded,
+                                      size: isSmallScreen ? 12 : 14,
+                                      color: Colors.grey[600],
+                                    ),
+                                    SizedBox(width: 4),
+                                    Text(
+                                      (currentAnnouncement.timeAgo
+                                              ?.toString()) ??
+                                          'Just now',
+                                      style: TextStyle(
+                                        fontSize: isSmallScreen ? 11 : 12,
+                                        color: Colors.grey[600],
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      // Message
+                      if (currentAnnouncement.message != null &&
+                          currentAnnouncement.message
+                              .toString()
+                              .isNotEmpty) ...[
+                        SizedBox(height: isSmallScreen ? 12 : 16),
+                        Container(
+                          padding: EdgeInsets.all(isSmallScreen ? 12 : 14),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Text(
+                            currentAnnouncement.message.toString(),
+                            style: TextStyle(
+                              fontSize: isSmallScreen ? 13 : 14,
+                              color: Colors.grey[700],
+                              height: 1.5,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
                 ),
               ),
-              const SizedBox(height: 8),
-              Align(
-                alignment: Alignment.centerRight,
-                child: TextButton(
-                  onPressed: () => Navigator.of(context).pop(),
-                  child: const Text('Close'),
+            ),
+            // Footer with navigation buttons
+            Container(
+              padding: EdgeInsets.symmetric(
+                horizontal: isSmallScreen ? 16 : 20,
+                vertical: isSmallScreen ? 12 : 16,
+              ),
+              decoration: BoxDecoration(
+                color: Colors.grey[50],
+                borderRadius: const BorderRadius.only(
+                  bottomLeft: Radius.circular(24),
+                  bottomRight: Radius.circular(24),
                 ),
               ),
-            ],
-          ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Previous button
+                  if (widget.announcements.length > 1)
+                    SizedBox(
+                      width: double.infinity,
+                      child: TextButton.icon(
+                        onPressed: isFirst ? null : _previousAnnouncement,
+                        icon: Icon(
+                          Icons.arrow_back_rounded,
+                          size: isSmallScreen ? 16 : 18,
+                          color: isFirst
+                              ? Colors.grey[400]
+                              : const Color(0xFF6B5FFF),
+                        ),
+                        label: Text(
+                          'Previous',
+                          style: TextStyle(
+                            fontSize: isSmallScreen ? 13 : 14,
+                            fontWeight: FontWeight.w600,
+                            color: isFirst
+                                ? Colors.grey[400]
+                                : const Color(0xFF6B5FFF),
+                          ),
+                        ),
+                        style: TextButton.styleFrom(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: isSmallScreen ? 12 : 16,
+                            vertical: isSmallScreen ? 12 : 14,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          minimumSize: Size.zero,
+                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        ),
+                      ),
+                    ),
+                  // Spacing between buttons
+                  if (widget.announcements.length > 1)
+                    SizedBox(height: isSmallScreen ? 12 : 16),
+                  // Next/Got it button
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: isLast
+                          ? () {
+                              // Use the dialog's context to ensure we pop the correct route
+                              if (Navigator.of(context).canPop()) {
+                                Navigator.of(context).pop();
+                              }
+                            }
+                          : _nextAnnouncement,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF6B5FFF),
+                        foregroundColor: Colors.white,
+                        padding: EdgeInsets.symmetric(
+                          horizontal: isSmallScreen ? 16 : 24,
+                          vertical: isSmallScreen ? 12 : 14,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        elevation: 0,
+                        minimumSize: Size.zero,
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            isLast ? 'Got it' : 'Next',
+                            style: TextStyle(
+                              fontSize: isSmallScreen ? 14 : 15,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          if (!isLast) ...[
+                            SizedBox(width: isSmallScreen ? 6 : 8),
+                            Icon(
+                              Icons.arrow_forward_rounded,
+                              size: isSmallScreen ? 16 : 18,
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -106,9 +403,18 @@ class StudentHomePage extends StatefulWidget {
 
 class _StudentHomePageState extends State<StudentHomePage>
     with SingleTickerProviderStateMixin {
+  // Static flag to prevent multiple dialogs across all instances
+  static bool _isAnyAnnouncementShowing = false;
+  // Static flag to track if announcements have been shown in this app session
+  static bool _hasShownAnnouncementsThisSession = false;
+
   int _selectedIndex = 0;
   bool _isLoading = true;
   bool _isSidebarOpen = false;
+  bool _isAnnouncementDialogShowing = false;
+  bool _isShowingAnnouncement =
+      false; // Synchronous flag to prevent race conditions
+  DateTime? _lastAnnouncementShown;
   User? _currentUser;
   late List<Widget> _pages;
   Map<String, dynamic> _sidebarCounts = {};
@@ -179,29 +485,96 @@ class _StudentHomePageState extends State<StudentHomePage>
     _loadDashboardData();
     _initializePages();
 
-    // Fetch and show announcements after login/app launch
+    // Fetch and show announcements only once after initial login/app launch
+    // Add a small delay to ensure widget is fully built
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _showAnnouncementIfAny();
+      Future.delayed(const Duration(milliseconds: 300), () {
+        if (mounted) {
+          _showAnnouncementIfAny();
+        }
+      });
     });
   }
 
   Future<void> _showAnnouncementIfAny() async {
+    // Prevent showing multiple dialogs - use static flag for global prevention
+    // Also check if announcements have already been shown in this session
+    if (_isAnyAnnouncementShowing ||
+        _isShowingAnnouncement ||
+        _isAnnouncementDialogShowing ||
+        _hasShownAnnouncementsThisSession ||
+        !mounted) {
+      return;
+    }
+
+    // Set all flags immediately to prevent concurrent calls
+    _isAnyAnnouncementShowing = true;
+    _isShowingAnnouncement = true;
+
+    // Set state flag as well
+    setState(() {
+      _isAnnouncementDialogShowing = true;
+    });
+
+    // Prevent showing too frequently (within 5 seconds)
+    if (_lastAnnouncementShown != null) {
+      final timeSinceLastShown = DateTime.now().difference(
+        _lastAnnouncementShown!,
+      );
+      if (timeSinceLastShown.inSeconds < 5) {
+        // Reset flags if we're not showing
+        _isAnyAnnouncementShowing = false;
+        _isShowingAnnouncement = false;
+        if (mounted) {
+          setState(() {
+            _isAnnouncementDialogShowing = false;
+          });
+        }
+        return;
+      }
+    }
+
     try {
-      final notifications = await NotificationService()
-          .getStudentNotifications();
-      final unreadAnnouncements = notifications
-          .where((n) => !n.isRead && n.type.toLowerCase() == 'announcement')
-          .toList();
-      if (unreadAnnouncements.isNotEmpty && mounted) {
-        showDialog(
+      final announcements = await AnnouncementService()
+          .getStudentAnnouncements();
+      if (announcements.isNotEmpty && mounted) {
+        setState(() {
+          _lastAnnouncementShown = DateTime.now();
+        });
+
+        // Mark that announcements have been shown in this session
+        _hasShownAnnouncementsThisSession = true;
+
+        // Show dialog with consistent barrier color
+        await showDialog(
           context: context,
           barrierDismissible: true,
-          builder: (ctx) =>
-              AnnouncementDialog(announcements: unreadAnnouncements),
+          barrierColor: Colors.black.withOpacity(0.5),
+          builder: (ctx) => AnnouncementDialog(announcements: announcements),
         );
+      } else {
+        // No announcements, reset flags
+        _isAnyAnnouncementShowing = false;
+        _isShowingAnnouncement = false;
+        if (mounted) {
+          setState(() {
+            _isAnnouncementDialogShowing = false;
+          });
+        }
       }
     } catch (_) {
-      // Ignore errors for now
+      // Reset flags on error
+      _isAnyAnnouncementShowing = false;
+      _isShowingAnnouncement = false;
+    } finally {
+      // Always reset flags when done
+      _isAnyAnnouncementShowing = false;
+      _isShowingAnnouncement = false;
+      if (mounted) {
+        setState(() {
+          _isAnnouncementDialogShowing = false;
+        });
+      }
     }
   }
 
@@ -262,9 +635,9 @@ class _StudentHomePageState extends State<StudentHomePage>
         api.getProfile(headers),
       ]);
 
-      final sidebar = results[0] as Map<String, dynamic>;
-      final dash = results[1] as Map<String, dynamic>;
-      final prof = results[2] as Map<String, dynamic>;
+      final sidebar = results[0];
+      final dash = results[1];
+      final prof = results[2];
 
       // Update cache with fresh data
       await _cacheService.setAllData(
@@ -319,7 +692,6 @@ class _StudentHomePageState extends State<StudentHomePage>
       ), // My Results
       const JobRecommendationScreen(), // Jobs
       const InternshipsPage(), // Internships
-      // const ResumeBuilderPage(), // Resume Builder - Removed from navbar but code kept
       const _AIAssistantPage(), // AI Assistant (unlocked)
       const NotificationPage(), // Notifications
       const LearningHistoryPage(), // Learning History
@@ -347,7 +719,7 @@ class _StudentHomePageState extends State<StudentHomePage>
   void _showLogoutConfirmation() {
     showDialog(
       context: context,
-      barrierColor: Colors.black.withValues(alpha: 0.3),
+      barrierColor: Colors.black.withOpacity(0.3),
       builder: (BuildContext context) {
         return BackdropFilter(
           filter: ImageFilter.blur(sigmaX: 4, sigmaY: 4),
@@ -377,9 +749,6 @@ class _StudentHomePageState extends State<StudentHomePage>
                   await _cacheService.clearCache();
 
                   await _authService.logout();
-
-                  // Clear login form fields
-                  LoginPage.clearFieldsOnLogout();
 
                   if (mounted) {
                     Navigator.pushAndRemoveUntil(
@@ -1048,10 +1417,7 @@ class _HomePageContent extends StatelessWidget {
   final Map<String, dynamic> sidebarCounts;
   final Map<String, dynamic> dashboardData;
 
-  const _HomePageContent({
-    required this.sidebarCounts,
-    required this.dashboardData,
-  });
+  _HomePageContent({required this.sidebarCounts, required this.dashboardData});
 
   @override
   Widget build(BuildContext context) {
@@ -1121,7 +1487,12 @@ class _HomePageContent extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // Stats Cards Grid (2x2) with animations
-                  const StudentStatsGrid(),
+                  // Use a key that changes when dashboardData is populated to force rebuild
+                  StudentStatsGrid(
+                    key: ValueKey(
+                      'stats_${dashboardData.isNotEmpty ? dashboardData.hashCode : 'loading'}',
+                    ),
+                  ),
                   SizedBox(height: spacing),
                   // Weekly Progress
                   WeeklyProgressWidget(
@@ -1131,7 +1502,12 @@ class _HomePageContent extends StatelessWidget {
                   ),
                   SizedBox(height: spacing),
                   // Enrolled Courses
-                  const EnrolledCoursesWidget(),
+                  // Use a key that changes when dashboardData is populated to force rebuild
+                  EnrolledCoursesWidget(
+                    key: ValueKey(
+                      'enrolled_${dashboardData.isNotEmpty ? dashboardData.hashCode : 'loading'}',
+                    ),
+                  ),
                   SizedBox(height: spacing),
                   // Recent Activity and Upcoming Events - Responsive layout
                   _buildResponsiveTwoColumn(
@@ -1187,7 +1563,6 @@ class _HomePageContent extends StatelessWidget {
           Expanded(child: firstChild),
           SizedBox(width: spacing),
           Expanded(child: secondChild),
-
         ],
       );
     } else {

@@ -4,6 +4,7 @@ import Conversation from '../models/Conversation.js';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { SYSTEM_PROMPT } from '../config/systemPrompt.js';
 import { generateWithOllama } from '../config/ollama.js';
+import jwt from 'jsonwebtoken';
 
 const router = express.Router();
 
@@ -25,6 +26,31 @@ function getGeminiAI() {
 // Debug: Check if GEMINI_API_KEY is loaded (called at runtime)
 // Note: These debug logs are misleading at module load time, 
 // the actual runtime check happens in the status endpoint
+
+// Helper to extract authenticated user id from either Authorization header or httpOnly cookies
+function getUserIdFromRequest(req) {
+  try {
+    let token = null;
+    
+    const authHeader = req.headers.authorization || '';
+    if (authHeader.startsWith('Bearer ')) {
+      token = authHeader.slice(7);
+    }
+
+    if (!token && req.cookies?.authToken) {
+      token = req.cookies.authToken;
+    }
+
+    if (!token) {
+      return null;
+    }
+
+    const payload = jwt.verify(token, process.env.JWT_SECRET);
+    return payload.id || payload.userId || payload.principalId || payload._id || null;
+  } catch (error) {
+    return null;
+  }
+}
 
 // Helper function to call Gemini API (streaming)
 async function callGemini(messages, res) {
@@ -120,18 +146,7 @@ router.post('/chat', async (req, res) => {
     }
     
     // Try to get user ID from auth, but make it optional
-    let userId = null;
-    try {
-      // Check if user is authenticated
-      const auth = req.headers.authorization || '';
-      const token = auth.startsWith('Bearer ') ? auth.slice(7) : null;
-      if (token) {
-        const jwt = await import('jsonwebtoken');
-        const payload = jwt.default.verify(token, process.env.JWT_SECRET);
-        userId = payload.id || payload.userId || payload.principalId || payload._id;
-      }
-    } catch (authError) {
-    }
+    const userId = getUserIdFromRequest(req);
 
     if (!message || typeof message !== 'string') {
       return res.status(400).json({
@@ -671,17 +686,7 @@ router.post('/chat', async (req, res) => {
 router.get('/conversations', async (req, res) => {
   try {
     // Try to get user ID from auth, but make it optional
-    let userId = null;
-    try {
-      const auth = req.headers.authorization || '';
-      const token = auth.startsWith('Bearer ') ? auth.slice(7) : null;
-      if (token) {
-        const jwt = await import('jsonwebtoken');
-        const payload = jwt.default.verify(token, process.env.JWT_SECRET);
-        userId = payload.id || payload.userId || payload.principalId || payload._id;
-      }
-    } catch (authError) {
-    }
+    const userId = getUserIdFromRequest(req);
 
     if (!userId) {
       return res.json({ 
@@ -722,17 +727,7 @@ router.get('/conversations', async (req, res) => {
 router.get('/conversations/:id', async (req, res) => {
   try {
     // Try to get user ID from auth, but make it optional
-    let userId = null;
-    try {
-      const auth = req.headers.authorization || '';
-      const token = auth.startsWith('Bearer ') ? auth.slice(7) : null;
-      if (token) {
-        const jwt = await import('jsonwebtoken');
-        const payload = jwt.default.verify(token, process.env.JWT_SECRET);
-        userId = payload.id || payload.userId || payload.principalId || payload._id;
-      }
-    } catch (authError) {
-    }
+    const userId = getUserIdFromRequest(req);
 
     if (!userId) {
       return res.status(404).json({ 
@@ -769,17 +764,7 @@ router.get('/conversations/:id', async (req, res) => {
 router.delete('/conversations/:id', async (req, res) => {
   try {
     // Try to get user ID from auth, but make it optional
-    let userId = null;
-    try {
-      const auth = req.headers.authorization || '';
-      const token = auth.startsWith('Bearer ') ? auth.slice(7) : null;
-      if (token) {
-        const jwt = await import('jsonwebtoken');
-        const payload = jwt.default.verify(token, process.env.JWT_SECRET);
-        userId = payload.id || payload.userId || payload.principalId || payload._id;
-      }
-    } catch (authError) {
-    }
+    const userId = getUserIdFromRequest(req);
 
     if (!userId) {
       return res.status(404).json({ 

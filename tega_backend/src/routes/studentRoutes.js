@@ -12,12 +12,24 @@ import {
   removeProfilePhoto,
   getStudentDashboard,
   getSidebarCounts,
-  changeStudentPassword
+  changeStudentPassword,
+  deleteStudentAccount
 } from '../controllers/studentController.js';
 import multer from 'multer';
 
-// Configure multer for file uploads
-const upload = multer({ dest: 'uploads/' });
+// Configure multer for in-memory file uploads (images only)
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: 5 * 1024 * 1024 // 5MB max for profile photos
+  },
+  fileFilter: (req, file, cb) => {
+    if (!file.mimetype?.startsWith('image/')) {
+      return cb(new Error('Only image files are allowed'), false);
+    }
+    cb(null, true);
+  }
+});
 
 const router = express.Router();
 
@@ -221,6 +233,12 @@ router.put('/profile/picture',
 router.post('/change-password', 
   studentAuth, 
   changeStudentPassword
+);
+
+// Delete account route
+router.delete('/delete-account', 
+  studentAuth, 
+  deleteStudentAccount
 );
 
 // Debug route to check user's profile picture data

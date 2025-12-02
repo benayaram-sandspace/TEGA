@@ -5,11 +5,15 @@ import {
   getSubmission, 
   deleteSubmission,
   getUserStats, 
-  getLanguages 
+  getLanguages,
+  checkHealth
 } from '../controllers/codeController.js';
 import { studentAuth } from '../middleware/studentAuth.js';
 
 const router = express.Router();
+
+// Health check endpoint (no auth required for monitoring)
+router.get('/health', checkHealth);
 
 // Code execution routes
 router.post('/run', studentAuth, runCode);

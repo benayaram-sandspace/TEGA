@@ -118,6 +118,7 @@ const ResumeSchema = new mongoose.Schema({
   uploadedResume: {
     cloudinaryId: { type: String },
     url: { type: String },
+    r2Key: { type: String },
     filename: { type: String },
     path: { type: String },
     originalName: { type: String },

@@ -3,11 +3,41 @@ import Student from '../models/Student.js';
 import Template from '../models/Template.js';
 import { buildResumePdf } from '../utils/resumeGenerator.js';
 import cloudinary, { cloudinaryAvailable } from '../config/cloudinary.js';
+import { uploadToR2, generateR2Key } from '../config/r2.js';
+
+const buildR2PublicUrl = (key) => {
+  if (process.env.R2_PUBLIC_URL) {
+    return `${process.env.R2_PUBLIC_URL}/${key}`;
+  }
+  if (process.env.R2_ENDPOINT && process.env.R2_BUCKET_NAME) {
+    const endpoint = process.env.R2_ENDPOINT.replace(/\/$/, '');
+    return `${endpoint}/${process.env.R2_BUCKET_NAME}/${key}`;
+  }
+  if (process.env.R2_ACCOUNT_ID) {
+    return `https://pub-${process.env.R2_ACCOUNT_ID}.r2.dev/${key}`;
+  }
+  return null;
+};
 
 const getResume = async (req, res) => {
   try {
+    // Prevent caching so the client always receives the latest data
+    res.set({
+      'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+      'Pragma': 'no-cache',
+      'Expires': '0'
+    });
+    const studentId = req.user?.id || req.studentId || req.student?._id;
+
+    if (!studentId) {
+      return res.status(401).json({
+        success: false,
+        message: 'Authentication required'
+      });
+    }
+
     // Try to find existing resume, but don't require it
-    let resume = await Resume.findOne({ student: req.user?.id });
+    let resume = await Resume.findOne({ student: studentId });
     
     if (!resume) {
       // Return a clean default resume structure
@@ -44,7 +74,7 @@ const saveResume = async (req, res) => {
   try {
     
     const resumeData = req.body;
-    const studentId = req.user?.id || req.studentId;
+    const studentId = req.user?.id || req.studentId || req.student?._id;
 
     if (!studentId) {
       return res.status(401).json({ 
@@ -150,6 +180,12 @@ const saveResume = async (req, res) => {
       options
     );
 
+    // Prevent caching of the save response
+    res.set({
+      'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+      'Pragma': 'no-cache',
+      'Expires': '0'
+    });
     res.status(200).json({ 
       success: true,
       message: 'Resume saved successfully', 
@@ -248,6 +284,123 @@ const downloadResume = async (req, res) => {
   }
 };
 
+// Download the student's last uploaded resume file
+const downloadUploadedResume = async (req, res) => {
+  try {
+    const studentId = req.user?.id || req.studentId || req.student?._id;
+    if (!studentId) {
+      return res.status(401).json({ success: false, message: 'Authentication required' });
+    }
+
+    // Find resume with uploaded file info
+    const resumeDoc = await Resume.findOne({ student: studentId }).lean();
+    const uploaded = resumeDoc?.uploadedResume;
+    if (!uploaded || !(uploaded.url || uploaded.publicUrl)) {
+      return res.status(404).json({ success: false, message: 'No uploaded resume found' });
+    }
+
+    const sourceUrl = uploaded.url || uploaded.publicUrl;
+    const filename = (uploaded.originalName && String(uploaded.originalName).trim()) || 'resume.pdf';
+
+    // Prevent caching
+    res.set({
+      'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+      'Pragma': 'no-cache',
+      'Expires': '0'
+    });
+
+    // If we have an internal proxy route (e.g. /api/r2/resume/:key), fetch from R2 directly
+    if (sourceUrl.includes('/api/r2/resume/')) {
+      try {
+        // Extract the R2 key from the URL
+        const urlMatch = sourceUrl.match(/\/api\/r2\/resume\/([^?]+)/);
+        if (!urlMatch || !urlMatch[1]) {
+          return res.status(400).json({ success: false, message: 'Invalid resume URL format' });
+        }
+        
+        const r2Key = decodeURIComponent(urlMatch[1]);
+        
+        // Import R2 config
+        const { getR2Client, getR2BucketName } = await import('../config/r2.js');
+        const r2Client = getR2Client();
+        const R2_BUCKET_NAME = getR2BucketName();
+        
+        if (!r2Client || !R2_BUCKET_NAME) {
+          return res.status(503).json({ success: false, message: 'R2 storage is not configured' });
+        }
+        
+        const { GetObjectCommand } = await import('@aws-sdk/client-s3');
+        
+        // Try different possible key paths
+        const possibleKeys = [
+          r2Key,
+          `resumes/${r2Key}`,
+          `uploads/resumes/${r2Key}`
+        ];
+        
+        let objectResponse = null;
+        for (const key of possibleKeys) {
+          try {
+            const command = new GetObjectCommand({
+              Bucket: R2_BUCKET_NAME,
+              Key: key
+            });
+            objectResponse = await r2Client.send(command);
+            break; // Success, exit loop
+          } catch (keyError) {
+            if (keyError.Code === 'NoSuchKey' || keyError.name === 'NoSuchKey') {
+              continue; // Try next key
+            }
+            throw keyError; // Re-throw if it's a different error
+          }
+        }
+        
+        if (!objectResponse) {
+          return res.status(404).json({ success: false, message: 'Resume file not found in storage' });
+        }
+        
+        // Set headers for download
+        const contentType = objectResponse.ContentType || uploaded.mimetype || 'application/octet-stream';
+        res.setHeader('Content-Type', contentType);
+        res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(filename)}"`);
+        if (objectResponse.ContentLength) {
+          res.setHeader('Content-Length', objectResponse.ContentLength);
+        }
+        
+        // Stream the file
+        objectResponse.Body.pipe(res);
+        return;
+      } catch (r2Error) {
+        return res.status(500).json({ 
+          success: false, 
+          message: 'Error fetching resume from R2 storage', 
+          error: process.env.NODE_ENV === 'development' ? r2Error.message : undefined 
+        });
+      }
+    }
+
+    // Otherwise stream the file to the client from external URL
+    try {
+      const fileResponse = await fetch(sourceUrl);
+      if (!fileResponse.ok) {
+        return res.status(502).json({ success: false, message: 'Failed to fetch resume from storage' });
+      }
+
+      // Pass through content-type and disposition
+      const contentType = fileResponse.headers.get('content-type') || uploaded.mimetype || 'application/octet-stream';
+      res.setHeader('Content-Type', contentType);
+      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+
+      // Stream the body
+      fileResponse.body.pipe(res);
+    } catch (err) {
+      return res.status(500).json({ success: false, message: 'Error streaming resume', error: process.env.NODE_ENV === 'development' ? err.message : undefined });
+    }
+  } catch (error) {
+    return res.status(500).json({ success: false, message: 'Server error while downloading resume' });
+  }
+};
+
 const uploadResume = async (req, res) => {
   try {
     
@@ -258,7 +411,7 @@ const uploadResume = async (req, res) => {
       });
     }
 
-    const studentId = req.user?.id;
+    const studentId = req.user?.id || req.studentId || req.student?._id;
     if (!studentId) {
       return res.status(401).json({
         success: false,
@@ -268,7 +421,7 @@ const uploadResume = async (req, res) => {
 
     // Check if Cloudinary is available and configured
     if (!cloudinaryAvailable || !cloudinary || !process.env.CLOUDINARY_CLOUD_NAME || !process.env.CLOUDINARY_API_KEY || !process.env.CLOUDINARY_API_SECRET) {
-      return handleLocalStorageUpload(req, res, studentId);
+      return handleR2Upload(req, res, studentId);
     }
 
     // Upload file to Cloudinary for production
@@ -318,6 +471,12 @@ const uploadResume = async (req, res) => {
       options
     );
 
+    // Ensure clients don't cache this response
+    res.set({
+      'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+      'Pragma': 'no-cache',
+      'Expires': '0'
+    });
     res.status(200).json({
       success: true,
       message: 'Resume uploaded successfully',
@@ -338,41 +497,37 @@ const uploadResume = async (req, res) => {
   }
 };
 
-// Fallback function for local storage when Cloudinary is not configured
-const handleLocalStorageUpload = async (req, res, studentId) => {
+// Fallback function using Cloudflare R2 when Cloudinary is not configured
+const handleR2Upload = async (req, res, studentId) => {
   try {
-    
-    // Create uploads/resumes directory if it doesn't exist
-    const fs = await import('fs');
-    const path = await import('path');
-    
-    const uploadsDir = path.join(process.cwd(), 'uploads', 'resumes');
-    if (!fs.existsSync(uploadsDir)) {
-      fs.mkdirSync(uploadsDir, { recursive: true });
-    }
+    const contentType = req.file.mimetype || 'application/octet-stream';
+    const r2Key = generateR2Key('resumes', req.file.originalname || `resume-${studentId}.pdf`);
 
-    // Generate unique filename
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    const filename = `resume-${studentId}-${uniqueSuffix}${path.extname(req.file.originalname)}`;
-    const filepath = path.join(uploadsDir, filename);
+    const uploadResult = await uploadToR2(req.file.buffer, r2Key, contentType, {
+      studentId: String(studentId),
+      originalName: req.file.originalname || 'resume'
+    });
 
-    // Save file to local storage
-    fs.writeFileSync(filepath, req.file.buffer);
+    const publicUrl = uploadResult.url || buildR2PublicUrl(r2Key);
+    const serverUrl = process.env.SERVER_URL || process.env.API_URL ||
+      (process.env.NODE_ENV === 'development'
+        ? `http://localhost:${process.env.PORT || 5001}`
+        : process.env.CLIENT_URL || 'http://localhost:5001');
+    const proxyUrl = `${serverUrl}/api/r2/resume/${encodeURIComponent(r2Key)}`;
 
-    // Create or update the resume record with local file information
     const resumeData = {
       student: studentId,
       uploadedResume: {
-        filename: filename,
-        path: filepath,
+        r2Key,
+        url: proxyUrl,
+        publicUrl,
         originalName: req.file.originalname,
         size: req.file.size,
-        mimetype: req.file.mimetype,
+        mimetype: contentType,
         uploadedAt: new Date()
       }
     };
 
-    // Update or create resume record
     const options = { 
       upsert: true,
       new: true,
@@ -385,11 +540,18 @@ const handleLocalStorageUpload = async (req, res, studentId) => {
       options
     );
 
+    // Ensure clients don't cache this response
+    res.set({
+      'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+      'Pragma': 'no-cache',
+      'Expires': '0'
+    });
     res.status(200).json({
       success: true,
       message: 'Resume uploaded successfully',
       data: {
-        filename: filename,
+        url: resumeData.uploadedResume.url,
+        r2Key: resumeData.uploadedResume.r2Key,
         originalName: req.file.originalname,
         size: req.file.size,
         uploadedAt: resumeData.uploadedResume.uploadedAt
@@ -410,5 +572,6 @@ export {
   saveResume,
   getTemplates,
   downloadResume,
-  uploadResume
+  uploadResume,
+  downloadUploadedResume
 };

@@ -5,7 +5,8 @@ import {
   saveResume, 
   getTemplates, 
   downloadResume,
-  uploadResume
+  uploadResume,
+  downloadUploadedResume
 } from '../controllers/resumeController.js';
 import { studentAuth } from '../middleware/studentAuth.js';
 
@@ -41,6 +42,9 @@ router.get('/templates', studentAuth, getTemplates);
 
 // Download resume as PDF using template name
 router.post('/download/:templateName', studentAuth, downloadResume);
+
+// Download last uploaded resume file
+router.get('/download', studentAuth, downloadUploadedResume);
 
 // Upload resume file
 router.post('/upload', studentAuth, upload.single('resume'), uploadResume);

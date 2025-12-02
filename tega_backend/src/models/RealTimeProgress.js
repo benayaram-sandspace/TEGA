@@ -642,7 +642,7 @@ realTimeProgressSchema.statics.getCurrentlyWatching = function(courseId) {
 
 realTimeProgressSchema.statics.getStudentStats = function(studentId) {
   return this.aggregate([
-    { $match: { studentId: mongoose.Types.ObjectId(studentId) } },
+    { $match: { studentId: new mongoose.Types.ObjectId(studentId) } },
     {
       $group: {
         _id: null,

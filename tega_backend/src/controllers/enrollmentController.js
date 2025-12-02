@@ -1,8 +1,8 @@
-import Enrollment from "../models/Enrollment.js";
-import RealTimeCourse from "../models/RealTimeCourse.js";
-import RealTimeProgress from "../models/RealTimeProgress.js";
+import Enrollment from '../models/Enrollment.js';
+import RealTimeCourse from '../models/RealTimeCourse.js';
+import RealTimeProgress from '../models/RealTimeProgress.js';
 // Enrollment functionality now in Enrollment model
-import mongoose from "mongoose";
+import mongoose from 'mongoose';
 
 // Enroll student in course - CONSOLIDATED TO USE ONLY REALTIMECOURSE
 export const enrollInCourse = async (req, res) => {
@@ -13,30 +13,30 @@ export const enrollInCourse = async (req, res) => {
     if (!studentId) {
       return res.status(401).json({
         success: false,
-        message: "Student authentication required",
+        message: 'Student authentication required'
       });
     }
 
     // Use only RealTimeCourse model (R2-based system)
     const course = await RealTimeCourse.findById(courseId);
-
+    
     if (!course) {
       return res.status(404).json({
         success: false,
-        message: "Course not found",
+        message: 'Course not found'
       });
     }
 
     // Check if already enrolled
     const existingEnrollment = await Enrollment.findOne({
       studentId,
-      courseId,
+      courseId
     });
 
     if (existingEnrollment) {
       return res.status(400).json({
         success: false,
-        message: "Already enrolled in this course",
+        message: 'Already enrolled in this course'
       });
     }
 
@@ -46,19 +46,16 @@ export const enrollInCourse = async (req, res) => {
       courseId,
       isPaid: course.isFree || course.price === 0,
       enrolledAt: new Date(),
-      status: "active",
+      status: 'active'
     });
 
     await enrollment.save();
 
     // Initialize RealTimeProgress for all courses
     const totalModules = course.modules?.length || 0;
-    const totalLectures =
-      course.modules?.reduce(
-        (total, module) => total + (module.lectures?.length || 0),
-        0
-      ) || 0;
-
+    const totalLectures = course.modules?.reduce((total, module) => 
+      total + (module.lectures?.length || 0), 0) || 0;
+    
     const progress = new RealTimeProgress({
       studentId: new mongoose.Types.ObjectId(studentId),
       courseId: new mongoose.Types.ObjectId(courseId),
@@ -69,25 +66,26 @@ export const enrollInCourse = async (req, res) => {
         totalLectures,
         completedModules: 0,
         completedLectures: 0,
-        progressPercentage: 0,
-      },
+        progressPercentage: 0
+      }
     });
-
+    
     await progress.save();
-
+    
     // Update enrollment count
     await course.incrementEnrollment();
 
     res.status(201).json({
       success: true,
-      message: "Successfully enrolled in course",
-      enrollment,
+      message: 'Successfully enrolled in course',
+      enrollment
     });
+
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: "Failed to enroll in course",
-      error: process.env.NODE_ENV === "development" ? error.message : undefined,
+      message: 'Failed to enroll in course',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }
 };
@@ -101,7 +99,7 @@ export const checkEnrollment = async (req, res) => {
     if (!studentId) {
       return res.status(401).json({
         success: false,
-        message: "Student authentication required",
+        message: 'Student authentication required'
       });
     }
 
@@ -111,21 +109,21 @@ export const checkEnrollment = async (req, res) => {
     if (!course) {
       return res.status(404).json({
         success: false,
-        message: "Course not found",
+        message: 'Course not found'
       });
     }
 
     // Check both Enrollment and Enrollment records
     const enrollment = await Enrollment.findOne({
       studentId,
-      courseId,
+      courseId
     });
 
     const userCourse = await Enrollment.findOne({
       studentId,
       courseId,
       isActive: true,
-      accessExpiresAt: { $gt: new Date() },
+      accessExpiresAt: { $gt: new Date() }
     });
 
     const isEnrolled = !!(enrollment || userCourse);
@@ -137,14 +135,15 @@ export const checkEnrollment = async (req, res) => {
       course: {
         title: course.title,
         price: course.price,
-        isFree: course.isFree,
-      },
+        isFree: course.isFree
+      }
     });
+
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: "Failed to check enrollment",
-      error: process.env.NODE_ENV === "development" ? error.message : undefined,
+      message: 'Failed to check enrollment',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }
 };
@@ -156,7 +155,7 @@ export const getStudentEnrollments = async (req, res) => {
     if (!studentId) {
       return res.status(401).json({
         success: false,
-        message: "Student authentication required",
+        message: 'Student authentication required'
       });
     }
     const enrollments = await Enrollment.getStudentEnrollments(studentId);
@@ -165,13 +164,14 @@ export const getStudentEnrollments = async (req, res) => {
     const allEnrollments = [...enrollments, ...userCourses];
     res.json({
       success: true,
-      enrollments: allEnrollments,
+      enrollments: allEnrollments
     });
+
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: "Failed to get enrollments",
-      error: process.env.NODE_ENV === "development" ? error.message : undefined,
+      message: 'Failed to get enrollments',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }
 };
@@ -185,18 +185,18 @@ export const checkLectureAccess = async (req, res) => {
     if (!studentId) {
       return res.status(401).json({
         success: false,
-        message: "Student authentication required",
+        message: 'Student authentication required'
       });
     }
 
     // Get course using RealTimeCourse model
     const course = await RealTimeCourse.findById(courseId);
-
+    
     // Find lecture in course modules
     let lecture = null;
     let moduleIndex = -1;
     let lectureIndex = -1;
-
+    
     if (course && course.modules && Array.isArray(course.modules)) {
       for (let mIdx = 0; mIdx < course.modules.length; mIdx++) {
         const module = course.modules[mIdx];
@@ -217,49 +217,47 @@ export const checkLectureAccess = async (req, res) => {
     if (!course || !lecture) {
       return res.status(404).json({
         success: false,
-        message: "Course or lecture not found",
+        message: 'Course or lecture not found'
       });
     }
 
     // Check if it's the first lecture (always free)
     const isFirstLecture = moduleIndex === 0 && lectureIndex === 0;
-
+    
     // Additional check: if it's marked as preview, it should be free
     const isPreview = lecture.isPreview || false;
 
     // Check both Enrollment and Enrollment records
     const enrollment = await Enrollment.findOne({
       studentId,
-      courseId,
+      courseId
     });
 
     const userCourse = await Enrollment.findOne({
       studentId,
       courseId,
       isActive: true,
-      accessExpiresAt: { $gt: new Date() },
+      accessExpiresAt: { $gt: new Date() }
     });
 
     let hasAccess = false;
-    let reason = "";
+    let reason = '';
 
     if (isFirstLecture || isPreview) {
       hasAccess = true;
-      reason = isFirstLecture
-        ? "First lecture is free"
-        : "Preview lecture is free";
+      reason = isFirstLecture ? 'First lecture is free' : 'Preview lecture is free';
     } else if (course.isFree || course.price === 0) {
       hasAccess = true;
-      reason = "Course is free";
-    } else if (enrollment && enrollment.status === "active") {
+      reason = 'Course is free';
+    } else if (enrollment && enrollment.status === 'active') {
       hasAccess = true;
-      reason = "Enrolled in course";
+      reason = 'Enrolled in course';
     } else if (userCourse) {
       hasAccess = true;
-      reason = "Course purchased";
+      reason = 'Course purchased';
     } else {
       hasAccess = false;
-      reason = "Enrollment required";
+      reason = 'Enrollment required';
     }
 
     res.json({
@@ -271,7 +269,7 @@ export const checkLectureAccess = async (req, res) => {
       course: {
         title: course.title,
         price: course.price,
-        isFree: course.isFree,
+        isFree: course.isFree
       },
       enrollment: enrollment || userCourse || null,
       lecture: {
@@ -279,14 +277,15 @@ export const checkLectureAccess = async (req, res) => {
         title: lecture.title,
         type: lecture.type,
         duration: lecture.duration,
-        isPreview: isPreview,
-      },
+        isPreview: isPreview
+      }
     });
+
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: "Failed to check lecture access",
-      error: process.env.NODE_ENV === "development" ? error.message : undefined,
+      message: 'Failed to check lecture access',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }
 };
@@ -300,32 +299,33 @@ export const unenrollFromCourse = async (req, res) => {
     if (!studentId) {
       return res.status(401).json({
         success: false,
-        message: "Student authentication required",
+        message: 'Student authentication required'
       });
     }
 
     const enrollment = await Enrollment.findOneAndUpdate(
       { studentId, courseId },
-      { status: "cancelled" },
+      { status: 'cancelled' },
       { new: true }
     );
 
     if (!enrollment) {
       return res.status(404).json({
         success: false,
-        message: "Enrollment not found",
+        message: 'Enrollment not found'
       });
     }
 
     res.json({
       success: true,
-      message: "Successfully unenrolled from course",
+      message: 'Successfully unenrolled from course'
     });
+
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: "Failed to unenroll from course",
-      error: process.env.NODE_ENV === "development" ? error.message : undefined,
+      message: 'Failed to unenroll from course',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }
 };

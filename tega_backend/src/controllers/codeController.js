@@ -76,7 +76,9 @@ export const runCode = async (req, res) => {
         throw new Error(`Judge0 service health check failed: ${healthCheck.statusText}`);
       }
     } catch (healthError) {
-      throw new Error(`Cannot connect to code execution service at ${JUDGE0_BASE_URL}. Please ensure Judge0 service is running and accessible. Error: ${healthError.message}`);
+      const errorMsg = `Cannot connect to code execution service at ${JUDGE0_BASE_URL}. `;
+      const troubleshooting = `Please ensure Judge0 service is running. To restart: cd judge-service && docker-compose restart judge0`;
+      throw new Error(`${errorMsg}${troubleshooting}. Error: ${healthError.message}`);
     }
 
     // Prepare Judge0 request
@@ -87,46 +89,103 @@ export const runCode = async (req, res) => {
       stdin
     };
 
-    // Submit code to Judge0
+    // Submit code to Judge0 with retry logic for queue full errors
     let submissionResponse;
     let token;
-    try {
-      // Create timeout signal for submission (compatible with older Node.js versions)
-      let submissionTimeoutSignal;
-      if (typeof AbortSignal !== 'undefined' && AbortSignal.timeout) {
-        submissionTimeoutSignal = AbortSignal.timeout(10000);
-      } else {
-        const controller = new AbortController();
-        submissionTimeoutSignal = controller.signal;
-        setTimeout(() => controller.abort(), 10000);
-      }
-      
-      submissionResponse = await fetch(`${JUDGE0_BASE_URL}/submissions`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(JUDGE0_API_KEY && { 'X-RapidAPI-Key': JUDGE0_API_KEY })
-        },
-        body: JSON.stringify(judge0Request),
-        signal: submissionTimeoutSignal
-      });
-      
-      if (!submissionResponse.ok) {
-        const errorText = await submissionResponse.text();
-        throw new Error(`Judge0 submission failed: ${submissionResponse.statusText} - ${errorText}`);
-      }
+    const maxRetries = 5; // Maximum retry attempts for queue full errors
+    let retryCount = 0;
+    let lastError = null;
+    
+    while (retryCount <= maxRetries) {
+      try {
+        // Create timeout signal for submission (compatible with older Node.js versions)
+        let submissionTimeoutSignal;
+        if (typeof AbortSignal !== 'undefined' && AbortSignal.timeout) {
+          submissionTimeoutSignal = AbortSignal.timeout(10000);
+        } else {
+          const controller = new AbortController();
+          submissionTimeoutSignal = controller.signal;
+          setTimeout(() => controller.abort(), 10000);
+        }
+        
+        submissionResponse = await fetch(`${JUDGE0_BASE_URL}/submissions`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(JUDGE0_API_KEY && { 'X-RapidAPI-Key': JUDGE0_API_KEY })
+          },
+          body: JSON.stringify(judge0Request),
+          signal: submissionTimeoutSignal
+        });
+        
+        if (!submissionResponse.ok) {
+          const errorText = await submissionResponse.text();
+          const isQueueFull = submissionResponse.status === 503 && 
+                            (errorText.includes('queue is full') || 
+                             errorText.includes('queue is full') ||
+                             errorText.toLowerCase().includes('queue'));
+          
+          // If queue is full and we haven't exceeded max retries, retry with exponential backoff
+          if (isQueueFull && retryCount < maxRetries) {
+            retryCount++;
+            const backoffDelay = Math.min(1000 * Math.pow(2, retryCount - 1), 10000); // Exponential backoff, max 10s
+            await new Promise(resolve => setTimeout(resolve, backoffDelay));
+            continue; // Retry the request
+          }
+          
+          // If it's a queue full error but we've exhausted retries, provide a helpful message
+          if (isQueueFull) {
+            throw new Error(`Code execution service queue is full. Please wait a moment and try again. The service is currently processing many requests.`);
+          }
+          
+          // For other errors, throw immediately
+          throw new Error(`Judge0 submission failed: ${submissionResponse.statusText} - ${errorText}`);
+        }
 
-      const submissionData = await submissionResponse.json();
-      token = submissionData.token;
-      
-      if (!token) {
-        throw new Error('Failed to get submission token from Judge0');
+        const submissionData = await submissionResponse.json();
+        token = submissionData.token;
+        
+        if (!token) {
+          throw new Error('Failed to get submission token from Judge0');
+        }
+        
+        // Success! Break out of retry loop
+        break;
+        
+      } catch (fetchError) {
+        lastError = fetchError;
+        
+        // Check if it's a queue full error in the message
+        const isQueueFullError = fetchError.message && 
+                                 (fetchError.message.includes('queue is full') || 
+                                  fetchError.message.toLowerCase().includes('queue'));
+        
+        // If queue is full and we haven't exceeded max retries, retry with exponential backoff
+        if (isQueueFullError && retryCount < maxRetries) {
+          retryCount++;
+          const backoffDelay = Math.min(1000 * Math.pow(2, retryCount - 1), 10000); // Exponential backoff, max 10s
+          await new Promise(resolve => setTimeout(resolve, backoffDelay));
+          continue; // Retry the request
+        }
+        
+        // Handle timeout errors
+        if (fetchError.name === 'AbortError') {
+          throw new Error(`Timeout connecting to code execution service at ${JUDGE0_BASE_URL}`);
+        }
+        
+        // If we've exhausted retries for queue full, provide helpful message
+        if (isQueueFullError) {
+          throw new Error(`Code execution service queue is full. Please wait a moment and try again. The service is currently processing many requests.`);
+        }
+        
+        // For other errors, throw immediately
+        throw new Error(`Cannot connect to code execution service at ${JUDGE0_BASE_URL}. Please ensure Judge0 service is running. Error: ${fetchError.message}`);
       }
-    } catch (fetchError) {
-      if (fetchError.name === 'AbortError') {
-        throw new Error(`Timeout connecting to code execution service at ${JUDGE0_BASE_URL}`);
-      }
-      throw new Error(`Cannot connect to code execution service at ${JUDGE0_BASE_URL}. Please ensure Judge0 service is running. Error: ${fetchError.message}`);
+    }
+    
+    // If we exited the loop without a token, throw the last error
+    if (!token && lastError) {
+      throw lastError;
     }
     
 
@@ -256,17 +315,27 @@ export const runCode = async (req, res) => {
   } catch (error) {
     // Provide more specific error messages
     let errorMessage = error.message || 'Code execution failed';
+    let statusCode = 500;
     
+    // Check if it's a queue full error
+    if (error.message && (error.message.includes('queue is full') || error.message.toLowerCase().includes('queue'))) {
+      errorMessage = error.message.includes('queue is full') 
+        ? error.message 
+        : 'Code execution service queue is full. Please wait a moment and try again.';
+      statusCode = 503; // Service Unavailable
+    }
     // Check if it's a network error (Judge0 connection issue)
-    if (error.message && (error.message.includes('fetch') || error.message.includes('ECONNREFUSED') || error.message.includes('network'))) {
+    else if (error.message && (error.message.includes('fetch') || error.message.includes('ECONNREFUSED') || error.message.includes('network'))) {
       errorMessage = 'Cannot connect to code execution service. Please ensure Judge0 service is running.';
+      statusCode = 503;
+    }
+    // Check if it's a timeout
+    else if (error.message && error.message.includes('timeout')) {
+      errorMessage = 'Code execution timed out. Your code may be taking too long to execute.';
+      statusCode = 504; // Gateway Timeout
     }
     
-    // Check if it's a timeout
-    if (error.message && error.message.includes('timeout')) {
-      errorMessage = 'Code execution timed out. Your code may be taking too long to execute.';
-    }
-    res.status(500).json({
+    res.status(statusCode).json({
       success: false,
       message: errorMessage,
       error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
@@ -441,6 +510,88 @@ export const getUserStats = async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Failed to fetch user statistics'
+    });
+  }
+};
+
+/**
+ * Health check endpoint for Judge0 service
+ */
+export const checkHealth = async (req, res) => {
+  try {
+    // Quick health check - verify Judge0 is accessible
+    let healthCheck;
+    try {
+      const controller = new AbortController();
+      const timeoutSignal = controller.signal;
+      setTimeout(() => controller.abort(), 3000);
+      
+      healthCheck = await fetch(`${JUDGE0_BASE_URL}/languages`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(JUDGE0_API_KEY && { 'X-RapidAPI-Key': JUDGE0_API_KEY })
+        },
+        signal: timeoutSignal
+      });
+    } catch (healthError) {
+      return res.status(503).json({
+        success: false,
+        status: 'unhealthy',
+        message: `Cannot connect to Judge0 service at ${JUDGE0_BASE_URL}`,
+        error: healthError.message,
+        service: 'Judge0',
+        url: JUDGE0_BASE_URL
+      });
+    }
+    
+    if (!healthCheck.ok) {
+      return res.status(503).json({
+        success: false,
+        status: 'unhealthy',
+        message: `Judge0 service returned error: ${healthCheck.statusText}`,
+        statusCode: healthCheck.status,
+        service: 'Judge0',
+        url: JUDGE0_BASE_URL
+      });
+    }
+    
+    // Try to get queue status if possible
+    let queueInfo = null;
+    try {
+      // Check if we can get system info (some Judge0 versions support this)
+      const statsResponse = await fetch(`${JUDGE0_BASE_URL}/statistics`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(JUDGE0_API_KEY && { 'X-RapidAPI-Key': JUDGE0_API_KEY })
+        }
+      });
+      
+      if (statsResponse.ok) {
+        queueInfo = await statsResponse.json();
+      }
+    } catch (statsError) {
+      // Statistics endpoint might not be available, that's okay
+    }
+    
+    res.json({
+      success: true,
+      status: 'healthy',
+      message: 'Judge0 service is running',
+      service: 'Judge0',
+      url: JUDGE0_BASE_URL,
+      queueInfo: queueInfo
+    });
+    
+  } catch (error) {
+    res.status(503).json({
+      success: false,
+      status: 'unhealthy',
+      message: 'Health check failed',
+      error: error.message,
+      service: 'Judge0',
+      url: JUDGE0_BASE_URL
     });
   }
 };

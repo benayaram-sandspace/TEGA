@@ -8,12 +8,15 @@ import { validatePDFContent } from '../utils/pdfValidator.js';
 import { parseWithAI } from '../utils/aiPdfParser.js';
 import fs from 'fs/promises';
 import path from 'path';
+import os from 'os';
 
 // ============ ADMIN - PDF Upload & Parsing ============
 
 export const uploadPDF = async (req, res) => {
-  try {
+  let tempDir = null;
+  let tempFilePath = null;
 
+  try {
     if (!req.file) {
       return res.status(400).json({
         success: false,
@@ -23,23 +26,25 @@ export const uploadPDF = async (req, res) => {
 
     const { companyName } = req.body;
     if (!companyName) {
-      // Clean up uploaded file
-      await fs.unlink(req.file.path);
       return res.status(400).json({
         success: false,
         message: 'Company name is required'
       });
     }
 
+    const sanitizedName = (req.file.originalname || 'questions.pdf').replace(/[^a-zA-Z0-9.-]/g, '_');
+    tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'company-pdf-'));
+    tempFilePath = path.join(tempDir, sanitizedName);
+    await fs.writeFile(tempFilePath, req.file.buffer);
+
     // Parse PDF (use AI if available, otherwise basic parser)
-    const useAI = process.env.GEMINI_API_KEY ? true : false;
+    const useAI = Boolean(process.env.GEMINI_API_KEY);
     
     const parseResult = useAI 
-      ? await parseWithAI(req.file.path, companyName)
-      : await parsePDFQuestions(req.file.path, companyName);
+      ? await parseWithAI(tempFilePath, companyName)
+      : await parsePDFQuestions(tempFilePath, companyName);
 
     if (!parseResult.success) {
-      await fs.unlink(req.file.path);
       return res.status(400).json({
         success: false,
         message: 'Failed to parse PDF'
@@ -53,9 +58,6 @@ export const uploadPDF = async (req, res) => {
 
     // Validate extracted questions
     const validation = validateQuestions(parseResult.questions);
-
-    // Clean up PDF file
-    await fs.unlink(req.file.path);
 
     res.json({
       success: true,
@@ -76,17 +78,18 @@ export const uploadPDF = async (req, res) => {
       }
     });
   } catch (error) {
-    // Clean up file if exists
-    if (req.file) {
-      try {
-        await fs.unlink(req.file.path);
-      } catch (e) {}
-    }
     res.status(500).json({
       success: false,
       message: 'Failed to process PDF',
       error: error.message
     });
+  } finally {
+    if (tempDir) {
+      try {
+        await fs.rm(tempDir, { recursive: true, force: true });
+      } catch (cleanupError) {
+      }
+    }
   }
 };
 

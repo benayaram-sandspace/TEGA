@@ -573,13 +573,37 @@ export const updateLectureDuration = async (req, res) => {
       });
     }
 
+    // Recalculate course total duration after lecture duration update
+    let totalDuration = 0;
+    if (course.modules && course.modules.length > 0) {
+      course.modules.forEach(module => {
+        if (module.lectures && module.lectures.length > 0) {
+          module.lectures.forEach(lecture => {
+            totalDuration += lecture.duration || 0;
+          });
+        }
+      });
+    }
+
+    // Update formattedDuration
+    const hours = Math.max(0, Math.floor(totalDuration / 3600));
+    const minutes = Math.max(0, Math.floor((totalDuration % 3600) / 60));
+    course.formattedDuration = hours > 0 
+      ? `${hours} hour${hours > 1 ? 's' : ''} ${minutes > 0 ? `${minutes} min` : ''}`
+      : `${minutes} min`;
+    course.estimatedDuration = {
+      hours: hours,
+      minutes: minutes
+    };
+
     // Save the course
     await course.save();
 
     res.json({
       success: true,
       message: 'Lecture duration updated successfully',
-      duration: duration
+      duration: duration,
+      courseDuration: course.formattedDuration
     });
 
   } catch (error) {
@@ -941,6 +965,21 @@ export const updateLectureProgress = async (req, res) => {
         
         await studentProgress.save();
 
+        try {
+          const PlacementProgress = (await import('../models/PlacementProgress.js')).default;
+          let placementProgress = await PlacementProgress.findOne({ studentId });
+          
+          if (!placementProgress) {
+            placementProgress = new PlacementProgress({ studentId });
+          }
+          
+          // Update lastActivityDate to trigger streak calculation
+          placementProgress.lastActivityDate = new Date();
+          await placementProgress.save();
+        } catch (streakError) {
+          // If PlacementProgress doesn't exist or fails, continue without updating streak
+        }
+
         // Emit real-time progress update
         const io = req.app.get('io');
         if (io) {
@@ -996,6 +1035,21 @@ export const updateLectureProgress = async (req, res) => {
         });
 
         await progressDoc.calculateOverallProgress();
+        
+        try {
+          const PlacementProgress = (await import('../models/PlacementProgress.js')).default;
+          let placementProgress = await PlacementProgress.findOne({ studentId });
+          
+          if (!placementProgress) {
+            placementProgress = new PlacementProgress({ studentId });
+          }
+          
+          // Update lastActivityDate to trigger streak calculation
+          placementProgress.lastActivityDate = new Date();
+          await placementProgress.save();
+        } catch (streakError) {
+          // If PlacementProgress doesn't exist or fails, continue without updating streak
+        }
 
         res.json({
           success: true,
@@ -1103,6 +1157,21 @@ export const submitQuiz = async (req, res) => {
       });
 
       await progressDoc.calculateOverallProgress();
+      
+      try {
+        const PlacementProgress = (await import('../models/PlacementProgress.js')).default;
+        let placementProgress = await PlacementProgress.findOne({ studentId });
+        
+        if (!placementProgress) {
+          placementProgress = new PlacementProgress({ studentId });
+        }
+        
+        // Update lastActivityDate to trigger streak calculation
+        placementProgress.lastActivityDate = new Date();
+        await placementProgress.save();
+      } catch (streakError) {
+        // If PlacementProgress doesn't exist or fails, continue without updating streak
+      }
     }
 
     // Emit real-time quiz completion
@@ -1826,8 +1895,36 @@ export const updateRealTimeCourse = async (req, res) => {
       updateData.previewVideo = '';
     }
 
-    // Calculate total duration if modules are updated
-    if (updateData.modules && updateData.modules.length > 0) {
+    // Always recalculate total duration from current course modules (ensures accuracy when modules/lectures are added/updated)
+    const existingCourse = await RealTimeCourse.findById(courseId);
+    if (existingCourse) {
+      // Use updated modules if provided, otherwise use existing modules from database
+      const modulesToCalculate = updateData.modules && updateData.modules.length > 0 
+        ? updateData.modules 
+        : (existingCourse.modules || []);
+      
+      if (modulesToCalculate && modulesToCalculate.length > 0) {
+        let totalDuration = 0;
+        modulesToCalculate.forEach(module => {
+          if (module.lectures && module.lectures.length > 0) {
+            module.lectures.forEach(lecture => {
+              totalDuration += lecture.duration || 0;
+            });
+          }
+        });
+
+        const hours = Math.max(0, Math.floor(totalDuration / 3600));
+        const minutes = Math.max(0, Math.floor((totalDuration % 3600) / 60));
+        updateData.formattedDuration = hours > 0 
+          ? `${hours} hour${hours > 1 ? 's' : ''} ${minutes > 0 ? `${minutes} min` : ''}`
+          : `${minutes} min`;
+        updateData.estimatedDuration = {
+          hours: hours,
+          minutes: minutes
+        };
+      }
+    } else if (updateData.modules && updateData.modules.length > 0) {
+      // Fallback: calculate from updateData if course not found (shouldn't happen, but safety check)
       let totalDuration = 0;
       updateData.modules.forEach(module => {
         if (module.lectures && module.lectures.length > 0) {

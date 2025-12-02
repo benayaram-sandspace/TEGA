@@ -74,10 +74,50 @@ const corsOptions = {
   optionsSuccessStatus: 200 // Some legacy browsers choke on 204
 };
 
-// Initialize Socket.IO
+// Initialize Socket.IO with improved configuration
 const io = new Server(server, {
-  cors: corsOptions,
-  transports: ['websocket', 'polling']
+  cors: {
+    origin: function (origin, callback) {
+      // Allow requests with no origin (like mobile apps or curl requests)
+      if (!origin) return callback(null, true);
+      
+      const allowedOrigins = [
+        'http://localhost:3000', 
+        'http://127.0.0.1:3000',
+        'http://localhost:3001', 
+        'http://127.0.0.1:3001',
+        'https://tegaedu.com',
+        'https://www.tegaedu.com',
+        process.env.CLIENT_URL,
+        process.env.FRONTEND_URL
+      ].filter(Boolean);
+      
+      // Allow any origin in development
+      if (process.env.NODE_ENV === 'development') {
+        return callback(null, true);
+      }
+      
+      // Check if origin is allowed
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+      
+      // For production, also allow any subdomain of tegaedu.com
+      if (process.env.NODE_ENV === 'production' && origin && origin.match(/^https?:\/\/[a-zA-Z0-9-]+\.tegaedu\.com$/)) {
+        return callback(null, true);
+      }
+      
+      callback(null, true); // Allow all origins for Socket.IO to prevent connection issues
+    },
+    methods: ['GET', 'POST'],
+    credentials: true
+  },
+  transports: ['websocket', 'polling'],
+  allowEIO3: true, // Allow Engine.IO v3 clients
+  pingTimeout: 60000,
+  pingInterval: 25000,
+  maxHttpBufferSize: 1e8, // 100MB
+  connectTimeout: 45000
 });
 
 // Socket.IO connection handling - Production Ready
@@ -302,10 +342,7 @@ import quizRoutes from './routes/quizRoutes.js';
 import codeRoutes from './routes/codeRoutes.js';
 import codeSnippetRoutes from './routes/codeSnippetRoutes.js';
 import jobMelaRoutes from './routes/jobMelaRoutes.js';
-
-// Serve static files (uploaded images)
-app.use('/uploads', express.static('uploads'));
-
+import galleryRoutes from './routes/galleryRoutes.js';
 // Use routes
 app.use("/api/jobs", jobRoutes);
 app.use('/api/auth', authRoutes);
@@ -346,6 +383,7 @@ app.use('/api/interviews', mockInterviewRoutes);
 app.use('/api/apply', jobMelaRoutes);
 
 // Static file serving is already configured above
+app.use('/api/gallery', galleryRoutes);
 
 // Note: All course access now handled by realTimeCourse.js (R2-based system only)
 

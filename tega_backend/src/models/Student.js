@@ -96,6 +96,17 @@ const studentSchema = new mongoose.Schema({
   expectedGraduation: { type: Date },
   cgpa: { type: Number },
   percentage: { type: Number },
+  
+  // Previous Education Details
+  tenthBoard: { type: String, trim: true },
+  tenthSchool: { type: String, trim: true },
+  tenthYear: { type: Number },
+  tenthPercentage: { type: Number },
+  twelfthBoard: { type: String, trim: true },
+  twelfthSchool: { type: String, trim: true },
+  twelfthYear: { type: Number },
+  twelfthPercentage: { type: Number },
+  twelfthStream: { type: String, trim: true },
   state: { type: String, trim: true },
   country: { type: String, trim: true },
   permanentAddress: { type: String, trim: true },

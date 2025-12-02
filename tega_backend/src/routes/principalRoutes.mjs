@@ -19,6 +19,27 @@ const router = express.Router();
 // Import storage service for OTP management
 import storageService from '../services/storageService.js';
 
+const escapeRegex = (value = '') => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+const buildInstituteRegex = (value = '') => {
+  if (!value || typeof value !== 'string') {
+    return /.*/i;
+  }
+
+  const tokens = value
+    .trim()
+    .split(/[\s,./-]+/)
+    .filter(Boolean)
+    .map(token => escapeRegex(token));
+
+  if (!tokens.length) {
+    return /.*/i;
+  }
+
+  const pattern = tokens.join('[\\s,./-]*');
+  return new RegExp(pattern, 'i');
+};
+
 // Email transporter setup with optimized settings
 const transporter = nodemailer.createTransport({
   service: 'gmail',
@@ -239,17 +260,19 @@ router.post('/reset-password', async (req, res) => {
 router.get('/dashboard', principalAuth, async (req, res) => {
   try {
     const principal = req.principal;
+    const instituteRegex = buildInstituteRegex(principal.university);
+    const baseInstituteFilter = { institute: { $regex: instituteRegex } };
 
     // Get college-specific user data (users from the same university)
-    const collegeStudents = await Student.find({ institute: principal.university })
+    const collegeStudents = await Student.find(baseInstituteFilter)
       .select('username firstName lastName email institute course year createdAt')
       .sort({ createdAt: -1 })
       .limit(100);
 
     // Get statistics for this college only
-    const totalCollegeStudents = await Student.countDocuments({ institute: principal.university });
+    const totalCollegeStudents = await Student.countDocuments(baseInstituteFilter);
     const recentCollegeRegistrations = await Student.countDocuments({
-      institute: principal.university,
+      ...baseInstituteFilter,
       createdAt: { $gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) }
     });
 
@@ -323,6 +346,8 @@ router.get('/students', principalAuth, async (req, res) => {
     const principal = req.principal;
 
     const university = principal.university;
+    const instituteRegex = buildInstituteRegex(university);
+    const baseInstituteFilter = { institute: { $regex: instituteRegex } };
 
     // Get pagination parameters
     const page = parseInt(req.query.page) || 1;
@@ -336,7 +361,7 @@ router.get('/students', principalAuth, async (req, res) => {
     const courseFilter = req.query.course || '';
 
     // Build query
-    let query = { institute: university };
+    let query = { ...baseInstituteFilter };
     
     // Add search filter
     if (search) {
@@ -374,12 +399,12 @@ router.get('/students', principalAuth, async (req, res) => {
     const totalStudents = await Student.countDocuments(query);
 
     // Calculate stats
-    const total = await Student.countDocuments({ institute: university });
-    const pending = await Student.countDocuments({ institute: university, accountStatus: 'pending' });
-    const approved = await Student.countDocuments({ institute: university, accountStatus: 'approved' });
-    const rejected = await Student.countDocuments({ institute: university, accountStatus: 'rejected' });
-    const active = await Student.countDocuments({ institute: university, isActive: true });
-    const inactive = await Student.countDocuments({ institute: university, isActive: false });
+    const total = await Student.countDocuments(baseInstituteFilter);
+    const pending = await Student.countDocuments({ ...baseInstituteFilter, accountStatus: 'pending' });
+    const approved = await Student.countDocuments({ ...baseInstituteFilter, accountStatus: 'approved' });
+    const rejected = await Student.countDocuments({ ...baseInstituteFilter, accountStatus: 'rejected' });
+    const active = await Student.countDocuments({ ...baseInstituteFilter, isActive: true });
+    const inactive = await Student.countDocuments({ ...baseInstituteFilter, isActive: false });
 
     res.json({
       success: true,
@@ -415,6 +440,7 @@ router.get('/students/:studentId', principalAuth, async (req, res) => {
     const principal = req.principal;
     const { studentId } = req.params;
     const university = principal.university;
+    const instituteRegex = buildInstituteRegex(university);
 
     // Validate studentId format
     if (!mongoose.Types.ObjectId.isValid(studentId)) {
@@ -426,7 +452,7 @@ router.get('/students/:studentId', principalAuth, async (req, res) => {
 
     const student = await Student.findOne({ 
       _id: studentId, 
-      institute: university 
+      institute: { $regex: instituteRegex }
     }).select('-password');
 
     if (!student) {
@@ -693,6 +719,7 @@ router.get('/course-enrollments', principalAuth, async (req, res) => {
   try {
     const principal = req.principal;
     const university = principal.university;
+    const instituteRegex = buildInstituteRegex(university);
 
     const Enrollment = (await import('../models/Enrollment.js')).default;
     const UserCourse = (await import('../models/UserCourse.js')).default;
@@ -702,7 +729,7 @@ router.get('/course-enrollments', principalAuth, async (req, res) => {
     const Student = (await import('../models/Student.js')).default;
 
     // Get all students from this institute
-    const instituteStudents = await Student.find({ institute: university }).select('_id').lean();
+    const instituteStudents = await Student.find({ institute: { $regex: instituteRegex } }).select('_id').lean();
     const instituteStudentIds = instituteStudents.map(s => s._id);
 
     if (instituteStudentIds.length === 0) {
@@ -891,6 +918,7 @@ router.get('/top-students-tega-exam', principalAuth, async (req, res) => {
   try {
     const principal = req.principal;
     const university = principal.university;
+    const instituteRegex = buildInstituteRegex(university);
 
     const ExamAttempt = (await import('../models/ExamAttempt.js')).default;
     const Exam = (await import('../models/Exam.js')).default;
@@ -898,7 +926,7 @@ router.get('/top-students-tega-exam', principalAuth, async (req, res) => {
 
     // Get all students from this institute (case-insensitive matching)
     const instituteStudents = await Student.find({ 
-      institute: { $regex: new RegExp(`^${university}$`, 'i') }
+      institute: { $regex: instituteRegex }
     })
       .select('_id firstName lastName email course institute')
       .lean();
@@ -982,9 +1010,22 @@ router.get('/top-students-tega-exam', principalAuth, async (req, res) => {
 
     // Group by student and calculate average scores
     const studentPerformance = {};
+    const subjectStatsMap = {};
     
     examAttempts.forEach(attempt => {
       const studentId = String(attempt.studentId._id);
+      const subject = attempt.examId?.subject || 'General';
+      const attemptPercentage = attempt.percentage || 0;
+      
+      if (!subjectStatsMap[subject]) {
+        subjectStatsMap[subject] = {
+          subject,
+          totalPercentage: 0,
+          attempts: 0
+        };
+      }
+      subjectStatsMap[subject].totalPercentage += attemptPercentage;
+      subjectStatsMap[subject].attempts += 1;
       
       if (!studentPerformance[studentId]) {
         studentPerformance[studentId] = {
@@ -1051,10 +1092,31 @@ router.get('/top-students-tega-exam', principalAuth, async (req, res) => {
       email: student.email
     }));
 
+    const subjectStats = Object.values(subjectStatsMap).map(stat => ({
+      subject: stat.subject,
+      avgPercentage: stat.attempts > 0 ? Math.round(stat.totalPercentage / stat.attempts) : 0,
+      attempts: stat.attempts
+    })).sort((a, b) => b.avgPercentage - a.avgPercentage);
+
+    const studentsWithResults = Object.keys(studentPerformance).length;
+    const avgPercentageAll = studentsWithResults > 0
+      ? Math.round(Object.values(studentPerformance).reduce((sum, perf) => sum + perf.avgPercentage, 0) / studentsWithResults)
+      : 0;
+    const highestScoreOverall = formattedStudents.length > 0
+      ? Math.max(...formattedStudents.map(student => student.highestScore || student.score || 0))
+      : 0;
+
     res.json({
       success: true,
       topStudents: formattedStudents,
       totalStudents: topStudents.length,
+      overview: {
+        studentsAttempted: studentsWithResults,
+        totalAttempts: examAttempts.length,
+        avgPercentage: avgPercentageAll,
+        highestScore: highestScoreOverall
+      },
+      subjectStats,
       debug: process.env.NODE_ENV === 'development' ? {
         university,
         studentsFound: instituteStudentIds.length,
@@ -1079,6 +1141,7 @@ router.get('/trend-analysis', principalAuth, async (req, res) => {
   try {
     const principal = req.principal;
     const university = principal.university;
+    const instituteRegex = buildInstituteRegex(university);
     const period = parseInt(req.query.period) || 30; // days
 
     const Student = (await import('../models/Student.js')).default;
@@ -1103,7 +1166,7 @@ router.get('/trend-analysis', principalAuth, async (req, res) => {
 
     // Get all students from this institute
     const instituteStudents = await Student.find({ 
-      institute: { $regex: new RegExp(`^${university}$`, 'i') }
+      institute: { $regex: instituteRegex }
     }).select('_id createdAt').lean();
 
     const instituteStudentIds = instituteStudents.map(s => s._id);
@@ -1118,7 +1181,7 @@ router.get('/trend-analysis', principalAuth, async (req, res) => {
 
       // Total students registered up to this point
       const totalStudents = await Student.countDocuments({
-        institute: { $regex: new RegExp(`^${university}$`, 'i') },
+        institute: { $regex: instituteRegex },
         createdAt: { $lte: intervalEnd }
       });
 
@@ -1191,40 +1254,20 @@ router.get('/trend-analysis', principalAuth, async (req, res) => {
 });
 
 // Get Placement Readiness Data for Principal
-router.get('/placement-readiness', async (req, res) => {
+router.get('/placement-readiness', principalAuth, async (req, res) => {
   try {
-    const authHeader = req.header('Authorization');
-    const token = authHeader?.startsWith('Bearer ') ? authHeader.replace('Bearer ', '') : authHeader;
-
-    if (!token) {
-      return res.status(401).json({
-        success: false,
-        message: 'Access denied. No token provided.'
-      });
-    }
-
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-super-secret-jwt-key-change-this-in-production');
-    const principal = await Principal.findById(decoded.id);
-
-    if (!principal) {
-      return res.status(404).json({
-        success: false,
-        message: 'Principal not found.'
-      });
-    }
-
-    if (!principal.isActive) {
-      return res.status(401).json({
-        success: false,
-        message: 'Principal account deactivated.'
-      });
-    }
+    const principal = req.principal;
+    const instituteRegex = buildInstituteRegex(principal.university);
 
     // Get all students from the principal's university
-    const students = await Student.find({ institute: principal.university })
+    const students = await Student.find({ institute: { $regex: instituteRegex } })
       .select('_id firstName lastName email course');
 
     const studentIds = students.map(student => student._id);
+
+    // Import Job and Application models dynamically
+    const Job = (await import('../models/Job.js')).default;
+    const Application = (await import('../models/Application.js')).default;
 
     // Get all active jobs on the platform (matching the frontend query)
     // Include both 'open' and 'active' statuses as per the job controller
@@ -1232,12 +1275,12 @@ router.get('/placement-readiness', async (req, res) => {
       isActive: true, 
       status: { $in: ['open', 'active'] },
       postingType: 'job'  // Only include jobs, not internships
-    }).select('title company location salary jobType');
+    }).select('title company location salary jobType').lean();
 
     // Get all applications from students in this university
     const applications = await Application.find({ 
       studentId: { $in: studentIds } 
-    }).populate('jobId', 'title company');
+    }).populate('jobId', 'title company').lean();
 
     // Calculate total applications
     const totalApplications = applications.length;
@@ -1285,6 +1328,7 @@ router.get('/students/export', principalAuth, async (req, res) => {
     const principal = req.principal;
 
     const university = principal.university;
+    const instituteRegex = buildInstituteRegex(university);
     const format = req.query.format || 'csv';
 
     // Get search parameters
@@ -1294,7 +1338,7 @@ router.get('/students/export', principalAuth, async (req, res) => {
     const courseFilter = req.query.course || '';
 
     // Build query
-    let query = { institute: university };
+    let query = { institute: { $regex: instituteRegex } };
     
     // Add search filter
     if (search) {
@@ -1357,34 +1401,9 @@ router.get('/students/export', principalAuth, async (req, res) => {
 });
 
 // Update Principal Account Information
-router.put('/account', async (req, res) => {
+router.put('/account', principalAuth, async (req, res) => {
   try {
-    const authHeader = req.header('Authorization');
-    const token = authHeader?.startsWith('Bearer ') ? authHeader.replace('Bearer ', '') : authHeader;
-    
-    if (!token) {
-      return res.status(401).json({
-        success: false,
-        message: 'Access denied. No token provided.'
-      });
-    }
-
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-super-secret-jwt-key-change-this-in-production');
-    const principal = await Principal.findById(decoded.id);
-    
-    if (!principal) {
-      return res.status(404).json({
-        success: false,
-        message: 'Principal not found.'
-      });
-    }
-
-    if (!principal.isActive) {
-      return res.status(401).json({
-        success: false,
-        message: 'Principal account deactivated.'
-      });
-    }
+    const principal = req.principal;
 
     const { principalName, email, phone, designation } = req.body;
 
@@ -1439,34 +1458,9 @@ router.put('/account', async (req, res) => {
 });
 
 // Update Principal College Information
-router.put('/college', async (req, res) => {
+router.put('/college', principalAuth, async (req, res) => {
   try {
-    const authHeader = req.header('Authorization');
-    const token = authHeader?.startsWith('Bearer ') ? authHeader.replace('Bearer ', '') : authHeader;
-    
-    if (!token) {
-      return res.status(401).json({
-        success: false,
-        message: 'Access denied. No token provided.'
-      });
-    }
-
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-super-secret-jwt-key-change-this-in-production');
-    const principal = await Principal.findById(decoded.id);
-    
-    if (!principal) {
-      return res.status(404).json({
-        success: false,
-        message: 'Principal not found.'
-      });
-    }
-
-    if (!principal.isActive) {
-      return res.status(401).json({
-        success: false,
-        message: 'Principal account deactivated.'
-      });
-    }
+    const principal = req.principal;
 
     const { 
       collegeName, 
@@ -1536,34 +1530,10 @@ router.put('/college', async (req, res) => {
 });
 
 // Get Course Engagement Statistics
-router.get('/course-engagement', async (req, res) => {
+router.get('/course-engagement', principalAuth, async (req, res) => {
   try {
-    const authHeader = req.header('Authorization');
-    const token = authHeader?.startsWith('Bearer ') ? authHeader.replace('Bearer ', '') : authHeader;
-
-    if (!token) {
-      return res.status(401).json({
-        success: false,
-        message: 'Access denied. No token provided.'
-      });
-    }
-
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-super-secret-jwt-key-change-this-in-production');
-    const principal = await Principal.findById(decoded.id);
-
-    if (!principal) {
-      return res.status(404).json({
-        success: false,
-        message: 'Principal not found.'
-      });
-    }
-
-    if (!principal.isActive) {
-      return res.status(401).json({
-        success: false,
-        message: 'Principal account deactivated.'
-      });
-    }
+    const principal = req.principal;
+    const instituteRegex = buildInstituteRegex(principal.university);
 
     // Import models
     const RealTimeCourse = (await import('../models/RealTimeCourse.js')).default;
@@ -1571,7 +1541,7 @@ router.get('/course-engagement', async (req, res) => {
     const Enrollment = (await import('../models/Enrollment.js')).default;
 
     // Get all students from the principal's university
-    const students = await Student.find({ institute: principal.university })
+    const students = await Student.find({ institute: { $regex: instituteRegex } })
       .select('_id')
       .lean();
 
@@ -1608,35 +1578,66 @@ router.get('/course-engagement', async (req, res) => {
       // Calculate average completion
       const avgCompletion = courseProgress.length > 0
         ? Math.round(
-            courseProgress.reduce((sum, p) => sum + (p.overallProgress?.percentage || 0), 0) / courseProgress.length
+            courseProgress.reduce((sum, p) => {
+              const progress = p.overallProgress?.percentage || p.overallProgress || 0;
+              return sum + (typeof progress === 'number' ? progress : 0);
+            }, 0) / courseProgress.length
           )
         : 0;
+
+      // Calculate average time spent (in hours)
+      const totalTimeSpent = courseProgress.reduce((sum, p) => {
+        const timeSpent = p.overallProgress?.timeSpent || p.timeSpent || 0;
+        return sum + (typeof timeSpent === 'number' ? timeSpent : 0);
+      }, 0);
+      const avgTimeSpent = courseProgress.length > 0 
+        ? Math.round(totalTimeSpent / courseProgress.length / 3600) // Convert seconds to hours
+        : 0;
+
+      // Get module count
+      const moduleCount = course.modules?.length || 0;
 
       return {
         _id: course._id,
         title: course.title,
         category: course.category,
         students: courseEnrollments.length,
-        completion: avgCompletion
+        completion: avgCompletion,
+        avgTime: avgTimeSpent,
+        modules: course.modules || [],
+        moduleCount
       };
     });
 
     // Calculate total statistics
-    const totalStudents = enrollments.length;
+    const totalEnrollments = enrollments.length;
     const totalCourses = courses.length;
     const avgCompletion = progressRecords.length > 0
       ? Math.round(
-          progressRecords.reduce((sum, p) => sum + (p.overallProgress?.percentage || 0), 0) / progressRecords.length
+          progressRecords.reduce((sum, p) => {
+            const progress = p.overallProgress?.percentage || p.overallProgress || 0;
+            return sum + (typeof progress === 'number' ? progress : 0);
+          }, 0) / progressRecords.length
         )
+      : 0;
+
+    // Calculate total average study time (in hours per week)
+    const totalTimeSpent = progressRecords.reduce((sum, p) => {
+      const timeSpent = p.overallProgress?.timeSpent || p.timeSpent || 0;
+      return sum + (typeof timeSpent === 'number' ? timeSpent : 0);
+    }, 0);
+    const avgStudyTime = progressRecords.length > 0
+      ? Math.round((totalTimeSpent / progressRecords.length / 3600) * 0.5) // Convert to hours and estimate weekly
       : 0;
 
     res.json({
       success: true,
       data: {
         courses: courseStats,
-        totalStudents,
+        totalStudents: totalEnrollments,
         totalCourses,
-        avgCompletion
+        avgCompletion,
+        avgStudyTime
       }
     });
 
@@ -1650,35 +1651,9 @@ router.get('/course-engagement', async (req, res) => {
 });
 
 // Change Principal Password
-router.post('/change-password', async (req, res) => {
+router.post('/change-password', principalAuth, async (req, res) => {
   try {
-    const authHeader = req.header('Authorization');
-    const token = authHeader?.startsWith('Bearer ') ? authHeader.replace('Bearer ', '') : authHeader;
-    
-    if (!token) {
-      return res.status(401).json({
-        success: false,
-        message: 'Access denied. No token provided.'
-      });
-    }
-
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-super-secret-jwt-key-change-this-in-production');
-    const principal = await Principal.findById(decoded.id);
-    
-    if (!principal) {
-      return res.status(404).json({
-        success: false,
-        message: 'Principal not found.'
-      });
-    }
-
-    if (!principal.isActive) {
-      return res.status(401).json({
-        success: false,
-        message: 'Principal account deactivated.'
-      });
-    }
-
+    const principal = req.principal;
     const { currentPassword, newPassword } = req.body;
 
     // Validate required fields

@@ -411,33 +411,48 @@ export const generateMaterialDownloadUrl = async (req, res) => {
     const { materialId } = req.params;
     const studentId = req.studentId;
 
+    if (!materialId) {
+      return res.status(400).json({
+        success: false,
+        message: 'Material ID is required'
+      });
+    }
 
     // First, try to find in CourseMaterial collection
     let material = await CourseMaterial.findById(materialId);
     
     if (!material) {
-      
       // If not found in CourseMaterial, search in course materials
-      const courses = await RealTimeCourse.find({
-        'modules.lectures.materials.id': materialId
-      });
-      
-      if (courses.length === 0) {
-        return res.status(404).json({
-          success: false,
-          message: 'Material not found'
-        });
-      }
+      // MongoDB nested array queries can be tricky, so we'll search all courses manually
+      const allCourses = await RealTimeCourse.find({});
       
       // Find the material in course data
       let foundMaterial = null;
-      for (const course of courses) {
-        for (const module of course.modules) {
-          for (const lecture of module.lectures) {
-            const courseMaterial = lecture.materials.find(m => m.id === materialId);
-            if (courseMaterial) {
-              foundMaterial = courseMaterial;
-              break;
+      let foundCourse = null;
+      
+      for (const course of allCourses) {
+        for (const module of course.modules || []) {
+          for (const lecture of module.lectures || []) {
+            if (lecture.materials && Array.isArray(lecture.materials)) {
+              const courseMaterial = lecture.materials.find(m => {
+                // Try multiple comparison methods to handle different ID formats
+                const mId = m.id || m._id;
+                const mIdStr = mId ? String(mId) : '';
+                const materialIdStr = String(materialId);
+                
+                return (
+                  mIdStr === materialIdStr ||
+                  m.id === materialId ||
+                  m._id?.toString() === materialIdStr ||
+                  (mId && mId.toString() === materialIdStr) ||
+                  (mId && String(mId) === materialIdStr)
+                );
+              });
+              if (courseMaterial) {
+                foundMaterial = courseMaterial;
+                foundCourse = course;
+                break;
+              }
             }
           }
           if (foundMaterial) break;
@@ -448,44 +463,136 @@ export const generateMaterialDownloadUrl = async (req, res) => {
       if (!foundMaterial) {
         return res.status(404).json({
           success: false,
-          message: 'Material not found in course data'
+          message: 'Material not found in course data',
+          materialId: materialId,
+          hint: 'Material may not exist or ID format may be incorrect'
         });
       }
       
+      // Check if material has r2Key
+      if (!foundMaterial.r2Key) {
+        return res.status(400).json({
+          success: false,
+          message: 'Material R2 key not found. The file may not be properly uploaded.'
+        });
+      }
       
-      // Generate presigned download URL (valid for 1 hour)
-      const result = await generatePresignedDownloadUrl(foundMaterial.r2Key, 3600);
-      
-      // Update download count in course data
-      await RealTimeCourse.findOneAndUpdate(
-        { 'modules.lectures.materials.id': materialId },
-        { $inc: { 'modules.$[].lectures.$[].materials.$[material].downloadCount': 1 } },
-        { arrayFilters: [{ 'material.id': materialId }] }
-      );
+      try {
+        // Verify file exists in R2 before generating presigned URL
+        const { getR2Client, getR2BucketName } = await import('../config/r2.js');
+        const { HeadObjectCommand } = await import('@aws-sdk/client-s3');
+        const r2Client = getR2Client();
+        const bucketName = getR2BucketName();
+        
+        if (r2Client && bucketName) {
+          try {
+            const headCommand = new HeadObjectCommand({
+              Bucket: bucketName,
+              Key: foundMaterial.r2Key
+            });
+            await r2Client.send(headCommand);
+          } catch (headError) {
+            if (headError.name === 'NotFound' || headError.Code === 'NoSuchKey') {
+              return res.status(404).json({
+                success: false,
+                message: 'File not found in storage. The file may have been deleted or the R2 key is incorrect.',
+                r2Key: foundMaterial.r2Key
+              });
+            }
+            // If it's a different error, continue to try generating presigned URL
+          }
+        }
+        
+        // Generate presigned download URL (valid for 1 hour)
+        const result = await generatePresignedDownloadUrl(foundMaterial.r2Key, 3600);
+        
+        // Update download count in course data
+        try {
+          await RealTimeCourse.findOneAndUpdate(
+            { 'modules.lectures.materials.id': materialId },
+            { $inc: { 'modules.$[].lectures.$[].materials.$[material].downloadCount': 1 } },
+            { arrayFilters: [{ 'material.id': materialId }] }
+          );
+        } catch (updateError) {
+          // Download count update failed, but continue with download
+        }
 
-      res.json({
-        success: true,
-        downloadUrl: result.downloadUrl,
-        fileName: foundMaterial.name,
-        fileSize: foundMaterial.fileSize,
-        expiresIn: result.expiresIn
-      });
+        res.json({
+          success: true,
+          downloadUrl: result.downloadUrl,
+          fileName: foundMaterial.name || foundMaterial.fileName,
+          fileSize: foundMaterial.fileSize,
+          expiresIn: result.expiresIn
+        });
+      } catch (r2Error) {
+        return res.status(500).json({
+          success: false,
+          message: 'Failed to generate download URL. The file may not exist in storage.',
+          error: process.env.NODE_ENV === 'development' ? r2Error.message : undefined,
+          r2Key: foundMaterial.r2Key
+        });
+      }
       
     } else {
+      // Material found in CourseMaterial collection
+      if (!material.r2Key) {
+        return res.status(400).json({
+          success: false,
+          message: 'Material R2 key not found. The file may not be properly uploaded.'
+        });
+      }
       
-      // Generate presigned download URL (valid for 1 hour)
-      const result = await generatePresignedDownloadUrl(material.r2Key, 3600);
+      try {
+        // Verify file exists in R2 before generating presigned URL
+        const { getR2Client, getR2BucketName } = await import('../config/r2.js');
+        const { HeadObjectCommand } = await import('@aws-sdk/client-s3');
+        const r2Client = getR2Client();
+        const bucketName = getR2BucketName();
+        
+        if (r2Client && bucketName) {
+          try {
+            const headCommand = new HeadObjectCommand({
+              Bucket: bucketName,
+              Key: material.r2Key
+            });
+            await r2Client.send(headCommand);
+          } catch (headError) {
+            if (headError.name === 'NotFound' || headError.Code === 'NoSuchKey') {
+              return res.status(404).json({
+                success: false,
+                message: 'File not found in storage. The file may have been deleted or the R2 key is incorrect.',
+                r2Key: material.r2Key
+              });
+            }
+            // If it's a different error, continue to try generating presigned URL
+          }
+        }
+        
+        // Generate presigned download URL (valid for 1 hour)
+        const result = await generatePresignedDownloadUrl(material.r2Key, 3600);
 
-      // Increment download count
-      await material.incrementDownloadCount();
+        // Increment download count
+        try {
+          await material.incrementDownloadCount();
+        } catch (updateError) {
+          // Download count update failed, but continue with download
+        }
 
-      res.json({
-        success: true,
-        downloadUrl: result.downloadUrl,
-        fileName: material.fileName,
-        fileSize: material.fileSize,
-        expiresIn: result.expiresIn
-      });
+        res.json({
+          success: true,
+          downloadUrl: result.downloadUrl,
+          fileName: material.fileName,
+          fileSize: material.fileSize,
+          expiresIn: result.expiresIn
+        });
+      } catch (r2Error) {
+        return res.status(500).json({
+          success: false,
+          message: 'Failed to generate download URL. The file may not exist in storage.',
+          error: process.env.NODE_ENV === 'development' ? r2Error.message : undefined,
+          r2Key: material.r2Key
+        });
+      }
     }
 
   } catch (error) {

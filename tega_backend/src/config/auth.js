@@ -13,7 +13,7 @@ const requiredEnvVars = [
 
 for (const envVar of requiredEnvVars) {
   if (!process.env[envVar]) {
-    throw new Error(`❌ CRITICAL: ${envVar} environment variable is required for production`);
+    throw new Error(` CRITICAL: ${envVar} environment variable is required for production`);
   }
 }
 
