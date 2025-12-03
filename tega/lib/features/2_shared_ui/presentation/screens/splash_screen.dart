@@ -22,6 +22,7 @@ class _SplashScreenState extends State<SplashScreen> {
   late VideoPlayerController _videoController;
   late Future<void> _initializeVideoPlayerFuture;
   final AuthService _authService = AuthService();
+  bool _hasError = false;
 
   @override
   void initState() {
@@ -34,32 +35,34 @@ class _SplashScreenState extends State<SplashScreen> {
     _initializeVideoPlayerFuture = _videoController
         .initialize()
         .then((_) {
-          // Ensure the video plays only once.  
+          // Ensure the video plays only once.
           _videoController.setLooping(false);
           // Start playback immediately.
           _videoController.play();
         })
-        .timeout(
-          const Duration(seconds: 5),
-          onTimeout: () {
-            print('Video initialization timed out. Navigating...');
-            _navigateBasedOnSession();
-          },
-        )
         .catchError((error) {
-          print('Video initialization failed: $error');
-          _navigateBasedOnSession();
+          debugPrint("Video initialization failed: $error");
+          if (mounted) {
+            setState(() {
+              _hasError = true;
+            });
+            // Fallback navigation if video fails
+            Future.delayed(const Duration(seconds: 3), () {
+              if (mounted) _navigateBasedOnSession();
+            });
+          }
         });
 
     // Add a listener to navigate after the video completes.
     _videoController.addListener(() {
-      // Check if controller is disposed or not initialized to avoid errors
-      if (!_videoController.value.isInitialized) return;
+      // If we have an error, we rely on the timer above, not this listener.
+      if (_hasError) return;
 
+      final isInitialized = _videoController.value.isInitialized;
       final isFinished =
           _videoController.value.duration == _videoController.value.position;
 
-      if (isFinished) {
+      if (isInitialized && isFinished) {
         // Use a small delay to ensure the last frame is shown briefly before navigating.
         Future.delayed(const Duration(milliseconds: 500), () {
           // Check if the widget is still in the tree before navigating.
@@ -155,9 +158,28 @@ class _SplashScreenState extends State<SplashScreen> {
         child: FutureBuilder(
           future: _initializeVideoPlayerFuture,
           builder: (context, snapshot) {
+            // If initialization is done (success or error handled in catchError)
             if (snapshot.connectionState == ConnectionState.done) {
-              // Once the video is ready, remove the native splash screen.
+              // Remove native splash once we are ready to show something
               FlutterNativeSplash.remove();
+
+              if (_hasError || !_videoController.value.isInitialized) {
+                // Fallback UI
+                return Center(
+                  child: Image.asset(
+                    'assets/splash_logo.png',
+                    width: 200,
+                    height: 200,
+                    errorBuilder: (context, error, stackTrace) {
+                      return const Icon(
+                        Icons.error,
+                        size: 50,
+                        color: Colors.red,
+                      );
+                    },
+                  ),
+                );
+              }
 
               // This structure ensures the video is centered and not cropped.
               return Center(
