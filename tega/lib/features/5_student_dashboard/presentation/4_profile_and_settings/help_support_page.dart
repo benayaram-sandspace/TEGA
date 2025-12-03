@@ -41,7 +41,7 @@ class _HelpSupportPageState extends State<HelpSupportPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF7F8FC),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SingleChildScrollView(
         padding: EdgeInsets.all(
           isLargeDesktop
@@ -95,7 +95,7 @@ class _HelpSupportPageState extends State<HelpSupportPage> {
         Text(
           'Browse by Category',
           style: TextStyle(
-            color: const Color(0xFF111827),
+            color: Theme.of(context).textTheme.titleLarge?.color,
             fontSize: isLargeDesktop
                 ? 24
                 : isDesktop
@@ -226,7 +226,7 @@ class _HelpSupportPageState extends State<HelpSupportPage> {
             : 16,
       ),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(
           isLargeDesktop
               ? 16
@@ -240,7 +240,7 @@ class _HelpSupportPageState extends State<HelpSupportPage> {
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Theme.of(context).shadowColor.withOpacity(0.05),
             blurRadius: isLargeDesktop
                 ? 12
                 : isDesktop
@@ -350,7 +350,7 @@ class _HelpSupportPageState extends State<HelpSupportPage> {
             child: Text(
               description,
               style: TextStyle(
-                color: const Color(0xFF6B7280),
+                color: Theme.of(context).textTheme.bodyMedium?.color,
                 fontSize: isLargeDesktop
                     ? 14
                     : isDesktop
@@ -377,7 +377,7 @@ class _HelpSupportPageState extends State<HelpSupportPage> {
         Text(
           'Popular Articles',
           style: TextStyle(
-            color: const Color(0xFF111827),
+            color: Theme.of(context).textTheme.titleLarge?.color,
             fontSize: isLargeDesktop
                 ? 24
                 : isDesktop
@@ -403,7 +403,7 @@ class _HelpSupportPageState extends State<HelpSupportPage> {
         ),
         Container(
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: Theme.of(context).cardColor,
             borderRadius: BorderRadius.circular(
               isLargeDesktop
                   ? 16
@@ -417,7 +417,7 @@ class _HelpSupportPageState extends State<HelpSupportPage> {
             ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.05),
+                color: Theme.of(context).shadowColor.withOpacity(0.05),
                 blurRadius: isLargeDesktop
                     ? 12
                     : isDesktop
@@ -488,7 +488,7 @@ class _HelpSupportPageState extends State<HelpSupportPage> {
         children: [
           Icon(
             Icons.description_outlined,
-            color: Colors.grey[400],
+            color: Theme.of(context).disabledColor,
             size: isLargeDesktop
                 ? 24
                 : isDesktop
@@ -514,7 +514,7 @@ class _HelpSupportPageState extends State<HelpSupportPage> {
             child: Text(
               title,
               style: TextStyle(
-                color: const Color(0xFF111827),
+                color: Theme.of(context).textTheme.bodyMedium?.color,
                 fontSize: isLargeDesktop
                     ? 16
                     : isDesktop
@@ -563,7 +563,7 @@ class _HelpSupportPageState extends State<HelpSupportPage> {
             : 16,
       ),
       height: 1,
-      color: Colors.grey[200],
+      color: Theme.of(context).dividerColor,
     );
   }
 
@@ -581,7 +581,7 @@ class _HelpSupportPageState extends State<HelpSupportPage> {
             : 24,
       ),
       decoration: BoxDecoration(
-        color: const Color(0xFFF7F8FC),
+        color: Theme.of(context).scaffoldBackgroundColor,
         borderRadius: BorderRadius.circular(
           isLargeDesktop
               ? 16
@@ -594,7 +594,7 @@ class _HelpSupportPageState extends State<HelpSupportPage> {
               : 12,
         ),
         border: Border.all(
-          color: const Color(0xFFE5E7EB),
+          color: Theme.of(context).dividerColor,
           width: isLargeDesktop || isDesktop
               ? 1.5
               : isTablet
@@ -609,7 +609,7 @@ class _HelpSupportPageState extends State<HelpSupportPage> {
           Text(
             'Still need help?',
             style: TextStyle(
-              color: const Color(0xFF111827),
+              color: Theme.of(context).textTheme.titleLarge?.color,
               fontSize: isLargeDesktop
                   ? 22
                   : isDesktop
@@ -636,7 +636,7 @@ class _HelpSupportPageState extends State<HelpSupportPage> {
           Text(
             'Our support team is available to help you with any questions or issues you might have.',
             style: TextStyle(
-              color: const Color(0xFF6B7280),
+              color: Theme.of(context).textTheme.bodyMedium?.color,
               fontSize: isLargeDesktop
                   ? 16
                   : isDesktop
@@ -725,7 +725,7 @@ class _HelpSupportPageState extends State<HelpSupportPage> {
             children: [
               Icon(
                 Icons.access_time,
-                color: Colors.grey[500],
+                color: Theme.of(context).textTheme.bodySmall?.color,
                 size: isLargeDesktop
                     ? 18
                     : isDesktop
@@ -751,7 +751,7 @@ class _HelpSupportPageState extends State<HelpSupportPage> {
                 child: Text(
                   'Available Monday to Friday, 9:00 AM to 6:00 PM IST',
                   style: TextStyle(
-                    color: Colors.grey[500],
+                    color: Theme.of(context).textTheme.bodySmall?.color,
                     fontSize: isLargeDesktop
                         ? 14
                         : isDesktop
@@ -783,8 +783,12 @@ class _HelpSupportPageState extends State<HelpSupportPage> {
       child: ElevatedButton.icon(
         onPressed: onTap,
         style: ElevatedButton.styleFrom(
-          backgroundColor: isPrimary ? const Color(0xFF3B82F6) : Colors.white,
-          foregroundColor: isPrimary ? Colors.white : const Color(0xFF3B82F6),
+          backgroundColor: isPrimary
+              ? Theme.of(context).primaryColor
+              : Theme.of(context).cardColor,
+          foregroundColor: isPrimary
+              ? Theme.of(context).colorScheme.onPrimary
+              : Theme.of(context).primaryColor,
           padding: EdgeInsets.symmetric(
             horizontal: isLargeDesktop
                 ? 24

@@ -83,10 +83,13 @@ class _ResumeBuilderPageState extends State<ResumeBuilderPage>
 
   @override
   Widget build(BuildContext context) {
+    // Refactored for theme consistency
     if (_isLoading) {
-      return const Scaffold(
+      return Scaffold(
         body: Center(
-          child: CircularProgressIndicator(color: Color(0xFF6B5FFF)),
+          child: CircularProgressIndicator(
+            color: Theme.of(context).primaryColor,
+          ),
         ),
       );
     }
@@ -100,9 +103,9 @@ class _ResumeBuilderPageState extends State<ResumeBuilderPage>
       description:
           'Create professional resumes with our AI-powered builder. Choose from multiple templates and export to PDF.',
       icon: Icons.description_rounded,
-      primaryColor: const Color(0xFF4CAF50),
+      primaryColor: Theme.of(context).primaryColor,
       child: Scaffold(
-        backgroundColor: const Color(0xFFF5F7FA),
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         body: Column(
           children: [
             _buildTopBar(isDesktop, isTablet),
@@ -129,7 +132,7 @@ class _ResumeBuilderPageState extends State<ResumeBuilderPage>
         ),
         floatingActionButton: FloatingActionButton.extended(
           onPressed: () => _exportPDF(),
-          backgroundColor: const Color(0xFF6B5FFF),
+          backgroundColor: Theme.of(context).primaryColor,
           icon: const Icon(Icons.picture_as_pdf, color: Colors.white),
           label: const Text(
             'Export PDF',
@@ -144,10 +147,10 @@ class _ResumeBuilderPageState extends State<ResumeBuilderPage>
     return Container(
       padding: EdgeInsets.all(isDesktop ? 24 : 16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardColor,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Theme.of(context).shadowColor.withOpacity(0.05),
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -168,7 +171,7 @@ class _ResumeBuilderPageState extends State<ResumeBuilderPage>
                       style: TextStyle(
                         fontSize: isDesktop ? 24 : 20,
                         fontWeight: FontWeight.w700,
-                        color: const Color(0xFF1A1A1A),
+                        color: Theme.of(context).textTheme.bodyLarge?.color,
                       ),
                     ),
                     const SizedBox(height: 4),
@@ -176,7 +179,7 @@ class _ResumeBuilderPageState extends State<ResumeBuilderPage>
                       'Create ATS-friendly resumes with professional templates',
                       style: TextStyle(
                         fontSize: isDesktop ? 14 : 12,
-                        color: Colors.grey[600],
+                        color: Theme.of(context).textTheme.bodyMedium?.color,
                       ),
                     ),
                   ],
@@ -190,7 +193,7 @@ class _ResumeBuilderPageState extends State<ResumeBuilderPage>
                       'Templates',
                       Icons.palette_outlined,
                       () => _showTemplateSelector(),
-                      const Color(0xFF6B5FFF),
+                      Theme.of(context).primaryColor,
                       false,
                     ),
                     const SizedBox(height: 8),
@@ -198,7 +201,7 @@ class _ResumeBuilderPageState extends State<ResumeBuilderPage>
                       _showPreview ? 'Hide Preview' : 'Live Preview',
                       _showPreview ? Icons.visibility_off : Icons.visibility,
                       () => setState(() => _showPreview = !_showPreview),
-                      const Color(0xFF6B5FFF),
+                      Theme.of(context).primaryColor,
                       false,
                     ),
                   ],
@@ -217,7 +220,7 @@ class _ResumeBuilderPageState extends State<ResumeBuilderPage>
                         'Templates',
                         Icons.palette_outlined,
                         () => _showTemplateSelector(),
-                        const Color(0xFF6B5FFF),
+                        Theme.of(context).primaryColor,
                         false,
                       ),
                     ),
@@ -227,7 +230,7 @@ class _ResumeBuilderPageState extends State<ResumeBuilderPage>
                         _showPreview ? 'Edit' : 'Preview',
                         _showPreview ? Icons.edit : Icons.visibility,
                         () => setState(() => _showPreview = !_showPreview),
-                        const Color(0xFF6B5FFF),
+                        Theme.of(context).primaryColor,
                         false,
                       ),
                     ),
@@ -254,7 +257,7 @@ class _ResumeBuilderPageState extends State<ResumeBuilderPage>
               style: TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.w600,
-                color: Colors.grey[700],
+                color: Theme.of(context).textTheme.bodyLarge?.color,
               ),
             ),
             Text(
@@ -264,7 +267,7 @@ class _ResumeBuilderPageState extends State<ResumeBuilderPage>
                 fontWeight: FontWeight.w700,
                 color: completionPercentage == 100
                     ? const Color(0xFF10B981)
-                    : const Color(0xFF6B5FFF),
+                    : Theme.of(context).primaryColor,
               ),
             ),
           ],
@@ -275,11 +278,11 @@ class _ResumeBuilderPageState extends State<ResumeBuilderPage>
           child: LinearProgressIndicator(
             value: completionPercentage / 100,
             minHeight: 8,
-            backgroundColor: Colors.grey[200],
+            backgroundColor: Theme.of(context).dividerColor,
             valueColor: AlwaysStoppedAnimation(
               completionPercentage == 100
                   ? const Color(0xFF10B981)
-                  : const Color(0xFF6B5FFF),
+                  : Theme.of(context).primaryColor,
             ),
           ),
         ),
@@ -319,7 +322,7 @@ class _ResumeBuilderPageState extends State<ResumeBuilderPage>
 
   Widget _buildMainContent(bool isDesktop, bool isTablet) {
     return Container(
-      color: const Color(0xFFF5F7FA),
+      color: Theme.of(context).scaffoldBackgroundColor,
       child: Column(
         children: [
           _buildQuickTips(isDesktop, isTablet),
@@ -352,18 +355,20 @@ class _ResumeBuilderPageState extends State<ResumeBuilderPage>
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            const Color(0xFF6B5FFF).withOpacity(0.1),
-            const Color(0xFF8B7FFF).withOpacity(0.05),
+            Theme.of(context).primaryColor.withOpacity(0.1),
+            Theme.of(context).primaryColorLight.withOpacity(0.05),
           ],
         ),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFF6B5FFF).withOpacity(0.2)),
+        border: Border.all(
+          color: Theme.of(context).primaryColor.withOpacity(0.2),
+        ),
       ),
       child: Row(
         children: [
-          const Icon(
+          Icon(
             Icons.lightbulb_outline,
-            color: Color(0xFF6B5FFF),
+            color: Theme.of(context).primaryColor,
             size: 18,
           ),
           const SizedBox(width: 10),
@@ -372,7 +377,7 @@ class _ResumeBuilderPageState extends State<ResumeBuilderPage>
               'Tip: Fill all sections to increase your completion score',
               style: TextStyle(
                 fontSize: 13,
-                color: Colors.grey[800],
+                color: Theme.of(context).textTheme.bodyLarge?.color,
                 fontWeight: FontWeight.w500,
               ),
               maxLines: 1,
@@ -388,16 +393,16 @@ class _ResumeBuilderPageState extends State<ResumeBuilderPage>
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.08),
+            color: Theme.of(context).shadowColor.withOpacity(0.08),
             blurRadius: 20,
             offset: const Offset(0, 4),
           ),
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Theme.of(context).shadowColor.withOpacity(0.04),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -408,14 +413,17 @@ class _ResumeBuilderPageState extends State<ResumeBuilderPage>
         isScrollable: true,
         indicator: BoxDecoration(
           borderRadius: BorderRadius.circular(12),
-          gradient: const LinearGradient(
-            colors: [Color(0xFF6B5FFF), Color(0xFF8B7FFF)],
+          gradient: LinearGradient(
+            colors: [
+              Theme.of(context).primaryColor,
+              Theme.of(context).primaryColorLight,
+            ],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
           boxShadow: [
             BoxShadow(
-              color: const Color(0xFF6B5FFF).withOpacity(0.3),
+              color: Theme.of(context).primaryColor.withOpacity(0.3),
               blurRadius: 8,
               offset: const Offset(0, 2),
             ),
@@ -424,7 +432,7 @@ class _ResumeBuilderPageState extends State<ResumeBuilderPage>
         indicatorSize: TabBarIndicatorSize.tab,
         indicatorPadding: const EdgeInsets.all(6),
         labelColor: Colors.white,
-        unselectedLabelColor: Colors.grey[600],
+        unselectedLabelColor: Theme.of(context).textTheme.bodyMedium?.color,
         labelStyle: const TextStyle(
           fontSize: 14,
           fontWeight: FontWeight.w700,
@@ -505,16 +513,16 @@ class _ResumeBuilderPageState extends State<ResumeBuilderPage>
       child: Container(
         padding: EdgeInsets.all(isDesktop ? 24 : 20),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: Theme.of(context).cardColor,
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.06),
+              color: Theme.of(context).shadowColor.withOpacity(0.06),
               blurRadius: 20,
               offset: const Offset(0, 4),
             ),
             BoxShadow(
-              color: Colors.black.withOpacity(0.04),
+              color: Theme.of(context).shadowColor.withOpacity(0.04),
               blurRadius: 8,
               offset: const Offset(0, 2),
             ),
@@ -528,8 +536,11 @@ class _ResumeBuilderPageState extends State<ResumeBuilderPage>
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [Color(0xFF6B5FFF), Color(0xFF8B7FFF)],
+                    gradient: LinearGradient(
+                      colors: [
+                        Theme.of(context).primaryColor,
+                        Theme.of(context).primaryColorLight,
+                      ],
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                     ),
@@ -546,12 +557,12 @@ class _ResumeBuilderPageState extends State<ResumeBuilderPage>
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
+                      Text(
                         'Personal Information',
                         style: TextStyle(
                           fontSize: 22,
                           fontWeight: FontWeight.w800,
-                          color: Color(0xFF1A1A1A),
+                          color: Theme.of(context).textTheme.bodyLarge?.color,
                           letterSpacing: 0.5,
                         ),
                       ),
@@ -560,7 +571,7 @@ class _ResumeBuilderPageState extends State<ResumeBuilderPage>
                         'Basic details that will appear on your resume',
                         style: TextStyle(
                           fontSize: 15,
-                          color: Colors.grey[600],
+                          color: Theme.of(context).textTheme.bodyMedium?.color,
                           fontWeight: FontWeight.w500,
                         ),
                       ),
@@ -626,7 +637,10 @@ class _ResumeBuilderPageState extends State<ResumeBuilderPage>
             const SizedBox(height: 6),
             Text(
               'A brief overview of your professional background and goals',
-              style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+              style: TextStyle(
+                fontSize: 14,
+                color: Theme.of(context).textTheme.bodyMedium?.color,
+              ),
             ),
             const SizedBox(height: 12),
             _buildTextField(
@@ -655,16 +669,16 @@ class _ResumeBuilderPageState extends State<ResumeBuilderPage>
       child: Container(
         padding: EdgeInsets.all(isDesktop ? 24 : 20),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: Theme.of(context).cardColor,
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.06),
+              color: Theme.of(context).shadowColor.withOpacity(0.06),
               blurRadius: 20,
               offset: const Offset(0, 4),
             ),
             BoxShadow(
-              color: Colors.black.withOpacity(0.04),
+              color: Theme.of(context).shadowColor.withOpacity(0.04),
               blurRadius: 8,
               offset: const Offset(0, 2),
             ),
@@ -683,16 +697,18 @@ class _ResumeBuilderPageState extends State<ResumeBuilderPage>
                         children: [
                           Icon(
                             Icons.work_outline,
-                            color: const Color(0xFF6B5FFF),
+                            color: Theme.of(context).primaryColor,
                             size: 24,
                           ),
                           const SizedBox(width: 12),
-                          const Text(
+                          Text(
                             'Work Experience',
                             style: TextStyle(
                               fontSize: 20,
                               fontWeight: FontWeight.w700,
-                              color: Color(0xFF1A1A1A),
+                              color: Theme.of(
+                                context,
+                              ).textTheme.bodyLarge?.color,
                             ),
                           ),
                         ],
@@ -704,7 +720,9 @@ class _ResumeBuilderPageState extends State<ResumeBuilderPage>
                           'Add your professional work history',
                           style: TextStyle(
                             fontSize: 14,
-                            color: Colors.grey[600],
+                            color: Theme.of(
+                              context,
+                            ).textTheme.bodyMedium?.color,
                             fontWeight: FontWeight.w400,
                           ),
                         ),
@@ -717,7 +735,7 @@ class _ResumeBuilderPageState extends State<ResumeBuilderPage>
                   icon: const Icon(Icons.add, size: 18),
                   label: const Text('Add'),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF6B5FFF),
+                    backgroundColor: Theme.of(context).primaryColor,
                     foregroundColor: Colors.white,
                     elevation: 0,
                     padding: const EdgeInsets.symmetric(
@@ -760,16 +778,16 @@ class _ResumeBuilderPageState extends State<ResumeBuilderPage>
       child: Container(
         padding: EdgeInsets.all(isDesktop ? 24 : 20),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: Theme.of(context).cardColor,
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.06),
+              color: Theme.of(context).shadowColor.withOpacity(0.06),
               blurRadius: 20,
               offset: const Offset(0, 4),
             ),
             BoxShadow(
-              color: Colors.black.withOpacity(0.04),
+              color: Theme.of(context).shadowColor.withOpacity(0.04),
               blurRadius: 8,
               offset: const Offset(0, 2),
             ),
@@ -792,12 +810,14 @@ class _ResumeBuilderPageState extends State<ResumeBuilderPage>
                             size: 24,
                           ),
                           const SizedBox(width: 12),
-                          const Text(
+                          Text(
                             'Education',
                             style: TextStyle(
                               fontSize: 20,
                               fontWeight: FontWeight.w700,
-                              color: Color(0xFF1A1A1A),
+                              color: Theme.of(
+                                context,
+                              ).textTheme.bodyLarge?.color,
                             ),
                           ),
                         ],
@@ -809,7 +829,9 @@ class _ResumeBuilderPageState extends State<ResumeBuilderPage>
                           'Add your educational background',
                           style: TextStyle(
                             fontSize: 14,
-                            color: Colors.grey[600],
+                            color: Theme.of(
+                              context,
+                            ).textTheme.bodyMedium?.color,
                             fontWeight: FontWeight.w400,
                           ),
                         ),
@@ -865,16 +887,16 @@ class _ResumeBuilderPageState extends State<ResumeBuilderPage>
       child: Container(
         padding: EdgeInsets.all(isDesktop ? 24 : 20),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: Theme.of(context).cardColor,
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.06),
+              color: Theme.of(context).shadowColor.withOpacity(0.06),
               blurRadius: 20,
               offset: const Offset(0, 4),
             ),
             BoxShadow(
-              color: Colors.black.withOpacity(0.04),
+              color: Theme.of(context).shadowColor.withOpacity(0.04),
               blurRadius: 8,
               offset: const Offset(0, 2),
             ),
@@ -897,12 +919,14 @@ class _ResumeBuilderPageState extends State<ResumeBuilderPage>
                             size: 24,
                           ),
                           const SizedBox(width: 12),
-                          const Text(
+                          Text(
                             'Skills',
                             style: TextStyle(
                               fontSize: 20,
                               fontWeight: FontWeight.w700,
-                              color: Color(0xFF1A1A1A),
+                              color: Theme.of(
+                                context,
+                              ).textTheme.bodyLarge?.color,
                             ),
                           ),
                         ],
@@ -914,7 +938,9 @@ class _ResumeBuilderPageState extends State<ResumeBuilderPage>
                           'List your technical and soft skills',
                           style: TextStyle(
                             fontSize: 14,
-                            color: Colors.grey[600],
+                            color: Theme.of(
+                              context,
+                            ).textTheme.bodyMedium?.color,
                             fontWeight: FontWeight.w400,
                           ),
                         ),
@@ -989,16 +1015,16 @@ class _ResumeBuilderPageState extends State<ResumeBuilderPage>
           Container(
             padding: EdgeInsets.all(isDesktop ? 24 : 20),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: Theme.of(context).cardColor,
               borderRadius: BorderRadius.circular(16),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.06),
+                  color: Theme.of(context).shadowColor.withOpacity(0.06),
                   blurRadius: 20,
                   offset: const Offset(0, 4),
                 ),
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.04),
+                  color: Theme.of(context).shadowColor.withOpacity(0.04),
                   blurRadius: 8,
                   offset: const Offset(0, 2),
                 ),
@@ -1018,12 +1044,14 @@ class _ResumeBuilderPageState extends State<ResumeBuilderPage>
                             size: 24,
                           ),
                           const SizedBox(width: 12),
-                          const Text(
+                          Text(
                             'Projects',
                             style: TextStyle(
                               fontSize: 20,
                               fontWeight: FontWeight.w700,
-                              color: Color(0xFF1A1A1A),
+                              color: Theme.of(
+                                context,
+                              ).textTheme.bodyLarge?.color,
                             ),
                           ),
                         ],
@@ -1053,16 +1081,16 @@ class _ResumeBuilderPageState extends State<ResumeBuilderPage>
           Container(
             padding: EdgeInsets.all(isDesktop ? 24 : 20),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: Theme.of(context).cardColor,
               borderRadius: BorderRadius.circular(16),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.06),
+                  color: Theme.of(context).shadowColor.withOpacity(0.06),
                   blurRadius: 20,
                   offset: const Offset(0, 4),
                 ),
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.04),
+                  color: Theme.of(context).shadowColor.withOpacity(0.04),
                   blurRadius: 8,
                   offset: const Offset(0, 2),
                 ),
@@ -1078,16 +1106,18 @@ class _ResumeBuilderPageState extends State<ResumeBuilderPage>
                         children: [
                           Icon(
                             Icons.verified_outlined,
-                            color: const Color(0xFF6B5FFF),
+                            color: Theme.of(context).primaryColor,
                             size: 24,
                           ),
                           const SizedBox(width: 12),
-                          const Text(
+                          Text(
                             'Certifications',
                             style: TextStyle(
                               fontSize: 20,
                               fontWeight: FontWeight.w700,
-                              color: Color(0xFF1A1A1A),
+                              color: Theme.of(
+                                context,
+                              ).textTheme.bodyLarge?.color,
                             ),
                           ),
                         ],
@@ -1097,7 +1127,7 @@ class _ResumeBuilderPageState extends State<ResumeBuilderPage>
                       onPressed: () => _addCertification(),
                       icon: const Icon(
                         Icons.add_circle,
-                        color: Color(0xFF6B5FFF),
+                        color: Theme.of(context).primaryColor,
                         size: 28,
                       ),
                     ),
@@ -1132,10 +1162,14 @@ class _ResumeBuilderPageState extends State<ResumeBuilderPage>
             Container(
               padding: const EdgeInsets.all(5),
               decoration: BoxDecoration(
-                color: const Color(0xFF6B5FFF).withOpacity(0.1),
+                color: Theme.of(context).primaryColor.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: Icon(icon, size: 15, color: const Color(0xFF6B5FFF)),
+              child: Icon(
+                icon,
+                size: 15,
+                color: Theme.of(context).primaryColor,
+              ),
             ),
             const SizedBox(width: 10),
             Text(
@@ -1143,7 +1177,7 @@ class _ResumeBuilderPageState extends State<ResumeBuilderPage>
               style: const TextStyle(
                 fontSize: 15,
                 fontWeight: FontWeight.w700,
-                color: Color(0xFF1A1A1A),
+                color: Theme.of(context).textTheme.bodyLarge?.color,
                 letterSpacing: 0.3,
               ),
             ),
@@ -1155,7 +1189,7 @@ class _ResumeBuilderPageState extends State<ResumeBuilderPage>
             borderRadius: BorderRadius.circular(12),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.04),
+                color: Theme.of(context).shadowColor.withOpacity(0.04),
                 blurRadius: 8,
                 offset: const Offset(0, 2),
               ),
@@ -1171,29 +1205,29 @@ class _ResumeBuilderPageState extends State<ResumeBuilderPage>
             style: const TextStyle(
               fontSize: 15,
               fontWeight: FontWeight.w500,
-              color: Color(0xFF1A1A1A),
+              color: Theme.of(context).textTheme.bodyLarge?.color,
             ),
             decoration: InputDecoration(
               hintText: hint,
               hintStyle: TextStyle(
-                color: Colors.grey[400],
+                color: Theme.of(context).hintColor,
                 fontSize: 15,
                 fontWeight: FontWeight.w400,
               ),
               filled: true,
-              fillColor: Colors.white,
+              fillColor: Theme.of(context).cardColor,
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: Colors.grey[200]!),
+                borderSide: BorderSide(color: Theme.of(context).dividerColor),
               ),
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: Colors.grey[200]!),
+                borderSide: BorderSide(color: Theme.of(context).dividerColor),
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
                 borderSide: const BorderSide(
-                  color: Color(0xFF6B5FFF),
+                  color: Theme.of(context).primaryColor,
                   width: 2,
                 ),
               ),
@@ -1213,20 +1247,23 @@ class _ResumeBuilderPageState extends State<ResumeBuilderPage>
       padding: const EdgeInsets.all(48),
       child: Column(
         children: [
-          Icon(icon, size: 64, color: Colors.grey[300]),
+          Icon(icon, size: 64, color: Theme.of(context).disabledColor),
           const SizedBox(height: 16),
           Text(
             title,
             style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w600,
-              color: Colors.grey[600],
+              color: Theme.of(context).textTheme.bodyMedium?.color,
             ),
           ),
           const SizedBox(height: 8),
           Text(
             subtitle,
-            style: TextStyle(fontSize: 14, color: Colors.grey[500]),
+            style: TextStyle(
+              fontSize: 14,
+              color: Theme.of(context).textTheme.bodyMedium?.color,
+            ),
             textAlign: TextAlign.center,
           ),
         ],
@@ -1251,7 +1288,11 @@ class _ResumeBuilderPageState extends State<ResumeBuilderPage>
               onPressed: () => _editExperience(index),
             ),
             IconButton(
-              icon: const Icon(Icons.delete, size: 20, color: Colors.red),
+              icon: Icon(
+                Icons.delete,
+                size: 20,
+                color: Theme.of(context).colorScheme.error,
+              ),
               onPressed: () {
                 setState(() => _resumeData.experiences.removeAt(index));
               },
@@ -1279,7 +1320,11 @@ class _ResumeBuilderPageState extends State<ResumeBuilderPage>
               onPressed: () => _editEducation(index),
             ),
             IconButton(
-              icon: const Icon(Icons.delete, size: 20, color: Colors.red),
+              icon: Icon(
+                Icons.delete,
+                size: 20,
+                color: Theme.of(context).colorScheme.error,
+              ),
               onPressed: () {
                 setState(() => _resumeData.educations.removeAt(index));
               },
@@ -1304,7 +1349,11 @@ class _ResumeBuilderPageState extends State<ResumeBuilderPage>
           overflow: TextOverflow.ellipsis,
         ),
         trailing: IconButton(
-          icon: const Icon(Icons.delete, size: 20, color: Colors.red),
+          icon: Icon(
+            Icons.delete,
+            size: 20,
+            color: Theme.of(context).colorScheme.error,
+          ),
           onPressed: () {
             setState(() => _resumeData.projects.removeAt(index));
           },
@@ -1323,7 +1372,11 @@ class _ResumeBuilderPageState extends State<ResumeBuilderPage>
         ),
         subtitle: Text(cert.issuer),
         trailing: IconButton(
-          icon: const Icon(Icons.delete, size: 20, color: Colors.red),
+          icon: Icon(
+            Icons.delete,
+            size: 20,
+            color: Theme.of(context).colorScheme.error,
+          ),
           onPressed: () {
             setState(() => _resumeData.certifications.removeAt(index));
           },
@@ -1335,18 +1388,22 @@ class _ResumeBuilderPageState extends State<ResumeBuilderPage>
   Widget _buildLivePreview(bool isDesktop) {
     if (_selectedTemplate == null) {
       return Container(
-        color: Colors.grey[100],
+        color: Theme.of(context).scaffoldBackgroundColor,
         child: const Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(Icons.palette_outlined, size: 64, color: Colors.grey),
+              Icon(
+                Icons.palette_outlined,
+                size: 64,
+                color: Theme.of(context).disabledColor,
+              ),
               SizedBox(height: 16),
               Text(
                 'Select a template to see preview',
                 style: TextStyle(
                   fontSize: 18,
-                  color: Colors.grey,
+                  color: Theme.of(context).hintColor,
                   fontWeight: FontWeight.w500,
                 ),
               ),

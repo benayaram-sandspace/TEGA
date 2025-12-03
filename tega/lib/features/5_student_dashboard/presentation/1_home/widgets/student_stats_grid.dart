@@ -72,25 +72,25 @@ class _StudentStatsGridState extends State<StudentStatsGrid>
             'Completed Courses',
             '${userProgress['completedCourses'] ?? 0}',
             Icons.check_circle_outline_rounded,
-            const Color(0xFF6B5FFF),
+            Theme.of(context).primaryColor,
           ),
           _StatInfo(
             'In Progress',
             '$enrolledCount',
             Icons.pending_actions_rounded,
-            const Color(0xFF4CAF50),
+            Colors.green,
           ),
           _StatInfo(
             'Certifications',
             '${userProgress['certificates'] ?? 0}',
             Icons.workspace_premium_rounded,
-            const Color(0xFFFF9800),
+            Colors.orange,
           ),
           _StatInfo(
             'Study Hours',
             '${userProgress['totalHours'] ?? 0}',
             Icons.access_time_rounded,
-            const Color(0xFF2196F3),
+            Colors.blue,
           ),
         ];
         _isLoadingStats = false;
@@ -110,30 +110,25 @@ class _StudentStatsGridState extends State<StudentStatsGrid>
       if (!mounted) return;
       setState(() {
         _stats = [
-          const _StatInfo(
+          _StatInfo(
             'Completed Courses',
             '0',
             Icons.check_circle_outline_rounded,
-            Color(0xFF6B5FFF),
+            Theme.of(context).primaryColor,
           ),
-          const _StatInfo(
+          _StatInfo(
             'In Progress',
             '0',
             Icons.pending_actions_rounded,
-            Color(0xFF4CAF50),
+            Colors.green,
           ),
-          const _StatInfo(
+          _StatInfo(
             'Certifications',
             '0',
             Icons.workspace_premium_rounded,
-            Color(0xFFFF9800),
+            Colors.orange,
           ),
-          const _StatInfo(
-            'Study Hours',
-            '0',
-            Icons.access_time_rounded,
-            Color(0xFF2196F3),
-          ),
+          _StatInfo('Study Hours', '0', Icons.access_time_rounded, Colors.blue),
         ];
         _isLoadingStats = false;
       });
@@ -162,24 +157,15 @@ class _StudentStatsGridState extends State<StudentStatsGrid>
     switch (index) {
       case 0:
         return [
-          const Color(0xFF6B5FFF),
-          const Color(0xFF6B5FFF).withOpacity(0.8),
+          Theme.of(context).primaryColor,
+          Theme.of(context).primaryColor.withOpacity(0.8),
         ];
       case 1:
-        return [
-          const Color(0xFF4CAF50),
-          const Color(0xFF4CAF50).withOpacity(0.8),
-        ];
+        return [Colors.green, Colors.green.withOpacity(0.8)];
       case 2:
-        return [
-          const Color(0xFFFF9800),
-          const Color(0xFFFF9800).withOpacity(0.8),
-        ];
+        return [Colors.orange, Colors.orange.withOpacity(0.8)];
       case 3:
-        return [
-          const Color(0xFF2196F3),
-          const Color(0xFF2196F3).withOpacity(0.8),
-        ];
+        return [Colors.blue, Colors.blue.withOpacity(0.8)];
       default:
         return [Colors.blue, Colors.blue.withOpacity(0.8)];
     }
@@ -252,7 +238,9 @@ class _StudentStatsGridState extends State<StudentStatsGrid>
                             ),
                           ] else ...[
                             BoxShadow(
-                              color: Colors.black.withOpacity(0.08),
+                              color: Theme.of(
+                                context,
+                              ).shadowColor.withOpacity(0.08),
                               blurRadius: 12,
                               offset: const Offset(0, 4),
                             ),
@@ -568,10 +556,12 @@ class _StudentStatsGridState extends State<StudentStatsGrid>
   @override
   Widget build(BuildContext context) {
     if (_isLoadingStats) {
-      return const Center(
+      return Center(
         child: Padding(
           padding: EdgeInsets.all(40.0),
-          child: CircularProgressIndicator(color: Color(0xFF6B5FFF)),
+          child: CircularProgressIndicator(
+            color: Theme.of(context).primaryColor,
+          ),
         ),
       );
     }

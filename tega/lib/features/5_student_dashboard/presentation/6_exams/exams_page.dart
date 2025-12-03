@@ -505,7 +505,7 @@ class _ExamsPageState extends State<ExamsPage>
     }
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: CustomScrollView(
         slivers: [
           // Main Exam Section (only show if TEGA exam is available)

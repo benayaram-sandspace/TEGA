@@ -143,25 +143,25 @@ class _QuestionPageState extends State<QuestionPage> {
     final options = List<String>.from(question["options"]);
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: PreferredSize(
         preferredSize: const Size.fromHeight(54),
         child: AppBar(
           automaticallyImplyLeading: false,
-          backgroundColor: Colors.white,
+          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
           elevation: 0,
           titleSpacing: 0,
           title: Row(
             children: [
               IconButton(
-                icon: const Icon(Icons.close, color: Colors.black87),
+                icon: Icon(Icons.close, color: Theme.of(context).iconTheme.color),
                 onPressed: () => Navigator.of(context).pop(),
               ),
               Expanded(
                 child: Text(
                   "Question ${_currentQuestion + 1} of ${_questions.length}",
-                  style: const TextStyle(
-                    color: Colors.black87,
+                  style: TextStyle(
+                    color: Theme.of(context).textTheme.bodyLarge?.color,
                     fontSize: 14.5,
                     fontWeight: FontWeight.w600,
                   ),
@@ -172,13 +172,13 @@ class _QuestionPageState extends State<QuestionPage> {
                   const Icon(
                     Icons.timer_outlined,
                     size: 18,
-                    color: Color(0xFF6F6F7A),
+                    color: Theme.of(context).textTheme.bodyMedium?.color,
                   ),
                   const SizedBox(width: 4),
                   Text(
                     _formatTime(_timeLeft),
-                    style: const TextStyle(
-                      color: Color(0xFF6F6F7A),
+                    style: TextStyle(
+                      color: Theme.of(context).textTheme.bodyMedium?.color,
                       fontSize: 13.5,
                       fontWeight: FontWeight.w600,
                     ),
@@ -194,13 +194,13 @@ class _QuestionPageState extends State<QuestionPage> {
               margin: const EdgeInsets.only(bottom: 4),
               width: double.infinity,
               height: 3,
-              color: const Color(0xFFEAEAEA),
+              color: Theme.of(context).dividerColor,
               child: Align(
                 alignment: Alignment.centerLeft,
                 child: FractionallySizedBox(
                   widthFactor:
                       (_currentQuestion + 1) / _questions.length.toDouble(),
-                  child: Container(height: 3, color: const Color(0xFF5E4FDB)),
+                  child: Container(height: 3, color: Theme.of(context).primaryColor),
                 ),
               ),
             ),
@@ -216,11 +216,11 @@ class _QuestionPageState extends State<QuestionPage> {
               width: double.infinity,
               padding: const EdgeInsets.fromLTRB(16, 18, 16, 16),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: Theme.of(context).cardColor,
                 borderRadius: BorderRadius.circular(14),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
+                    color: Theme.of(context).shadowColor.withOpacity(0.05),
                     blurRadius: 8,
                     offset: const Offset(0, 3),
                   ),
@@ -231,19 +231,15 @@ class _QuestionPageState extends State<QuestionPage> {
                 children: [
                   Text(
                     question["title"],
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w800,
-                      color: Colors.black87,
+                    style: TextStyle(
+                      color: Theme.of(context).textTheme.bodyLarge?.color,
                     ),
                   ),
                   const SizedBox(height: 12),
                   Text(
                     question["question"],
-                    style: const TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                      color: Color(0xFF444444),
+                    style: TextStyle(
+                      color: Theme.of(context).textTheme.bodyMedium?.color,
                       height: 1.4,
                     ),
                   ),
@@ -271,11 +267,11 @@ class _QuestionPageState extends State<QuestionPage> {
                             ),
                             side: BorderSide(
                               color: isSelected
-                                  ? const Color(0xFF5E4FDB)
-                                  : const Color(0xFFDADCE0),
+                                  ? Theme.of(context).primaryColor
+                                  : Theme.of(context).dividerColor,
                               width: isSelected ? 2 : 1,
                             ),
-                            backgroundColor: Colors.white,
+                            backgroundColor: Theme.of(context).cardColor,
                           ),
                           child: Row(
                             children: [
@@ -287,22 +283,20 @@ class _QuestionPageState extends State<QuestionPage> {
                                   shape: BoxShape.circle,
                                   border: Border.all(
                                     color: isSelected
-                                        ? const Color(0xFF5E4FDB)
-                                        : const Color(0xFFDADCE0),
+                                        ? Theme.of(context).primaryColor
+                                        : Theme.of(context).dividerColor,
                                     width: 1.5,
                                   ),
                                   color: isSelected
-                                      ? const Color(0xFFEDEBFE)
-                                      : Colors.white,
+                                      ? Theme.of(context).primaryColor.withOpacity(0.1)
+                                      : Theme.of(context).cardColor,
                                 ),
                                 child: Text(
                                   String.fromCharCode(65 + index),
                                   style: TextStyle(
-                                    fontWeight: FontWeight.w700,
-                                    fontSize: 13,
                                     color: isSelected
-                                        ? const Color(0xFF5E4FDB)
-                                        : Colors.black87,
+                                        ? Theme.of(context).primaryColor
+                                        : Theme.of(context).textTheme.bodyLarge?.color,
                                   ),
                                 ),
                               ),
@@ -310,10 +304,8 @@ class _QuestionPageState extends State<QuestionPage> {
                               Expanded(
                                 child: Text(
                                   options[index],
-                                  style: const TextStyle(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w500,
-                                    color: Colors.black87,
+                                  style: TextStyle(
+                                    color: Theme.of(context).textTheme.bodyLarge?.color,
                                   ),
                                 ),
                               ),
@@ -333,8 +325,8 @@ class _QuestionPageState extends State<QuestionPage> {
                           ? null
                           : () => _goToExplanation(_selectedIndex),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF5E4FDB),
-                        disabledBackgroundColor: const Color(0xFFBFB8E6),
+                        backgroundColor: Theme.of(context).primaryColor,
+                        disabledBackgroundColor: Theme.of(context).disabledColor,
                         foregroundColor: Colors.white,
                         elevation: 0,
                         shape: RoundedRectangleBorder(
@@ -379,15 +371,15 @@ class ExplanationPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         automaticallyImplyLeading: false,
-        backgroundColor: Colors.white,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         elevation: 0,
         title: Text(
           "Question $questionNumber of $total",
           style: const TextStyle(
-            color: Colors.black87,
+            color: Theme.of(context).textTheme.bodyLarge?.color,
             fontWeight: FontWeight.w700,
             fontSize: 15,
           ),
@@ -400,11 +392,11 @@ class ExplanationPage extends StatelessWidget {
           width: double.infinity,
           padding: const EdgeInsets.all(18),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: Theme.of(context).cardColor,
             borderRadius: BorderRadius.circular(14),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.05),
+                color: Theme.of(context).shadowColor.withOpacity(0.05),
                 blurRadius: 8,
                 offset: const Offset(0, 3),
               ),
@@ -417,13 +409,13 @@ class ExplanationPage extends StatelessWidget {
                 children: [
                   Icon(
                     isCorrect ? Icons.check_circle : Icons.cancel,
-                    color: isCorrect ? Colors.green : Colors.red,
+                    color: isCorrect ? Colors.green : Theme.of(context).colorScheme.error,
                   ),
                   const SizedBox(width: 8),
                   Text(
                     isCorrect ? "Correct!" : "Wrong!",
                     style: TextStyle(
-                      color: isCorrect ? Colors.green : Colors.red,
+                      color: isCorrect ? Colors.green : Theme.of(context).colorScheme.error,
                       fontWeight: FontWeight.w700,
                       fontSize: 15,
                     ),
@@ -435,7 +427,7 @@ class ExplanationPage extends StatelessWidget {
                 isCorrect
                     ? "Great job! You selected the right answer."
                     : "That’s not correct. Review the explanation below.",
-                style: const TextStyle(fontSize: 14, color: Colors.black87),
+                style: TextStyle(fontSize: 14, color: Theme.of(context).textTheme.bodyLarge?.color),
               ),
               const SizedBox(height: 16),
               const Text(
@@ -445,10 +437,7 @@ class ExplanationPage extends StatelessWidget {
               const SizedBox(height: 6),
               Text(
                 explanation,
-                style: const TextStyle(
-                  fontSize: 14,
-                  height: 1.4,
-                  color: Color(0xFF444444),
+                  color: Theme.of(context).textTheme.bodyMedium?.color,
                 ),
               ),
               const SizedBox(height: 24),
@@ -457,7 +446,7 @@ class ExplanationPage extends StatelessWidget {
                 child: ElevatedButton(
                   onPressed: onNext,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF5E4FDB),
+                    backgroundColor: Theme.of(context).primaryColor,
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 14),
                   ),
@@ -488,19 +477,19 @@ class QuizCompletedPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         automaticallyImplyLeading: false,
         elevation: 0,
-        backgroundColor: Colors.white,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         title: const Text(
           "Results",
-          style: TextStyle(color: Colors.black87, fontWeight: FontWeight.w700),
+          style: TextStyle(color: Theme.of(context).textTheme.bodyLarge?.color, fontWeight: FontWeight.w700),
         ),
         centerTitle: true,
         actions: [
           IconButton(
-            icon: const Icon(Icons.close, color: Colors.black87),
+            icon: Icon(Icons.close, color: Theme.of(context).iconTheme.color),
             onPressed: () => Navigator.of(context).pop(),
           ),
         ],
@@ -510,7 +499,7 @@ class QuizCompletedPage extends StatelessWidget {
         child: Column(
           children: [
             const SizedBox(height: 12),
-            const Icon(Icons.emoji_events, size: 64, color: Color(0xFF5E4FDB)),
+            Icon(Icons.emoji_events, size: 64, color: Theme.of(context).primaryColor),
             const SizedBox(height: 12),
             const Text(
               "Drill Complete!",
@@ -521,11 +510,11 @@ class QuizCompletedPage extends StatelessWidget {
               width: double.infinity,
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: Theme.of(context).cardColor,
                 borderRadius: BorderRadius.circular(14),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
+                    color: Theme.of(context).shadowColor.withOpacity(0.05),
                     blurRadius: 8,
                     offset: const Offset(0, 3),
                   ),
@@ -538,7 +527,7 @@ class QuizCompletedPage extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.w600,
-                      color: Colors.grey[700],
+                      color: Theme.of(context).textTheme.bodyMedium?.color,
                     ),
                   ),
                   const SizedBox(height: 6),
@@ -551,15 +540,17 @@ class QuizCompletedPage extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 20),
-                  _resultRow(Icons.flash_on, "XP Gained", "+50 XP"),
+                  _resultRow(context, Icons.flash_on, "XP Gained", "+50 XP"),
                   const SizedBox(height: 12),
                   _resultRow(
+                    context,
                     Icons.local_fire_department,
                     "Current Streak",
                     "6 Days",
                   ),
                   const SizedBox(height: 12),
                   _resultRow(
+                    context,
                     Icons.emoji_events,
                     "Badge Earned",
                     "Logical Thinker",
@@ -569,14 +560,14 @@ class QuizCompletedPage extends StatelessWidget {
                     width: double.infinity,
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFF8F9FB),
+                      color: Theme.of(context).cardColor,
                       borderRadius: BorderRadius.circular(10),
                     ),
-                    child: const Text(
+                    child: Text(
                       "Need to Review:\n\nQuestion #3: Review the concept of \"Conditional Reasoning\" in the Logic chapter of your course materials.",
                       style: TextStyle(
                         fontSize: 14,
-                        color: Color(0xFF444444),
+                        color: Theme.of(context).textTheme.bodyMedium?.color,
                         height: 1.4,
                       ),
                     ),
@@ -595,8 +586,8 @@ class QuizCompletedPage extends StatelessWidget {
                             );
                           },
                           style: OutlinedButton.styleFrom(
-                            side: const BorderSide(color: Color(0xFF5E4FDB)),
-                            foregroundColor: const Color(0xFF5E4FDB),
+                            side: BorderSide(color: Theme.of(context).primaryColor),
+                            foregroundColor: Theme.of(context).primaryColor,
                             padding: const EdgeInsets.symmetric(vertical: 14),
                           ),
                           child: const Text(
@@ -617,7 +608,7 @@ class QuizCompletedPage extends StatelessWidget {
                             );
                           },
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF5E4FDB),
+                            backgroundColor: Theme.of(context).primaryColor,
                             foregroundColor: Colors.white,
                             padding: const EdgeInsets.symmetric(vertical: 14),
                           ),
@@ -638,25 +629,25 @@ class QuizCompletedPage extends StatelessWidget {
     );
   }
 
-  Widget _resultRow(IconData icon, String label, String value) {
+  Widget _resultRow(BuildContext context, IconData icon, String label, String value) {
     return Row(
       children: [
-        Icon(icon, color: Colors.black54),
+        Icon(icon, color: Theme.of(context).iconTheme.color),
         const SizedBox(width: 10),
         Expanded(
           child: Text(
             label,
-            style: const TextStyle(
+            style: TextStyle(
               fontWeight: FontWeight.w600,
-              color: Colors.black87,
+              color: Theme.of(context).textTheme.bodyLarge?.color,
             ),
           ),
         ),
         Text(
           value,
-          style: const TextStyle(
+          style: TextStyle(
             fontWeight: FontWeight.w700,
-            color: Color(0xFF5E4FDB),
+            color: Theme.of(context).primaryColor,
           ),
         ),
       ],

@@ -43,7 +43,7 @@ class _OnboardingScreen2State extends State<OnboardingScreen2> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(20.0),
@@ -54,7 +54,10 @@ class _OnboardingScreen2State extends State<OnboardingScreen2> {
               Row(
                 children: [
                   IconButton(
-                    icon: const Icon(Icons.arrow_back, color: Colors.black87),
+                    icon: Icon(
+                      Icons.arrow_back,
+                      color: Theme.of(context).iconTheme.color,
+                    ),
                     onPressed: () {
                       Navigator.pushReplacement(
                         context,
@@ -64,12 +67,12 @@ class _OnboardingScreen2State extends State<OnboardingScreen2> {
                       );
                     },
                   ),
-                  const Text(
+                  Text(
                     "What are you interested in\nafter college?",
                     style: TextStyle(
                       fontSize: 22,
                       fontWeight: FontWeight.bold,
-                      color: Colors.black87,
+                      color: Theme.of(context).textTheme.bodyLarge?.color,
                       height: 1.3,
                     ),
                   ),
@@ -82,11 +85,11 @@ class _OnboardingScreen2State extends State<OnboardingScreen2> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Text(
+                  Text(
                     'Step 2 of 6',
                     style: TextStyle(
                       fontSize: 14,
-                      color: Colors.grey,
+                      color: Theme.of(context).textTheme.bodyMedium?.color,
                       fontWeight: FontWeight.w500,
                     ),
                   ),
@@ -97,7 +100,9 @@ class _OnboardingScreen2State extends State<OnboardingScreen2> {
                         Container(
                           height: 8,
                           decoration: BoxDecoration(
-                            color: Colors.grey.shade200,
+                            color: Theme.of(
+                              context,
+                            ).dividerColor.withOpacity(0.2),
                             borderRadius: BorderRadius.circular(4),
                           ),
                         ),
@@ -106,7 +111,7 @@ class _OnboardingScreen2State extends State<OnboardingScreen2> {
                           child: Container(
                             height: 8,
                             decoration: BoxDecoration(
-                              color: const Color(0xFFFFA726),
+                              color: Theme.of(context).primaryColor,
                               borderRadius: BorderRadius.circular(4),
                             ),
                           ),
@@ -115,11 +120,11 @@ class _OnboardingScreen2State extends State<OnboardingScreen2> {
                     ),
                   ),
                   const SizedBox(width: 20),
-                  const Text(
+                  Text(
                     '33% Complete',
                     style: TextStyle(
                       fontSize: 14,
-                      color: Colors.grey,
+                      color: Theme.of(context).textTheme.bodyMedium?.color,
                       fontWeight: FontWeight.w500,
                     ),
                   ),
@@ -127,9 +132,12 @@ class _OnboardingScreen2State extends State<OnboardingScreen2> {
               ),
 
               const SizedBox(height: 8),
-              const Text(
+              Text(
                 "(Choose up to 5)",
-                style: TextStyle(fontSize: 14, color: Colors.grey),
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Theme.of(context).textTheme.bodyMedium?.color,
+                ),
               ),
 
               const SizedBox(height: 20),
@@ -152,13 +160,13 @@ class _OnboardingScreen2State extends State<OnboardingScreen2> {
                         ),
                         decoration: BoxDecoration(
                           color: isSelected
-                              ? const Color(0xFFFFA726)
-                              : Colors.white,
+                              ? Theme.of(context).primaryColor
+                              : Theme.of(context).cardColor,
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(
                             color: isSelected
-                                ? const Color(0xFFFFA726)
-                                : Colors.grey.shade300,
+                                ? Theme.of(context).primaryColor
+                                : Theme.of(context).dividerColor,
                             width: 1,
                           ),
                         ),
@@ -166,7 +174,9 @@ class _OnboardingScreen2State extends State<OnboardingScreen2> {
                           children: [
                             Icon(
                               _getIconForInterest(interest),
-                              color: isSelected ? Colors.white : Colors.black54,
+                              color: isSelected
+                                  ? Colors.white
+                                  : (Theme.of(context).iconTheme.color),
                             ),
                             const SizedBox(width: 12),
                             Expanded(
@@ -177,7 +187,9 @@ class _OnboardingScreen2State extends State<OnboardingScreen2> {
                                   fontWeight: FontWeight.w500,
                                   color: isSelected
                                       ? Colors.white
-                                      : Colors.black87,
+                                      : (Theme.of(
+                                          context,
+                                        ).textTheme.bodyLarge?.color),
                                 ),
                               ),
                             ),
@@ -213,11 +225,14 @@ class _OnboardingScreen2State extends State<OnboardingScreen2> {
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(10),
                       ),
-                      side: BorderSide(color: Colors.grey.shade400),
+                      side: BorderSide(color: Theme.of(context).dividerColor),
                     ),
-                    child: const Text(
+                    child: Text(
                       "Skip",
-                      style: TextStyle(fontSize: 16, color: Colors.black87),
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: Theme.of(context).textTheme.bodyLarge?.color,
+                      ),
                     ),
                   ),
                   ElevatedButton(
@@ -231,7 +246,7 @@ class _OnboardingScreen2State extends State<OnboardingScreen2> {
                       );
                     },
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFFFFA726),
+                      backgroundColor: Theme.of(context).primaryColor,
                       padding: const EdgeInsets.symmetric(
                         horizontal: 32,
                         vertical: 14,

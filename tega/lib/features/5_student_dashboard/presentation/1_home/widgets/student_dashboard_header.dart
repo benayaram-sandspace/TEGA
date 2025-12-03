@@ -152,7 +152,7 @@ class StudentDashboardHeader extends StatelessWidget {
         vertical: verticalPadding,
       ),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardColor,
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.05),
@@ -170,8 +170,8 @@ class StudentDashboardHeader extends StatelessWidget {
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
                 colors: [
-                  const Color(0xFF6B5FFF).withOpacity(0.1),
-                  const Color(0xFF6B5FFF).withOpacity(0.05),
+                  Theme.of(context).primaryColor.withOpacity(0.1),
+                  Theme.of(context).primaryColor.withOpacity(0.05),
                 ],
               ),
               borderRadius: BorderRadius.circular(borderRadius),
@@ -184,13 +184,13 @@ class StudentDashboardHeader extends StatelessWidget {
                   onMenuTap();
                 },
                 borderRadius: BorderRadius.circular(borderRadius),
-                splashColor: const Color(0xFF6B5FFF).withOpacity(0.2),
+                splashColor: Theme.of(context).primaryColor.withOpacity(0.2),
                 child: Container(
                   padding: EdgeInsets.all(buttonPadding),
                   child: Icon(
                     Icons.menu_rounded,
                     size: menuIconSize,
-                    color: const Color(0xFF6B5FFF),
+                    color: Theme.of(context).primaryColor,
                   ),
                 ),
               ),
@@ -206,7 +206,7 @@ class StudentDashboardHeader extends StatelessWidget {
                   Icon(
                     _getIconForTitle(title),
                     size: titleIconSize,
-                    color: const Color(0xFF6B5FFF),
+                    color: Theme.of(context).primaryColor,
                   ),
                   SizedBox(width: isSmallScreen ? 8 : 10),
                   Flexible(
@@ -215,7 +215,11 @@ class StudentDashboardHeader extends StatelessWidget {
                       style: TextStyle(
                         fontSize: titleFontSize,
                         fontWeight: FontWeight.w700,
-                        color: Colors.black,
+                        color:
+                            Theme.of(
+                              context,
+                            ).appBarTheme.titleTextStyle?.color ??
+                            Colors.black,
                         letterSpacing: 0.5,
                       ),
                       overflow: TextOverflow.ellipsis,
@@ -252,7 +256,8 @@ class StudentDashboardHeader extends StatelessWidget {
                       child: Icon(
                         Icons.notifications_outlined,
                         size: notificationIconSize,
-                        color: Colors.black87,
+                        color:
+                            Theme.of(context).iconTheme.color ?? Colors.black87,
                       ),
                     ),
                   ),
@@ -268,13 +273,18 @@ class StudentDashboardHeader extends StatelessWidget {
                       vertical: isSmallScreen ? 1 : 2,
                     ),
                     decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        colors: [Color(0xFFFF5252), Color(0xFFFF1744)],
+                      gradient: LinearGradient(
+                        colors: [
+                          Theme.of(context).colorScheme.error,
+                          Theme.of(context).colorScheme.error,
+                        ],
                       ),
                       borderRadius: BorderRadius.circular(10),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.red.withOpacity(0.4),
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.error.withOpacity(0.4),
                           spreadRadius: 0,
                           blurRadius: 4,
                           offset: const Offset(0, 2),

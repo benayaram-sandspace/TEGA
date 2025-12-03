@@ -334,16 +334,18 @@ class _LearningHistoryPageState extends State<LearningHistoryPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F5F5),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(child: _buildOverviewTab()),
     );
   }
 
   Widget _buildOverviewTab() {
     if (_isLoadingStats) {
-      return const Center(
+      return Center(
         child: CircularProgressIndicator(
-          valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF9C88FF)),
+          valueColor: AlwaysStoppedAnimation<Color>(
+            Theme.of(context).primaryColor,
+          ),
         ),
       );
     }
@@ -364,7 +366,7 @@ class _LearningHistoryPageState extends State<LearningHistoryPage> {
 
     return RefreshIndicator(
       onRefresh: () => _loadData(forceRefresh: true),
-      color: const Color(0xFF9C88FF),
+      color: Theme.of(context).primaryColor,
       child: SingleChildScrollView(
         padding: EdgeInsets.all(
           isLargeDesktop
@@ -431,10 +433,13 @@ class _LearningHistoryPageState extends State<LearningHistoryPage> {
             : 28,
       ),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
+        gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [Color(0xFF9C88FF), Color(0xFF7A6BFF)],
+          colors: [
+            Theme.of(context).primaryColor,
+            Theme.of(context).primaryColorLight,
+          ],
         ),
         borderRadius: BorderRadius.circular(
           isLargeDesktop
@@ -449,7 +454,7 @@ class _LearningHistoryPageState extends State<LearningHistoryPage> {
         ),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF9C88FF).withOpacity(0.3),
+            color: Theme.of(context).primaryColor.withOpacity(0.3),
             blurRadius: isLargeDesktop
                 ? 24
                 : isDesktop
@@ -863,7 +868,9 @@ class _LearningHistoryPageState extends State<LearningHistoryPage> {
             : 14,
       ),
       decoration: BoxDecoration(
-        color: isSelected ? const Color(0xFF9C88FF) : const Color(0xFFF8F9FA),
+        color: isSelected
+            ? Theme.of(context).primaryColor
+            : Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(
           isLargeDesktop
               ? 22
@@ -876,7 +883,9 @@ class _LearningHistoryPageState extends State<LearningHistoryPage> {
               : 18,
         ),
         border: Border.all(
-          color: isSelected ? const Color(0xFF9C88FF) : const Color(0xFFE9ECEF),
+          color: isSelected
+              ? Theme.of(context).primaryColor
+              : Theme.of(context).dividerColor,
           width: isLargeDesktop || isDesktop
               ? 1.5
               : isTablet
@@ -890,7 +899,10 @@ class _LearningHistoryPageState extends State<LearningHistoryPage> {
         child: Text(
           label,
           style: TextStyle(
-            color: isSelected ? Colors.white : const Color(0xFF6C757D),
+            color: isSelected
+                ? Colors.white
+                : (Theme.of(context).textTheme.bodyMedium?.color ??
+                      Colors.grey),
             fontSize: isLargeDesktop
                 ? 16
                 : isDesktop
@@ -939,7 +951,7 @@ class _LearningHistoryPageState extends State<LearningHistoryPage> {
                   : isSmallScreen
                   ? 48
                   : 56,
-              color: Colors.grey[400],
+              color: Theme.of(context).disabledColor,
             ),
             SizedBox(
               height: isLargeDesktop
@@ -965,7 +977,9 @@ class _LearningHistoryPageState extends State<LearningHistoryPage> {
                     ? 16
                     : 18,
                 fontWeight: FontWeight.bold,
-                color: Colors.grey[700],
+                color:
+                    Theme.of(context).textTheme.bodyLarge?.color ??
+                    Colors.grey[700],
               ),
               textAlign: TextAlign.center,
             ),
@@ -985,7 +999,9 @@ class _LearningHistoryPageState extends State<LearningHistoryPage> {
                 'Please check your connection and try again',
                 textAlign: TextAlign.center,
                 style: TextStyle(
-                  color: Colors.grey[600],
+                  color:
+                      Theme.of(context).textTheme.bodyMedium?.color ??
+                      Colors.grey[600],
                   fontSize: isLargeDesktop
                       ? 18
                       : isDesktop
@@ -1013,7 +1029,9 @@ class _LearningHistoryPageState extends State<LearningHistoryPage> {
                 message,
                 textAlign: TextAlign.center,
                 style: TextStyle(
-                  color: Colors.grey[600],
+                  color:
+                      Theme.of(context).textTheme.bodyMedium?.color ??
+                      Colors.grey[600],
                   fontSize: isLargeDesktop
                       ? 18
                       : isDesktop
@@ -1066,8 +1084,8 @@ class _LearningHistoryPageState extends State<LearningHistoryPage> {
                 ),
               ),
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF9C88FF),
-                foregroundColor: Colors.white,
+                backgroundColor: Theme.of(context).primaryColor,
+                foregroundColor: Theme.of(context).cardColor,
                 padding: EdgeInsets.symmetric(
                   horizontal: isLargeDesktop
                       ? 32
@@ -1126,7 +1144,7 @@ class _LearningHistoryPageState extends State<LearningHistoryPage> {
                     : 22,
               ),
               decoration: BoxDecoration(
-                color: const Color(0xFF9C88FF).withOpacity(0.1),
+                color: Theme.of(context).primaryColor.withOpacity(0.1),
                 shape: BoxShape.circle,
               ),
               child: Icon(
@@ -1140,7 +1158,7 @@ class _LearningHistoryPageState extends State<LearningHistoryPage> {
                     : isSmallScreen
                     ? 48
                     : 56,
-                color: const Color(0xFF9C88FF),
+                color: Theme.of(context).primaryColor,
               ),
             ),
             SizedBox(
@@ -1167,7 +1185,9 @@ class _LearningHistoryPageState extends State<LearningHistoryPage> {
                     ? 16
                     : 18,
                 fontWeight: FontWeight.w600,
-                color: const Color(0xFF2C3E50),
+                color:
+                    Theme.of(context).textTheme.bodyLarge?.color ??
+                    Theme.of(context).textTheme.bodyLarge?.color,
               ),
               textAlign: TextAlign.center,
             ),
@@ -1191,7 +1211,7 @@ class _LearningHistoryPageState extends State<LearningHistoryPage> {
             : 20,
       ),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(
           isLargeDesktop
               ? 24
@@ -1205,7 +1225,7 @@ class _LearningHistoryPageState extends State<LearningHistoryPage> {
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.08),
+            color: Theme.of(context).shadowColor.withOpacity(0.08),
             blurRadius: isLargeDesktop
                 ? 20
                 : isDesktop
@@ -1247,7 +1267,7 @@ class _LearningHistoryPageState extends State<LearningHistoryPage> {
                       : 6,
                 ),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF9C88FF).withOpacity(0.1),
+                  color: Theme.of(context).primaryColor.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(
                     isLargeDesktop
                         ? 10
@@ -1260,7 +1280,7 @@ class _LearningHistoryPageState extends State<LearningHistoryPage> {
                 ),
                 child: Icon(
                   Icons.tune,
-                  color: const Color(0xFF9C88FF),
+                  color: Theme.of(context).primaryColor,
                   size: isLargeDesktop
                       ? 22
                       : isDesktop
@@ -1291,7 +1311,9 @@ class _LearningHistoryPageState extends State<LearningHistoryPage> {
                         ? 17
                         : 16,
                     fontWeight: FontWeight.bold,
-                    color: const Color(0xFF2C3E50),
+                    color:
+                        Theme.of(context).textTheme.bodyLarge?.color ??
+                        const Color(0xFF2C3E50),
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -1389,7 +1411,7 @@ class _LearningHistoryPageState extends State<LearningHistoryPage> {
                       : 9,
                 ),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFF8F9FA),
+                  color: Theme.of(context).cardColor,
                   borderRadius: BorderRadius.circular(
                     isLargeDesktop
                         ? 20
@@ -1399,14 +1421,17 @@ class _LearningHistoryPageState extends State<LearningHistoryPage> {
                         ? 16
                         : 16,
                   ),
-                  border: Border.all(color: const Color(0xFFE9ECEF), width: 1),
+                  border: Border.all(
+                    color: Theme.of(context).dividerColor,
+                    width: 1,
+                  ),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Icon(
                       Icons.sort_rounded,
-                      color: const Color(0xFF6C757D),
+                      color: Theme.of(context).iconTheme.color ?? Colors.grey,
                       size: isLargeDesktop
                           ? 18
                           : isDesktop
@@ -1428,7 +1453,9 @@ class _LearningHistoryPageState extends State<LearningHistoryPage> {
                       child: Text(
                         'Newest',
                         style: TextStyle(
-                          color: const Color(0xFF6C757D),
+                          color:
+                              Theme.of(context).textTheme.bodyMedium?.color ??
+                              Colors.grey,
                           fontSize: isLargeDesktop
                               ? 14
                               : isDesktop
@@ -1453,7 +1480,7 @@ class _LearningHistoryPageState extends State<LearningHistoryPage> {
                     ),
                     Icon(
                       Icons.keyboard_arrow_down_rounded,
-                      color: const Color(0xFF6C757D),
+                      color: Theme.of(context).iconTheme.color ?? Colors.grey,
                       size: isLargeDesktop
                           ? 18
                           : isDesktop
@@ -1489,8 +1516,11 @@ class _LearningHistoryPageState extends State<LearningHistoryPage> {
                       ? 42
                       : 40,
                   decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [Color(0xFF9C88FF), Color(0xFF7A6BFF)],
+                    gradient: LinearGradient(
+                      colors: [
+                        Theme.of(context).primaryColor,
+                        Theme.of(context).primaryColorLight,
+                      ],
                     ),
                     borderRadius: BorderRadius.circular(
                       isLargeDesktop
@@ -1503,7 +1533,7 @@ class _LearningHistoryPageState extends State<LearningHistoryPage> {
                     ),
                     boxShadow: [
                       BoxShadow(
-                        color: const Color(0xFF9C88FF).withOpacity(0.3),
+                        color: Theme.of(context).primaryColor.withOpacity(0.3),
                         blurRadius: isLargeDesktop
                             ? 10
                             : isDesktop
@@ -1534,7 +1564,7 @@ class _LearningHistoryPageState extends State<LearningHistoryPage> {
                           children: [
                             Icon(
                               Icons.analytics_rounded,
-                              color: Colors.white,
+                              color: Theme.of(context).cardColor,
                               size: isLargeDesktop
                                   ? 20
                                   : isDesktop
@@ -1556,7 +1586,7 @@ class _LearningHistoryPageState extends State<LearningHistoryPage> {
                               child: Text(
                                 'View Analytics',
                                 style: TextStyle(
-                                  color: Colors.white,
+                                  color: Theme.of(context).cardColor,
                                   fontSize: isLargeDesktop
                                       ? 16
                                       : isDesktop
@@ -1602,7 +1632,7 @@ class _LearningHistoryPageState extends State<LearningHistoryPage> {
                     ? 42
                     : 40,
                 decoration: BoxDecoration(
-                  color: const Color(0xFFF8F9FA),
+                  color: Theme.of(context).cardColor,
                   borderRadius: BorderRadius.circular(
                     isLargeDesktop
                         ? 14
@@ -1612,7 +1642,10 @@ class _LearningHistoryPageState extends State<LearningHistoryPage> {
                         ? 11
                         : 11,
                   ),
-                  border: Border.all(color: const Color(0xFFE9ECEF), width: 1),
+                  border: Border.all(
+                    color: Theme.of(context).dividerColor,
+                    width: 1,
+                  ),
                 ),
                 child: Material(
                   color: Colors.transparent,
@@ -1630,7 +1663,7 @@ class _LearningHistoryPageState extends State<LearningHistoryPage> {
                     child: Center(
                       child: Icon(
                         Icons.refresh_rounded,
-                        color: const Color(0xFF6C757D),
+                        color: Theme.of(context).iconTheme.color ?? Colors.grey,
                         size: isLargeDesktop
                             ? 22
                             : isDesktop
@@ -1653,7 +1686,7 @@ class _LearningHistoryPageState extends State<LearningHistoryPage> {
   Widget _buildEnrolledCoursesList() {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(
           isLargeDesktop
               ? 20
@@ -1667,7 +1700,7 @@ class _LearningHistoryPageState extends State<LearningHistoryPage> {
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Theme.of(context).shadowColor.withOpacity(0.05),
             blurRadius: isLargeDesktop
                 ? 16
                 : isDesktop
@@ -1748,7 +1781,9 @@ class _LearningHistoryPageState extends State<LearningHistoryPage> {
                     ? 16
                     : 18,
                 fontWeight: FontWeight.bold,
-                color: const Color(0xFF2C3E50),
+                color:
+                    Theme.of(context).textTheme.bodyLarge?.color ??
+                    Theme.of(context).textTheme.bodyLarge?.color,
               ),
             ),
           ),
@@ -1768,8 +1803,8 @@ class _LearningHistoryPageState extends State<LearningHistoryPage> {
                       : 32,
                 ),
                 child: CircularProgressIndicator(
-                  valueColor: const AlwaysStoppedAnimation<Color>(
-                    Color(0xFF9C88FF),
+                  valueColor: AlwaysStoppedAnimation<Color>(
+                    Theme.of(context).primaryColor,
                   ),
                   strokeWidth: isLargeDesktop
                       ? 4
@@ -1811,7 +1846,7 @@ class _LearningHistoryPageState extends State<LearningHistoryPage> {
                           : isSmallScreen
                           ? 40
                           : 44,
-                      color: Colors.grey[400],
+                      color: Theme.of(context).disabledColor,
                     ),
                     SizedBox(
                       height: isLargeDesktop
@@ -1839,7 +1874,9 @@ class _LearningHistoryPageState extends State<LearningHistoryPage> {
                             ? 14
                             : 15,
                         fontWeight: FontWeight.bold,
-                        color: Colors.grey[700],
+                        color:
+                            Theme.of(context).textTheme.bodyLarge?.color ??
+                            Colors.grey[700],
                       ),
                       textAlign: TextAlign.center,
                     ),
@@ -1868,7 +1905,9 @@ class _LearningHistoryPageState extends State<LearningHistoryPage> {
                               : isSmallScreen
                               ? 12
                               : 13,
-                          color: Colors.grey[600],
+                          color:
+                              Theme.of(context).textTheme.bodyMedium?.color ??
+                              Colors.grey[600],
                         ),
                       ),
                     ] else ...[
@@ -1896,7 +1935,9 @@ class _LearningHistoryPageState extends State<LearningHistoryPage> {
                               : isSmallScreen
                               ? 12
                               : 13,
-                          color: Colors.grey[600],
+                          color:
+                              Theme.of(context).textTheme.bodyMedium?.color ??
+                              Colors.grey[600],
                         ),
                       ),
                     ],
@@ -1940,8 +1981,8 @@ class _LearningHistoryPageState extends State<LearningHistoryPage> {
                         ),
                       ),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF9C88FF),
-                        foregroundColor: Colors.white,
+                        backgroundColor: Theme.of(context).primaryColor,
+                        foregroundColor: Theme.of(context).cardColor,
                         padding: EdgeInsets.symmetric(
                           horizontal: isLargeDesktop
                               ? 28
@@ -1998,7 +2039,7 @@ class _LearningHistoryPageState extends State<LearningHistoryPage> {
                             : 22,
                       ),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFF5F5F5),
+                        color: Theme.of(context).scaffoldBackgroundColor,
                         shape: BoxShape.circle,
                       ),
                       child: Icon(
@@ -2012,7 +2053,7 @@ class _LearningHistoryPageState extends State<LearningHistoryPage> {
                             : isSmallScreen
                             ? 40
                             : 44,
-                        color: Colors.grey,
+                        color: Theme.of(context).disabledColor,
                       ),
                     ),
                     SizedBox(
@@ -2039,7 +2080,9 @@ class _LearningHistoryPageState extends State<LearningHistoryPage> {
                             ? 16
                             : 17,
                         fontWeight: FontWeight.w600,
-                        color: const Color(0xFF2C3E50),
+                        color:
+                            Theme.of(context).textTheme.bodyLarge?.color ??
+                            Theme.of(context).textTheme.bodyLarge?.color,
                       ),
                     ),
                     SizedBox(
@@ -2065,7 +2108,9 @@ class _LearningHistoryPageState extends State<LearningHistoryPage> {
                             : isSmallScreen
                             ? 12
                             : 13,
-                        color: Colors.grey,
+                        color:
+                            Theme.of(context).textTheme.bodyMedium?.color ??
+                            Colors.grey,
                       ),
                     ),
                   ],
@@ -2114,7 +2159,7 @@ class _LearningHistoryPageState extends State<LearningHistoryPage> {
         ? Colors.red
         : progressPercent < 50
         ? Colors.orange
-        : const Color(0xFF4CAF50);
+        : Theme.of(context).colorScheme.secondary;
 
     return Container(
       margin: EdgeInsets.only(
@@ -2149,10 +2194,10 @@ class _LearningHistoryPageState extends State<LearningHistoryPage> {
             : 14,
       ),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardColor,
         border: Border(
           bottom: BorderSide(
-            color: const Color(0xFFE9ECEF).withOpacity(0.5),
+            color: Theme.of(context).dividerColor.withOpacity(0.5),
             width: isLargeDesktop || isDesktop
                 ? 1.5
                 : isTablet
@@ -2191,7 +2236,7 @@ class _LearningHistoryPageState extends State<LearningHistoryPage> {
                   : 9,
             ),
             decoration: BoxDecoration(
-              color: const Color(0xFF2196F3).withOpacity(0.1),
+              color: Theme.of(context).primaryColor.withOpacity(0.1),
               borderRadius: BorderRadius.circular(
                 isLargeDesktop
                     ? 12
@@ -2206,7 +2251,7 @@ class _LearningHistoryPageState extends State<LearningHistoryPage> {
             ),
             child: Icon(
               Icons.menu_book_outlined,
-              color: const Color(0xFF2196F3),
+              color: Theme.of(context).primaryColor,
               size: isLargeDesktop
                   ? 28
                   : isDesktop
@@ -2249,7 +2294,9 @@ class _LearningHistoryPageState extends State<LearningHistoryPage> {
                         ? 14
                         : 16,
                     fontWeight: FontWeight.bold,
-                    color: const Color(0xFF1A1A1A),
+                    color:
+                        Theme.of(context).textTheme.bodyLarge?.color ??
+                        Theme.of(context).textTheme.bodyLarge?.color,
                     height: 1.3,
                   ),
                   maxLines: 2,
@@ -2279,7 +2326,9 @@ class _LearningHistoryPageState extends State<LearningHistoryPage> {
                         : isSmallScreen
                         ? 12
                         : 13,
-                    color: const Color(0xFF6C757D),
+                    color:
+                        Theme.of(context).textTheme.bodyMedium?.color ??
+                        Colors.grey,
                     height: 1.4,
                   ),
                 ),
@@ -2310,7 +2359,9 @@ class _LearningHistoryPageState extends State<LearningHistoryPage> {
                               : isSmallScreen
                               ? 11
                               : 12,
-                          color: const Color(0xFF6C757D),
+                          color:
+                              Theme.of(context).textTheme.bodyMedium?.color ??
+                              Colors.grey,
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -2442,7 +2493,7 @@ class _LearningHistoryPageState extends State<LearningHistoryPage> {
                     ? 40
                     : 45,
                 decoration: BoxDecoration(
-                  color: const Color(0xFFE9ECEF),
+                  color: Theme.of(context).dividerColor.withOpacity(0.2),
                   borderRadius: BorderRadius.circular(
                     isLargeDesktop
                         ? 3

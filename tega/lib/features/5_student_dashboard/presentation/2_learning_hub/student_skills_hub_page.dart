@@ -7,14 +7,18 @@ class SkillsHubScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Refactored for theme consistency
     return Scaffold(
-      backgroundColor: Colors.grey[50],
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        title: const Text(
+        title: Text(
           'My Skills Hub',
-          style: TextStyle(color: Colors.black87, fontWeight: FontWeight.w600),
+          style: TextStyle(
+            color: Theme.of(context).textTheme.bodyLarge?.color,
+            fontWeight: FontWeight.w600,
+          ),
         ),
-        backgroundColor: Colors.white,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         elevation: 0,
         // The header icon has been removed from the actions property.
       ),
@@ -29,12 +33,12 @@ class SkillsHubScreen extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // The icon next to the title has been removed.
-                  const Text(
+                  Text(
                     'My Skills',
                     style: TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
-                      color: Colors.black87,
+                      color: Theme.of(context).textTheme.bodyLarge?.color,
                     ),
                   ),
                   const SizedBox(height: 20),
@@ -45,17 +49,17 @@ class SkillsHubScreen extends StatelessWidget {
 
             // Recommended Courses Section
             Container(
-              color: Colors.white,
+              color: Theme.of(context).cardColor,
               padding: const EdgeInsets.all(20.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
+                  Text(
                     'Recommended Courses',
                     style: TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
-                      color: Colors.black87,
+                      color: Theme.of(context).textTheme.bodyLarge?.color,
                     ),
                   ),
                   const SizedBox(height: 20),
@@ -70,21 +74,24 @@ class SkillsHubScreen extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
+                  Text(
                     'Activity',
                     style: TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
-                      color: Colors.black87,
+                      color: Theme.of(context).textTheme.bodyLarge?.color,
                     ),
                   ),
                   const SizedBox(height: 8),
-                  const Text(
+                  Text(
                     'Weekly Progress',
-                    style: TextStyle(fontSize: 16, color: Colors.black54),
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: Theme.of(context).textTheme.bodyMedium?.color,
+                    ),
                   ),
                   const SizedBox(height: 20),
-                  const _ActivitySection(),
+                  _ActivitySection(),
                 ],
               ),
             ),
@@ -197,7 +204,7 @@ class _SkillCard extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: Theme.of(context).cardColor,
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Image.asset(
@@ -205,15 +212,19 @@ class _SkillCard extends StatelessWidget {
                   width: 24,
                   height: 24,
                   errorBuilder: (context, error, stackTrace) {
-                    return const Icon(Icons.code, size: 24, color: Colors.grey);
+                    return Icon(
+                      Icons.code,
+                      size: 24,
+                      color: Theme.of(context).disabledColor,
+                    );
                   },
                 ),
               ),
               Text(
                 percentage,
-                style: const TextStyle(
+                style: TextStyle(
                   fontWeight: FontWeight.bold,
-                  color: Colors.black87,
+                  color: Theme.of(context).textTheme.bodyLarge?.color,
                   fontSize: 14,
                 ),
               ),
@@ -224,10 +235,10 @@ class _SkillCard extends StatelessWidget {
             children: [
               Text(
                 name,
-                style: const TextStyle(
+                style: TextStyle(
                   fontWeight: FontWeight.w600,
                   fontSize: 14,
-                  color: Colors.black87,
+                  color: Theme.of(context).textTheme.bodyLarge?.color,
                 ),
               ),
               const SizedBox(height: 8),
@@ -329,17 +340,20 @@ class _CourseCard extends StatelessWidget {
           const SizedBox(height: 8),
           Text(
             title,
-            style: const TextStyle(
+            style: TextStyle(
               fontWeight: FontWeight.w600,
               fontSize: 14,
-              color: Colors.black87,
+              color: Theme.of(context).textTheme.bodyLarge?.color,
             ),
             maxLines: 2,
           ),
           const SizedBox(height: 4),
           Text(
             duration,
-            style: TextStyle(color: Colors.grey[600], fontSize: 12),
+            style: TextStyle(
+              color: Theme.of(context).textTheme.bodyMedium?.color,
+              fontSize: 12,
+            ),
           ),
         ],
       ),
@@ -360,7 +374,7 @@ class _ActivitySection extends StatelessWidget {
           height: 200,
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: Theme.of(context).cardColor,
             borderRadius: BorderRadius.circular(20),
           ),
           child: BarChart(
@@ -379,7 +393,8 @@ class _ActivitySection extends StatelessWidget {
                 bottomTitles: AxisTitles(
                   sideTitles: SideTitles(
                     showTitles: true,
-                    getTitlesWidget: _getBottomTitles,
+                    getTitlesWidget: (value, meta) =>
+                        _getBottomTitles(context, value, meta),
                   ),
                 ),
                 leftTitles: AxisTitles(
@@ -391,7 +406,7 @@ class _ActivitySection extends StatelessWidget {
                         return Text(
                           '${value.toInt()}',
                           style: const TextStyle(
-                            color: Colors.grey,
+                            color: Theme.of(context).hintColor,
                             fontSize: 10,
                           ),
                         );
@@ -406,7 +421,10 @@ class _ActivitySection extends StatelessWidget {
                 drawVerticalLine: false,
                 horizontalInterval: 20,
                 getDrawingHorizontalLine: (value) {
-                  return FlLine(color: Colors.grey[200]!, strokeWidth: 1);
+                  return FlLine(
+                    color: Theme.of(context).dividerColor,
+                    strokeWidth: 1,
+                  );
                 },
               ),
               borderData: FlBorderData(show: false),
@@ -474,8 +492,12 @@ class _ActivitySection extends StatelessWidget {
     });
   }
 
-  static Widget _getBottomTitles(double value, TitleMeta meta) {
-    const style = TextStyle(color: Colors.grey, fontSize: 12);
+  static Widget _getBottomTitles(
+    BuildContext context,
+    double value,
+    TitleMeta meta,
+  ) {
+    final style = TextStyle(color: Theme.of(context).hintColor, fontSize: 12);
     String text;
     switch (value.toInt()) {
       case 0:
@@ -539,7 +561,7 @@ class _AchievementCard extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: Theme.of(context).cardColor,
               borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(icon, color: iconColor, size: 24),
@@ -551,16 +573,19 @@ class _AchievementCard extends StatelessWidget {
               children: [
                 Text(
                   title,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 14,
-                    color: Colors.black87,
+                    color: Theme.of(context).textTheme.bodyLarge?.color,
                   ),
                 ),
                 const SizedBox(height: 2),
                 Text(
                   subtitle,
-                  style: TextStyle(fontSize: 12, color: Colors.grey[700]),
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Theme.of(context).textTheme.bodyMedium?.color,
+                  ),
                   overflow: TextOverflow.ellipsis,
                 ),
               ],

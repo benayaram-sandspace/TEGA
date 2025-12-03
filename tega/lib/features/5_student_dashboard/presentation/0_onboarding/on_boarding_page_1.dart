@@ -28,7 +28,7 @@ class CareerDiscoveryWelcome extends StatelessWidget {
     return WillPopScope(
       onWillPop: () async => false, // 🚫 Prevent back navigation
       child: Scaffold(
-        backgroundColor: Colors.white,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         body: SafeArea(
           child: SingleChildScrollView(
             padding: const EdgeInsets.symmetric(horizontal: 20.0),
@@ -48,14 +48,14 @@ class CareerDiscoveryWelcome extends StatelessWidget {
                     height: logoSize,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color: Colors.white,
+                      color: Theme.of(context).cardColor,
                       border: Border.all(
-                        color: const Color(0xFFFFD700),
+                        color: Theme.of(context).colorScheme.secondary,
                         width: 3,
                       ),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.grey.withOpacity(0.2),
+                          color: Theme.of(context).shadowColor.withOpacity(0.2),
                           spreadRadius: 2,
                           blurRadius: 5,
                           offset: const Offset(0, 3),
@@ -75,7 +75,7 @@ class CareerDiscoveryWelcome extends StatelessWidget {
                     style: TextStyle(
                       fontSize: isSmall ? 9 : 10,
                       letterSpacing: 1.5,
-                      color: Colors.grey,
+                      color: Theme.of(context).textTheme.bodyMedium?.color,
                       fontWeight: FontWeight.w500,
                     ),
                   ),
@@ -84,7 +84,7 @@ class CareerDiscoveryWelcome extends StatelessWidget {
                     style: TextStyle(
                       fontSize: isSmall ? 9 : 10,
                       letterSpacing: 1.5,
-                      color: Colors.grey,
+                      color: Theme.of(context).textTheme.bodyMedium?.color,
                       fontWeight: FontWeight.w500,
                     ),
                   ),
@@ -114,7 +114,7 @@ class CareerDiscoveryWelcome extends StatelessWidget {
                         style: TextStyle(
                           fontSize: greetFont,
                           fontWeight: FontWeight.w600,
-                          color: Colors.black87,
+                          color: Theme.of(context).textTheme.bodyLarge?.color,
                         ),
                       ),
                       const SizedBox(width: 8),
@@ -130,7 +130,7 @@ class CareerDiscoveryWelcome extends StatelessWidget {
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontSize: bodyFont,
-                      color: Colors.grey,
+                      color: Theme.of(context).textTheme.bodyMedium?.color,
                       height: 1.5,
                     ),
                   ),
@@ -139,7 +139,7 @@ class CareerDiscoveryWelcome extends StatelessWidget {
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontSize: bodyFont,
-                      color: Colors.grey,
+                      color: Theme.of(context).textTheme.bodyMedium?.color,
                       height: 1.5,
                     ),
                   ),
@@ -150,12 +150,18 @@ class CareerDiscoveryWelcome extends StatelessWidget {
                   Text(
                     'This will take less than 2 mins. Let\'s find the skills',
                     textAlign: TextAlign.center,
-                    style: TextStyle(fontSize: minorFont, color: Colors.grey),
+                    style: TextStyle(
+                      fontSize: minorFont,
+                      color: Theme.of(context).textTheme.bodyMedium?.color,
+                    ),
                   ),
                   Text(
                     'and jobs that match YOU.',
                     textAlign: TextAlign.center,
-                    style: TextStyle(fontSize: minorFont, color: Colors.grey),
+                    style: TextStyle(
+                      fontSize: minorFont,
+                      color: Theme.of(context).textTheme.bodyMedium?.color,
+                    ),
                   ),
 
                   SizedBox(height: isSmall ? 20 : 30),
@@ -171,7 +177,9 @@ class CareerDiscoveryWelcome extends StatelessWidget {
                           overflow: TextOverflow.ellipsis,
                           style: TextStyle(
                             fontSize: minorFont,
-                            color: Colors.grey,
+                            color:
+                                Theme.of(context).textTheme.bodyMedium?.color ??
+                                Colors.grey,
                             fontWeight: FontWeight.w500,
                           ),
                         ),
@@ -183,7 +191,9 @@ class CareerDiscoveryWelcome extends StatelessWidget {
                             Container(
                               height: 8,
                               decoration: BoxDecoration(
-                                color: Colors.grey.shade200,
+                                color: Theme.of(
+                                  context,
+                                ).dividerColor.withOpacity(0.2),
                                 borderRadius: BorderRadius.circular(4),
                               ),
                             ),
@@ -192,7 +202,7 @@ class CareerDiscoveryWelcome extends StatelessWidget {
                               child: Container(
                                 height: 8,
                                 decoration: BoxDecoration(
-                                  color: const Color(0xFFFFA726),
+                                  color: Theme.of(context).primaryColor,
                                   borderRadius: BorderRadius.circular(4),
                                 ),
                               ),
@@ -208,7 +218,9 @@ class CareerDiscoveryWelcome extends StatelessWidget {
                           overflow: TextOverflow.ellipsis,
                           style: TextStyle(
                             fontSize: minorFont,
-                            color: Colors.grey,
+                            color:
+                                Theme.of(context).textTheme.bodyMedium?.color ??
+                                Colors.grey,
                             fontWeight: FontWeight.w500,
                           ),
                         ),
@@ -235,7 +247,7 @@ class CareerDiscoveryWelcome extends StatelessWidget {
                           );
                         },
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFFFFA726),
+                          backgroundColor: Theme.of(context).primaryColor,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
                           ),

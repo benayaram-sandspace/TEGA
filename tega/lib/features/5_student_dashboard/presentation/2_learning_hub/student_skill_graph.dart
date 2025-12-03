@@ -6,21 +6,24 @@ class SkillGraphPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         automaticallyImplyLeading: true,
         elevation: 0,
-        backgroundColor: Colors.white,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         title: const Text(
           "Skill Graph",
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.w700,
-            color: Colors.black87,
+            color: Theme.of(context).textTheme.bodyLarge?.color,
           ),
         ),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black87),
+          icon: Icon(
+            Icons.arrow_back,
+            color: Theme.of(context).iconTheme.color,
+          ),
           onPressed: () => Navigator.of(context).pop(),
         ),
       ),
@@ -35,24 +38,37 @@ class SkillGraphPage extends StatelessWidget {
               style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.w700,
-                color: Colors.black87,
+                color: Theme.of(context).textTheme.bodyLarge?.color,
               ),
             ),
             const SizedBox(height: 6),
             const Text(
               "Here's your career map!",
-              style: TextStyle(fontSize: 15, color: Colors.black87),
+              style: TextStyle(
+                fontSize: 15,
+                color: Theme.of(context).textTheme.bodyLarge?.color,
+              ),
             ),
             const SizedBox(height: 16),
 
             Row(
               children: [
                 Expanded(
-                  child: _buildStatCard("Current Readiness", "68%", "+2.4%"),
+                  child: _buildStatCard(
+                    context,
+                    "Current Readiness",
+                    "68%",
+                    "+2.4%",
+                  ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
-                  child: _buildStatCard("Top Career Match", "Data Analyst", ""),
+                  child: _buildStatCard(
+                    context,
+                    "Top Career Match",
+                    "Data Analyst",
+                    "",
+                  ),
                 ),
               ],
             ),
@@ -67,7 +83,7 @@ class SkillGraphPage extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w700,
-                    color: Colors.black87,
+                    color: Theme.of(context).textTheme.bodyLarge?.color,
                   ),
                 ),
                 Text(
@@ -75,7 +91,7 @@ class SkillGraphPage extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w500,
-                    color: Colors.black54,
+                    color: Theme.of(context).textTheme.bodyMedium?.color,
                   ),
                 ),
               ],
@@ -84,7 +100,7 @@ class SkillGraphPage extends StatelessWidget {
             Container(
               height: 140,
               decoration: BoxDecoration(
-                color: const Color(0xFFF5F5F5),
+                color: Theme.of(context).cardColor,
                 borderRadius: BorderRadius.circular(12),
               ),
               child: const Center(child: Text("Graph Placeholder")),
@@ -97,7 +113,7 @@ class SkillGraphPage extends StatelessWidget {
               child: ElevatedButton(
                 onPressed: () {},
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF5E4FDB),
+                  backgroundColor: Theme.of(context).primaryColor,
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 14),
                   shape: RoundedRectangleBorder(
@@ -120,14 +136,14 @@ class SkillGraphPage extends StatelessWidget {
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(10),
                   ),
-                  side: const BorderSide(color: Color(0xFF5E4FDB)),
+                  side: BorderSide(color: Theme.of(context).primaryColor),
                 ),
                 child: const Text(
                   "Find Career Paths",
                   style: TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.w600,
-                    color: Color(0xFF5E4FDB),
+                    color: Theme.of(context).primaryColor,
                   ),
                 ),
               ),
@@ -138,7 +154,7 @@ class SkillGraphPage extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
-                color: const Color(0xFFF5F5F5),
+                color: Theme.of(context).cardColor,
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Row(
@@ -158,13 +174,18 @@ class SkillGraphPage extends StatelessWidget {
                           style: TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.w600,
-                            color: Colors.black87,
+                            color: Theme.of(context).textTheme.bodyLarge?.color,
                           ),
                         ),
                         SizedBox(height: 2),
                         Text(
                           "See how learning new skills impacts your career options",
-                          style: TextStyle(fontSize: 13, color: Colors.black54),
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: Theme.of(
+                              context,
+                            ).textTheme.bodyMedium?.color,
+                          ),
                         ),
                       ],
                     ),
@@ -174,7 +195,7 @@ class SkillGraphPage extends StatelessWidget {
                     "Explore",
                     style: TextStyle(
                       fontSize: 13,
-                      color: Color(0xFF5E4FDB),
+                      color: Theme.of(context).primaryColor,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -187,11 +208,11 @@ class SkillGraphPage extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: Theme.of(context).cardColor,
                 borderRadius: BorderRadius.circular(12),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
+                    color: Theme.of(context).shadowColor.withOpacity(0.05),
                     blurRadius: 6,
                     offset: const Offset(0, 3),
                   ),
@@ -205,7 +226,7 @@ class SkillGraphPage extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.w600,
-                      color: Colors.black87,
+                      color: Theme.of(context).textTheme.bodyLarge?.color,
                     ),
                   ),
                   const SizedBox(height: 10),
@@ -242,7 +263,7 @@ class SkillGraphPage extends StatelessWidget {
                     child: ElevatedButton(
                       onPressed: () {},
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF5E4FDB),
+                        backgroundColor: Theme.of(context).primaryColor,
                         foregroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(vertical: 14),
                         shape: RoundedRectangleBorder(
@@ -261,7 +282,7 @@ class SkillGraphPage extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: const Color(0xFFEAF9F0),
+                color: Theme.of(context).cardColor,
                 borderRadius: BorderRadius.circular(10),
               ),
               child: const Text(
@@ -276,18 +297,22 @@ class SkillGraphPage extends StatelessWidget {
             const SizedBox(height: 20),
 
             // New Jobs Unlocked
-            const Text(
+            Text(
               "New Jobs Unlocked",
               style: TextStyle(
                 fontSize: 15,
                 fontWeight: FontWeight.w700,
-                color: Colors.black87,
+                color: Theme.of(context).textTheme.bodyLarge?.color,
               ),
             ),
             const SizedBox(height: 12),
-            _buildJobCard("Business Intelligence Analyst", "IT / Business"),
+            _buildJobCard(
+              context,
+              "Business Intelligence Analyst",
+              "IT / Business",
+            ),
             const SizedBox(height: 10),
-            _buildJobCard("Data Engineer", "IT / Infrastructure"),
+            _buildJobCard(context, "Data Engineer", "IT / Infrastructure"),
             const SizedBox(height: 20),
 
             // Career Path Upgrades
@@ -300,7 +325,7 @@ class SkillGraphPage extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 12),
-            _buildProgressCard("Data Analyst", 0.78, 0.92),
+            _buildProgressCard(context, "Data Analyst", 0.78, 0.92),
             const SizedBox(height: 20),
 
             SizedBox(
@@ -308,7 +333,7 @@ class SkillGraphPage extends StatelessWidget {
               child: ElevatedButton(
                 onPressed: () {},
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF5E4FDB),
+                  backgroundColor: Theme.of(context).primaryColor,
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 14),
                   shape: RoundedRectangleBorder(
@@ -324,11 +349,16 @@ class SkillGraphPage extends StatelessWidget {
     );
   }
 
-  Widget _buildStatCard(String label, String value, String subtext) {
+  Widget _buildStatCard(
+    BuildContext context,
+    String label,
+    String value,
+    String subtext,
+  ) {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: const Color(0xFFF7F7FF),
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
@@ -336,24 +366,27 @@ class SkillGraphPage extends StatelessWidget {
         children: [
           Text(
             label,
-            style: const TextStyle(fontSize: 13, color: Colors.black54),
+            style: TextStyle(
+              fontSize: 13,
+              color: Theme.of(context).textTheme.bodyMedium?.color,
+            ),
           ),
           const SizedBox(height: 6),
           Text(
             value,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w700,
-              color: Colors.black87,
+              color: Theme.of(context).textTheme.bodyLarge?.color,
             ),
           ),
           if (subtext.isNotEmpty)
             Text(
               subtext,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.w600,
-                color: Colors.black54,
+                color: Theme.of(context).textTheme.bodyMedium?.color,
               ),
             ),
         ],
@@ -361,15 +394,15 @@ class SkillGraphPage extends StatelessWidget {
     );
   }
 
-  Widget _buildJobCard(String title, String subtitle) {
+  Widget _buildJobCard(BuildContext context, String title, String subtitle) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Theme.of(context).shadowColor.withOpacity(0.05),
             blurRadius: 5,
             offset: const Offset(0, 2),
           ),
@@ -383,23 +416,26 @@ class SkillGraphPage extends StatelessWidget {
             children: [
               Text(
                 title,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.w600,
-                  color: Colors.black87,
+                  color: Theme.of(context).textTheme.bodyLarge?.color,
                 ),
               ),
               const SizedBox(height: 2),
               Text(
                 subtitle,
-                style: const TextStyle(fontSize: 13, color: Colors.black54),
+                style: TextStyle(
+                  fontSize: 13,
+                  color: Theme.of(context).textTheme.bodyMedium?.color,
+                ),
               ),
             ],
           ),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
             decoration: BoxDecoration(
-              color: const Color(0xFFF0F0FF),
+              color: Theme.of(context).primaryColor.withOpacity(0.1),
               borderRadius: BorderRadius.circular(8),
             ),
             child: const Text(
@@ -407,7 +443,7 @@ class SkillGraphPage extends StatelessWidget {
               style: TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
-                color: Color(0xFF5E4FDB),
+                color: Theme.of(context).primaryColor,
               ),
             ),
           ),
@@ -416,15 +452,20 @@ class SkillGraphPage extends StatelessWidget {
     );
   }
 
-  Widget _buildProgressCard(String title, double oldVal, double newVal) {
+  Widget _buildProgressCard(
+    BuildContext context,
+    String title,
+    double oldVal,
+    double newVal,
+  ) {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Theme.of(context).shadowColor.withOpacity(0.05),
             blurRadius: 5,
             offset: const Offset(0, 2),
           ),
@@ -435,10 +476,10 @@ class SkillGraphPage extends StatelessWidget {
         children: [
           Text(
             title,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 15,
               fontWeight: FontWeight.w600,
-              color: Colors.black87,
+              color: Theme.of(context).textTheme.bodyLarge?.color,
             ),
           ),
           const SizedBox(height: 10),
@@ -473,10 +514,10 @@ class SkillGraphPage extends StatelessWidget {
           const SizedBox(height: 8),
           Text(
             "${(oldVal * 100).toInt()}% → ${(newVal * 100).toInt()}%",
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w600,
-              color: Colors.black54,
+              color: Theme.of(context).textTheme.bodyMedium?.color,
             ),
           ),
         ],

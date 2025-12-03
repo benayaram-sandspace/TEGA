@@ -51,7 +51,7 @@ class _OnboardingScreen3State extends State<OnboardingScreen3> {
     final bool canProceed = allSkillsRated();
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(20.0),
@@ -62,7 +62,10 @@ class _OnboardingScreen3State extends State<OnboardingScreen3> {
               Row(
                 children: [
                   IconButton(
-                    icon: const Icon(Icons.arrow_back, color: Colors.black87),
+                    icon: Icon(
+                      Icons.arrow_back,
+                      color: Theme.of(context).iconTheme.color,
+                    ),
                     onPressed: () {
                       Navigator.pushReplacement(
                         context,
@@ -72,12 +75,12 @@ class _OnboardingScreen3State extends State<OnboardingScreen3> {
                       );
                     },
                   ),
-                  const Text(
+                  Text(
                     "💪 What are your current\nstrengths?",
                     style: TextStyle(
                       fontSize: 22,
                       fontWeight: FontWeight.bold,
-                      color: Colors.black87,
+                      color: Theme.of(context).textTheme.bodyLarge?.color,
                       height: 1.3,
                     ),
                   ),
@@ -90,11 +93,11 @@ class _OnboardingScreen3State extends State<OnboardingScreen3> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Text(
+                  Text(
                     'Step 3 of 6',
                     style: TextStyle(
                       fontSize: 14,
-                      color: Colors.grey,
+                      color: Theme.of(context).textTheme.bodyMedium?.color,
                       fontWeight: FontWeight.w500,
                     ),
                   ),
@@ -105,7 +108,9 @@ class _OnboardingScreen3State extends State<OnboardingScreen3> {
                         Container(
                           height: 8,
                           decoration: BoxDecoration(
-                            color: Colors.grey.shade200,
+                            color: Theme.of(
+                              context,
+                            ).dividerColor.withOpacity(0.2),
                             borderRadius: BorderRadius.circular(4),
                           ),
                         ),
@@ -114,7 +119,7 @@ class _OnboardingScreen3State extends State<OnboardingScreen3> {
                           child: Container(
                             height: 8,
                             decoration: BoxDecoration(
-                              color: const Color(0xFFFFA726),
+                              color: Theme.of(context).primaryColor,
                               borderRadius: BorderRadius.circular(4),
                             ),
                           ),
@@ -123,11 +128,11 @@ class _OnboardingScreen3State extends State<OnboardingScreen3> {
                     ),
                   ),
                   const SizedBox(width: 20),
-                  const Text(
+                  Text(
                     '50% Complete',
                     style: TextStyle(
                       fontSize: 14,
-                      color: Colors.grey,
+                      color: Theme.of(context).textTheme.bodyMedium?.color,
                       fontWeight: FontWeight.w500,
                     ),
                   ),
@@ -137,9 +142,12 @@ class _OnboardingScreen3State extends State<OnboardingScreen3> {
               const SizedBox(height: 16),
 
               // Subtitle
-              const Text(
+              Text(
                 "Rate each skill from 1 to 5",
-                style: TextStyle(fontSize: 14, color: Colors.grey),
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Theme.of(context).textTheme.bodyMedium?.color,
+                ),
               ),
 
               const SizedBox(height: 16),
@@ -151,12 +159,15 @@ class _OnboardingScreen3State extends State<OnboardingScreen3> {
                   horizontal: 12,
                 ),
                 decoration: BoxDecoration(
-                  color: Colors.blue.shade50,
+                  color: Theme.of(context).primaryColor.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: const Text(
+                child: Text(
                   "💡 Your answers help us tailor your Skill Graph.\nBe honest — there are no wrong answers!",
-                  style: TextStyle(fontSize: 13, color: Colors.black87),
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: Theme.of(context).textTheme.bodyLarge?.color,
+                  ),
                 ),
               ),
 
@@ -174,8 +185,10 @@ class _OnboardingScreen3State extends State<OnboardingScreen3> {
                         horizontal: 14,
                       ),
                       decoration: BoxDecoration(
-                        color: Colors.white,
-                        border: Border.all(color: Colors.grey.shade300),
+                        color: Theme.of(context).cardColor,
+                        border: Border.all(
+                          color: Theme.of(context).dividerColor,
+                        ),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Column(
@@ -186,25 +199,33 @@ class _OnboardingScreen3State extends State<OnboardingScreen3> {
                             children: [
                               Icon(
                                 skillIcons[skill],
-                                color: Colors.black87,
+                                color: Theme.of(context).iconTheme.color,
                                 size: 22,
                               ),
                               const SizedBox(width: 10),
                               Expanded(
                                 child: Text(
                                   skill,
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     fontSize: 16,
                                     fontWeight: FontWeight.w500,
-                                    color: Colors.black87,
+                                    color:
+                                        Theme.of(
+                                          context,
+                                        ).textTheme.bodyLarge?.color ??
+                                        Colors.black87,
                                   ),
                                 ),
                               ),
                               Text(
                                 "($rating)",
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 14,
-                                  color: Colors.grey,
+                                  color:
+                                      Theme.of(
+                                        context,
+                                      ).textTheme.bodyMedium?.color ??
+                                      Colors.grey,
                                 ),
                               ),
                             ],
@@ -228,8 +249,8 @@ class _OnboardingScreen3State extends State<OnboardingScreen3> {
                                   decoration: BoxDecoration(
                                     shape: BoxShape.circle,
                                     color: isSelected
-                                        ? const Color(0xFFFFA726)
-                                        : Colors.grey.shade300,
+                                        ? Theme.of(context).primaryColor
+                                        : Theme.of(context).dividerColor,
                                   ),
                                 ),
                               );
@@ -266,11 +287,14 @@ class _OnboardingScreen3State extends State<OnboardingScreen3> {
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(10),
                       ),
-                      side: BorderSide(color: Colors.grey.shade400),
+                      side: BorderSide(color: Theme.of(context).dividerColor),
                     ),
-                    child: const Text(
+                    child: Text(
                       "Skip",
-                      style: TextStyle(fontSize: 16, color: Colors.black87),
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: Theme.of(context).textTheme.bodyLarge?.color,
+                      ),
                     ),
                   ),
                   ElevatedButton(
@@ -286,8 +310,8 @@ class _OnboardingScreen3State extends State<OnboardingScreen3> {
                         : null, // disabled when not all rated
                     style: ElevatedButton.styleFrom(
                       backgroundColor: canProceed
-                          ? const Color(0xFFFFA726)
-                          : Colors.grey.shade400,
+                          ? Theme.of(context).primaryColor
+                          : Theme.of(context).disabledColor,
                       padding: const EdgeInsets.symmetric(
                         horizontal: 32,
                         vertical: 14,

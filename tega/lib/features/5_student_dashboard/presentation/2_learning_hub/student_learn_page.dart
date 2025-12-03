@@ -130,30 +130,39 @@ class _MyCoursesScreenState extends State<MyCoursesScreen> {
 
     return Scaffold(
       // FIX: Changed background color to light grey
-      backgroundColor: Colors.grey[200],
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         // FIX: Changed AppBar color and added elevation for a light theme
-        backgroundColor: Colors.white,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         elevation: 2.0,
-        surfaceTintColor: Colors.white,
+        surfaceTintColor: Theme.of(context).scaffoldBackgroundColor,
         leading: IconButton(
           // FIX: Changed icon color to be visible on a light background
-          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.black87),
+          icon: Icon(
+            Icons.arrow_back_ios_new,
+            color: Theme.of(context).iconTheme.color,
+          ),
           onPressed: () {
             Navigator.of(context).pushReplacement(
               MaterialPageRoute(builder: (context) => StudentHomePage()),
             );
           },
         ),
-        title: const Text(
+        title: Text(
           'My Courses',
           // FIX: Changed text color for light theme
-          style: TextStyle(color: Colors.black87, fontWeight: FontWeight.bold),
+          style: TextStyle(
+            color: Theme.of(context).textTheme.bodyLarge?.color,
+            fontWeight: FontWeight.bold,
+          ),
         ),
         actions: [
           IconButton(
             // FIX: Changed icon color for light theme
-            icon: const Icon(Icons.filter_list, color: Colors.black87),
+            icon: Icon(
+              Icons.filter_list,
+              color: Theme.of(context).iconTheme.color,
+            ),
             onPressed: () {
               // Handle filter action
             },
@@ -180,13 +189,13 @@ class _MyCoursesScreenState extends State<MyCoursesScreen> {
   Widget _buildSearchBar() {
     // FIX: Restyled for light theme
     return TextField(
-      style: const TextStyle(color: Colors.black87),
+      style: TextStyle(color: Theme.of(context).textTheme.bodyLarge?.color),
       decoration: InputDecoration(
         hintText: 'Search',
-        hintStyle: TextStyle(color: Colors.grey[600]),
-        prefixIcon: Icon(Icons.search, color: Colors.grey[600]),
+        hintStyle: TextStyle(color: Theme.of(context).hintColor),
+        prefixIcon: Icon(Icons.search, color: Theme.of(context).hintColor),
         filled: true,
-        fillColor: Colors.white,
+        fillColor: Theme.of(context).cardColor,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(30.0),
           borderSide: BorderSide.none,
@@ -203,8 +212,8 @@ class _MyCoursesScreenState extends State<MyCoursesScreen> {
     return Text(
       title,
       // FIX: Changed text color for light theme
-      style: const TextStyle(
-        color: Colors.black87,
+      style: TextStyle(
+        color: Theme.of(context).textTheme.bodyLarge?.color,
         fontSize: 20.0,
         fontWeight: FontWeight.bold,
       ),
@@ -395,9 +404,9 @@ class _MyCoursesScreenState extends State<MyCoursesScreen> {
 
   Widget _buildSubscribedCourseCard(SubscribedCourse course) {
     return Card(
-      color: Colors.white,
+      color: Theme.of(context).cardColor,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.0)),
-      surfaceTintColor: Colors.white,
+      surfaceTintColor: Theme.of(context).cardColor,
       clipBehavior: Clip.antiAlias,
       child: SingleChildScrollView(
         child: Padding(
@@ -415,7 +424,7 @@ class _MyCoursesScreenState extends State<MyCoursesScreen> {
                   child: Icon(
                     course.icon,
                     size: 40,
-                    color: const Color(0xFF29274F).withOpacity(0.7),
+                    color: Theme.of(context).primaryColor.withOpacity(0.7),
                   ),
                 ),
               ),
@@ -432,12 +441,18 @@ class _MyCoursesScreenState extends State<MyCoursesScreen> {
               const SizedBox(height: 16),
               Text(
                 course.category,
-                style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Theme.of(context).textTheme.bodyMedium?.color,
+                ),
               ),
               const SizedBox(height: 4),
               Text(
                 course.duration,
-                style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Theme.of(context).textTheme.bodyMedium?.color,
+                ),
               ),
             ],
           ),

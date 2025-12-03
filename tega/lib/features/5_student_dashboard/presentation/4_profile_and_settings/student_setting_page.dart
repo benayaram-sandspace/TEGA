@@ -5,6 +5,8 @@ import 'package:tega/features/1_authentication/data/auth_repository.dart';
 import 'package:tega/features/1_authentication/presentation/screens/login_page.dart';
 import 'package:tega/core/constants/api_constants.dart';
 import 'package:tega/core/services/settings_cache_service.dart';
+import 'package:provider/provider.dart';
+import 'package:tega/core/providers/theme_provider.dart';
 
 class SettingsPage extends StatelessWidget {
   const SettingsPage({super.key});
@@ -1077,50 +1079,46 @@ class _SecuritySettingsPageState extends State<SecuritySettingsPage> {
   }
 }
 
-class AppearanceSettingsPage extends StatefulWidget {
+class AppearanceSettingsPage extends StatelessWidget {
   const AppearanceSettingsPage({super.key});
-
-  @override
-  State<AppearanceSettingsPage> createState() => _AppearanceSettingsPageState();
-}
-
-class _AppearanceSettingsPageState extends State<AppearanceSettingsPage> {
-  String _currentTheme = 'Light';
 
   // Responsive breakpoints
   double get mobileBreakpoint => 600;
   double get tabletBreakpoint => 1024;
   double get desktopBreakpoint => 1440;
-  bool get isMobile => MediaQuery.of(context).size.width < mobileBreakpoint;
-  bool get isTablet =>
-      MediaQuery.of(context).size.width >= mobileBreakpoint &&
-      MediaQuery.of(context).size.width < tabletBreakpoint;
-  bool get isDesktop =>
+
+  bool isLargeDesktop(BuildContext context) =>
+      MediaQuery.of(context).size.width >= desktopBreakpoint;
+  bool isDesktop(BuildContext context) =>
       MediaQuery.of(context).size.width >= tabletBreakpoint &&
       MediaQuery.of(context).size.width < desktopBreakpoint;
-  bool get isLargeDesktop =>
-      MediaQuery.of(context).size.width >= desktopBreakpoint;
-  bool get isSmallScreen => MediaQuery.of(context).size.width < 400;
+  bool isTablet(BuildContext context) =>
+      MediaQuery.of(context).size.width >= mobileBreakpoint &&
+      MediaQuery.of(context).size.width < tabletBreakpoint;
+  bool isSmallScreen(BuildContext context) =>
+      MediaQuery.of(context).size.width < 400;
 
   @override
   Widget build(BuildContext context) {
+    final themeProvider = Provider.of<ThemeProvider>(context);
+
     return Scaffold(
-      backgroundColor: const Color(0xFFF7F8FC),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
         elevation: 0,
         title: Text(
           'Appearance',
           style: TextStyle(
-            color: const Color(0xFF111827),
+            color: Theme.of(context).appBarTheme.titleTextStyle?.color,
             fontWeight: FontWeight.w700,
-            fontSize: isLargeDesktop
+            fontSize: isLargeDesktop(context)
                 ? 22
-                : isDesktop
+                : isDesktop(context)
                 ? 20
-                : isTablet
+                : isTablet(context)
                 ? 19
-                : isSmallScreen
+                : isSmallScreen(context)
                 ? 16
                 : 18,
           ),
@@ -1128,14 +1126,14 @@ class _AppearanceSettingsPageState extends State<AppearanceSettingsPage> {
         leading: IconButton(
           icon: Icon(
             Icons.arrow_back,
-            color: const Color(0xFF111827),
-            size: isLargeDesktop
+            color: Theme.of(context).iconTheme.color,
+            size: isLargeDesktop(context)
                 ? 28
-                : isDesktop
+                : isDesktop(context)
                 ? 26
-                : isTablet
+                : isTablet(context)
                 ? 24
-                : isSmallScreen
+                : isSmallScreen(context)
                 ? 20
                 : 22,
           ),
@@ -1144,57 +1142,63 @@ class _AppearanceSettingsPageState extends State<AppearanceSettingsPage> {
       ),
       body: SingleChildScrollView(
         padding: EdgeInsets.all(
-          isLargeDesktop
+          isLargeDesktop(context)
               ? 24
-              : isDesktop
+              : isDesktop(context)
               ? 20
-              : isTablet
+              : isTablet(context)
               ? 18
-              : isSmallScreen
+              : isSmallScreen(context)
               ? 12
               : 16,
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
-          children: [_buildThemeCard()],
+          children: [_buildThemeCard(context, themeProvider)],
         ),
       ),
     );
   }
 
-  Widget _buildThemeCard() {
+  Widget _buildThemeCard(BuildContext context, ThemeProvider themeProvider) {
+    final isDark = themeProvider.isDarkMode;
+    final cardColor = isDark ? const Color(0xFF1E1E1E) : Colors.white;
+    final textColor = isDark ? Colors.white : const Color(0xFF111827);
+    final subTextColor = isDark ? Colors.grey[400] : const Color(0xFF6B7280);
+    final borderColor = isDark ? Colors.grey[800]! : const Color(0xFFE5E7EB);
+
     return Container(
       padding: EdgeInsets.all(
-        isLargeDesktop
+        isLargeDesktop(context)
             ? 20
-            : isDesktop
+            : isDesktop(context)
             ? 18
-            : isTablet
+            : isTablet(context)
             ? 16
-            : isSmallScreen
+            : isSmallScreen(context)
             ? 12
             : 14,
       ),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: cardColor,
         borderRadius: BorderRadius.circular(
-          isLargeDesktop
+          isLargeDesktop(context)
               ? 16
-              : isDesktop
+              : isDesktop(context)
               ? 14
-              : isTablet
+              : isTablet(context)
               ? 12
-              : isSmallScreen
+              : isSmallScreen(context)
               ? 10
               : 12,
         ),
         border: Border.all(
-          color: const Color(0xFFE5E7EB),
-          width: isLargeDesktop || isDesktop
+          color: borderColor,
+          width: isLargeDesktop(context) || isDesktop(context)
               ? 1.5
-              : isTablet
+              : isTablet(context)
               ? 1.2
-              : isSmallScreen
+              : isSmallScreen(context)
               ? 0.8
               : 1,
         ),
@@ -1205,91 +1209,102 @@ class _AppearanceSettingsPageState extends State<AppearanceSettingsPage> {
           Text(
             'Theme',
             style: TextStyle(
-              color: const Color(0xFF111827),
+              color: textColor,
               fontWeight: FontWeight.w600,
-              fontSize: isLargeDesktop
+              fontSize: isLargeDesktop(context)
                   ? 18
-                  : isDesktop
+                  : isDesktop(context)
                   ? 17
-                  : isTablet
+                  : isTablet(context)
                   ? 16
-                  : isSmallScreen
+                  : isSmallScreen(context)
                   ? 14
                   : 15,
             ),
           ),
           SizedBox(
-            height: isLargeDesktop
+            height: isLargeDesktop(context)
                 ? 12
-                : isDesktop
+                : isDesktop(context)
                 ? 10
-                : isTablet
+                : isTablet(context)
                 ? 8
-                : isSmallScreen
+                : isSmallScreen(context)
                 ? 6
                 : 8,
           ),
           Text(
-            'Current theme: $_currentTheme',
+            'Current theme: ${isDark ? 'Dark' : 'Light'}',
             style: TextStyle(
-              color: const Color(0xFF6B7280),
-              fontSize: isLargeDesktop
+              color: subTextColor,
+              fontSize: isLargeDesktop(context)
                   ? 15
-                  : isDesktop
+                  : isDesktop(context)
                   ? 14
-                  : isTablet
+                  : isTablet(context)
                   ? 13
-                  : isSmallScreen
+                  : isSmallScreen(context)
                   ? 11
                   : 12,
             ),
           ),
           SizedBox(
-            height: isLargeDesktop
+            height: isLargeDesktop(context)
                 ? 20
-                : isDesktop
+                : isDesktop(context)
                 ? 18
-                : isTablet
+                : isTablet(context)
                 ? 16
-                : isSmallScreen
+                : isSmallScreen(context)
                 ? 12
                 : 16,
           ),
           Center(
             child: ElevatedButton(
-              onPressed: _switchTheme,
+              onPressed: () {
+                themeProvider.toggleTheme();
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(
+                      'Theme switched to ${!isDark ? 'Dark' : 'Light'}',
+                    ),
+                    backgroundColor: const Color(0xFF6B5FFF),
+                    duration: const Duration(seconds: 2),
+                  ),
+                );
+              },
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF6B5FFF),
                 foregroundColor: Colors.white,
                 padding: EdgeInsets.symmetric(
-                  horizontal: isLargeDesktop
+                  horizontal: isLargeDesktop(context)
                       ? 32
-                      : isDesktop
+                      : isDesktop(context)
                       ? 28
-                      : isTablet
+                      : isTablet(context)
                       ? 24
-                      : isSmallScreen
+                      : isSmallScreen(context)
                       ? 20
                       : 24,
-                  vertical: isLargeDesktop
+                  vertical: isLargeDesktop(context)
                       ? 16
-                      : isDesktop
+                      : isDesktop(context)
                       ? 14
-                      : isTablet
+                      : isTablet(context)
                       ? 12
-                      : isSmallScreen
+                      : isSmallScreen(context)
                       ? 10
                       : 12,
                 ),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(
-                    isLargeDesktop
+                    isLargeDesktop(context)
                         ? 10
-                        : isDesktop
+                        : isDesktop(context)
                         ? 9
-                        : isTablet
+                        : isTablet(context)
                         ? 8
-                        : isSmallScreen
+                        : isSmallScreen(context)
                         ? 6
                         : 8,
                   ),
@@ -1298,13 +1313,13 @@ class _AppearanceSettingsPageState extends State<AppearanceSettingsPage> {
               child: Text(
                 'Switch Theme',
                 style: TextStyle(
-                  fontSize: isLargeDesktop
+                  fontSize: isLargeDesktop(context)
                       ? 17
-                      : isDesktop
+                      : isDesktop(context)
                       ? 16
-                      : isTablet
+                      : isTablet(context)
                       ? 15
-                      : isSmallScreen
+                      : isSmallScreen(context)
                       ? 13
                       : 14,
                 ),
@@ -1312,21 +1327,6 @@ class _AppearanceSettingsPageState extends State<AppearanceSettingsPage> {
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  void _switchTheme() {
-    setState(() {
-      _currentTheme = _currentTheme == 'Light' ? 'Dark' : 'Light';
-    });
-
-    // Show feedback to user
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Theme switched to $_currentTheme'),
-        backgroundColor: const Color(0xFF6B5FFF),
-        duration: const Duration(seconds: 2),
       ),
     );
   }
@@ -1623,17 +1623,6 @@ class _AccountSettingsPageState extends State<AccountSettingsPage> {
                             ),
                           ],
                         ),
-                  SizedBox(
-                    height: isLargeDesktop
-                        ? 32
-                        : isDesktop
-                        ? 28
-                        : isTablet
-                        ? 24
-                        : isSmallScreen
-                        ? 16
-                        : 20,
-                  ),
                 ],
               ),
             ),
@@ -1654,7 +1643,7 @@ class _AccountSettingsPageState extends State<AccountSettingsPage> {
             : 14,
       ),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: const Color(0xFFECFDF5),
         borderRadius: BorderRadius.circular(
           isLargeDesktop
               ? 16
@@ -1667,7 +1656,7 @@ class _AccountSettingsPageState extends State<AccountSettingsPage> {
               : 12,
         ),
         border: Border.all(
-          color: const Color(0xFFE5E7EB),
+          color: const Color(0xFFD1FAE5),
           width: isLargeDesktop || isDesktop
               ? 1.5
               : isTablet
@@ -1679,105 +1668,94 @@ class _AccountSettingsPageState extends State<AccountSettingsPage> {
       ),
       child: Row(
         children: [
+          Container(
+            padding: EdgeInsets.all(
+              isLargeDesktop
+                  ? 10
+                  : isDesktop
+                  ? 9
+                  : isTablet
+                  ? 8
+                  : isSmallScreen
+                  ? 6
+                  : 8,
+            ),
+            decoration: const BoxDecoration(
+              color: Color(0xFF10B981),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              Icons.check,
+              color: Colors.white,
+              size: isLargeDesktop
+                  ? 24
+                  : isDesktop
+                  ? 22
+                  : isTablet
+                  ? 20
+                  : isSmallScreen
+                  ? 16
+                  : 18,
+            ),
+          ),
+          SizedBox(
+            width: isLargeDesktop
+                ? 16
+                : isDesktop
+                ? 14
+                : isTablet
+                ? 12
+                : isSmallScreen
+                ? 10
+                : 12,
+          ),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Account Status',
+                  status,
                   style: TextStyle(
-                    color: const Color(0xFF111827),
+                    color: const Color(0xFF065F46),
                     fontWeight: FontWeight.w700,
                     fontSize: isLargeDesktop
-                        ? 20
-                        : isDesktop
                         ? 18
-                        : isTablet
+                        : isDesktop
                         ? 17
+                        : isTablet
+                        ? 16
                         : isSmallScreen
                         ? 14
-                        : 16,
+                        : 15,
                   ),
                 ),
                 SizedBox(
                   height: isLargeDesktop
-                      ? 8
-                      : isDesktop
-                      ? 7
-                      : isTablet
-                      ? 6
-                      : isSmallScreen
                       ? 4
-                      : 6,
+                      : isDesktop
+                      ? 3
+                      : isTablet
+                      ? 2
+                      : isSmallScreen
+                      ? 2
+                      : 2,
                 ),
                 Text(
                   description,
                   style: TextStyle(
-                    color: const Color(0xFF6B7280),
+                    color: const Color(0xFF047857),
                     fontSize: isLargeDesktop
-                        ? 16
-                        : isDesktop
                         ? 15
-                        : isTablet
+                        : isDesktop
                         ? 14
+                        : isTablet
+                        ? 13
                         : isSmallScreen
-                        ? 12
-                        : 13,
+                        ? 11
+                        : 12,
                   ),
                 ),
               ],
-            ),
-          ),
-          Container(
-            padding: EdgeInsets.symmetric(
-              horizontal: isLargeDesktop
-                  ? 16
-                  : isDesktop
-                  ? 14
-                  : isTablet
-                  ? 12
-                  : isSmallScreen
-                  ? 8
-                  : 10,
-              vertical: isLargeDesktop
-                  ? 8
-                  : isDesktop
-                  ? 7
-                  : isTablet
-                  ? 6
-                  : isSmallScreen
-                  ? 4
-                  : 5,
-            ),
-            decoration: BoxDecoration(
-              color: const Color(0xFFD1FAE5),
-              borderRadius: BorderRadius.circular(
-                isLargeDesktop
-                    ? 24
-                    : isDesktop
-                    ? 22
-                    : isTablet
-                    ? 20
-                    : isSmallScreen
-                    ? 16
-                    : 18,
-              ),
-            ),
-            child: Text(
-              status,
-              style: TextStyle(
-                color: const Color(0xFF065F46),
-                fontWeight: FontWeight.w700,
-                fontSize: isLargeDesktop
-                    ? 16
-                    : isDesktop
-                    ? 15
-                    : isTablet
-                    ? 14
-                    : isSmallScreen
-                    ? 12
-                    : 13,
-              ),
             ),
           ),
         ],
@@ -1792,17 +1770,17 @@ class _AccountSettingsPageState extends State<AccountSettingsPage> {
         Text(
           label,
           style: TextStyle(
-            color: const Color(0xFF374151),
-            fontWeight: FontWeight.w600,
+            color: const Color(0xFF6B7280),
             fontSize: isLargeDesktop
-                ? 16
-                : isDesktop
                 ? 15
-                : isTablet
+                : isDesktop
                 ? 14
+                : isTablet
+                ? 13
                 : isSmallScreen
-                ? 12
-                : 13,
+                ? 11
+                : 12,
+            fontWeight: FontWeight.w500,
           ),
         ),
         SizedBox(
@@ -1829,27 +1807,27 @@ class _AccountSettingsPageState extends State<AccountSettingsPage> {
                 ? 10
                 : 12,
             vertical: isLargeDesktop
-                ? 18
-                : isDesktop
-                ? 16
-                : isTablet
                 ? 14
-                : isSmallScreen
+                : isDesktop
+                ? 12
+                : isTablet
                 ? 10
-                : 12,
+                : isSmallScreen
+                ? 8
+                : 10,
           ),
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(
               isLargeDesktop
-                  ? 14
-                  : isDesktop
-                  ? 12
-                  : isTablet
                   ? 10
-                  : isSmallScreen
+                  : isDesktop
+                  ? 9
+                  : isTablet
                   ? 8
-                  : 10,
+                  : isSmallScreen
+                  ? 6
+                  : 8,
             ),
             border: Border.all(
               color: const Color(0xFFE5E7EB),
@@ -1875,6 +1853,7 @@ class _AccountSettingsPageState extends State<AccountSettingsPage> {
                   : isSmallScreen
                   ? 12
                   : 13,
+              fontWeight: FontWeight.w500,
             ),
           ),
         ),
@@ -1890,27 +1869,27 @@ class _AccountSettingsPageState extends State<AccountSettingsPage> {
     return Container(
       padding: EdgeInsets.all(
         isLargeDesktop
-            ? 20
-            : isDesktop
-            ? 18
-            : isTablet
             ? 16
-            : isSmallScreen
+            : isDesktop
+            ? 14
+            : isTablet
             ? 12
-            : 14,
+            : isSmallScreen
+            ? 10
+            : 12,
       ),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(
           isLargeDesktop
-              ? 16
-              : isDesktop
-              ? 14
-              : isTablet
               ? 12
-              : isSmallScreen
+              : isDesktop
               ? 10
-              : 12,
+              : isTablet
+              ? 8
+              : isSmallScreen
+              ? 6
+              : 8,
         ),
         border: Border.all(
           color: const Color(0xFFE5E7EB),
@@ -1923,55 +1902,23 @@ class _AccountSettingsPageState extends State<AccountSettingsPage> {
               : 1,
         ),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Row(
         children: [
-          Row(
-            children: [
-              Icon(
-                icon,
-                color: const Color(0xFF6B7280),
-                size: isLargeDesktop
-                    ? 22
-                    : isDesktop
-                    ? 20
-                    : isTablet
-                    ? 18
-                    : isSmallScreen
-                    ? 16
-                    : 18,
-              ),
-              SizedBox(
-                width: isLargeDesktop
-                    ? 8
-                    : isDesktop
-                    ? 7
-                    : isTablet
-                    ? 6
-                    : isSmallScreen
-                    ? 5
-                    : 6,
-              ),
-              Text(
-                label,
-                style: TextStyle(
-                  color: const Color(0xFF6B7280),
-                  fontWeight: FontWeight.w600,
-                  fontSize: isLargeDesktop
-                      ? 16
-                      : isDesktop
-                      ? 15
-                      : isTablet
-                      ? 14
-                      : isSmallScreen
-                      ? 12
-                      : 13,
-                ),
-              ),
-            ],
+          Icon(
+            icon,
+            color: const Color(0xFF9CA3AF),
+            size: isLargeDesktop
+                ? 24
+                : isDesktop
+                ? 22
+                : isTablet
+                ? 20
+                : isSmallScreen
+                ? 16
+                : 18,
           ),
           SizedBox(
-            height: isLargeDesktop
+            width: isLargeDesktop
                 ? 12
                 : isDesktop
                 ? 10
@@ -1981,20 +1928,41 @@ class _AccountSettingsPageState extends State<AccountSettingsPage> {
                 ? 6
                 : 8,
           ),
-          Text(
-            value,
-            style: TextStyle(
-              color: const Color(0xFF111827),
-              fontSize: isLargeDesktop
-                  ? 16
-                  : isDesktop
-                  ? 15
-                  : isTablet
-                  ? 14
-                  : isSmallScreen
-                  ? 12
-                  : 13,
-            ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: TextStyle(
+                  color: const Color(0xFF6B7280),
+                  fontSize: isLargeDesktop
+                      ? 13
+                      : isDesktop
+                      ? 12
+                      : isTablet
+                      ? 11
+                      : isSmallScreen
+                      ? 10
+                      : 11,
+                ),
+              ),
+              Text(
+                value,
+                style: TextStyle(
+                  color: const Color(0xFF111827),
+                  fontWeight: FontWeight.w600,
+                  fontSize: isLargeDesktop
+                      ? 15
+                      : isDesktop
+                      ? 14
+                      : isTablet
+                      ? 13
+                      : isSmallScreen
+                      ? 11
+                      : 12,
+                ),
+              ),
+            ],
           ),
         ],
       ),

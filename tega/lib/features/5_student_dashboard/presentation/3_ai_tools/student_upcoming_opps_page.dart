@@ -855,14 +855,17 @@ class _AllOpportunitiesScreenState extends State<AllOpportunitiesScreen>
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [Colors.deepPurple.shade400, Colors.deepPurple.shade600],
+          colors: [
+            Theme.of(context).primaryColor,
+            Theme.of(context).primaryColorDark,
+          ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(15),
         boxShadow: [
           BoxShadow(
-            color: Colors.deepPurple.withOpacity(0.3),
+            color: Theme.of(context).primaryColor.withOpacity(0.3),
             blurRadius: 10,
             offset: const Offset(0, 5),
           ),
@@ -907,15 +910,21 @@ class _AllOpportunitiesScreenState extends State<AllOpportunitiesScreen>
               Text(
                 'Profile Completion: 75%',
                 style: TextStyle(
-                  color: Colors.white.withOpacity(0.9),
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.onPrimary.withOpacity(0.9),
                   fontSize: 12,
                 ),
               ),
               const SizedBox(height: 4),
               LinearProgressIndicator(
                 value: 0.75,
-                backgroundColor: Colors.white.withOpacity(0.2),
-                valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
+                backgroundColor: Theme.of(
+                  context,
+                ).colorScheme.onPrimary.withOpacity(0.2),
+                valueColor: AlwaysStoppedAnimation<Color>(
+                  Theme.of(context).colorScheme.onPrimary,
+                ),
               ),
             ],
           ),
@@ -938,12 +947,16 @@ class _AllOpportunitiesScreenState extends State<AllOpportunitiesScreen>
           scale: animValue,
           child: Column(
             children: [
-              Icon(icon, color: Colors.white, size: 20),
+              Icon(
+                icon,
+                color: Theme.of(context).colorScheme.onPrimary,
+                size: 20,
+              ),
               const SizedBox(height: 4),
               Text(
                 animValue == 1 ? value : '0',
-                style: const TextStyle(
-                  color: Colors.white,
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.onPrimary,
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
                 ),
@@ -951,7 +964,9 @@ class _AllOpportunitiesScreenState extends State<AllOpportunitiesScreen>
               Text(
                 label,
                 style: TextStyle(
-                  color: Colors.white.withOpacity(0.8),
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.onPrimary.withOpacity(0.8),
                   fontSize: 12,
                 ),
               ),
@@ -966,13 +981,15 @@ class _AllOpportunitiesScreenState extends State<AllOpportunitiesScreen>
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.purple.shade50,
+        color: Theme.of(context).primaryColor.withOpacity(0.05),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.purple.shade200),
+        border: Border.all(
+          color: Theme.of(context).primaryColor.withOpacity(0.3),
+        ),
       ),
       child: Row(
         children: [
-          Icon(Icons.auto_awesome, color: Colors.purple.shade600),
+          Icon(Icons.auto_awesome, color: Theme.of(context).primaryColor),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
@@ -988,7 +1005,10 @@ class _AllOpportunitiesScreenState extends State<AllOpportunitiesScreen>
                 const SizedBox(height: 4),
                 Text(
                   'Based on your profile, "TCS Campus Recruitment" has 88% match!',
-                  style: TextStyle(fontSize: 12, color: Colors.purple.shade600),
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Theme.of(context).primaryColor,
+                  ),
                 ),
               ],
             ),
@@ -1005,11 +1025,11 @@ class _AllOpportunitiesScreenState extends State<AllOpportunitiesScreen>
   Widget _buildEnhancedSearchBar() {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
+            color: Theme.of(context).shadowColor.withOpacity(0.1),
             blurRadius: 5,
             offset: const Offset(0, 2),
           ),
@@ -1024,13 +1044,19 @@ class _AllOpportunitiesScreenState extends State<AllOpportunitiesScreen>
         },
         decoration: InputDecoration(
           hintText: 'Search opportunities, companies, skills...',
-          prefixIcon: const Icon(Icons.search, color: Colors.grey),
+          prefixIcon: Icon(
+            Icons.search,
+            color: Theme.of(context).iconTheme.color,
+          ),
           suffixIcon: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
               if (_searchQuery.isNotEmpty)
                 IconButton(
-                  icon: const Icon(Icons.clear, color: Colors.grey),
+                  icon: Icon(
+                    Icons.clear,
+                    color: Theme.of(context).iconTheme.color,
+                  ),
                   onPressed: () {
                     setState(() {
                       _searchQuery = '';
@@ -1039,7 +1065,7 @@ class _AllOpportunitiesScreenState extends State<AllOpportunitiesScreen>
                   },
                 ),
               IconButton(
-                icon: const Icon(Icons.mic, color: Colors.grey),
+                icon: Icon(Icons.mic, color: Theme.of(context).iconTheme.color),
                 onPressed: () {
                   // Voice search functionality
                 },
@@ -1047,7 +1073,7 @@ class _AllOpportunitiesScreenState extends State<AllOpportunitiesScreen>
             ],
           ),
           filled: true,
-          fillColor: Colors.white,
+          fillColor: Theme.of(context).cardColor,
           contentPadding: const EdgeInsets.symmetric(vertical: 0),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12.0),
@@ -1069,7 +1095,7 @@ class _AllOpportunitiesScreenState extends State<AllOpportunitiesScreen>
           Text(
             '${filteredOpportunities.length} opportunities found',
             style: TextStyle(
-              color: Colors.grey.shade700,
+              color: Theme.of(context).textTheme.bodyMedium?.color,
               fontWeight: FontWeight.w500,
             ),
           ),
@@ -1083,12 +1109,15 @@ class _AllOpportunitiesScreenState extends State<AllOpportunitiesScreen>
                   ),
                   margin: const EdgeInsets.only(right: 8),
                   decoration: BoxDecoration(
-                    color: Colors.deepPurple.shade50,
+                    color: Theme.of(context).primaryColor.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: const Text(
+                  child: Text(
                     'Bookmarked',
-                    style: TextStyle(fontSize: 12, color: Colors.deepPurple),
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Theme.of(context).primaryColor,
+                    ),
                   ),
                 ),
               if (_showOnlyVerified)
@@ -1098,7 +1127,7 @@ class _AllOpportunitiesScreenState extends State<AllOpportunitiesScreen>
                     vertical: 4,
                   ),
                   decoration: BoxDecoration(
-                    color: Colors.blue.shade50,
+                    color: Colors.blue.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: const Text(
@@ -1118,16 +1147,26 @@ class _AllOpportunitiesScreenState extends State<AllOpportunitiesScreen>
       child: Column(
         children: [
           const SizedBox(height: 50),
-          Icon(Icons.search_off, size: 80, color: Colors.grey.shade300),
+          Icon(
+            Icons.search_off,
+            size: 80,
+            color: Theme.of(context).disabledColor,
+          ),
           const SizedBox(height: 16),
           Text(
             'No opportunities found',
-            style: TextStyle(fontSize: 18, color: Colors.grey.shade600),
+            style: TextStyle(
+              fontSize: 18,
+              color: Theme.of(context).textTheme.bodyLarge?.color,
+            ),
           ),
           const SizedBox(height: 8),
           Text(
             'Try adjusting your filters or search',
-            style: TextStyle(fontSize: 14, color: Colors.grey.shade500),
+            style: TextStyle(
+              fontSize: 14,
+              color: Theme.of(context).textTheme.bodyMedium?.color,
+            ),
           ),
           const SizedBox(height: 20),
           ElevatedButton(
@@ -1143,7 +1182,9 @@ class _AllOpportunitiesScreenState extends State<AllOpportunitiesScreen>
                 _filterOpportunities();
               });
             },
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.deepPurple),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Theme.of(context).primaryColor,
+            ),
             child: const Text('Clear All Filters'),
           ),
         ],
@@ -1200,7 +1241,7 @@ class _AllOpportunitiesScreenState extends State<AllOpportunitiesScreen>
                             min: 0,
                             max: 100,
                             divisions: 20,
-                            activeColor: Colors.deepPurple,
+                            activeColor: Theme.of(context).primaryColor,
                             labels: RangeLabels(
                               '${_matchRange.start.round()}%',
                               '${_matchRange.end.round()}%',
@@ -1225,7 +1266,9 @@ class _AllOpportunitiesScreenState extends State<AllOpportunitiesScreen>
                               ChoiceChip(
                                 label: const Text('All Types'),
                                 selected: _selectedType == null,
-                                selectedColor: Colors.deepPurple.shade100,
+                                selectedColor: Theme.of(
+                                  context,
+                                ).primaryColor.withOpacity(0.2),
                                 onSelected: (selected) {
                                   setModalState(() {
                                     _selectedType = selected
@@ -1237,7 +1280,9 @@ class _AllOpportunitiesScreenState extends State<AllOpportunitiesScreen>
                               ChoiceChip(
                                 label: const Text('In-Person'),
                                 selected: _selectedType == 'in-person',
-                                selectedColor: Colors.deepPurple.shade100,
+                                selectedColor: Theme.of(
+                                  context,
+                                ).primaryColor.withOpacity(0.2),
                                 onSelected: (selected) {
                                   setModalState(() {
                                     _selectedType = selected
@@ -1249,7 +1294,9 @@ class _AllOpportunitiesScreenState extends State<AllOpportunitiesScreen>
                               ChoiceChip(
                                 label: const Text('Virtual'),
                                 selected: _selectedType == 'virtual',
-                                selectedColor: Colors.deepPurple.shade100,
+                                selectedColor: Theme.of(
+                                  context,
+                                ).primaryColor.withOpacity(0.2),
                                 onSelected: (selected) {
                                   setModalState(() {
                                     _selectedType = selected ? 'virtual' : null;
@@ -1259,7 +1306,9 @@ class _AllOpportunitiesScreenState extends State<AllOpportunitiesScreen>
                               ChoiceChip(
                                 label: const Text('Hybrid'),
                                 selected: _selectedType == 'hybrid',
-                                selectedColor: Colors.deepPurple.shade100,
+                                selectedColor: Theme.of(
+                                  context,
+                                ).primaryColor.withOpacity(0.2),
                                 onSelected: (selected) {
                                   setModalState(() {
                                     _selectedType = selected ? 'hybrid' : null;
@@ -1338,7 +1387,7 @@ class _AllOpportunitiesScreenState extends State<AllOpportunitiesScreen>
                               'Show only verified companies',
                             ),
                             value: _showOnlyVerified,
-                            activeThumbColor: Colors.deepPurple,
+                            activeThumbColor: Theme.of(context).primaryColor,
                             onChanged: (value) {
                               setModalState(() {
                                 _showOnlyVerified = value;
@@ -1377,7 +1426,7 @@ class _AllOpportunitiesScreenState extends State<AllOpportunitiesScreen>
                             Navigator.pop(context);
                           },
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.deepPurple,
+                            backgroundColor: Theme.of(context).primaryColor,
                           ),
                           child: const Text('Apply Filters'),
                         ),
@@ -1465,7 +1514,10 @@ class _AllOpportunitiesScreenState extends State<AllOpportunitiesScreen>
           const SizedBox(height: 4),
           Text(
             time,
-            style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
+            style: TextStyle(
+              fontSize: 11,
+              color: Theme.of(context).textTheme.bodySmall?.color,
+            ),
           ),
         ],
       ),
@@ -1494,7 +1546,10 @@ class _AllOpportunitiesScreenState extends State<AllOpportunitiesScreen>
             children: [
               Row(
                 children: [
-                  Icon(Icons.auto_awesome, color: Colors.purple.shade600),
+                  Icon(
+                    Icons.auto_awesome,
+                    color: Theme.of(context).primaryColor,
+                  ),
                   const SizedBox(width: 8),
                   const Text(
                     'AI Recommendations for You',
@@ -1505,7 +1560,9 @@ class _AllOpportunitiesScreenState extends State<AllOpportunitiesScreen>
               const SizedBox(height: 8),
               Text(
                 'Based on your profile, skills, and preferences',
-                style: TextStyle(color: Colors.grey.shade600),
+                style: TextStyle(
+                  color: Theme.of(context).textTheme.bodyMedium?.color,
+                ),
               ),
               const SizedBox(height: 20),
               Expanded(
@@ -1528,13 +1585,15 @@ class _AllOpportunitiesScreenState extends State<AllOpportunitiesScreen>
                               child: Container(
                                 padding: const EdgeInsets.all(2),
                                 decoration: BoxDecoration(
-                                  color: Colors.purple,
+                                  color: Theme.of(context).primaryColor,
                                   borderRadius: BorderRadius.circular(10),
                                 ),
                                 child: Text(
                                   '${opp.matchPercentage.round()}%',
                                   style: const TextStyle(
-                                    color: Colors.white,
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.onPrimary,
                                     fontSize: 8,
                                     fontWeight: FontWeight.bold,
                                   ),
@@ -1554,7 +1613,9 @@ class _AllOpportunitiesScreenState extends State<AllOpportunitiesScreen>
                             const SizedBox(height: 4),
                             LinearProgressIndicator(
                               value: opp.matchPercentage / 100,
-                              backgroundColor: Colors.grey.shade200,
+                              backgroundColor: Theme.of(
+                                context,
+                              ).dividerColor.withOpacity(0.1),
                               valueColor: AlwaysStoppedAnimation<Color>(
                                 opp.matchPercentage >= 85
                                     ? Colors.green
@@ -1638,9 +1699,11 @@ class EnhancedOpportunityCard extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(16.0),
         decoration: BoxDecoration(
-          color: isViewed ? Colors.grey.shade50 : opportunity.cardColor,
+          color: isViewed
+              ? Theme.of(context).cardColor.withOpacity(0.5)
+              : Theme.of(context).cardColor,
           borderRadius: BorderRadius.circular(15.0),
-          border: Border.all(color: Colors.grey.shade200, width: 0.5),
+          border: Border.all(color: Theme.of(context).dividerColor, width: 0.5),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -1654,7 +1717,9 @@ class EnhancedOpportunityCard extends StatelessWidget {
                       radius: 20,
                       child: Icon(
                         opportunity.icon,
-                        color: Colors.black54,
+                        color: Theme.of(
+                          context,
+                        ).iconTheme.color?.withOpacity(0.54),
                         size: 20,
                       ),
                     ),
@@ -1683,7 +1748,7 @@ class EnhancedOpportunityCard extends StatelessWidget {
                           Expanded(
                             child: Text(
                               opportunity.title,
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontWeight: FontWeight.bold,
                                 fontSize: 15,
                               ),
@@ -1692,7 +1757,7 @@ class EnhancedOpportunityCard extends StatelessWidget {
                           if (opportunity.isVerified)
                             Icon(
                               Icons.verified,
-                              color: Colors.blue.shade600,
+                              color: Theme.of(context).primaryColor,
                               size: 14,
                             ),
                           const SizedBox(width: 4),
@@ -1722,13 +1787,15 @@ class EnhancedOpportunityCard extends StatelessWidget {
                           Icon(
                             Icons.calendar_today,
                             size: 12,
-                            color: Colors.grey.shade600,
+                            color: Theme.of(context).textTheme.bodySmall?.color,
                           ),
                           const SizedBox(width: 4),
                           Text(
                             opportunity.date,
-                            style: const TextStyle(
-                              color: Colors.black54,
+                            style: TextStyle(
+                              color: Theme.of(
+                                context,
+                              ).textTheme.bodyMedium?.color,
                               fontSize: 13,
                             ),
                           ),
@@ -1741,14 +1808,18 @@ class EnhancedOpportunityCard extends StatelessWidget {
                             Icon(
                               Icons.business,
                               size: 12,
-                              color: Colors.grey.shade600,
+                              color: Theme.of(
+                                context,
+                              ).textTheme.bodySmall?.color,
                             ),
                             const SizedBox(width: 4),
                             Expanded(
                               child: Text(
                                 opportunity.company,
                                 style: TextStyle(
-                                  color: Colors.grey.shade600,
+                                  color: Theme.of(
+                                    context,
+                                  ).textTheme.bodySmall?.color,
                                   fontSize: 12,
                                 ),
                                 overflow: TextOverflow.ellipsis,
@@ -1765,7 +1836,9 @@ class EnhancedOpportunityCard extends StatelessWidget {
                     IconButton(
                       icon: Icon(
                         isBookmarked ? Icons.bookmark : Icons.bookmark_border,
-                        color: isBookmarked ? Colors.deepPurple : Colors.grey,
+                        color: isBookmarked
+                            ? Theme.of(context).primaryColor
+                            : Theme.of(context).disabledColor,
                         size: 20,
                       ),
                       onPressed: onBookmarkToggle,
@@ -1801,7 +1874,9 @@ class EnhancedOpportunityCard extends StatelessWidget {
                   Expanded(
                     child: LinearProgressIndicator(
                       value: opportunity.matchPercentage / 100,
-                      backgroundColor: Colors.grey.shade200,
+                      backgroundColor: Theme.of(
+                        context,
+                      ).dividerColor.withOpacity(0.1),
                       valueColor: AlwaysStoppedAnimation<Color>(
                         opportunity.matchPercentage >= 80
                             ? Colors.green
@@ -1835,6 +1910,7 @@ class EnhancedOpportunityCard extends StatelessWidget {
               children: [
                 if (opportunity.type.isNotEmpty)
                   _buildInfoChip(
+                    context,
                     opportunity.type == 'virtual'
                         ? Icons.video_call
                         : opportunity.type == 'hybrid'
@@ -1848,11 +1924,13 @@ class EnhancedOpportunityCard extends StatelessWidget {
                   ),
                 if (opportunity.applicants > 0)
                   _buildInfoChip(
+                    context,
                     Icons.people,
                     '${opportunity.applicants} applied',
                   ),
                 if (opportunity.viewCount > 0)
                   _buildInfoChip(
+                    context,
                     Icons.visibility,
                     '${opportunity.viewCount} views',
                   ),
@@ -1898,21 +1976,28 @@ class EnhancedOpportunityCard extends StatelessWidget {
     }
   }
 
-  Widget _buildInfoChip(IconData icon, String label) {
+  Widget _buildInfoChip(BuildContext context, IconData icon, String label) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
       decoration: BoxDecoration(
-        color: Colors.grey.shade100,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 10, color: Colors.grey.shade600),
+          Icon(
+            icon,
+            size: 10,
+            color: Theme.of(context).textTheme.bodySmall?.color,
+          ),
           const SizedBox(width: 4),
           Text(
             label,
-            style: TextStyle(fontSize: 10, color: Colors.grey.shade600),
+            style: TextStyle(
+              fontSize: 10,
+              color: Theme.of(context).textTheme.bodySmall?.color,
+            ),
           ),
         ],
       ),
@@ -1947,14 +2032,17 @@ class DetailedOpportunityCard extends StatelessWidget {
         padding: const EdgeInsets.all(20.0),
         decoration: BoxDecoration(
           gradient: LinearGradient(
-            colors: [Colors.white, Colors.blue.shade50],
+            colors: [
+              Theme.of(context).cardColor,
+              Theme.of(context).primaryColor.withOpacity(0.05),
+            ],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
           borderRadius: BorderRadius.circular(20.0),
           boxShadow: [
             BoxShadow(
-              color: Colors.blue.withOpacity(0.08),
+              color: Theme.of(context).shadowColor.withOpacity(0.1),
               spreadRadius: 4,
               blurRadius: 10,
             ),
@@ -1966,11 +2054,13 @@ class DetailedOpportunityCard extends StatelessWidget {
             Row(
               children: [
                 CircleAvatar(
-                  backgroundColor: const Color(0xFFE3F2FD),
+                  backgroundColor: Theme.of(
+                    context,
+                  ).primaryColor.withOpacity(0.1),
                   radius: 22,
                   child: Icon(
                     opportunity.icon,
-                    color: Colors.blue.shade700,
+                    color: Theme.of(context).primaryColor,
                     size: 24,
                   ),
                 ),
@@ -1984,7 +2074,7 @@ class DetailedOpportunityCard extends StatelessWidget {
                           Expanded(
                             child: Text(
                               opportunity.title,
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontWeight: FontWeight.bold,
                                 fontSize: 16,
                               ),
@@ -1993,7 +2083,7 @@ class DetailedOpportunityCard extends StatelessWidget {
                           if (opportunity.isVerified)
                             Icon(
                               Icons.verified,
-                              color: Colors.blue.shade600,
+                              color: Theme.of(context).primaryColor,
                               size: 16,
                             ),
                         ],
@@ -2001,8 +2091,8 @@ class DetailedOpportunityCard extends StatelessWidget {
                       const SizedBox(height: 4),
                       Text(
                         opportunity.date,
-                        style: const TextStyle(
-                          color: Colors.black54,
+                        style: TextStyle(
+                          color: Theme.of(context).textTheme.bodyMedium?.color,
                           fontSize: 14,
                         ),
                       ),
@@ -2012,7 +2102,9 @@ class DetailedOpportunityCard extends StatelessWidget {
                 IconButton(
                   icon: Icon(
                     isBookmarked ? Icons.bookmark : Icons.bookmark_border,
-                    color: isBookmarked ? Colors.deepPurple : Colors.grey,
+                    color: isBookmarked
+                        ? Theme.of(context).primaryColor
+                        : Theme.of(context).disabledColor,
                   ),
                   onPressed: onBookmarkToggle,
                 ),
@@ -2022,7 +2114,10 @@ class DetailedOpportunityCard extends StatelessWidget {
               const SizedBox(height: 12),
               Text(
                 opportunity.description,
-                style: TextStyle(color: Colors.grey.shade700, fontSize: 13),
+                style: TextStyle(
+                  color: Theme.of(context).textTheme.bodyMedium?.color,
+                  fontSize: 13,
+                ),
               ),
             ],
             const SizedBox(height: 12),
@@ -2030,14 +2125,14 @@ class DetailedOpportunityCard extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: Colors.purple.shade50,
+                color: Theme.of(context).primaryColor.withOpacity(0.05),
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Row(
                 children: [
                   Icon(
                     Icons.auto_awesome,
-                    color: Colors.purple.shade600,
+                    color: Theme.of(context).primaryColor,
                     size: 16,
                   ),
                   const SizedBox(width: 8),
@@ -2049,16 +2144,18 @@ class DetailedOpportunityCard extends StatelessWidget {
                           'AI Match Score: ${opportunity.matchPercentage}%',
                           style: TextStyle(
                             fontWeight: FontWeight.bold,
-                            color: Colors.purple.shade800,
+                            color: Theme.of(context).primaryColorDark,
                             fontSize: 12,
                           ),
                         ),
                         const SizedBox(height: 4),
                         LinearProgressIndicator(
                           value: opportunity.matchPercentage / 100,
-                          backgroundColor: Colors.purple.shade100,
+                          backgroundColor: Theme.of(
+                            context,
+                          ).primaryColor.withOpacity(0.2),
                           valueColor: AlwaysStoppedAnimation<Color>(
-                            Colors.purple.shade600,
+                            Theme.of(context).primaryColor,
                           ),
                         ),
                       ],
@@ -2076,21 +2173,21 @@ class DetailedOpportunityCard extends StatelessWidget {
                   Chip(
                     avatar: const Icon(Icons.location_on, size: 16),
                     label: Text(opportunity.location),
-                    backgroundColor: Colors.grey.shade100,
+                    backgroundColor: Theme.of(context).cardColor,
                     labelStyle: const TextStyle(fontSize: 12),
                   ),
                 if (opportunity.company.isNotEmpty)
                   Chip(
                     avatar: const Icon(Icons.business, size: 16),
                     label: Text(opportunity.company),
-                    backgroundColor: Colors.grey.shade100,
+                    backgroundColor: Theme.of(context).cardColor,
                     labelStyle: const TextStyle(fontSize: 12),
                   ),
                 if (opportunity.applicants > 0)
                   Chip(
                     avatar: const Icon(Icons.people, size: 16),
                     label: Text('${opportunity.applicants} applied'),
-                    backgroundColor: Colors.grey.shade100,
+                    backgroundColor: Theme.of(context).cardColor,
                     labelStyle: const TextStyle(fontSize: 12),
                   ),
                 if (opportunity.salary.isNotEmpty)
@@ -2112,12 +2209,12 @@ class DetailedOpportunityCard extends StatelessWidget {
                     icon: const Icon(Icons.info_outline, size: 18),
                     label: const Text('View Details'),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.white,
-                      foregroundColor: Colors.blue.shade700,
+                      backgroundColor: Theme.of(context).cardColor,
+                      foregroundColor: Theme.of(context).primaryColor,
                       elevation: 0,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(10),
-                        side: BorderSide(color: Colors.grey.shade300),
+                        side: BorderSide(color: Theme.of(context).dividerColor),
                       ),
                       padding: const EdgeInsets.symmetric(vertical: 12),
                     ),
@@ -2131,8 +2228,8 @@ class DetailedOpportunityCard extends StatelessWidget {
                     label: Text(isApplied ? 'Applied' : 'Apply Now'),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: isApplied
-                          ? Colors.grey
-                          : Colors.deepPurple,
+                          ? Theme.of(context).disabledColor
+                          : Theme.of(context).primaryColor,
                       foregroundColor: Colors.white,
                       elevation: 0,
                       shape: RoundedRectangleBorder(
@@ -2180,7 +2277,11 @@ class OpportunityDetailsSheet extends StatelessWidget {
               CircleAvatar(
                 backgroundColor: opportunity.iconBackgroundColor,
                 radius: 30,
-                child: Icon(opportunity.icon, size: 30, color: Colors.black54),
+                child: Icon(
+                  opportunity.icon,
+                  size: 30,
+                  color: Theme.of(context).textTheme.bodyMedium?.color,
+                ),
               ),
               const SizedBox(width: 16),
               Expanded(
@@ -2199,7 +2300,10 @@ class OpportunityDetailsSheet extends StatelessWidget {
                           ),
                         ),
                         if (opportunity.isVerified)
-                          Icon(Icons.verified, color: Colors.blue.shade600),
+                          Icon(
+                            Icons.verified,
+                            color: Theme.of(context).primaryColor,
+                          ),
                       ],
                     ),
                     const SizedBox(height: 4),
@@ -2207,7 +2311,7 @@ class OpportunityDetailsSheet extends StatelessWidget {
                       opportunity.company,
                       style: TextStyle(
                         fontSize: 16,
-                        color: Colors.grey.shade700,
+                        color: Theme.of(context).textTheme.bodyMedium?.color,
                       ),
                     ),
                   ],
@@ -2227,8 +2331,8 @@ class OpportunityDetailsSheet extends StatelessWidget {
                   label: Text(isApplied ? 'Applied' : 'Apply Now'),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: isApplied
-                        ? Colors.grey
-                        : Colors.deepPurple,
+                        ? Theme.of(context).disabledColor
+                        : Theme.of(context).primaryColor,
                     padding: const EdgeInsets.symmetric(vertical: 12),
                   ),
                 ),
@@ -2238,10 +2342,12 @@ class OpportunityDetailsSheet extends StatelessWidget {
                 onPressed: onBookmarkToggle,
                 icon: Icon(
                   isBookmarked ? Icons.bookmark : Icons.bookmark_border,
-                  color: isBookmarked ? Colors.deepPurple : Colors.grey,
+                  color: isBookmarked
+                      ? Theme.of(context).primaryColor
+                      : Theme.of(context).disabledColor,
                 ),
                 style: IconButton.styleFrom(
-                  backgroundColor: Colors.grey.shade100,
+                  backgroundColor: Theme.of(context).cardColor,
                 ),
               ),
               const SizedBox(width: 8),
@@ -2251,7 +2357,7 @@ class OpportunityDetailsSheet extends StatelessWidget {
                 },
                 icon: const Icon(Icons.share),
                 style: IconButton.styleFrom(
-                  backgroundColor: Colors.grey.shade100,
+                  backgroundColor: Theme.of(context).cardColor,
                 ),
               ),
             ],
@@ -2263,7 +2369,10 @@ class OpportunityDetailsSheet extends StatelessWidget {
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
               gradient: LinearGradient(
-                colors: [Colors.purple.shade50, Colors.purple.shade100],
+                colors: [
+                  Theme.of(context).primaryColor.withOpacity(0.05),
+                  Theme.of(context).primaryColor.withOpacity(0.1),
+                ],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
@@ -2274,13 +2383,16 @@ class OpportunityDetailsSheet extends StatelessWidget {
               children: [
                 Row(
                   children: [
-                    Icon(Icons.auto_awesome, color: Colors.purple.shade700),
+                    Icon(
+                      Icons.auto_awesome,
+                      color: Theme.of(context).primaryColor,
+                    ),
                     const SizedBox(width: 8),
                     Text(
                       'AI Match Analysis',
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
-                        color: Colors.purple.shade800,
+                        color: Theme.of(context).primaryColorDark,
                         fontSize: 16,
                       ),
                     ),
@@ -2303,9 +2415,9 @@ class OpportunityDetailsSheet extends StatelessWidget {
                           const SizedBox(height: 4),
                           LinearProgressIndicator(
                             value: opportunity.matchPercentage / 100,
-                            backgroundColor: Colors.white,
+                            backgroundColor: Theme.of(context).cardColor,
                             valueColor: AlwaysStoppedAnimation<Color>(
-                              Colors.purple.shade600,
+                              Theme.of(context).primaryColor,
                             ),
                           ),
                         ],
@@ -2315,7 +2427,7 @@ class OpportunityDetailsSheet extends StatelessWidget {
                     Container(
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: Theme.of(context).cardColor,
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Column(
@@ -2397,7 +2509,9 @@ class OpportunityDetailsSheet extends StatelessWidget {
                   .map(
                     (skill) => Chip(
                       label: Text(skill),
-                      backgroundColor: Colors.deepPurple.shade50,
+                      backgroundColor: Theme.of(
+                        context,
+                      ).primaryColor.withOpacity(0.1),
                     ),
                   )
                   .toList(),
@@ -2426,7 +2540,7 @@ class OpportunityDetailsSheet extends StatelessWidget {
                           ? Icons.language
                           : Icons.info,
                       size: 16,
-                      color: Colors.grey,
+                      color: Theme.of(context).iconTheme.color,
                     ),
                     const SizedBox(width: 8),
                     Text(entry.value),

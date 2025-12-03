@@ -817,11 +817,11 @@ class _CourseContentPageState extends State<CourseContentPage> {
           child: Container(
             constraints: const BoxConstraints(maxWidth: 400),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: Theme.of(context).cardColor,
               borderRadius: BorderRadius.circular(24),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.1),
+                  color: Theme.of(context).shadowColor.withOpacity(0.1),
                   blurRadius: 30,
                   offset: const Offset(0, 10),
                 ),
@@ -936,10 +936,14 @@ class _CourseContentPageState extends State<CourseContentPage> {
                                 children: [
                                   Text(
                                     widget.course['title'] ?? 'Course',
-                                    style: const TextStyle(
+                                    style: TextStyle(
                                       fontSize: 16,
                                       fontWeight: FontWeight.w600,
-                                      color: Color(0xFF1A1A1A),
+                                      color:
+                                          Theme.of(
+                                            context,
+                                          ).textTheme.bodyLarge?.color ??
+                                          const Color(0xFF1A1A1A),
                                     ),
                                     maxLines: 2,
                                     overflow: TextOverflow.ellipsis,
@@ -995,7 +999,12 @@ class _CourseContentPageState extends State<CourseContentPage> {
                       const SizedBox(height: 8),
                       Text(
                         'Buy the course to unlock all premium videos or go back.',
-                        style: TextStyle(fontSize: 14, color: Colors.grey),
+                        style: TextStyle(
+                          fontSize: 14,
+                          color:
+                              Theme.of(context).textTheme.bodyMedium?.color ??
+                              Colors.grey,
+                        ),
                         textAlign: TextAlign.center,
                       ),
                       const SizedBox(height: 16),
@@ -1143,9 +1152,11 @@ class _CourseContentPageState extends State<CourseContentPage> {
           Expanded(
             child: Text(
               text,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 14,
-                color: Color(0xFF4A4A4A),
+                color:
+                    Theme.of(context).textTheme.bodyMedium?.color ??
+                    const Color(0xFF4A4A4A),
                 fontWeight: FontWeight.w400,
               ),
             ),
@@ -1164,7 +1175,7 @@ class _CourseContentPageState extends State<CourseContentPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F5F5),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _errorMessage != null
@@ -1253,10 +1264,14 @@ class _CourseContentPageState extends State<CourseContentPage> {
             ? 8
             : 12,
       ),
-      decoration: const BoxDecoration(
-        color: Colors.white,
+      decoration: BoxDecoration(
+        color: Theme.of(context).cardColor,
         boxShadow: [
-          BoxShadow(color: Colors.black12, blurRadius: 4, offset: Offset(0, 2)),
+          BoxShadow(
+            color: Theme.of(context).shadowColor.withOpacity(0.12),
+            blurRadius: 4,
+            offset: Offset(0, 2),
+          ),
         ],
       ),
       child: Row(
@@ -1332,7 +1347,9 @@ class _CourseContentPageState extends State<CourseContentPage> {
                           : isSmallScreen
                           ? 10
                           : 12,
-                      color: Colors.grey,
+                      color:
+                          Theme.of(context).textTheme.bodyMedium?.color ??
+                          Colors.grey,
                     ),
                     maxLines: isLargeDesktop || isDesktop
                         ? 3
@@ -1423,7 +1440,7 @@ class _CourseContentPageState extends State<CourseContentPage> {
             ? []
             : [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.2),
+                  color: Theme.of(context).shadowColor.withOpacity(0.2),
                   blurRadius: isTablet ? 12 : 8,
                   offset: const Offset(0, 2),
                 ),
@@ -2137,7 +2154,7 @@ class _CourseContentPageState extends State<CourseContentPage> {
             : 16,
       ),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(
           isLargeDesktop
               ? 20
@@ -2151,7 +2168,7 @@ class _CourseContentPageState extends State<CourseContentPage> {
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Theme.of(context).shadowColor.withOpacity(0.05),
             blurRadius: isLargeDesktop
                 ? 16
                 : isDesktop
@@ -2183,7 +2200,9 @@ class _CourseContentPageState extends State<CourseContentPage> {
                     : 16,
               ),
               decoration: BoxDecoration(
-                border: Border(bottom: BorderSide(color: Colors.grey[200]!)),
+                border: Border(
+                  bottom: BorderSide(color: Theme.of(context).dividerColor),
+                ),
               ),
               child: Row(
                 children: [
@@ -2259,7 +2278,9 @@ class _CourseContentPageState extends State<CourseContentPage> {
                     duration: const Duration(milliseconds: 200),
                     child: Icon(
                       Icons.expand_more,
-                      color: Colors.grey,
+                      color:
+                          Theme.of(context).iconTheme.color?.withOpacity(0.6) ??
+                          Colors.grey,
                       size: isLargeDesktop
                           ? 32
                           : isDesktop
@@ -2336,7 +2357,7 @@ class _CourseContentPageState extends State<CourseContentPage> {
                         : 32,
                     decoration: BoxDecoration(
                       color: isLocked
-                          ? Colors.grey[300]
+                          ? Theme.of(context).disabledColor.withOpacity(0.3)
                           : isSelected
                           ? const Color(0xFF6B5FFF)
                           : Colors.grey[200],
@@ -2359,10 +2380,10 @@ class _CourseContentPageState extends State<CourseContentPage> {
                           ? Icons.play_arrow
                           : Icons.play_circle_outline,
                       color: isLocked
-                          ? Colors.grey[600]
+                          ? Theme.of(context).disabledColor
                           : isSelected
                           ? Colors.white
-                          : Colors.grey[600],
+                          : Theme.of(context).disabledColor,
                       size: isLargeDesktop
                           ? 28
                           : isDesktop
@@ -2381,10 +2402,11 @@ class _CourseContentPageState extends State<CourseContentPage> {
                           ? FontWeight.w600
                           : FontWeight.normal,
                       color: isLocked
-                          ? Colors.grey[500]
+                          ? Theme.of(context).disabledColor
                           : isSelected
                           ? const Color(0xFF6B5FFF)
-                          : Colors.black87,
+                          : Theme.of(context).textTheme.bodyLarge?.color ??
+                                Colors.black87,
                       fontSize: isLargeDesktop
                           ? 20
                           : isDesktop
@@ -2415,7 +2437,7 @@ class _CourseContentPageState extends State<CourseContentPage> {
                             : isSmallScreen
                             ? 10
                             : 12,
-                        color: Colors.grey[500],
+                        color: Theme.of(context).disabledColor,
                       ),
                       SizedBox(
                         width: isLargeDesktop
@@ -2440,7 +2462,7 @@ class _CourseContentPageState extends State<CourseContentPage> {
                               : isSmallScreen
                               ? 10
                               : 12,
-                          color: Colors.grey[500],
+                          color: Theme.of(context).disabledColor,
                         ),
                       ),
                       if (isPreview) ...[
@@ -2542,7 +2564,7 @@ class _CourseContentPageState extends State<CourseContentPage> {
                                 : 2,
                           ),
                           decoration: BoxDecoration(
-                            color: Colors.grey[600],
+                            color: Theme.of(context).disabledColor,
                             borderRadius: BorderRadius.circular(
                               isLargeDesktop
                                   ? 10
@@ -2609,7 +2631,11 @@ class _CourseContentPageState extends State<CourseContentPage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.error_outline, size: 64, color: Colors.red),
+            Icon(
+              Icons.error_outline,
+              size: 64,
+              color: Theme.of(context).colorScheme.error,
+            ),
             const SizedBox(height: 16),
             const Text(
               'Failed to Load Course Content',
@@ -2623,7 +2649,12 @@ class _CourseContentPageState extends State<CourseContentPage> {
             Text(
               _errorMessage ?? 'Unknown error occurred',
               textAlign: TextAlign.center,
-              style: const TextStyle(fontSize: 14, color: Colors.grey),
+              style: TextStyle(
+                fontSize: 14,
+                color:
+                    Theme.of(context).textTheme.bodyMedium?.color ??
+                    Colors.grey,
+              ),
             ),
             const SizedBox(height: 24),
             ElevatedButton.icon(
@@ -2646,7 +2677,7 @@ class _CourseContentPageState extends State<CourseContentPage> {
     final isTablet = screenWidth > 600;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F5F5),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: Column(
         children: [
           // Header
@@ -2663,13 +2694,13 @@ class _CourseContentPageState extends State<CourseContentPage> {
                     Container(
                       padding: EdgeInsets.all(isTablet ? 24 : 20),
                       decoration: BoxDecoration(
-                        color: Colors.grey[100],
+                        color: Theme.of(context).dividerColor.withOpacity(0.1),
                         shape: BoxShape.circle,
                       ),
                       child: Icon(
                         Icons.video_library_outlined,
                         size: isTablet ? 80 : 64,
-                        color: Colors.grey[400],
+                        color: Theme.of(context).disabledColor,
                       ),
                     ),
                     SizedBox(height: isTablet ? 32 : 24),
@@ -2680,7 +2711,9 @@ class _CourseContentPageState extends State<CourseContentPage> {
                       style: TextStyle(
                         fontSize: isTablet ? 24 : 20,
                         fontWeight: FontWeight.bold,
-                        color: Colors.grey[800],
+                        color:
+                            Theme.of(context).textTheme.bodyLarge?.color ??
+                            Colors.grey[800],
                       ),
                       textAlign: TextAlign.center,
                     ),
@@ -2691,7 +2724,9 @@ class _CourseContentPageState extends State<CourseContentPage> {
                       'This course doesn\'t have any video content yet.\nThe instructor may be working on adding materials.',
                       style: TextStyle(
                         fontSize: isTablet ? 16 : 14,
-                        color: Colors.grey[600],
+                        color:
+                            Theme.of(context).textTheme.bodyMedium?.color ??
+                            Colors.grey[600],
                         height: 1.5,
                       ),
                       textAlign: TextAlign.center,
@@ -2709,7 +2744,7 @@ class _CourseContentPageState extends State<CourseContentPage> {
                             icon: const Icon(Icons.arrow_back, size: 18),
                             label: const Text('Go Back'),
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.grey[600],
+                              backgroundColor: Theme.of(context).disabledColor,
                               foregroundColor: Colors.white,
                               padding: EdgeInsets.symmetric(
                                 vertical: isTablet ? 16 : 12,
@@ -2757,15 +2792,20 @@ class _CourseContentPageState extends State<CourseContentPage> {
                     Container(
                       padding: EdgeInsets.all(isTablet ? 20 : 16),
                       decoration: BoxDecoration(
-                        color: Colors.blue[50],
+                        color: Theme.of(context).primaryColor.withOpacity(0.1),
                         borderRadius: BorderRadius.circular(isTablet ? 12 : 8),
-                        border: Border.all(color: Colors.blue[200]!, width: 1),
+                        border: Border.all(
+                          color: Theme.of(
+                            context,
+                          ).primaryColor.withOpacity(0.3),
+                          width: 1,
+                        ),
                       ),
                       child: Row(
                         children: [
                           Icon(
                             Icons.info_outline,
-                            color: Colors.blue[600],
+                            color: Theme.of(context).primaryColor,
                             size: isTablet ? 20 : 18,
                           ),
                           SizedBox(width: isTablet ? 12 : 8),
@@ -2774,7 +2814,7 @@ class _CourseContentPageState extends State<CourseContentPage> {
                               'Check back later or contact support if you believe this is an error.',
                               style: TextStyle(
                                 fontSize: isTablet ? 14 : 12,
-                                color: Colors.blue[700],
+                                color: Theme.of(context).primaryColor,
                               ),
                             ),
                           ),

@@ -5,28 +5,22 @@ class DrillDetailPage extends StatelessWidget {
   const DrillDetailPage({super.key});
 
   // ---- Design tokens tuned to the screenshot ----
-  static const Color kPrimary = Color(0xFF5E4FDB); // purple
-  static const Color kPrimaryDark = Color(0xFF4A47A3);
-  static const Color kBadgeBg = Color(0xFFF2EEFF); // pale purple
-  static const Color kSurface = Colors.white;
-  static const Color kBorder = Color(0xFFE9E9EF);
-  static const Color kText = Color(0xFF222222);
-  static const Color kTextSecondary = Color(0xFF6F6F7A);
   static const double kCardRadius = 16;
 
   @override
   Widget build(BuildContext context) {
+    // Refactored for theme consistency
     return Scaffold(
-      backgroundColor: const Color(0xFFF7F8FA),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         elevation: 0.6,
         centerTitle: true,
-        iconTheme: const IconThemeData(color: Colors.black87),
-        title: const Text(
+        iconTheme: IconThemeData(color: Theme.of(context).iconTheme.color),
+        title: Text(
           'Daily Skill Drill',
           style: TextStyle(
-            color: Colors.black87,
+            color: Theme.of(context).textTheme.bodyLarge?.color,
             fontWeight: FontWeight.w700,
             fontSize: 18,
           ),
@@ -42,11 +36,11 @@ class DrillDetailPage extends StatelessWidget {
               width: 116,
               height: 116,
               decoration: BoxDecoration(
-                color: kBadgeBg,
+                color: Theme.of(context).primaryColor.withOpacity(0.1),
                 shape: BoxShape.circle,
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.03),
+                    color: Theme.of(context).shadowColor.withOpacity(0.03),
                     blurRadius: 12,
                     offset: const Offset(0, 6),
                   ),
@@ -54,13 +48,17 @@ class DrillDetailPage extends StatelessWidget {
               ),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
-                children: const [
-                  Icon(Icons.local_fire_department, size: 28, color: kPrimary),
+                children: [
+                  Icon(
+                    Icons.local_fire_department,
+                    size: 28,
+                    color: Theme.of(context).primaryColor,
+                  ),
                   SizedBox(height: 4),
                   Text(
                     '5',
                     style: TextStyle(
-                      color: kPrimary,
+                      color: Theme.of(context).primaryColor,
                       fontSize: 32,
                       fontWeight: FontWeight.w800,
                       height: 1.0,
@@ -70,7 +68,7 @@ class DrillDetailPage extends StatelessWidget {
                   Text(
                     'Days',
                     style: TextStyle(
-                      color: kPrimary,
+                      color: Theme.of(context).primaryColor,
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
                     ),
@@ -82,7 +80,7 @@ class DrillDetailPage extends StatelessWidget {
             const Text(
               'Current Streak',
               style: TextStyle(
-                color: kTextSecondary,
+                color: Theme.of(context).textTheme.bodyMedium?.color,
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
               ),
@@ -95,23 +93,27 @@ class DrillDetailPage extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
+                  Text(
                     'Drill of the Day',
                     style: TextStyle(
-                      color: kText,
+                      color: Theme.of(context).textTheme.bodyLarge?.color,
                       fontSize: 18,
                       fontWeight: FontWeight.w800,
                     ),
                   ),
                   const SizedBox(height: 10),
                   Row(
-                    children: const [
-                      Icon(Icons.event, size: 18, color: kTextSecondary),
+                    children: [
+                      Icon(
+                        Icons.event,
+                        size: 18,
+                        color: Theme.of(context).textTheme.bodyMedium?.color,
+                      ),
                       SizedBox(width: 8),
                       Text(
                         'June 15, 2023',
                         style: TextStyle(
-                          color: kTextSecondary,
+                          color: Theme.of(context).textTheme.bodyMedium?.color,
                           fontSize: 13,
                           fontWeight: FontWeight.w500,
                         ),
@@ -122,8 +124,8 @@ class DrillDetailPage extends StatelessWidget {
 
                   // Topic
                   _InfoRow(
-                    iconBg: Color(0xFFEDEBFE),
-                    iconColor: kPrimary,
+                    iconBg: Theme.of(context).primaryColor.withOpacity(0.1),
+                    iconColor: Theme.of(context).primaryColor,
                     icon: Icons.psychology_alt_outlined,
                     title: 'Topic',
                     subtitle: 'Logical Reasoning Puzzle',
@@ -132,8 +134,8 @@ class DrillDetailPage extends StatelessWidget {
 
                   // Effort
                   _InfoRow(
-                    iconBg: Color(0xFFEAEFFF),
-                    iconColor: kPrimaryDark,
+                    iconBg: Theme.of(context).primaryColor.withOpacity(0.1),
+                    iconColor: Theme.of(context).primaryColorDark,
                     icon: Icons.timer_outlined,
                     title: 'Effort',
                     subtitle: '5 Questions, Est. 2 mins',
@@ -164,7 +166,7 @@ class DrillDetailPage extends StatelessWidget {
                       },
 
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: kPrimary,
+                        backgroundColor: Theme.of(context).primaryColor,
                         foregroundColor: Colors.white,
                         elevation: 0,
                         shape: RoundedRectangleBorder(
@@ -195,11 +197,11 @@ class DrillDetailPage extends StatelessWidget {
                   // header row
                   Row(
                     children: [
-                      const Expanded(
+                      Expanded(
                         child: Text(
                           'Previous Results',
                           style: TextStyle(
-                            color: kText,
+                            color: Theme.of(context).textTheme.bodyLarge?.color,
                             fontSize: 16,
                             fontWeight: FontWeight.w800,
                           ),
@@ -208,7 +210,7 @@ class DrillDetailPage extends StatelessWidget {
                       TextButton(
                         onPressed: () {},
                         style: TextButton.styleFrom(
-                          foregroundColor: kPrimary,
+                          foregroundColor: Theme.of(context).primaryColor,
                           padding: const EdgeInsets.symmetric(horizontal: 8),
                           minimumSize: const Size(0, 0),
                           tapTargetSize: MaterialTapTargetSize.shrinkWrap,
@@ -267,12 +269,12 @@ class _Card extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.fromLTRB(16, 18, 16, 16),
       decoration: BoxDecoration(
-        color: DrillDetailPage.kSurface,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(DrillDetailPage.kCardRadius),
-        border: Border.all(color: DrillDetailPage.kBorder),
+        border: Border.all(color: Theme.of(context).dividerColor),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.02),
+            color: Theme.of(context).shadowColor.withOpacity(0.02),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -315,8 +317,8 @@ class _InfoRow extends StatelessWidget {
             children: [
               Text(
                 title,
-                style: const TextStyle(
-                  color: DrillDetailPage.kText,
+                style: TextStyle(
+                  color: Theme.of(context).textTheme.bodyLarge?.color,
                   fontWeight: FontWeight.w800,
                   fontSize: 14,
                 ),
@@ -324,8 +326,8 @@ class _InfoRow extends StatelessWidget {
               const SizedBox(height: 2),
               Text(
                 subtitle,
-                style: const TextStyle(
-                  color: DrillDetailPage.kTextSecondary,
+                style: TextStyle(
+                  color: Theme.of(context).textTheme.bodyMedium?.color,
                   fontWeight: FontWeight.w500,
                   fontSize: 13,
                 ),
@@ -360,9 +362,9 @@ class _ResultRow extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: const Color(0xFFF9FAFC),
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFF0F1F4)),
+        border: Border.all(color: Theme.of(context).dividerColor),
       ),
       child: Row(
         children: [
@@ -379,8 +381,8 @@ class _ResultRow extends StatelessWidget {
               children: [
                 Text(
                   title,
-                  style: const TextStyle(
-                    color: DrillDetailPage.kText,
+                  style: TextStyle(
+                    color: Theme.of(context).textTheme.bodyLarge?.color,
                     fontSize: 14,
                     fontWeight: FontWeight.w800,
                   ),
@@ -388,8 +390,8 @@ class _ResultRow extends StatelessWidget {
                 const SizedBox(height: 2),
                 Text(
                   subtitle,
-                  style: const TextStyle(
-                    color: DrillDetailPage.kTextSecondary,
+                  style: TextStyle(
+                    color: Theme.of(context).textTheme.bodyMedium?.color,
                     fontSize: 12.5,
                     fontWeight: FontWeight.w500,
                   ),
@@ -399,8 +401,8 @@ class _ResultRow extends StatelessWidget {
           ),
           Text(
             score,
-            style: const TextStyle(
-              color: DrillDetailPage.kText,
+            style: TextStyle(
+              color: Theme.of(context).textTheme.bodyLarge?.color,
               fontSize: 16,
               fontWeight: FontWeight.w800,
             ),

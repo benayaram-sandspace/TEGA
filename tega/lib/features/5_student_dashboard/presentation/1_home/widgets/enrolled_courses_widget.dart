@@ -199,8 +199,8 @@ class _EnrolledCoursesWidgetState extends State<EnrolledCoursesWidget>
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 colors: [
-                  Colors.white,
-                  Color.lerp(Colors.white, Colors.black, 0.02)!,
+                  Theme.of(context).cardColor,
+                  Theme.of(context).cardColor,
                 ],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
@@ -222,34 +222,36 @@ class _EnrolledCoursesWidgetState extends State<EnrolledCoursesWidget>
                     Container(
                       padding: const EdgeInsets.all(10),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF6B5FFF).withOpacity(0.1),
+                        color: Theme.of(context).primaryColor.withOpacity(0.1),
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      child: const Icon(
+                      child: Icon(
                         Icons.school_rounded,
-                        color: Color(0xFF6B5FFF),
+                        color: Theme.of(context).primaryColor,
                         size: 24,
                       ),
                     ),
                     const SizedBox(width: 12),
-                    const Text(
+                    Text(
                       'Enrolled Courses',
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w700,
-                        color: Color(0xFF333333),
+                        color:
+                            Theme.of(context).textTheme.bodyLarge?.color ??
+                            Colors.black,
                       ),
                     ),
                   ],
                 ),
                 const SizedBox(height: 16),
                 if (_isLoading)
-                  const Center(
+                  Center(
                     child: Padding(
                       padding: EdgeInsets.all(20.0),
                       child: CircularProgressIndicator(
                         valueColor: AlwaysStoppedAnimation<Color>(
-                          Color(0xFF6B5FFF),
+                          Theme.of(context).primaryColor,
                         ),
                       ),
                     ),
@@ -314,9 +316,9 @@ class _EnrolledCoursesWidgetState extends State<EnrolledCoursesWidget>
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: Colors.grey[50],
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey[200]!),
+        border: Border.all(color: Theme.of(context).dividerColor),
       ),
       child: Material(
         color: Colors.transparent,
@@ -340,9 +342,9 @@ class _EnrolledCoursesWidgetState extends State<EnrolledCoursesWidget>
               );
             } else {
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
+                SnackBar(
                   content: Text('Unable to open course. Course ID not found.'),
-                  backgroundColor: Colors.red,
+                  backgroundColor: Theme.of(context).colorScheme.error,
                 ),
               );
             }
@@ -358,7 +360,7 @@ class _EnrolledCoursesWidgetState extends State<EnrolledCoursesWidget>
                   child: Container(
                     width: 60,
                     height: 60,
-                    color: Colors.grey[300],
+                    color: Theme.of(context).dividerColor,
                     child: thumbnail != null && thumbnail.isNotEmpty
                         ? CachedNetworkImage(
                             imageUrl: thumbnail,
@@ -369,7 +371,7 @@ class _EnrolledCoursesWidgetState extends State<EnrolledCoursesWidget>
                               child: CircularProgressIndicator(
                                 strokeWidth: 2,
                                 valueColor: AlwaysStoppedAnimation<Color>(
-                                  const Color(0xFF6B5FFF),
+                                  Theme.of(context).primaryColor,
                                 ),
                               ),
                             ),
@@ -394,10 +396,13 @@ class _EnrolledCoursesWidgetState extends State<EnrolledCoursesWidget>
                     children: [
                       Text(
                         title,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w600,
-                          color: Color(0xFF333333),
+                          color:
+                              Theme.of(context).textTheme.bodyLarge?.color ??
+                              Theme.of(context).textTheme.bodyLarge?.color ??
+                              Colors.black,
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -405,7 +410,12 @@ class _EnrolledCoursesWidgetState extends State<EnrolledCoursesWidget>
                       const SizedBox(height: 4),
                       Text(
                         category,
-                        style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                        style: TextStyle(
+                          fontSize: 12,
+                          color:
+                              Theme.of(context).textTheme.bodyMedium?.color ??
+                              Colors.grey[600],
+                        ),
                       ),
                       const SizedBox(height: 8),
                       // Progress Bar
@@ -417,11 +427,11 @@ class _EnrolledCoursesWidgetState extends State<EnrolledCoursesWidget>
                               child: LinearProgressIndicator(
                                 value: progress / 100,
                                 minHeight: 6,
-                                backgroundColor: Colors.grey[200],
+                                backgroundColor: Theme.of(context).dividerColor,
                                 valueColor: AlwaysStoppedAnimation<Color>(
                                   progress >= 100
-                                      ? const Color(0xFF4CAF50)
-                                      : const Color(0xFF6B5FFF),
+                                      ? Colors.green
+                                      : Theme.of(context).primaryColor,
                                 ),
                               ),
                             ),
@@ -433,8 +443,8 @@ class _EnrolledCoursesWidgetState extends State<EnrolledCoursesWidget>
                               fontSize: 12,
                               fontWeight: FontWeight.w600,
                               color: progress >= 100
-                                  ? const Color(0xFF4CAF50)
-                                  : const Color(0xFF6B5FFF),
+                                  ? Colors.green
+                                  : Theme.of(context).primaryColor,
                             ),
                           ),
                         ],

@@ -9,7 +9,7 @@ class OnboardingScreen6 extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(20),
@@ -19,28 +19,31 @@ class OnboardingScreen6 extends StatelessWidget {
               const SizedBox(height: 10),
 
               // 🔹 Top Icon (Brain)
-              const FaIcon(
+              FaIcon(
                 FontAwesomeIcons.brain,
                 size: 60,
-                color: Colors.deepPurple,
+                color: Theme.of(context).primaryColor,
               ),
 
               const SizedBox(height: 15),
 
               // 🔹 Title
-              const Text(
+              Text(
                 "Your Career Engine is Ready!",
                 style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
-                  color: Colors.black87,
+                  color: Theme.of(context).textTheme.bodyLarge?.color,
                 ),
               ),
               const SizedBox(height: 6),
-              const Text(
+              Text(
                 "We’ve built your personalized Skill Graph based on your answers. Here’s what we found:",
                 textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 14, color: Colors.black54),
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Theme.of(context).textTheme.bodyMedium?.color,
+                ),
               ),
 
               const SizedBox(height: 20),
@@ -50,11 +53,11 @@ class OnboardingScreen6 extends StatelessWidget {
                 height: 220,
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: Theme.of(context).cardColor,
                   borderRadius: BorderRadius.circular(12),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
+                      color: Theme.of(context).shadowColor.withOpacity(0.05),
                       blurRadius: 6,
                       offset: const Offset(0, 3),
                     ),
@@ -101,7 +104,7 @@ class OnboardingScreen6 extends StatelessWidget {
                     lineBarsData: [
                       LineChartBarData(
                         isCurved: true,
-                        color: Colors.deepPurple,
+                        color: Theme.of(context).primaryColor,
                         barWidth: 3,
                         dotData: FlDotData(show: true),
                         spots: const [
@@ -121,14 +124,14 @@ class OnboardingScreen6 extends StatelessWidget {
               const SizedBox(height: 20),
 
               // 🔹 Skills List
-              const Align(
+              Align(
                 alignment: Alignment.centerLeft,
                 child: Text(
                   "Skills Mapped:",
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
-                    color: Colors.black87,
+                    color: Theme.of(context).textTheme.bodyLarge?.color,
                   ),
                 ),
               ),
@@ -171,14 +174,17 @@ class OnboardingScreen6 extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [Colors.blue, Colors.deepPurple],
+                  gradient: LinearGradient(
+                    colors: [
+                      Theme.of(context).primaryColor,
+                      Theme.of(context).primaryColorDark,
+                    ],
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                   ),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: const Column(
+                child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
@@ -212,7 +218,7 @@ class OnboardingScreen6 extends StatelessWidget {
                   );
                 },
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFFFA726),
+                  backgroundColor: Theme.of(context).primaryColor,
                   minimumSize: const Size(double.infinity, 55),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),

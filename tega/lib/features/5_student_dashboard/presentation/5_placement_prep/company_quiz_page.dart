@@ -98,7 +98,7 @@ class _CompanyQuizPageState extends State<CompanyQuizPage> {
           SnackBar(
             content: Text('Failed to start quiz: $e'),
             behavior: SnackBarBehavior.floating,
-            backgroundColor: Colors.red,
+            backgroundColor: Theme.of(context).colorScheme.error,
           ),
         );
       }
@@ -108,12 +108,16 @@ class _CompanyQuizPageState extends State<CompanyQuizPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF7F8FC),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         title: Text(widget.companyName),
-        backgroundColor: Colors.white,
+        backgroundColor:
+            Theme.of(context).appBarTheme.backgroundColor ??
+            Theme.of(context).cardColor,
         elevation: 0,
-        foregroundColor: const Color(0xFF1A1A1A),
+        foregroundColor:
+            Theme.of(context).appBarTheme.foregroundColor ??
+            Theme.of(context).textTheme.titleLarge?.color,
       ),
       floatingActionButton: null,
       body: _loading
@@ -157,7 +161,9 @@ class _CompanyQuizPageState extends State<CompanyQuizPage> {
                   : isTablet
                   ? 72
                   : 80,
-              color: Colors.grey[400],
+              color:
+                  Theme.of(context).textTheme.bodyMedium?.color ??
+                  Colors.grey[400],
             ),
             SizedBox(
               height: isMobile
@@ -175,7 +181,9 @@ class _CompanyQuizPageState extends State<CompanyQuizPage> {
                     ? 19
                     : 20,
                 fontWeight: FontWeight.bold,
-                color: Colors.grey[700],
+                color:
+                    Theme.of(context).textTheme.bodyMedium?.color ??
+                    Colors.grey[700],
               ),
               textAlign: TextAlign.center,
             ),
@@ -195,7 +203,9 @@ class _CompanyQuizPageState extends State<CompanyQuizPage> {
                       : isTablet
                       ? 15
                       : 16,
-                  color: Colors.grey[600],
+                  color:
+                      Theme.of(context).textTheme.bodyMedium?.color ??
+                      Colors.grey[600],
                 ),
                 textAlign: TextAlign.center,
               ),
@@ -225,7 +235,9 @@ class _CompanyQuizPageState extends State<CompanyQuizPage> {
                     : isTablet
                     ? 20
                     : 22,
-                color: Colors.white,
+                color:
+                    Theme.of(context).appBarTheme.backgroundColor ??
+                    Theme.of(context).cardColor,
               ),
               label: Text(
                 'Retry',
@@ -235,13 +247,17 @@ class _CompanyQuizPageState extends State<CompanyQuizPage> {
                       : isTablet
                       ? 15
                       : 16,
-                  color: Colors.white,
+                  color:
+                      Theme.of(context).appBarTheme.backgroundColor ??
+                      Theme.of(context).cardColor,
                   fontWeight: FontWeight.w600,
                 ),
               ),
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF6B5FFF),
-                foregroundColor: Colors.white,
+                backgroundColor: Theme.of(context).primaryColor,
+                foregroundColor:
+                    Theme.of(context).appBarTheme.backgroundColor ??
+                    Theme.of(context).cardColor,
                 padding: EdgeInsets.symmetric(
                   horizontal: isMobile
                       ? 20
@@ -285,16 +301,18 @@ class _CompanyQuizPageState extends State<CompanyQuizPage> {
       padding: const EdgeInsets.all(16),
       child: Container(
         decoration: BoxDecoration(
-          color: Colors.white,
+          color:
+              Theme.of(context).appBarTheme.backgroundColor ??
+              Theme.of(context).cardColor,
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.04),
+              color: Theme.of(context).shadowColor.withOpacity(0.04),
               blurRadius: 12,
               offset: const Offset(0, 6),
             ),
           ],
-          border: Border.all(color: const Color(0xFFEDEDED)),
+          border: Border.all(color: Theme.of(context).dividerColor),
         ),
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
         child: Column(
@@ -303,19 +321,24 @@ class _CompanyQuizPageState extends State<CompanyQuizPage> {
             // Progress
             Text(
               'Question ${_currentIndex + 1} of ${_questions.length}',
-              style: const TextStyle(fontWeight: FontWeight.w700),
+              style: TextStyle(fontWeight: FontWeight.w700),
             ),
             const SizedBox(height: 6),
             LinearProgressIndicator(
               value: (_currentIndex + 1) / _questions.length,
-              color: const Color(0xFF6B5FFF),
-              backgroundColor: const Color(0xFFEAEAEA),
+              color: Theme.of(context).primaryColor,
+              backgroundColor: Theme.of(context).dividerColor,
               minHeight: 6,
             ),
             const SizedBox(height: 8),
             Text(
               '$answeredCount answered',
-              style: const TextStyle(color: Colors.grey, fontSize: 12),
+              style: TextStyle(
+                color:
+                    Theme.of(context).textTheme.bodyMedium?.color ??
+                    Colors.grey,
+                fontSize: 12,
+              ),
             ),
             const SizedBox(height: 12),
             Wrap(
@@ -330,7 +353,7 @@ class _CompanyQuizPageState extends State<CompanyQuizPage> {
             const SizedBox(height: 10),
             Text(
               questionText,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w700,
                 color: Color(0xFF1A1A1A),
@@ -356,7 +379,7 @@ class _CompanyQuizPageState extends State<CompanyQuizPage> {
                     onPressed: _currentIndex == 0 ? null : _handlePrev,
                     style: OutlinedButton.styleFrom(
                       side: const BorderSide(color: Color(0xFF6B5FFF)),
-                      foregroundColor: const Color(0xFF6B5FFF),
+                      foregroundColor: Theme.of(context).primaryColor,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(10),
                       ),
@@ -374,8 +397,10 @@ class _CompanyQuizPageState extends State<CompanyQuizPage> {
                         ? null
                         : _handleNext,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF6B5FFF),
-                      foregroundColor: Colors.white,
+                      backgroundColor: Theme.of(context).primaryColor,
+                      foregroundColor:
+                          Theme.of(context).appBarTheme.backgroundColor ??
+                          Theme.of(context).cardColor,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(10),
                       ),
@@ -500,11 +525,13 @@ class _CompanyQuizPageState extends State<CompanyQuizPage> {
           ),
           child: Container(
             decoration: BoxDecoration(
-              color: Colors.white,
+              color:
+                  Theme.of(context).appBarTheme.backgroundColor ??
+                  Theme.of(context).cardColor,
               borderRadius: BorderRadius.circular(16),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.08),
+                  color: Theme.of(context).shadowColor.withOpacity(0.08),
                   blurRadius: 20,
                   offset: const Offset(0, 10),
                 ),
@@ -520,7 +547,7 @@ class _CompanyQuizPageState extends State<CompanyQuizPage> {
                     horizontal: 20,
                     vertical: 16,
                   ),
-                  decoration: const BoxDecoration(
+                  decoration: BoxDecoration(
                     gradient: LinearGradient(
                       colors: [Color(0xFF6B5FFF), Color(0xFF8B7FFF)],
                       begin: Alignment.topLeft,
@@ -536,19 +563,25 @@ class _CompanyQuizPageState extends State<CompanyQuizPage> {
                       Container(
                         padding: const EdgeInsets.all(10),
                         decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.15),
+                          color:
+                              Theme.of(context).appBarTheme.backgroundColor ??
+                              Theme.of(context).cardColor.withOpacity(0.15),
                           shape: BoxShape.circle,
                         ),
-                        child: const Icon(
+                        child: Icon(
                           Icons.emoji_events_rounded,
-                          color: Colors.white,
+                          color:
+                              Theme.of(context).appBarTheme.backgroundColor ??
+                              Theme.of(context).cardColor,
                         ),
                       ),
                       const SizedBox(width: 12),
-                      const Text(
+                      Text(
                         'Quiz Result',
                         style: TextStyle(
-                          color: Colors.white,
+                          color:
+                              Theme.of(context).appBarTheme.backgroundColor ??
+                              Theme.of(context).cardColor,
                           fontWeight: FontWeight.w700,
                           fontSize: 16,
                         ),
@@ -568,13 +601,13 @@ class _CompanyQuizPageState extends State<CompanyQuizPage> {
                           shape: BoxShape.circle,
                           color:
                               (isGood
-                                      ? const Color(0xFF27AE60)
-                                      : const Color(0xFFE74C3C))
+                                      ? Colors.green
+                                      : Theme.of(context).colorScheme.error)
                                   .withOpacity(0.1),
                           border: Border.all(
                             color: isGood
-                                ? const Color(0xFF27AE60)
-                                : const Color(0xFFE74C3C),
+                                ? Colors.green
+                                : Theme.of(context).colorScheme.error,
                             width: 2,
                           ),
                         ),
@@ -588,8 +621,8 @@ class _CompanyQuizPageState extends State<CompanyQuizPage> {
                                 fontSize: 24,
                                 fontWeight: FontWeight.w800,
                                 color: isGood
-                                    ? const Color(0xFF27AE60)
-                                    : const Color(0xFFE74C3C),
+                                    ? Colors.green
+                                    : Theme.of(context).colorScheme.error,
                               ),
                             ),
                             Text(
@@ -598,8 +631,8 @@ class _CompanyQuizPageState extends State<CompanyQuizPage> {
                                 fontSize: 14,
                                 fontWeight: FontWeight.w600,
                                 color: isGood
-                                    ? const Color(0xFF27AE60)
-                                    : const Color(0xFFE74C3C),
+                                    ? Colors.green
+                                    : Theme.of(context).colorScheme.error,
                               ),
                             ),
                           ],
@@ -608,7 +641,7 @@ class _CompanyQuizPageState extends State<CompanyQuizPage> {
                       const SizedBox(height: 12),
                       Text(
                         '$percent%',
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontWeight: FontWeight.w800,
                           fontSize: 18,
                           color: Color(0xFF1A1A1A),
@@ -620,8 +653,10 @@ class _CompanyQuizPageState extends State<CompanyQuizPage> {
                             ? 'Great work! Keep it up.'
                             : 'Good try! Review and attempt again.',
                         textAlign: TextAlign.center,
-                        style: const TextStyle(
-                          color: Color(0xFF6B7280),
+                        style: TextStyle(
+                          color:
+                              Theme.of(context).textTheme.bodyMedium?.color ??
+                              Colors.grey,
                           fontSize: 13,
                         ),
                       ),
@@ -652,7 +687,7 @@ class _CompanyQuizPageState extends State<CompanyQuizPage> {
                           },
                           style: OutlinedButton.styleFrom(
                             side: const BorderSide(color: Color(0xFF6B5FFF)),
-                            foregroundColor: const Color(0xFF6B5FFF),
+                            foregroundColor: Theme.of(context).primaryColor,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(10),
                             ),
@@ -678,8 +713,10 @@ class _CompanyQuizPageState extends State<CompanyQuizPage> {
                             Navigator.of(context).pop();
                           },
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF6B5FFF),
-                            foregroundColor: Colors.white,
+                            backgroundColor: Theme.of(context).primaryColor,
+                            foregroundColor:
+                                Theme.of(context).appBarTheme.backgroundColor ??
+                                Theme.of(context).cardColor,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(10),
                             ),
@@ -703,25 +740,28 @@ class _CompanyQuizPageState extends State<CompanyQuizPage> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: const Color(0xFF6B5FFF).withOpacity(0.08),
+        color: Theme.of(context).primaryColor.withOpacity(0.08),
         borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: const Color(0xFF6B5FFF).withOpacity(0.2)),
+        border: Border.all(
+          color: Theme.of(context).primaryColor.withOpacity(0.2),
+        ),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           Text(
             '$label: ',
-            style: const TextStyle(
-              color: Color(0xFF6B5FFF),
+            style: TextStyle(
+              color: Theme.of(context).primaryColor,
               fontWeight: FontWeight.w700,
               fontSize: 12,
             ),
           ),
           Text(
             value,
-            style: const TextStyle(
-              color: Color(0xFF1A1A1A),
+            style: TextStyle(
+              color:
+                  Theme.of(context).textTheme.bodyMedium?.color ?? Colors.black,
               fontWeight: FontWeight.w600,
               fontSize: 12,
             ),
@@ -749,11 +789,12 @@ class _OptionTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final borderColor = selected
-        ? const Color(0xFF6B5FFF)
-        : const Color(0xFFE4E4E4);
+        ? Theme.of(context).primaryColor
+        : Theme.of(context).dividerColor;
     final fill = selected
-        ? const Color(0xFF6B5FFF).withOpacity(0.06)
-        : Colors.white;
+        ? Theme.of(context).primaryColor.withOpacity(0.06)
+        : Theme.of(context).appBarTheme.backgroundColor ??
+              Theme.of(context).cardColor;
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(12),
@@ -773,14 +814,17 @@ class _OptionTile extends StatelessWidget {
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 color: selected
-                    ? const Color(0xFF6B5FFF)
-                    : const Color(0xFF6B5FFF).withOpacity(0.1),
+                    ? Theme.of(context).primaryColor
+                    : Theme.of(context).primaryColor.withOpacity(0.1),
               ),
               alignment: Alignment.center,
               child: Text(
                 label,
                 style: TextStyle(
-                  color: selected ? Colors.white : const Color(0xFF6B5FFF),
+                  color: selected
+                      ? Theme.of(context).appBarTheme.backgroundColor ??
+                            Theme.of(context).cardColor
+                      : Theme.of(context).primaryColor,
                   fontWeight: FontWeight.w700,
                   fontSize: 12,
                 ),
@@ -790,9 +834,11 @@ class _OptionTile extends StatelessWidget {
             Expanded(
               child: Text(
                 text,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 14,
-                  color: Color(0xFF1A1A1A),
+                  color:
+                      Theme.of(context).textTheme.bodyMedium?.color ??
+                      Colors.black,
                   height: 1.4,
                 ),
               ),

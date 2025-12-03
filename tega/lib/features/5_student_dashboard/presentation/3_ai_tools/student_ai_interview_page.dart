@@ -101,7 +101,10 @@ class _AiInterviewPageState extends State<AiInterviewPage>
             ),
             TextButton(
               onPressed: () => Navigator.of(context).pop(true),
-              child: const Text("Exit", style: TextStyle(color: Colors.red)),
+              child: Text(
+                "Exit",
+                style: TextStyle(color: Theme.of(context).colorScheme.error),
+              ),
             ),
           ],
         ),
@@ -333,7 +336,7 @@ class _AiInterviewPageState extends State<AiInterviewPage>
 
   Widget _buildInstructionsPage() {
     return Scaffold(
-      backgroundColor: Colors.grey[50],
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(20.0),
@@ -363,26 +366,30 @@ class _AiInterviewPageState extends State<AiInterviewPage>
                         width: double.infinity,
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          color: Colors.deepPurple.withOpacity(0.1),
+                          color: Theme.of(
+                            context,
+                          ).primaryColor.withOpacity(0.1),
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(
-                            color: Colors.deepPurple.withOpacity(0.3),
+                            color: Theme.of(
+                              context,
+                            ).primaryColor.withOpacity(0.3),
                           ),
                         ),
                         child: Column(
                           children: [
-                            const Icon(
+                            Icon(
                               Icons.psychology,
                               size: 48,
-                              color: Colors.deepPurple,
+                              color: Theme.of(context).primaryColor,
                             ),
                             const SizedBox(height: 12),
-                            const Text(
+                            Text(
                               "Soft Skills Assessment",
                               style: TextStyle(
                                 fontSize: 18,
                                 fontWeight: FontWeight.bold,
-                                color: Colors.deepPurple,
+                                color: Theme.of(context).primaryColor,
                               ),
                             ),
                             const SizedBox(height: 8),
@@ -391,7 +398,9 @@ class _AiInterviewPageState extends State<AiInterviewPage>
                               textAlign: TextAlign.center,
                               style: TextStyle(
                                 fontSize: 14,
-                                color: Colors.grey[700],
+                                color: Theme.of(
+                                  context,
+                                ).textTheme.bodyMedium?.color,
                               ),
                             ),
                           ],
@@ -503,7 +512,9 @@ class _AiInterviewPageState extends State<AiInterviewPage>
                                     "• Chrome or Safari browser recommended",
                                     style: TextStyle(
                                       fontSize: 12,
-                                      color: Colors.grey[700],
+                                      color: Theme.of(
+                                        context,
+                                      ).textTheme.bodyMedium?.color,
                                       height: 1.4,
                                     ),
                                   ),
@@ -524,7 +535,7 @@ class _AiInterviewPageState extends State<AiInterviewPage>
                 height: 56,
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.deepPurple,
+                    backgroundColor: Theme.of(context).primaryColor,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
@@ -575,7 +586,10 @@ class _AiInterviewPageState extends State<AiInterviewPage>
               children: [
                 Text(
                   label,
-                  style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Theme.of(context).textTheme.bodySmall?.color,
+                  ),
                 ),
                 Text(
                   value,
@@ -602,16 +616,16 @@ class _AiInterviewPageState extends State<AiInterviewPage>
             width: 24,
             height: 24,
             decoration: BoxDecoration(
-              color: Colors.deepPurple.withOpacity(0.1),
+              color: Theme.of(context).primaryColor.withOpacity(0.1),
               shape: BoxShape.circle,
             ),
             child: Center(
               child: Text(
                 number,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.bold,
-                  color: Colors.deepPurple,
+                  color: Theme.of(context).primaryColor,
                 ),
               ),
             ),
@@ -622,7 +636,7 @@ class _AiInterviewPageState extends State<AiInterviewPage>
               text,
               style: TextStyle(
                 fontSize: 14,
-                color: Colors.grey[700],
+                color: Theme.of(context).textTheme.bodyMedium?.color,
                 height: 1.4,
               ),
             ),
@@ -645,7 +659,7 @@ class _AiInterviewPageState extends State<AiInterviewPage>
                 color: Colors.white.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(20),
                 border: Border.all(
-                  color: Colors.deepPurple.withOpacity(0.3),
+                  color: Theme.of(context).primaryColor.withOpacity(0.3),
                   width: 2,
                 ),
               ),
@@ -672,15 +686,18 @@ class _AiInterviewPageState extends State<AiInterviewPage>
                     height: 100,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      border: Border.all(color: Colors.deepPurple, width: 3),
+                      border: Border.all(
+                        color: Theme.of(context).primaryColor,
+                        width: 3,
+                      ),
                     ),
                     child: Center(
                       child: Text(
                         _countdownSeconds.toString(),
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 48,
                           fontWeight: FontWeight.bold,
-                          color: Colors.deepPurple,
+                          color: Theme.of(context).primaryColor,
                         ),
                       ),
                     ),

@@ -76,8 +76,8 @@ class _WeeklyProgressWidgetState extends State<WeeklyProgressWidget>
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 colors: [
-                  Colors.white,
-                  Color.lerp(Colors.white, Colors.black, 0.02)!,
+                  Theme.of(context).cardColor,
+                  Theme.of(context).cardColor,
                 ],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
@@ -106,12 +106,14 @@ class _WeeklyProgressWidgetState extends State<WeeklyProgressWidget>
                           child: Container(
                             padding: const EdgeInsets.all(10),
                             decoration: BoxDecoration(
-                              color: const Color(0xFF6B5FFF).withOpacity(0.1),
+                              color: Theme.of(
+                                context,
+                              ).primaryColor.withOpacity(0.1),
                               borderRadius: BorderRadius.circular(12),
                             ),
-                            child: const Icon(
+                            child: Icon(
                               Icons.trending_up_rounded,
-                              color: Color(0xFF6B5FFF),
+                              color: Theme.of(context).primaryColor,
                               size: 24,
                             ),
                           ),
@@ -119,7 +121,7 @@ class _WeeklyProgressWidgetState extends State<WeeklyProgressWidget>
                       },
                     ),
                     const SizedBox(width: 12),
-                    const Expanded(
+                    Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -128,15 +130,29 @@ class _WeeklyProgressWidgetState extends State<WeeklyProgressWidget>
                             style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w700,
-                              color: Color(0xFF333333),
+                              color:
+                                  Theme.of(
+                                    context,
+                                  ).textTheme.bodyLarge?.color ??
+                                  Theme.of(
+                                    context,
+                                  ).textTheme.bodyLarge?.color ??
+                                  Colors.black,
                             ),
                           ),
-                          SizedBox(height: 2),
+                          const SizedBox(height: 2),
                           Text(
                             'Keep up the great work!',
                             style: TextStyle(
                               fontSize: 12,
-                              color: Color(0xFF6E7E9A),
+                              color:
+                                  Theme.of(
+                                    context,
+                                  ).textTheme.bodyMedium?.color ??
+                                  Theme.of(
+                                    context,
+                                  ).textTheme.bodyMedium?.color ??
+                                  Colors.grey,
                             ),
                           ),
                         ],
@@ -149,8 +165,8 @@ class _WeeklyProgressWidgetState extends State<WeeklyProgressWidget>
                       ),
                       decoration: BoxDecoration(
                         color: widget.currentStreak >= 7
-                            ? const Color(0xFF4CAF50).withOpacity(0.1)
-                            : const Color(0xFFFF9800).withOpacity(0.1),
+                            ? Colors.green.withOpacity(0.1)
+                            : Colors.orange.withOpacity(0.1),
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Row(
@@ -159,8 +175,8 @@ class _WeeklyProgressWidgetState extends State<WeeklyProgressWidget>
                             Icons.local_fire_department_rounded,
                             size: 16,
                             color: widget.currentStreak >= 7
-                                ? const Color(0xFF4CAF50)
-                                : const Color(0xFFFF9800),
+                                ? Colors.green
+                                : Colors.orange,
                           ),
                           const SizedBox(width: 4),
                           Text(
@@ -169,8 +185,8 @@ class _WeeklyProgressWidgetState extends State<WeeklyProgressWidget>
                               fontSize: 12,
                               fontWeight: FontWeight.w600,
                               color: widget.currentStreak >= 7
-                                  ? const Color(0xFF4CAF50)
-                                  : const Color(0xFFFF9800),
+                                  ? Colors.green
+                                  : Colors.orange,
                             ),
                           ),
                         ],
@@ -184,18 +200,21 @@ class _WeeklyProgressWidgetState extends State<WeeklyProgressWidget>
                   children: [
                     Text(
                       '${widget.weeklyProgress} / ${widget.weeklyGoal} hours',
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
-                        color: Color(0xFF333333),
+                        color:
+                            Theme.of(context).textTheme.bodyLarge?.color ??
+                            Theme.of(context).textTheme.bodyLarge?.color ??
+                            Colors.black,
                       ),
                     ),
                     Text(
                       '${(_progressAnimation.value * 100).toStringAsFixed(0)}%',
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w700,
-                        color: Color(0xFF6B5FFF),
+                        color: Theme.of(context).primaryColor,
                       ),
                     ),
                   ],
@@ -209,9 +228,9 @@ class _WeeklyProgressWidgetState extends State<WeeklyProgressWidget>
                       child: LinearProgressIndicator(
                         value: _progressAnimation.value,
                         minHeight: 10,
-                        backgroundColor: const Color(0xFFE0E0E0),
-                        valueColor: const AlwaysStoppedAnimation<Color>(
-                          Color(0xFF6B5FFF),
+                        backgroundColor: Theme.of(context).dividerColor,
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          Theme.of(context).primaryColor,
                         ),
                       ),
                     );

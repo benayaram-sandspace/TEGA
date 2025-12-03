@@ -330,7 +330,7 @@ class _CoursesPageState extends State<CoursesPage>
       decoration: InputDecoration(
         hintText: 'Search courses...',
         hintStyle: TextStyle(
-          color: Colors.grey[400],
+          color: Theme.of(context).hintColor,
           fontSize: isLargeDesktop
               ? 18
               : isDesktop
@@ -353,7 +353,7 @@ class _CoursesPageState extends State<CoursesPage>
               : 20,
         ),
         filled: true,
-        fillColor: Colors.white,
+        fillColor: Theme.of(context).cardColor,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(
             isLargeDesktop
@@ -376,7 +376,7 @@ class _CoursesPageState extends State<CoursesPage>
                 ? 13
                 : 12,
           ),
-          borderSide: BorderSide(color: Colors.grey[200]!),
+          borderSide: BorderSide(color: Theme.of(context).dividerColor),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(
@@ -510,7 +510,7 @@ class _CoursesPageState extends State<CoursesPage>
                   right: (isLargeDesktop || isDesktop) ? 4 : 0,
                 ),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: Theme.of(context).cardColor,
                   borderRadius: BorderRadius.circular(
                     isLargeDesktop
                         ? 24
@@ -522,7 +522,7 @@ class _CoursesPageState extends State<CoursesPage>
                   ),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.08),
+                      color: Theme.of(context).shadowColor.withOpacity(0.08),
                       blurRadius: isLargeDesktop
                           ? 24
                           : isDesktop
@@ -543,7 +543,7 @@ class _CoursesPageState extends State<CoursesPage>
                       spreadRadius: 0,
                     ),
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.04),
+                      color: Theme.of(context).shadowColor.withOpacity(0.04),
                       blurRadius: isLargeDesktop
                           ? 48
                           : isDesktop
@@ -665,13 +665,15 @@ class _CoursesPageState extends State<CoursesPage>
                                               : 14,
                                         ),
                                         decoration: BoxDecoration(
-                                          color: Colors.white.withOpacity(0.9),
+                                          color: Theme.of(
+                                            context,
+                                          ).cardColor.withOpacity(0.9),
                                           shape: BoxShape.circle,
                                           boxShadow: [
                                             BoxShadow(
-                                              color: Colors.black.withOpacity(
-                                                0.2,
-                                              ),
+                                              color: Theme.of(
+                                                context,
+                                              ).shadowColor.withOpacity(0.2),
                                               blurRadius: isLargeDesktop
                                                   ? 16
                                                   : isDesktop
@@ -739,7 +741,11 @@ class _CoursesPageState extends State<CoursesPage>
                                       ? 16
                                       : 18,
                                   fontWeight: FontWeight.w700,
-                                  color: const Color(0xFF1A1A1A),
+                                  color:
+                                      Theme.of(
+                                        context,
+                                      ).textTheme.bodyLarge?.color ??
+                                      const Color(0xFF1A1A1A),
                                   height: 1.3,
                                 ),
                                 maxLines: 2,
@@ -786,7 +792,11 @@ class _CoursesPageState extends State<CoursesPage>
                                             : isSmallScreen
                                             ? 12
                                             : 14,
-                                        color: Colors.grey[600],
+                                        color:
+                                            Theme.of(
+                                              context,
+                                            ).textTheme.bodyMedium?.color ??
+                                            Colors.grey[600],
                                         fontWeight: FontWeight.w500,
                                       ),
                                       maxLines: 1,
@@ -1179,7 +1189,9 @@ class _CoursesPageState extends State<CoursesPage>
                   : isSmallScreen
                   ? 13
                   : 14,
-              color: Colors.grey[600],
+              color:
+                  Theme.of(context).textTheme.bodyMedium?.color ??
+                  Colors.grey[600],
               fontWeight: FontWeight.w500,
             ),
           ),
@@ -1217,7 +1229,7 @@ class _CoursesPageState extends State<CoursesPage>
                   : isTablet
                   ? 50
                   : 44,
-              color: Colors.grey[400],
+              color: Theme.of(context).disabledColor,
             ),
             SizedBox(
               height: isLargeDesktop
@@ -1243,7 +1255,9 @@ class _CoursesPageState extends State<CoursesPage>
                     ? 15
                     : 16,
                 fontWeight: FontWeight.bold,
-                color: Colors.grey[700],
+                color:
+                    Theme.of(context).textTheme.bodyLarge?.color ??
+                    Colors.grey[700],
               ),
               textAlign: TextAlign.center,
             ),
@@ -1270,7 +1284,9 @@ class _CoursesPageState extends State<CoursesPage>
                     : isSmallScreen
                     ? 11
                     : 12,
-                color: Colors.grey[600],
+                color:
+                    Theme.of(context).textTheme.bodyMedium?.color ??
+                    Colors.grey[600],
               ),
               textAlign: TextAlign.center,
               maxLines: 2,
@@ -1423,7 +1439,9 @@ class _CoursesPageState extends State<CoursesPage>
                       ? 15
                       : 16,
                   fontWeight: FontWeight.w700,
-                  color: const Color(0xFF333333),
+                  color:
+                      Theme.of(context).textTheme.bodyLarge?.color ??
+                      const Color(0xFF333333),
                 ),
                 textAlign: TextAlign.center,
               ),
@@ -1448,7 +1466,9 @@ class _CoursesPageState extends State<CoursesPage>
                       : isSmallScreen
                       ? 11
                       : 12,
-                  color: Colors.grey[600],
+                  color:
+                      Theme.of(context).textTheme.bodyMedium?.color ??
+                      Colors.grey[600],
                 ),
                 textAlign: TextAlign.center,
               ),
@@ -1594,7 +1614,9 @@ class _CoursesPageState extends State<CoursesPage>
                     ? 16
                     : 18,
                 fontWeight: FontWeight.w700,
-                color: const Color(0xFF333333),
+                color:
+                    Theme.of(context).textTheme.bodyLarge?.color ??
+                    const Color(0xFF333333),
               ),
               textAlign: TextAlign.center,
             ),

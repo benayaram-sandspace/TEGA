@@ -246,7 +246,7 @@ class _AIAssistantPageState extends State<AIAssistantPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(
         child: Row(
           children: [
@@ -290,7 +290,7 @@ class _AIAssistantPageState extends State<AIAssistantPage> {
           : isTablet
           ? 280
           : 300,
-      color: Colors.white,
+      color: Theme.of(context).cardColor,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -374,7 +374,7 @@ class _AIAssistantPageState extends State<AIAssistantPage> {
                 Text(
                   'TEGA AI',
                   style: TextStyle(
-                    color: const Color(0xFF111827),
+                    color: Theme.of(context).textTheme.bodyLarge?.color,
                     fontWeight: FontWeight.w700,
                     fontSize: isLargeDesktop
                         ? 20
@@ -393,7 +393,7 @@ class _AIAssistantPageState extends State<AIAssistantPage> {
             ),
           ),
           Divider(
-            color: const Color(0xFFE5E7EB),
+            color: Theme.of(context).dividerColor,
             height: isLargeDesktop || isDesktop
                 ? 1.5
                 : isTablet
@@ -427,7 +427,7 @@ class _AIAssistantPageState extends State<AIAssistantPage> {
                       child: Text(
                         'No conversations yet',
                         style: TextStyle(
-                          color: Colors.black54,
+                          color: Theme.of(context).textTheme.bodyMedium?.color,
                           fontSize: isLargeDesktop
                               ? 16
                               : isDesktop
@@ -461,7 +461,9 @@ class _AIAssistantPageState extends State<AIAssistantPage> {
                       return ListTile(
                         dense: true,
                         selected: selected,
-                        selectedTileColor: const Color(0xFFEEF2FF),
+                        selectedTileColor: Theme.of(
+                          context,
+                        ).primaryColor.withOpacity(0.1),
                         contentPadding: EdgeInsets.symmetric(
                           horizontal: isLargeDesktop
                               ? 20
@@ -484,7 +486,7 @@ class _AIAssistantPageState extends State<AIAssistantPage> {
                         ),
                         leading: Icon(
                           Icons.chat_bubble_outline,
-                          color: const Color(0xFF6B7280),
+                          color: Theme.of(context).iconTheme.color,
                           size: isLargeDesktop
                               ? 22
                               : isDesktop
@@ -504,7 +506,7 @@ class _AIAssistantPageState extends State<AIAssistantPage> {
                               ? 2
                               : 1,
                           style: TextStyle(
-                            color: const Color(0xFF111827),
+                            color: Theme.of(context).textTheme.bodyLarge?.color,
                             fontSize: isLargeDesktop
                                 ? 16
                                 : isDesktop
@@ -526,7 +528,7 @@ class _AIAssistantPageState extends State<AIAssistantPage> {
                           tooltip: 'Delete',
                           icon: Icon(
                             Icons.delete_outline,
-                            color: const Color(0xFF9CA3AF),
+                            color: Theme.of(context).disabledColor,
                             size: isLargeDesktop
                                 ? 22
                                 : isDesktop
@@ -593,10 +595,10 @@ class _AIAssistantPageState extends State<AIAssistantPage> {
             : 10,
       ),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardColor,
         border: Border(
           bottom: BorderSide(
-            color: const Color(0xFFE5E7EB),
+            color: Theme.of(context).dividerColor,
             width: isLargeDesktop || isDesktop
                 ? 1.5
                 : isTablet
@@ -632,7 +634,7 @@ class _AIAssistantPageState extends State<AIAssistantPage> {
                   : 8,
             ),
             decoration: BoxDecoration(
-              color: const Color(0xFFF3F4F6),
+              color: Theme.of(context).scaffoldBackgroundColor,
               borderRadius: BorderRadius.circular(
                 isLargeDesktop
                     ? 12
@@ -644,7 +646,7 @@ class _AIAssistantPageState extends State<AIAssistantPage> {
                     ? 6
                     : 8,
               ),
-              border: Border.all(color: const Color(0xFFE5E7EB)),
+              border: Border.all(color: Theme.of(context).dividerColor),
             ),
             child: Row(
               children: [
@@ -659,7 +661,7 @@ class _AIAssistantPageState extends State<AIAssistantPage> {
                       : isSmallScreen
                       ? 14
                       : 16,
-                  color: const Color(0xFF6B7280),
+                  color: Theme.of(context).iconTheme.color,
                 ),
                 SizedBox(
                   width: isLargeDesktop || isDesktop
@@ -673,7 +675,7 @@ class _AIAssistantPageState extends State<AIAssistantPage> {
                 Text(
                   _model,
                   style: TextStyle(
-                    color: const Color(0xFF111827),
+                    color: Theme.of(context).textTheme.bodyLarge?.color,
                     fontSize: isLargeDesktop
                         ? 15
                         : isDesktop
@@ -696,7 +698,7 @@ class _AIAssistantPageState extends State<AIAssistantPage> {
                 ),
                 Icon(
                   Icons.keyboard_arrow_down,
-                  color: const Color(0xFF6B7280),
+                  color: Theme.of(context).iconTheme.color,
                   size: isLargeDesktop
                       ? 20
                       : isDesktop
@@ -756,7 +758,7 @@ class _AIAssistantPageState extends State<AIAssistantPage> {
                     : isSmallScreen
                     ? 48
                     : 56,
-                color: Colors.black.withOpacity(0.3),
+                color: Theme.of(context).disabledColor,
               ),
               SizedBox(
                 height: isLargeDesktop
@@ -772,7 +774,7 @@ class _AIAssistantPageState extends State<AIAssistantPage> {
               Text(
                 'Start a new chat to begin',
                 style: TextStyle(
-                  color: Colors.black.withOpacity(0.6),
+                  color: Theme.of(context).textTheme.bodyMedium?.color,
                   fontSize: isLargeDesktop
                       ? 22
                       : isDesktop

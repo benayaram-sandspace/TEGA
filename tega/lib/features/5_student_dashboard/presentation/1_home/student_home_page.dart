@@ -86,16 +86,16 @@ class _AnnouncementDialogState extends State<AnnouncementDialog> {
           maxHeight: MediaQuery.of(context).size.height * 0.8,
         ),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: Theme.of(context).cardColor,
           borderRadius: BorderRadius.circular(24),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.1),
+              color: Theme.of(context).shadowColor.withOpacity(0.1),
               blurRadius: 30,
               offset: const Offset(0, 10),
             ),
             BoxShadow(
-              color: const Color(0xFF6B5FFF).withOpacity(0.1),
+              color: Theme.of(context).primaryColor.withOpacity(0.1),
               blurRadius: 20,
               offset: const Offset(0, 5),
             ),
@@ -107,13 +107,16 @@ class _AnnouncementDialogState extends State<AnnouncementDialog> {
             // Header with gradient
             Container(
               padding: EdgeInsets.all(isSmallScreen ? 20 : 24),
-              decoration: const BoxDecoration(
+              decoration: BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [Color(0xFF6B5FFF), Color(0xFF8F7FFF)],
+                  colors: [
+                    Theme.of(context).primaryColor,
+                    Theme.of(context).primaryColorLight,
+                  ],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
-                borderRadius: BorderRadius.only(
+                borderRadius: const BorderRadius.only(
                   topLeft: Radius.circular(24),
                   topRight: Radius.circular(24),
                 ),
@@ -123,12 +126,12 @@ class _AnnouncementDialogState extends State<AnnouncementDialog> {
                   Container(
                     padding: EdgeInsets.all(isSmallScreen ? 8 : 10),
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.2),
+                      color: Theme.of(context).cardColor.withOpacity(0.2),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Icon(
                       Icons.campaign_rounded,
-                      color: Colors.white,
+                      color: Theme.of(context).cardColor,
                       size: isSmallScreen ? 24 : 28,
                     ),
                   ),
@@ -140,7 +143,7 @@ class _AnnouncementDialogState extends State<AnnouncementDialog> {
                         Text(
                           'College Announcements',
                           style: TextStyle(
-                            color: Colors.white,
+                            color: Theme.of(context).cardColor,
                             fontSize: isSmallScreen ? 18 : 22,
                             fontWeight: FontWeight.bold,
                             letterSpacing: 0.5,
@@ -151,7 +154,7 @@ class _AnnouncementDialogState extends State<AnnouncementDialog> {
                               ? '${_currentIndex + 1} of ${widget.announcements.length}'
                               : 'Announcement',
                           style: TextStyle(
-                            color: Colors.white.withOpacity(0.9),
+                            color: Theme.of(context).cardColor.withOpacity(0.9),
                             fontSize: isSmallScreen ? 12 : 14,
                             fontWeight: FontWeight.w500,
                           ),
@@ -166,7 +169,10 @@ class _AnnouncementDialogState extends State<AnnouncementDialog> {
                         Navigator.of(context).pop();
                       }
                     },
-                    icon: const Icon(Icons.close_rounded, color: Colors.white),
+                    icon: Icon(
+                      Icons.close_rounded,
+                      color: Theme.of(context).cardColor,
+                    ),
                     padding: EdgeInsets.zero,
                     constraints: const BoxConstraints(),
                     iconSize: isSmallScreen ? 20 : 24,
@@ -181,10 +187,10 @@ class _AnnouncementDialogState extends State<AnnouncementDialog> {
                 child: Container(
                   padding: EdgeInsets.all(isSmallScreen ? 14 : 18),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF6B5FFF).withOpacity(0.05),
+                    color: Theme.of(context).primaryColor.withOpacity(0.05),
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(
-                      color: const Color(0xFF6B5FFF).withOpacity(0.1),
+                      color: Theme.of(context).primaryColor.withOpacity(0.1),
                       width: 1,
                     ),
                   ),
@@ -200,7 +206,7 @@ class _AnnouncementDialogState extends State<AnnouncementDialog> {
                             decoration: BoxDecoration(
                               color:
                                   (currentAnnouncement.color ??
-                                          const Color(0xFF6B5FFF))
+                                          Theme.of(context).primaryColor)
                                       .withOpacity(0.15),
                               borderRadius: BorderRadius.circular(10),
                             ),
@@ -209,7 +215,7 @@ class _AnnouncementDialogState extends State<AnnouncementDialog> {
                                   Icons.campaign_rounded,
                               color:
                                   currentAnnouncement.color ??
-                                  const Color(0xFF6B5FFF),
+                                  Theme.of(context).primaryColor,
                               size: isSmallScreen ? 18 : 20,
                             ),
                           ),
@@ -224,7 +230,9 @@ class _AnnouncementDialogState extends State<AnnouncementDialog> {
                                   style: TextStyle(
                                     fontSize: isSmallScreen ? 16 : 18,
                                     fontWeight: FontWeight.bold,
-                                    color: Colors.grey[900],
+                                    color: Theme.of(
+                                      context,
+                                    ).textTheme.bodyLarge?.color,
                                     height: 1.3,
                                   ),
                                 ),
@@ -234,7 +242,9 @@ class _AnnouncementDialogState extends State<AnnouncementDialog> {
                                     Icon(
                                       Icons.access_time_rounded,
                                       size: isSmallScreen ? 12 : 14,
-                                      color: Colors.grey[600],
+                                      color: Theme.of(
+                                        context,
+                                      ).textTheme.bodyMedium?.color,
                                     ),
                                     SizedBox(width: 4),
                                     Text(
@@ -243,7 +253,9 @@ class _AnnouncementDialogState extends State<AnnouncementDialog> {
                                           'Just now',
                                       style: TextStyle(
                                         fontSize: isSmallScreen ? 11 : 12,
-                                        color: Colors.grey[600],
+                                        color: Theme.of(
+                                          context,
+                                        ).textTheme.bodyMedium?.color,
                                         fontWeight: FontWeight.w500,
                                       ),
                                     ),
@@ -263,14 +275,16 @@ class _AnnouncementDialogState extends State<AnnouncementDialog> {
                         Container(
                           padding: EdgeInsets.all(isSmallScreen ? 12 : 14),
                           decoration: BoxDecoration(
-                            color: Colors.white,
+                            color: Theme.of(context).cardColor,
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Text(
                             currentAnnouncement.message.toString(),
                             style: TextStyle(
                               fontSize: isSmallScreen ? 13 : 14,
-                              color: Colors.grey[700],
+                              color: Theme.of(
+                                context,
+                              ).textTheme.bodyMedium?.color,
                               height: 1.5,
                             ),
                           ),
@@ -288,7 +302,7 @@ class _AnnouncementDialogState extends State<AnnouncementDialog> {
                 vertical: isSmallScreen ? 12 : 16,
               ),
               decoration: BoxDecoration(
-                color: Colors.grey[50],
+                color: Theme.of(context).scaffoldBackgroundColor,
                 borderRadius: const BorderRadius.only(
                   bottomLeft: Radius.circular(24),
                   bottomRight: Radius.circular(24),
@@ -308,7 +322,7 @@ class _AnnouncementDialogState extends State<AnnouncementDialog> {
                           size: isSmallScreen ? 16 : 18,
                           color: isFirst
                               ? Colors.grey[400]
-                              : const Color(0xFF6B5FFF),
+                              : Theme.of(context).primaryColor,
                         ),
                         label: Text(
                           'Previous',
@@ -317,7 +331,7 @@ class _AnnouncementDialogState extends State<AnnouncementDialog> {
                             fontWeight: FontWeight.w600,
                             color: isFirst
                                 ? Colors.grey[400]
-                                : const Color(0xFF6B5FFF),
+                                : Theme.of(context).primaryColor,
                           ),
                         ),
                         style: TextButton.styleFrom(
@@ -349,8 +363,8 @@ class _AnnouncementDialogState extends State<AnnouncementDialog> {
                             }
                           : _nextAnnouncement,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF6B5FFF),
-                        foregroundColor: Colors.white,
+                        backgroundColor: Theme.of(context).primaryColor,
+                        foregroundColor: Theme.of(context).cardColor,
                         padding: EdgeInsets.symmetric(
                           horizontal: isSmallScreen ? 16 : 24,
                           vertical: isSmallScreen ? 12 : 14,
@@ -549,7 +563,7 @@ class _StudentHomePageState extends State<StudentHomePage>
         await showDialog(
           context: context,
           barrierDismissible: true,
-          barrierColor: Colors.black.withOpacity(0.5),
+          barrierColor: Theme.of(context).shadowColor.withOpacity(0.5),
           builder: (ctx) => AnnouncementDialog(announcements: announcements),
         );
       } else {
@@ -719,7 +733,7 @@ class _StudentHomePageState extends State<StudentHomePage>
   void _showLogoutConfirmation() {
     showDialog(
       context: context,
-      barrierColor: Colors.black.withOpacity(0.3),
+      barrierColor: Theme.of(context).shadowColor.withOpacity(0.3),
       builder: (BuildContext context) {
         return BackdropFilter(
           filter: ImageFilter.blur(sigmaX: 4, sigmaY: 4),
@@ -727,10 +741,10 @@ class _StudentHomePageState extends State<StudentHomePage>
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(16),
             ),
-            backgroundColor: Colors.white,
-            title: const Row(
+            backgroundColor: Theme.of(context).dialogBackgroundColor,
+            title: Row(
               children: [
-                Icon(Icons.logout, color: Colors.red),
+                Icon(Icons.logout, color: Theme.of(context).colorScheme.error),
                 SizedBox(width: 8),
                 Text('Logout'),
               ],
@@ -759,15 +773,15 @@ class _StudentHomePageState extends State<StudentHomePage>
                   }
                 },
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.red,
+                  backgroundColor: Theme.of(context).colorScheme.error,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8),
                   ),
                 ),
-                child: const Text(
+                child: Text(
                   'Logout',
                   style: TextStyle(
-                    color: Colors.white,
+                    color: Theme.of(context).colorScheme.onError,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -796,7 +810,7 @@ class _StudentHomePageState extends State<StudentHomePage>
     // On desktop/large desktop, show sidebar permanently
     if (shouldShowSidebarPermanently) {
       return Scaffold(
-        backgroundColor: const Color(0xFFF7F8FC),
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         body: SafeArea(
           child: Row(
             children: [
@@ -850,7 +864,7 @@ class _StudentHomePageState extends State<StudentHomePage>
 
     // Mobile/Tablet: Drawer sidebar
     return Scaffold(
-      backgroundColor: const Color(0xFFF7F8FC),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(
         child: Stack(
           children: [
@@ -916,10 +930,10 @@ class _StudentHomePageState extends State<StudentHomePage>
       return Container(
         width: sidebarWidth,
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: Theme.of(context).cardColor,
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
+              color: Theme.of(context).shadowColor.withOpacity(0.05),
               blurRadius: 10,
               offset: const Offset(2, 0),
             ),
@@ -938,9 +952,9 @@ class _StudentHomePageState extends State<StudentHomePage>
       bottom: 0,
       width: sidebarWidth,
       child: Material(
-        color: Colors.white,
+        color: Theme.of(context).cardColor,
         elevation: shouldShowSidebarPermanently ? 0 : 20,
-        shadowColor: const Color(0xFF6B5FFF).withOpacity(0.2),
+        shadowColor: Theme.of(context).primaryColor.withOpacity(0.2),
         child: _buildSidebarContent(),
       ),
     );
@@ -1120,9 +1134,12 @@ class _StudentHomePageState extends State<StudentHomePage>
     return Container(
       width: double.infinity,
       padding: headerPadding,
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [Color(0xFF6B5FFF), Color(0xFF5E4FDB)],
+          colors: [
+            Theme.of(context).primaryColor,
+            Theme.of(context).primaryColorDark,
+          ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -1135,17 +1152,17 @@ class _StudentHomePageState extends State<StudentHomePage>
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               border: Border.all(
-                color: Colors.white.withOpacity(0.3),
+                color: Theme.of(context).cardColor.withOpacity(0.3),
                 width: isSmallScreen ? 1.5 : 2,
               ),
             ),
             child: CircleAvatar(
               radius: avatarRadius,
-              backgroundColor: Colors.white,
+              backgroundColor: Theme.of(context).cardColor,
               child: Icon(
                 Icons.school_rounded,
                 size: iconSize,
-                color: const Color(0xFF6B5FFF),
+                color: Theme.of(context).primaryColor,
               ),
             ),
           ),
@@ -1153,7 +1170,7 @@ class _StudentHomePageState extends State<StudentHomePage>
           Text(
             _currentUser?.name ?? 'Student',
             style: TextStyle(
-              color: Colors.white,
+              color: Theme.of(context).cardColor,
               fontWeight: FontWeight.bold,
               fontSize: nameFontSize,
             ),
@@ -1164,7 +1181,7 @@ class _StudentHomePageState extends State<StudentHomePage>
           Text(
             display,
             style: TextStyle(
-              color: Colors.white.withOpacity(0.8),
+              color: Theme.of(context).cardColor.withOpacity(0.8),
               fontSize: detailFontSize,
             ),
             maxLines: isSmallScreen ? 1 : 2,
@@ -1197,7 +1214,7 @@ class _StudentHomePageState extends State<StudentHomePage>
       child: Text(
         title,
         style: TextStyle(
-          color: Colors.grey.withOpacity(0.6),
+          color: Theme.of(context).hintColor.withOpacity(0.6),
           fontSize: fontSize,
           fontWeight: FontWeight.w600,
           letterSpacing: isSmallScreen ? 0.8 : 1.2,
@@ -1257,7 +1274,7 @@ class _StudentHomePageState extends State<StudentHomePage>
 
     return Material(
       color: isSelected
-          ? const Color(0xFF6B5FFF).withOpacity(0.1)
+          ? Theme.of(context).primaryColor.withOpacity(0.1)
           : Colors.transparent,
       borderRadius: BorderRadius.circular(borderRadius),
       child: InkWell(
@@ -1273,19 +1290,19 @@ class _StudentHomePageState extends State<StudentHomePage>
           }
         },
         borderRadius: BorderRadius.circular(borderRadius),
-        splashColor: const Color(0xFF6B5FFF).withOpacity(0.2),
-        highlightColor: const Color(0xFF6B5FFF).withOpacity(0.2),
+        splashColor: Theme.of(context).primaryColor.withOpacity(0.2),
+        highlightColor: Theme.of(context).primaryColor.withOpacity(0.2),
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
           padding: padding,
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(borderRadius),
             color: isSelected
-                ? const Color(0xFF6B5FFF).withOpacity(0.1)
+                ? Theme.of(context).primaryColor.withOpacity(0.1)
                 : Colors.transparent,
             border: isSelected
                 ? Border.all(
-                    color: const Color(0xFF6B5FFF).withOpacity(0.3),
+                    color: Theme.of(context).primaryColor.withOpacity(0.3),
                     width: 1,
                   )
                 : null,
@@ -1297,13 +1314,15 @@ class _StudentHomePageState extends State<StudentHomePage>
                 padding: EdgeInsets.all(iconPadding),
                 decoration: BoxDecoration(
                   color: isSelected
-                      ? const Color(0xFF6B5FFF).withOpacity(0.2)
-                      : Colors.grey.withOpacity(0.1),
+                      ? Theme.of(context).primaryColor.withOpacity(0.2)
+                      : Theme.of(context).disabledColor.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Icon(
                   icon,
-                  color: isSelected ? const Color(0xFF6B5FFF) : Colors.grey,
+                  color: isSelected
+                      ? Theme.of(context).primaryColor
+                      : Theme.of(context).unselectedWidgetColor,
                   size: iconSize,
                 ),
               ),
@@ -1313,8 +1332,9 @@ class _StudentHomePageState extends State<StudentHomePage>
                   title,
                   style: TextStyle(
                     color: isSelected
-                        ? const Color(0xFF6B5FFF)
-                        : Colors.grey[800],
+                        ? Theme.of(context).primaryColor
+                        : Theme.of(context).textTheme.bodyLarge?.color ??
+                              Theme.of(context).textTheme.bodyLarge?.color,
                     fontWeight: isSelected
                         ? FontWeight.w600
                         : FontWeight.normal,
@@ -1331,13 +1351,13 @@ class _StudentHomePageState extends State<StudentHomePage>
                     vertical: isSmallScreen ? 1 : 2,
                   ),
                   decoration: BoxDecoration(
-                    color: Colors.red,
+                    color: Theme.of(context).colorScheme.error,
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: Text(
                     badge,
                     style: TextStyle(
-                      color: Colors.white,
+                      color: Theme.of(context).colorScheme.onError,
                       fontSize: isSmallScreen ? 9 : 11,
                       fontWeight: FontWeight.w700,
                     ),
@@ -1376,9 +1396,12 @@ class _StudentHomePageState extends State<StudentHomePage>
     return Container(
       margin: margin,
       decoration: BoxDecoration(
-        color: Colors.red.withOpacity(0.05),
+        color: Theme.of(context).colorScheme.error.withOpacity(0.05),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.red.withOpacity(0.3), width: 1),
+        border: Border.all(
+          color: Theme.of(context).colorScheme.error.withOpacity(0.3),
+          width: 1,
+        ),
       ),
       child: ListTile(
         dense: isSmallScreen,
@@ -1389,22 +1412,26 @@ class _StudentHomePageState extends State<StudentHomePage>
         leading: Container(
           padding: EdgeInsets.all(isSmallScreen ? 6 : 8),
           decoration: BoxDecoration(
-            color: Colors.red.withOpacity(0.1),
+            color: Theme.of(context).colorScheme.error.withOpacity(0.1),
             borderRadius: BorderRadius.circular(8),
           ),
-          child: Icon(Icons.logout, color: Colors.red, size: iconSize),
+          child: Icon(
+            Icons.logout,
+            color: Theme.of(context).colorScheme.error,
+            size: iconSize,
+          ),
         ),
         title: Text(
           'Logout',
           style: TextStyle(
-            color: Colors.red,
+            color: Theme.of(context).colorScheme.error,
             fontWeight: FontWeight.w600,
             fontSize: fontSize,
           ),
         ),
         trailing: Icon(
           Icons.arrow_forward_ios,
-          color: Colors.red,
+          color: Theme.of(context).colorScheme.error,
           size: isSmallScreen ? 14 : 16,
         ),
         onTap: _showLogoutConfirmation,

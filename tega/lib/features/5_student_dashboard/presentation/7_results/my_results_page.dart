@@ -283,7 +283,7 @@ class _MyResultsPageState extends State<MyResultsPage>
     super.build(context);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F5F5),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: _isLoading
           ? _buildLoadingState()
           : _errorMessage != null

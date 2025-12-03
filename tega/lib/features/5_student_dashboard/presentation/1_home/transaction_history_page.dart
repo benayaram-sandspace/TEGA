@@ -237,16 +237,16 @@ class _TransactionHistoryPageState extends State<TransactionHistoryPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F5F5),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(
         child: RefreshIndicator(
           onRefresh: () => _loadData(forceRefresh: true),
-          color: const Color(0xFF9C88FF),
+          color: Theme.of(context).primaryColor,
           child: _isLoading
               ? Center(
                   child: CircularProgressIndicator(
-                    valueColor: const AlwaysStoppedAnimation<Color>(
-                      Color(0xFF9C88FF),
+                    valueColor: AlwaysStoppedAnimation<Color>(
+                      Theme.of(context).primaryColor,
                     ),
                     strokeWidth: isLargeDesktop
                         ? 4
@@ -335,10 +335,13 @@ class _TransactionHistoryPageState extends State<TransactionHistoryPage> {
 
     return Container(
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
+        gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [Color(0xFF2C3E50), Color(0xFF34495E)],
+          colors: [
+            Theme.of(context).primaryColorDark,
+            Theme.of(context).primaryColor,
+          ],
         ),
         boxShadow: [
           BoxShadow(
@@ -359,9 +362,9 @@ class _TransactionHistoryPageState extends State<TransactionHistoryPage> {
                 // User Info and Actions
                 Row(
                   children: [
-                    const Icon(
+                    Icon(
                       Icons.person,
-                      color: Color(0xFF3498DB),
+                      color: Theme.of(context).colorScheme.secondary,
                       size: 16,
                     ),
                     const SizedBox(width: 8),
@@ -371,8 +374,8 @@ class _TransactionHistoryPageState extends State<TransactionHistoryPage> {
                         final studentName = snapshot.data ?? 'Loading...';
                         return Text(
                           studentName,
-                          style: const TextStyle(
-                            color: Color(0xFF3498DB),
+                          style: TextStyle(
+                            color: Theme.of(context).colorScheme.secondary,
                             fontSize: 14,
                             fontWeight: FontWeight.w500,
                           ),
@@ -407,7 +410,7 @@ class _TransactionHistoryPageState extends State<TransactionHistoryPage> {
                         vertical: 4,
                       ),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF27AE60),
+                        color: Colors.green,
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Row(
@@ -653,553 +656,6 @@ class _TransactionHistoryPageState extends State<TransactionHistoryPage> {
     );
   }
 
-  Widget _buildActionButton(String label, IconData icon, VoidCallback onTap) {
-    return Container(
-      height: 32,
-      padding: const EdgeInsets.symmetric(horizontal: 12),
-      decoration: BoxDecoration(
-        color: const Color(0xFF3498DB),
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          borderRadius: BorderRadius.circular(16),
-          onTap: onTap,
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(icon, color: Colors.white, size: 14),
-              const SizedBox(width: 4),
-              Text(
-                label,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildFilters() {
-    return Container(
-      margin: EdgeInsets.symmetric(
-        horizontal: isLargeDesktop
-            ? 32
-            : isDesktop
-            ? 24
-            : isTablet
-            ? 20
-            : isSmallScreen
-            ? 12
-            : 16,
-      ),
-      padding: EdgeInsets.all(
-        isLargeDesktop
-            ? 20
-            : isDesktop
-            ? 18
-            : isTablet
-            ? 16
-            : isSmallScreen
-            ? 12
-            : 14,
-      ),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(
-          isLargeDesktop
-              ? 20
-              : isDesktop
-              ? 18
-              : isTablet
-              ? 16
-              : isSmallScreen
-              ? 12
-              : 14,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: isLargeDesktop
-                ? 16
-                : isDesktop
-                ? 12
-                : isTablet
-                ? 10
-                : isSmallScreen
-                ? 6
-                : 8,
-            offset: Offset(
-              0,
-              isLargeDesktop
-                  ? 4
-                  : isDesktop
-                  ? 3
-                  : isTablet
-                  ? 2
-                  : isSmallScreen
-                  ? 1
-                  : 2,
-            ),
-          ),
-        ],
-      ),
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        child: Row(
-          children: [
-            _buildFilterTab('All', Icons.all_inclusive, _transactions.length),
-            SizedBox(
-              width: isLargeDesktop
-                  ? 12
-                  : isDesktop
-                  ? 10
-                  : isTablet
-                  ? 8
-                  : isSmallScreen
-                  ? 6
-                  : 7,
-            ),
-            _buildFilterTab(
-              'Completed',
-              Icons.check_circle,
-              _transactions
-                  .where(
-                    (t) =>
-                        t.status.toLowerCase() == 'completed' ||
-                        t.status.toLowerCase() == 'success' ||
-                        t.status.toLowerCase() == 'paid',
-                  )
-                  .length,
-            ),
-            SizedBox(
-              width: isLargeDesktop
-                  ? 12
-                  : isDesktop
-                  ? 10
-                  : isTablet
-                  ? 8
-                  : isSmallScreen
-                  ? 6
-                  : 7,
-            ),
-            _buildFilterTab(
-              'Failed',
-              Icons.error,
-              _transactions
-                  .where(
-                    (t) =>
-                        t.status.toLowerCase() == 'failed' ||
-                        t.status.toLowerCase() == 'error',
-                  )
-                  .length,
-            ),
-            SizedBox(
-              width: isLargeDesktop
-                  ? 12
-                  : isDesktop
-                  ? 10
-                  : isTablet
-                  ? 8
-                  : isSmallScreen
-                  ? 6
-                  : 7,
-            ),
-            _buildFilterTab(
-              'Pending',
-              Icons.access_time,
-              _transactions
-                  .where((t) => t.status.toLowerCase() == 'pending')
-                  .length,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildFilterTab(String label, IconData icon, int count) {
-    final isSelected = _selectedFilter == label;
-    return GestureDetector(
-      onTap: () {
-        setState(() {
-          _selectedFilter = label;
-        });
-      },
-      child: Container(
-        height: isLargeDesktop
-            ? 44
-            : isDesktop
-            ? 40
-            : isTablet
-            ? 38
-            : isSmallScreen
-            ? 32
-            : 36,
-        padding: EdgeInsets.symmetric(
-          horizontal: isLargeDesktop
-              ? 18
-              : isDesktop
-              ? 16
-              : isTablet
-              ? 14
-              : isSmallScreen
-              ? 10
-              : 12,
-        ),
-        decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFF9C88FF) : const Color(0xFFF8F9FA),
-          borderRadius: BorderRadius.circular(
-            isLargeDesktop
-                ? 22
-                : isDesktop
-                ? 20
-                : isTablet
-                ? 18
-                : isSmallScreen
-                ? 16
-                : 18,
-          ),
-          border: Border.all(
-            color: isSelected
-                ? const Color(0xFF9C88FF)
-                : const Color(0xFFE9ECEF),
-            width: isLargeDesktop || isDesktop
-                ? 1.5
-                : isTablet
-                ? 1.2
-                : isSmallScreen
-                ? 0.8
-                : 1,
-          ),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              icon,
-              color: isSelected ? Colors.white : const Color(0xFF6C757D),
-              size: isLargeDesktop
-                  ? 20
-                  : isDesktop
-                  ? 18
-                  : isTablet
-                  ? 16
-                  : isSmallScreen
-                  ? 14
-                  : 15,
-            ),
-            SizedBox(
-              width: isLargeDesktop
-                  ? 8
-                  : isDesktop
-                  ? 7
-                  : isTablet
-                  ? 6
-                  : isSmallScreen
-                  ? 4
-                  : 5,
-            ),
-            Text(
-              '$label ($count)',
-              style: TextStyle(
-                color: isSelected ? Colors.white : const Color(0xFF6C757D),
-                fontSize: isLargeDesktop
-                    ? 15
-                    : isDesktop
-                    ? 14
-                    : isTablet
-                    ? 13
-                    : isSmallScreen
-                    ? 11
-                    : 12,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildStatRow(IconData icon, String value, String label) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.end,
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        Icon(icon, color: Colors.white70, size: 16),
-        const SizedBox(width: 8),
-        Text(
-          value,
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        const SizedBox(width: 6),
-        Text(
-          label,
-          style: const TextStyle(color: Colors.white70, fontSize: 12),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildTransactionList() {
-    final filteredTransactions = _filteredTransactions;
-
-    if (filteredTransactions.isEmpty) {
-      return _buildEmptyState();
-    }
-
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 20),
-      child: Column(
-        children: [
-          // Section Header
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF9C88FF).withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: const Icon(
-                  Icons.receipt_long,
-                  color: Color(0xFF9C88FF),
-                  size: 16,
-                ),
-              ),
-              const SizedBox(width: 8),
-              const Text(
-                'Transaction History',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF2C3E50),
-                ),
-              ),
-              const Spacer(),
-              Text(
-                '${filteredTransactions.length} transactions',
-                style: const TextStyle(fontSize: 12, color: Color(0xFF6C757D)),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          // Transaction Cards
-          ...filteredTransactions.map(
-            (transaction) => Padding(
-              padding: const EdgeInsets.only(bottom: 12),
-              child: _buildTransactionCard(transaction),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildTransactionCard(Transaction transaction) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 8,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Header Row
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: transaction.statusColor.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Icon(
-                  transaction.statusIcon,
-                  color: transaction.statusColor,
-                  size: 16,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      transaction.courseName,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: Color(0xFF2C3E50),
-                      ),
-                    ),
-                    Text(
-                      transaction.paymentMethod,
-                      style: const TextStyle(
-                        fontSize: 12,
-                        color: Color(0xFF6C757D),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Text(
-                    transaction.formattedAmount,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF2C3E50),
-                    ),
-                  ),
-                  Text(
-                    transaction.timeAgo,
-                    style: const TextStyle(
-                      fontSize: 12,
-                      color: Color(0xFF6C757D),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          // Status and Details Row
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: transaction.statusColor.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Text(
-                  transaction.status.toUpperCase(),
-                  style: TextStyle(
-                    color: transaction.statusColor,
-                    fontSize: 10,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-              const Spacer(),
-              if (transaction.transactionId != null)
-                Text(
-                  'ID: ${transaction.transactionId!.substring(0, 8)}...',
-                  style: const TextStyle(
-                    fontSize: 10,
-                    color: Color(0xFF6C757D),
-                  ),
-                ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildEmptyState() {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 20),
-      child: Center(
-        child: Container(
-          padding: const EdgeInsets.all(32),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Container(
-                width: 100,
-                height: 100,
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF8F9FA),
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(
-                  Icons.receipt_long,
-                  size: 40,
-                  color: Color(0xFF6C757D),
-                ),
-              ),
-              const SizedBox(height: 20),
-              const Text(
-                'No transactions found',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                  color: Color(0xFF2C3E50),
-                ),
-              ),
-              const SizedBox(height: 8),
-              const Text(
-                'You haven\'t made any transactions yet. Complete a payment to see your transaction history here.\n\nOnly real transactions from the database are displayed.',
-                textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 13, color: Color(0xFF6C757D)),
-              ),
-              const SizedBox(height: 20),
-              Container(
-                height: 44,
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFF9C88FF), Color(0xFF7A6BFF)],
-                  ),
-                  borderRadius: BorderRadius.circular(22),
-                  boxShadow: [
-                    BoxShadow(
-                      color: const Color(0xFF9C88FF).withOpacity(0.3),
-                      blurRadius: 8,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: Material(
-                  color: Colors.transparent,
-                  child: InkWell(
-                    borderRadius: BorderRadius.circular(22),
-                    onTap: () {
-                      // Navigate to courses or payment page
-                    },
-                    child: const Center(
-                      child: Text(
-                        'Make Your First Payment',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
   Widget _buildErrorState() {
     final isNoInternet = _error == 'No internet connection';
 
@@ -1230,7 +686,7 @@ class _TransactionHistoryPageState extends State<TransactionHistoryPage> {
                   : isSmallScreen
                   ? 48
                   : 56,
-              color: Colors.grey[400],
+              color: Theme.of(context).disabledColor,
             ),
             SizedBox(
               height: isLargeDesktop
@@ -1258,7 +714,9 @@ class _TransactionHistoryPageState extends State<TransactionHistoryPage> {
                     ? 16
                     : 18,
                 fontWeight: FontWeight.bold,
-                color: Colors.grey[700],
+                color:
+                    Theme.of(context).textTheme.bodyLarge?.color ??
+                    Colors.grey[700],
               ),
               textAlign: TextAlign.center,
             ),
@@ -1278,7 +736,9 @@ class _TransactionHistoryPageState extends State<TransactionHistoryPage> {
                 'Please check your connection and try again',
                 textAlign: TextAlign.center,
                 style: TextStyle(
-                  color: Colors.grey[600],
+                  color:
+                      Theme.of(context).textTheme.bodyMedium?.color ??
+                      Colors.grey[600],
                   fontSize: isLargeDesktop
                       ? 18
                       : isDesktop
@@ -1306,7 +766,9 @@ class _TransactionHistoryPageState extends State<TransactionHistoryPage> {
                 _error ?? 'Unknown error occurred',
                 textAlign: TextAlign.center,
                 style: TextStyle(
-                  color: Colors.grey[600],
+                  color:
+                      Theme.of(context).textTheme.bodyMedium?.color ??
+                      Colors.grey[600],
                   fontSize: isLargeDesktop
                       ? 18
                       : isDesktop
@@ -1343,7 +805,7 @@ class _TransactionHistoryPageState extends State<TransactionHistoryPage> {
                     : isSmallScreen
                     ? 18
                     : 20,
-                color: Colors.white,
+                color: Theme.of(context).cardColor,
               ),
               label: Text(
                 'Retry',
@@ -1357,13 +819,13 @@ class _TransactionHistoryPageState extends State<TransactionHistoryPage> {
                       : isSmallScreen
                       ? 13
                       : 14,
-                  color: Colors.white,
+                  color: Theme.of(context).cardColor,
                   fontWeight: FontWeight.w600,
                 ),
               ),
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF9C88FF),
-                foregroundColor: Colors.white,
+                backgroundColor: Theme.of(context).primaryColor,
+                foregroundColor: Theme.of(context).cardColor,
                 padding: EdgeInsets.symmetric(
                   horizontal: isLargeDesktop
                       ? 32
@@ -1403,6 +865,281 @@ class _TransactionHistoryPageState extends State<TransactionHistoryPage> {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildFilters() {
+    final filters = ['All', 'Completed', 'Pending', 'Failed'];
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: Row(
+        children: filters.map((filter) {
+          final isSelected = _selectedFilter == filter;
+          return Padding(
+            padding: const EdgeInsets.only(right: 12),
+            child: InkWell(
+              onTap: () {
+                setState(() {
+                  _selectedFilter = filter;
+                });
+              },
+              borderRadius: BorderRadius.circular(20),
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
+                ),
+                decoration: BoxDecoration(
+                  color: isSelected
+                      ? Theme.of(context).primaryColor
+                      : Theme.of(context).cardColor,
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: isSelected
+                        ? Theme.of(context).primaryColor
+                        : Theme.of(context).dividerColor,
+                  ),
+                  boxShadow: isSelected
+                      ? [
+                          BoxShadow(
+                            color: Theme.of(
+                              context,
+                            ).primaryColor.withOpacity(0.3),
+                            blurRadius: 8,
+                            offset: const Offset(0, 2),
+                          ),
+                        ]
+                      : null,
+                ),
+                child: Text(
+                  filter,
+                  style: TextStyle(
+                    color: isSelected
+                        ? Colors.white
+                        : Theme.of(context).textTheme.bodyMedium?.color,
+                    fontWeight: isSelected
+                        ? FontWeight.w600
+                        : FontWeight.normal,
+                    fontSize: 14,
+                  ),
+                ),
+              ),
+            ),
+          );
+        }).toList(),
+      ),
+    );
+  }
+
+  Widget _buildTransactionList() {
+    final transactions = _filteredTransactions;
+
+    if (transactions.isEmpty) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(32),
+          child: Column(
+            children: [
+              Icon(
+                Icons.receipt_long_outlined,
+                size: 64,
+                color: Theme.of(context).disabledColor,
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'No transactions found',
+                style: TextStyle(
+                  color: Theme.of(context).textTheme.bodyLarge?.color,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    return ListView.separated(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      itemCount: transactions.length,
+      separatorBuilder: (context, index) => const SizedBox(height: 12),
+      itemBuilder: (context, index) {
+        final transaction = transactions[index];
+        return Container(
+          decoration: BoxDecoration(
+            color: Theme.of(context).cardColor,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 10,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: ListTile(
+            contentPadding: const EdgeInsets.all(16),
+            leading: Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Theme.of(context).primaryColor.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(
+                Icons.school, // Assuming course related
+                color: Theme.of(context).primaryColor,
+              ),
+            ),
+            title: Text(
+              transaction.courseName,
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                color: Theme.of(context).textTheme.bodyLarge?.color,
+              ),
+            ),
+            subtitle: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const SizedBox(height: 4),
+                Text(
+                  transaction.transactionId ?? '',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Theme.of(
+                      context,
+                    ).textTheme.bodyMedium?.color?.withOpacity(0.7),
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  transaction.timeAgo,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Theme.of(
+                      context,
+                    ).textTheme.bodyMedium?.color?.withOpacity(0.5),
+                  ),
+                ),
+              ],
+            ),
+            trailing: Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  transaction.formattedAmount,
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                    color: Theme.of(context).primaryColor,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: _getStatusColor(transaction.status).withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    transaction.status,
+                    style: TextStyle(
+                      color: _getStatusColor(transaction.status),
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Color _getStatusColor(String status) {
+    switch (status.toLowerCase()) {
+      case 'completed':
+      case 'success':
+      case 'paid':
+        return Colors.green;
+      case 'pending':
+        return Colors.orange;
+      case 'failed':
+      case 'error':
+        return Colors.red;
+      default:
+        return Colors.grey;
+    }
+  }
+
+  Widget _buildActionButton(String label, IconData icon, VoidCallback onTap) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(8),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.2),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Row(
+          children: [
+            Icon(icon, color: Colors.white, size: 16),
+            const SizedBox(width: 4),
+            Text(
+              label,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStatRow(IconData icon, String value, String label) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Icon(icon, color: Colors.white70, size: 16),
+        ),
+        const SizedBox(width: 12),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              value,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            Text(
+              label,
+              style: const TextStyle(color: Colors.white70, fontSize: 12),
+            ),
+          ],
+        ),
+      ],
     );
   }
 }

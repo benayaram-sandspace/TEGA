@@ -230,7 +230,7 @@ class _NotificationPageState extends State<NotificationPage> {
           SnackBar(
             content: Text('Error: ${e.toString()}'),
             behavior: SnackBarBehavior.floating,
-            backgroundColor: Colors.red,
+            backgroundColor: Theme.of(context).colorScheme.error,
           ),
         );
       }
@@ -270,7 +270,7 @@ class _NotificationPageState extends State<NotificationPage> {
           SnackBar(
             content: Text('Error deleting notification: ${e.toString()}'),
             behavior: SnackBarBehavior.floating,
-            backgroundColor: Colors.red,
+            backgroundColor: Theme.of(context).colorScheme.error,
           ),
         );
       }
@@ -280,7 +280,7 @@ class _NotificationPageState extends State<NotificationPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F5F5),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(
         child: Column(
           children: [
@@ -315,10 +315,10 @@ class _NotificationPageState extends State<NotificationPage> {
             : 12,
       ),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardColor,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Theme.of(context).shadowColor.withOpacity(0.05),
             blurRadius: isLargeDesktop
                 ? 8
                 : isDesktop
@@ -376,7 +376,7 @@ class _NotificationPageState extends State<NotificationPage> {
                 ),
               ),
               style: TextButton.styleFrom(
-                foregroundColor: const Color(0xFF9C88FF),
+                foregroundColor: Theme.of(context).primaryColor,
                 padding: EdgeInsets.symmetric(
                   horizontal: isLargeDesktop
                       ? 20
@@ -427,7 +427,7 @@ class _NotificationPageState extends State<NotificationPage> {
             ),
             icon: Icon(
               Icons.more_vert,
-              color: Colors.black87,
+              color: Theme.of(context).iconTheme.color,
               size: isLargeDesktop
                   ? 28
                   : isDesktop
@@ -461,7 +461,7 @@ class _NotificationPageState extends State<NotificationPage> {
                           : isSmallScreen
                           ? 16
                           : 18,
-                      color: const Color(0xFF9C88FF),
+                      color: Theme.of(context).primaryColor,
                     ),
                     SizedBox(
                       width: isLargeDesktop || isDesktop
@@ -504,7 +504,7 @@ class _NotificationPageState extends State<NotificationPage> {
                           : isSmallScreen
                           ? 16
                           : 18,
-                      color: const Color(0xFF9C88FF),
+                      color: Theme.of(context).primaryColor,
                     ),
                     SizedBox(
                       width: isLargeDesktop || isDesktop
@@ -554,7 +554,7 @@ class _NotificationPageState extends State<NotificationPage> {
 
     return RefreshIndicator(
       onRefresh: () => _loadNotifications(forceRefresh: true),
-      color: const Color(0xFF9C88FF),
+      color: Theme.of(context).primaryColor,
       child: ListView.separated(
         padding: EdgeInsets.all(
           isLargeDesktop
@@ -604,8 +604,10 @@ class _NotificationPageState extends State<NotificationPage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const CircularProgressIndicator(
-              valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF9C88FF)),
+            CircularProgressIndicator(
+              valueColor: AlwaysStoppedAnimation<Color>(
+                Theme.of(context).primaryColor,
+              ),
             ),
             SizedBox(
               height: isLargeDesktop
@@ -621,7 +623,9 @@ class _NotificationPageState extends State<NotificationPage> {
             Text(
               'Loading notifications...',
               style: TextStyle(
-                color: Colors.grey,
+                color:
+                    Theme.of(context).textTheme.bodyMedium?.color ??
+                    Colors.grey,
                 fontSize: isLargeDesktop
                     ? 20
                     : isDesktop
@@ -669,7 +673,7 @@ class _NotificationPageState extends State<NotificationPage> {
                   : isSmallScreen
                   ? 48
                   : 56,
-              color: Colors.grey[400],
+              color: Theme.of(context).disabledColor,
             ),
             SizedBox(
               height: isLargeDesktop
@@ -697,7 +701,9 @@ class _NotificationPageState extends State<NotificationPage> {
                     ? 16
                     : 18,
                 fontWeight: FontWeight.bold,
-                color: Colors.grey[700],
+                color:
+                    Theme.of(context).textTheme.bodyLarge?.color ??
+                    Colors.grey[700],
               ),
               textAlign: TextAlign.center,
             ),
@@ -717,7 +723,9 @@ class _NotificationPageState extends State<NotificationPage> {
                 'Please check your connection and try again',
                 textAlign: TextAlign.center,
                 style: TextStyle(
-                  color: Colors.grey[600],
+                  color:
+                      Theme.of(context).textTheme.bodyMedium?.color ??
+                      Colors.grey[600],
                   fontSize: isLargeDesktop
                       ? 16
                       : isDesktop
@@ -751,7 +759,9 @@ class _NotificationPageState extends State<NotificationPage> {
                 errorMessage!,
                 textAlign: TextAlign.center,
                 style: TextStyle(
-                  color: Colors.grey[600],
+                  color:
+                      Theme.of(context).textTheme.bodyMedium?.color ??
+                      Colors.grey[600],
                   fontSize: isLargeDesktop
                       ? 16
                       : isDesktop
@@ -810,8 +820,8 @@ class _NotificationPageState extends State<NotificationPage> {
                 ),
               ),
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF9C88FF),
-                foregroundColor: Colors.white,
+                backgroundColor: Theme.of(context).primaryColor,
+                foregroundColor: Theme.of(context).cardColor,
                 padding: EdgeInsets.symmetric(
                   horizontal: isLargeDesktop
                       ? 40
@@ -883,7 +893,7 @@ class _NotificationPageState extends State<NotificationPage> {
                     : 20,
               ),
               decoration: BoxDecoration(
-                color: const Color(0xFF9C88FF).withOpacity(0.1),
+                color: Theme.of(context).primaryColor.withOpacity(0.1),
                 shape: BoxShape.circle,
               ),
               child: Icon(
@@ -897,7 +907,7 @@ class _NotificationPageState extends State<NotificationPage> {
                     : isSmallScreen
                     ? 48
                     : 56,
-                color: const Color(0xFF9C88FF),
+                color: Theme.of(context).primaryColor,
               ),
             ),
             SizedBox(
@@ -924,7 +934,9 @@ class _NotificationPageState extends State<NotificationPage> {
                     ? 18
                     : 20,
                 fontWeight: FontWeight.w600,
-                color: const Color(0xFF2C3E50),
+                color:
+                    Theme.of(context).textTheme.bodyLarge?.color ??
+                    Theme.of(context).textTheme.bodyLarge?.color,
               ),
             ),
             SizedBox(
@@ -942,7 +954,9 @@ class _NotificationPageState extends State<NotificationPage> {
               'You\'ll see important updates, course announcements, and system notifications here when they arrive.',
               textAlign: TextAlign.center,
               style: TextStyle(
-                color: Colors.grey,
+                color:
+                    Theme.of(context).textTheme.bodyMedium?.color ??
+                    Colors.grey,
                 fontSize: isLargeDesktop
                     ? 17
                     : isDesktop
@@ -1001,8 +1015,8 @@ class _NotificationPageState extends State<NotificationPage> {
                 ),
               ),
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF9C88FF),
-                foregroundColor: Colors.white,
+                backgroundColor: Theme.of(context).primaryColor,
+                foregroundColor: Theme.of(context).cardColor,
                 padding: EdgeInsets.symmetric(
                   horizontal: isLargeDesktop
                       ? 40
@@ -1047,7 +1061,7 @@ class _NotificationPageState extends State<NotificationPage> {
   Widget _buildNotificationCard(NotificationModel notification) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(
           isLargeDesktop
               ? 20
@@ -1061,7 +1075,7 @@ class _NotificationPageState extends State<NotificationPage> {
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Theme.of(context).shadowColor.withOpacity(0.05),
             blurRadius: isLargeDesktop
                 ? 12
                 : isDesktop
@@ -1144,7 +1158,7 @@ class _NotificationPageState extends State<NotificationPage> {
                 ),
                 child: Icon(
                   notification.icon,
-                  color: Colors.white,
+                  color: Theme.of(context).cardColor,
                   size: isLargeDesktop
                       ? 28
                       : isDesktop
@@ -1187,7 +1201,7 @@ class _NotificationPageState extends State<NotificationPage> {
                                   : isSmallScreen
                                   ? 14
                                   : 16,
-                              color: const Color(0xFF3A7BD5),
+                              color: Theme.of(context).primaryColor,
                               fontWeight: !notification.isRead
                                   ? FontWeight.w600
                                   : FontWeight.w400,
@@ -1240,7 +1254,9 @@ class _NotificationPageState extends State<NotificationPage> {
                       Text(
                         notification.message!,
                         style: TextStyle(
-                          color: Colors.grey,
+                          color:
+                              Theme.of(context).textTheme.bodyMedium?.color ??
+                              Colors.grey,
                           fontSize: isLargeDesktop
                               ? 16
                               : isDesktop
@@ -1273,7 +1289,9 @@ class _NotificationPageState extends State<NotificationPage> {
                         Text(
                           notification.timeAgo,
                           style: TextStyle(
-                            color: Colors.grey,
+                            color:
+                                Theme.of(context).textTheme.bodyMedium?.color ??
+                                Colors.grey,
                             fontSize: isLargeDesktop
                                 ? 14
                                 : isDesktop
@@ -1375,7 +1393,7 @@ class _NotificationPageState extends State<NotificationPage> {
                                   : isSmallScreen
                                   ? 16
                                   : 18,
-                              color: Colors.red,
+                              color: Theme.of(context).colorScheme.error,
                             ),
                           ),
                         ),

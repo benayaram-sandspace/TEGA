@@ -26,10 +26,19 @@ class _CompanySpecificQuestionsPageState
   String? _errorMessage;
   final PlacementPrepCacheService _cacheService = PlacementPrepCacheService();
 
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
+
   @override
   void initState() {
     super.initState();
     _initializeCache();
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
 
   Future<void> _initializeCache() async {
@@ -186,501 +195,172 @@ class _CompanySpecificQuestionsPageState
     }
   }
 
-  // (Questions are loaded on the quiz page; no per-company preload here)
-
-  // Responsive breakpoints
-  double get mobileBreakpoint => 600;
-  double get tabletBreakpoint => 1024;
-  double get desktopBreakpoint => 1440;
-  bool get isMobile => MediaQuery.of(context).size.width < mobileBreakpoint;
-  bool get isTablet =>
-      MediaQuery.of(context).size.width >= mobileBreakpoint &&
-      MediaQuery.of(context).size.width < tabletBreakpoint;
-  bool get isDesktop =>
-      MediaQuery.of(context).size.width >= tabletBreakpoint &&
-      MediaQuery.of(context).size.width < desktopBreakpoint;
-  bool get isLargeDesktop =>
-      MediaQuery.of(context).size.width >= desktopBreakpoint;
-  bool get isSmallScreen => MediaQuery.of(context).size.width < 400;
+  List<Map<String, dynamic>> get _filteredCompanies {
+    if (_searchQuery.isEmpty) {
+      return _companies;
+    }
+    return _companies.where((company) {
+      final name = (company['name'] ?? '').toString().toLowerCase();
+      return name.contains(_searchQuery.toLowerCase());
+    }).toList();
+  }
 
   @override
   Widget build(BuildContext context) {
+    final isLargeDesktop = MediaQuery.of(context).size.width >= 1440;
+    final isDesktop =
+        MediaQuery.of(context).size.width >= 1024 &&
+        MediaQuery.of(context).size.width < 1440;
+    final isTablet =
+        MediaQuery.of(context).size.width >= 600 &&
+        MediaQuery.of(context).size.width < 1024;
+
     return Scaffold(
-      backgroundColor: const Color(0xFFF7F8FC),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         elevation: 0,
-        backgroundColor: Colors.white,
+        backgroundColor:
+            Theme.of(context).appBarTheme.backgroundColor ??
+            Theme.of(context).cardColor,
         leading: IconButton(
-          icon: Container(
-            padding: EdgeInsets.all(
-              isLargeDesktop
-                  ? 12
-                  : isDesktop
-                  ? 10
-                  : isTablet
-                  ? 9
-                  : isSmallScreen
-                  ? 6
-                  : 8,
-            ),
-            decoration: BoxDecoration(
-              color: const Color(0xFF6B5FFF).withOpacity(0.1),
-              borderRadius: BorderRadius.circular(
-                isLargeDesktop
-                    ? 14
-                    : isDesktop
-                    ? 12
-                    : isTablet
-                    ? 11
-                    : isSmallScreen
-                    ? 8
-                    : 10,
-              ),
-            ),
-            child: Icon(
-              Icons.arrow_back,
-              color: const Color(0xFF6B5FFF),
-              size: isLargeDesktop
-                  ? 28
-                  : isDesktop
-                  ? 24
-                  : isTablet
-                  ? 22
-                  : isSmallScreen
-                  ? 18
-                  : 20,
-            ),
+          icon: Icon(
+            Icons.arrow_back,
+            color: Theme.of(context).iconTheme.color,
           ),
           onPressed: () => Navigator.of(context).pop(),
         ),
-        systemOverlayStyle: SystemUiOverlayStyle.dark,
+        title: Text(
+          'Company Specific Questions',
+          style: TextStyle(
+            color: Theme.of(context).textTheme.titleLarge?.color,
+          ),
+        ),
       ),
-      body: SafeArea(
-        child: Column(
-          children: [
-            // Header Section
-            Container(
-              width: double.infinity,
-              padding: EdgeInsets.all(
-                isLargeDesktop
-                    ? 32
-                    : isDesktop
-                    ? 24
-                    : isTablet
-                    ? 20
-                    : isSmallScreen
-                    ? 12
-                    : 16,
+      body: _isLoading
+          ? Center(
+              child: CircularProgressIndicator(
+                color: Theme.of(context).primaryColor,
               ),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    const Color(0xFF6B5FFF).withOpacity(0.08),
-                    const Color(0xFF8F7FFF).withOpacity(0.04),
-                  ],
-                ),
-              ),
-              child: Row(
+            )
+          : _errorMessage != null
+          ? Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Container(
-                    padding: EdgeInsets.all(
-                      isLargeDesktop
-                          ? 20
-                          : isDesktop
-                          ? 16
-                          : isTablet
-                          ? 14
-                          : isSmallScreen
-                          ? 10
-                          : 12,
-                    ),
-                    decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        colors: [Color(0xFF6B5FFF), Color(0xFF8F7FFF)],
-                      ),
-                      borderRadius: BorderRadius.circular(
-                        isLargeDesktop
-                            ? 20
-                            : isDesktop
-                            ? 16
-                            : isTablet
-                            ? 14
-                            : isSmallScreen
-                            ? 10
-                            : 12,
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: const Color(0xFF6B5FFF).withOpacity(0.3),
-                          blurRadius: isLargeDesktop
-                              ? 16
-                              : isDesktop
-                              ? 12
-                              : isTablet
-                              ? 10
-                              : isSmallScreen
-                              ? 6
-                              : 8,
-                          offset: Offset(
-                            0,
-                            isLargeDesktop
-                                ? 6
-                                : isDesktop
-                                ? 4
-                                : isTablet
-                                ? 3
-                                : isSmallScreen
-                                ? 2
-                                : 3,
-                          ),
-                        ),
-                      ],
-                    ),
-                    child: Icon(
-                      Icons.rocket_launch_rounded,
-                      size: isLargeDesktop
-                          ? 40
-                          : isDesktop
-                          ? 32
-                          : isTablet
-                          ? 30
-                          : isSmallScreen
-                          ? 22
-                          : 28,
-                      color: Colors.white,
-                    ),
+                  Icon(
+                    Icons.error_outline,
+                    size: 48,
+                    color: Theme.of(context).colorScheme.error,
                   ),
-                  SizedBox(
-                    width: isLargeDesktop
-                        ? 20
-                        : isDesktop
-                        ? 16
-                        : isTablet
-                        ? 14
-                        : isSmallScreen
-                        ? 8
-                        : 12,
-                  ),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Practice & Excel',
-                          style: TextStyle(
-                            fontSize: isLargeDesktop
-                                ? 26
-                                : isDesktop
-                                ? 22
-                                : isTablet
-                                ? 20
-                                : isSmallScreen
-                                ? 16
-                                : 18,
-                            fontWeight: FontWeight.bold,
-                            color: const Color(0xFF1A1A1A),
-                          ),
-                        ),
-                        SizedBox(
-                          height: isLargeDesktop || isDesktop
-                              ? 6
-                              : isTablet
-                              ? 5
-                              : 4,
-                        ),
-                        Text(
-                          'Master company-specific questions and ace your interviews',
-                          style: TextStyle(
-                            fontSize: isLargeDesktop
-                                ? 16
-                                : isDesktop
-                                ? 15
-                                : isTablet
-                                ? 14
-                                : isSmallScreen
-                                ? 11
-                                : 13,
-                            color: Colors.grey[700],
-                            height: 1.3,
-                          ),
-                          maxLines: isLargeDesktop || isDesktop
-                              ? 3
-                              : isTablet
-                              ? 2
-                              : 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ],
+                  const SizedBox(height: 16),
+                  Text(
+                    _errorMessage!,
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.error,
                     ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 16),
+                  ElevatedButton(
+                    onPressed: () =>
+                        _loadCompaniesAndQuestions(forceRefresh: true),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Theme.of(context).primaryColor,
+                      foregroundColor: Colors.white,
+                    ),
+                    child: const Text('Retry'),
                   ),
                 ],
               ),
-            ),
-
-            // Companies Grid (light theme)
-            Expanded(
-              child: _isLoading
-                  ? const Center(
-                      child: CircularProgressIndicator(
-                        color: Color(0xFF6B5FFF),
+            )
+          : Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                children: [
+                  // Search Bar
+                  TextField(
+                    controller: _searchController,
+                    decoration: InputDecoration(
+                      hintText: 'Search companies...',
+                      hintStyle: TextStyle(
+                        color: Theme.of(context).textTheme.bodyMedium?.color,
                       ),
-                    )
-                  : _errorMessage != null && _companies.isEmpty
-                  ? Center(
-                      child: Padding(
-                        padding: EdgeInsets.all(
-                          isLargeDesktop
-                              ? 32
-                              : isDesktop
-                              ? 28
-                              : isTablet
-                              ? 24
-                              : isSmallScreen
-                              ? 16
-                              : 20,
-                        ),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.cloud_off,
-                              size: isLargeDesktop
-                                  ? 80
-                                  : isDesktop
-                                  ? 72
-                                  : isTablet
-                                  ? 64
-                                  : isSmallScreen
-                                  ? 48
-                                  : 56,
-                              color: Colors.grey[400],
-                            ),
-                            SizedBox(
-                              height: isLargeDesktop
-                                  ? 24
-                                  : isDesktop
-                                  ? 20
-                                  : isTablet
-                                  ? 18
-                                  : isSmallScreen
-                                  ? 12
-                                  : 16,
-                            ),
-                            Text(
-                              _errorMessage == 'No internet connection'
-                                  ? 'No internet connection'
-                                  : 'Something went wrong',
-                              style: TextStyle(
-                                color: Colors.grey[700],
-                                fontSize: isLargeDesktop
-                                    ? 18
-                                    : isDesktop
-                                    ? 16
-                                    : isTablet
-                                    ? 15
-                                    : isSmallScreen
-                                    ? 12
-                                    : 14,
-                                fontWeight: FontWeight.bold,
-                              ),
-                              textAlign: TextAlign.center,
-                            ),
-                            if (_errorMessage == 'No internet connection') ...[
-                              SizedBox(
-                                height: isLargeDesktop
-                                    ? 8
-                                    : isDesktop
-                                    ? 6
-                                    : isTablet
-                                    ? 5
-                                    : isSmallScreen
-                                    ? 4
-                                    : 5,
-                              ),
-                              Text(
-                                'Please check your connection and try again',
-                                style: TextStyle(
-                                  color: Colors.grey[600],
-                                  fontSize: isLargeDesktop
-                                      ? 14
-                                      : isDesktop
-                                      ? 13
-                                      : isTablet
-                                      ? 12
-                                      : isSmallScreen
-                                      ? 10
-                                      : 11,
+                      prefixIcon: Icon(
+                        Icons.search,
+                        color: Theme.of(context).iconTheme.color,
+                      ),
+                      filled: true,
+                      fillColor: Theme.of(context).cardColor,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide.none,
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 14,
+                      ),
+                    ),
+                    onChanged: (value) {
+                      setState(() {
+                        _searchQuery = value;
+                      });
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                  // Companies Grid
+                  Expanded(
+                    child: _filteredCompanies.isEmpty
+                        ? Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.search_off,
+                                  size: 64,
+                                  color: Theme.of(context).disabledColor,
                                 ),
-                                textAlign: TextAlign.center,
-                              ),
-                            ],
-                            SizedBox(
-                              height: isLargeDesktop
-                                  ? 24
-                                  : isDesktop
-                                  ? 20
-                                  : isTablet
-                                  ? 18
-                                  : isSmallScreen
-                                  ? 12
-                                  : 16,
-                            ),
-                            ElevatedButton(
-                              onPressed: () => _loadCompaniesAndQuestions(
-                                forceRefresh: true,
-                              ),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(0xFF6B5FFF),
-                                foregroundColor: Colors.white,
-                                padding: EdgeInsets.symmetric(
-                                  horizontal: isLargeDesktop
-                                      ? 24
-                                      : isDesktop
-                                      ? 20
-                                      : isTablet
-                                      ? 18
-                                      : isSmallScreen
-                                      ? 12
-                                      : 16,
-                                  vertical: isLargeDesktop
-                                      ? 14
-                                      : isDesktop
-                                      ? 12
-                                      : isTablet
-                                      ? 11
-                                      : isSmallScreen
-                                      ? 8
-                                      : 10,
-                                ),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(
-                                    isLargeDesktop
-                                        ? 12
-                                        : isDesktop
-                                        ? 10
-                                        : isTablet
-                                        ? 9
-                                        : isSmallScreen
-                                        ? 6
-                                        : 8,
+                                const SizedBox(height: 16),
+                                Text(
+                                  'No companies found',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    color: Theme.of(
+                                      context,
+                                    ).textTheme.bodyMedium?.color,
                                   ),
                                 ),
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(
-                                    Icons.refresh,
-                                    size: isLargeDesktop
-                                        ? 22
-                                        : isDesktop
-                                        ? 20
-                                        : isTablet
-                                        ? 19
-                                        : isSmallScreen
-                                        ? 16
-                                        : 18,
-                                  ),
-                                  SizedBox(
-                                    width: isLargeDesktop
-                                        ? 8
-                                        : isDesktop
-                                        ? 6
-                                        : isTablet
-                                        ? 5
-                                        : isSmallScreen
-                                        ? 4
-                                        : 5,
-                                  ),
-                                  Text(
-                                    'Retry',
-                                    style: TextStyle(
-                                      fontSize: isLargeDesktop
-                                          ? 16
-                                          : isDesktop
-                                          ? 15
-                                          : isTablet
-                                          ? 14
-                                          : isSmallScreen
-                                          ? 12
-                                          : 13,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                ],
-                              ),
+                              ],
                             ),
-                          ],
-                        ),
-                      ),
-                    )
-                  : Padding(
-                      padding: EdgeInsets.all(
-                        isLargeDesktop
-                            ? 28
-                            : isDesktop
-                            ? 24
-                            : isTablet
-                            ? 20
-                            : isSmallScreen
-                            ? 12
-                            : 16,
-                      ),
-                      child: LayoutBuilder(
-                        builder: (context, constraints) {
-                          final width = constraints.maxWidth;
-                          final crossAxisCount = width > 1400
-                              ? 4
-                              : width > 1000
-                              ? 3
-                              : width > 600
-                              ? 2
-                              : 1;
-                          return GridView.builder(
+                          )
+                        : GridView.builder(
                             gridDelegate:
                                 SliverGridDelegateWithFixedCrossAxisCount(
-                                  crossAxisCount: crossAxisCount,
-                                  mainAxisSpacing: isLargeDesktop
-                                      ? 16
+                                  crossAxisCount: isLargeDesktop
+                                      ? 4
                                       : isDesktop
-                                      ? 14
+                                      ? 3
                                       : isTablet
-                                      ? 12
-                                      : isSmallScreen
-                                      ? 8
-                                      : 10,
-                                  crossAxisSpacing: isLargeDesktop
-                                      ? 16
-                                      : isDesktop
-                                      ? 14
-                                      : isTablet
-                                      ? 12
-                                      : isSmallScreen
-                                      ? 8
-                                      : 10,
-                                  childAspectRatio: isLargeDesktop || isDesktop
-                                      ? 2.6
-                                      : isTablet
-                                      ? 2.4
-                                      : isSmallScreen
-                                      ? 2.2
-                                      : 2.3,
+                                      ? 2
+                                      : 1,
+                                  crossAxisSpacing: 16,
+                                  mainAxisSpacing: 16,
+                                  childAspectRatio: 1.2,
                                 ),
-                            itemCount: _companies.length,
+                            itemCount: _filteredCompanies.length,
                             itemBuilder: (context, index) {
-                              final item = _companies[index];
-                              final name = (item['name'] ?? '').toString();
-                              final count = item['count'];
-                              final logo = item['logo'];
+                              final company = _filteredCompanies[index];
+                              final name =
+                                  company['name']?.toString() ?? 'Unknown';
+                              final count = company['questionCount'] as int?;
+                              final logo = company['logo'];
                               final logoToUse =
                                   (logo is String && logo.isNotEmpty)
                                   ? logo
                                   : _getFallbackLogo(name);
+
                               return _CompanyCard(
                                 name: name,
-                                count: count is int ? count : null,
+                                count: count,
                                 logoUrl: logoToUse,
                                 onStartQuiz: () {
                                   Navigator.of(context).push(
@@ -692,27 +372,21 @@ class _CompanySpecificQuestionsPageState
                                 },
                               );
                             },
-                          );
-                        },
-                      ),
-                    ),
+                          ),
+                  ),
+                ],
+              ),
             ),
-          ],
-        ),
-      ),
     );
   }
-
-  // No filters needed in the grid view design
 }
-
-// (Question card removed in grid-only view)
 
 class _CompanyCard extends StatelessWidget {
   final String name;
   final int? count;
   final String? logoUrl;
   final VoidCallback onStartQuiz;
+
   const _CompanyCard({
     required this.name,
     this.count,
@@ -722,446 +396,78 @@ class _CompanyCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final screenWidth = MediaQuery.of(context).size.width;
-    final isLargeDesktop = screenWidth >= 1440;
-    final isDesktop = screenWidth >= 1024 && screenWidth < 1440;
-    final isTablet = screenWidth >= 600 && screenWidth < 1024;
-    final isSmallScreen = screenWidth < 400;
-
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(
-          isLargeDesktop
-              ? 18
-              : isDesktop
-              ? 16
-              : isTablet
-              ? 14
-              : isSmallScreen
-              ? 10
-              : 12,
-        ),
-        border: Border.all(color: const Color(0xFFEDEDED)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.035),
-            blurRadius: isLargeDesktop
-                ? 14
-                : isDesktop
-                ? 12
-                : isTablet
-                ? 10
-                : isSmallScreen
-                ? 6
-                : 8,
-            offset: Offset(
-              0,
-              isLargeDesktop
-                  ? 7
-                  : isDesktop
-                  ? 5
-                  : isTablet
-                  ? 4
-                  : isSmallScreen
-                  ? 2
-                  : 3,
-            ),
-          ),
-        ],
+    return Card(
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(color: Theme.of(context).dividerColor),
       ),
-      child: Padding(
-        padding: EdgeInsets.all(
-          isLargeDesktop
-              ? 16
-              : isDesktop
-              ? 14
-              : isTablet
-              ? 12
-              : isSmallScreen
-              ? 8
-              : 10,
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: isLargeDesktop
-                  ? 56
-                  : isDesktop
-                  ? 48
-                  : isTablet
-                  ? 44
-                  : isSmallScreen
-                  ? 32
-                  : 40,
-              height: isLargeDesktop
-                  ? 56
-                  : isDesktop
-                  ? 48
-                  : isTablet
-                  ? 44
-                  : isSmallScreen
-                  ? 32
-                  : 40,
-              decoration: BoxDecoration(
-                color: const Color(0xFF6B5FFF).withOpacity(0.08),
-                borderRadius: BorderRadius.circular(
-                  isLargeDesktop
-                      ? 16
-                      : isDesktop
-                      ? 14
-                      : isTablet
-                      ? 12
-                      : isSmallScreen
-                      ? 8
-                      : 10,
+      color: Theme.of(context).cardColor,
+      child: InkWell(
+        onTap: onStartQuiz,
+        borderRadius: BorderRadius.circular(16),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                width: 64,
+                height: 64,
+                decoration: BoxDecoration(
+                  color: Theme.of(context).primaryColor.withOpacity(0.1),
+                  shape: BoxShape.circle,
                 ),
+                alignment: Alignment.center,
+                child: logoUrl != null && logoUrl!.isNotEmpty
+                    ? ClipOval(
+                        child: CachedNetworkImage(
+                          imageUrl: logoUrl!,
+                          width: 40,
+                          height: 40,
+                          fit: BoxFit.cover,
+                          errorWidget: (_, __, ___) => Icon(
+                            Icons.business,
+                            color: Theme.of(context).primaryColor,
+                          ),
+                          placeholder: (_, __) => CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Theme.of(context).primaryColor,
+                          ),
+                        ),
+                      )
+                    : Icon(
+                        Icons.business,
+                        size: 32,
+                        color: Theme.of(context).primaryColor,
+                      ),
               ),
-              child: logoUrl != null && logoUrl!.isNotEmpty
-                  ? ClipRRect(
-                      borderRadius: BorderRadius.circular(
-                        isLargeDesktop
-                            ? 16
-                            : isDesktop
-                            ? 14
-                            : isTablet
-                            ? 12
-                            : isSmallScreen
-                            ? 8
-                            : 10,
-                      ),
-                      child: _CompanyLogo(url: logoUrl!),
-                    )
-                  : Icon(
-                      Icons.apartment_rounded,
-                      color: const Color(0xFF6B5FFF),
-                      size: isLargeDesktop
-                          ? 28
-                          : isDesktop
-                          ? 24
-                          : isTablet
-                          ? 22
-                          : isSmallScreen
-                          ? 16
-                          : 20,
-                    ),
-            ),
-            SizedBox(
-              width: isLargeDesktop
-                  ? 14
-                  : isDesktop
-                  ? 12
-                  : isTablet
-                  ? 11
-                  : isSmallScreen
-                  ? 6
-                  : 10,
-            ),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          name,
-                          style: TextStyle(
-                            fontSize: isLargeDesktop
-                                ? 18
-                                : isDesktop
-                                ? 16
-                                : isTablet
-                                ? 15
-                                : isSmallScreen
-                                ? 12
-                                : 14,
-                            fontWeight: FontWeight.w700,
-                            color: const Color(0xFF1A1A1A),
-                          ),
-                          maxLines: isLargeDesktop || isDesktop
-                              ? 2
-                              : isTablet
-                              ? 2
-                              : 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                      Icon(
-                        Icons.chevron_right_rounded,
-                        color: const Color(0xFF6B5FFF),
-                        size: isLargeDesktop
-                            ? 24
-                            : isDesktop
-                            ? 20
-                            : isTablet
-                            ? 18
-                            : isSmallScreen
-                            ? 14
-                            : 16,
-                      ),
-                    ],
-                  ),
-                  SizedBox(
-                    height: isLargeDesktop
-                        ? 6
-                        : isDesktop
-                        ? 5
-                        : isTablet
-                        ? 4
-                        : isSmallScreen
-                        ? 2
-                        : 3,
-                  ),
-                  if (count != null)
-                    Row(
-                      children: [
-                        Container(
-                          padding: EdgeInsets.all(
-                            isLargeDesktop
-                                ? 6
-                                : isDesktop
-                                ? 5
-                                : isTablet
-                                ? 4.5
-                                : isSmallScreen
-                                ? 3
-                                : 4,
-                          ),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF6B5FFF).withOpacity(0.08),
-                            borderRadius: BorderRadius.circular(
-                              isLargeDesktop
-                                  ? 8
-                                  : isDesktop
-                                  ? 7
-                                  : isTablet
-                                  ? 6
-                                  : isSmallScreen
-                                  ? 4
-                                  : 5,
-                            ),
-                          ),
-                          child: Icon(
-                            Icons.quiz_outlined,
-                            color: const Color(0xFF6B5FFF),
-                            size: isLargeDesktop
-                                ? 16
-                                : isDesktop
-                                ? 14
-                                : isTablet
-                                ? 13
-                                : isSmallScreen
-                                ? 10
-                                : 12,
-                          ),
-                        ),
-                        SizedBox(
-                          width: isLargeDesktop
-                              ? 8
-                              : isDesktop
-                              ? 7
-                              : isTablet
-                              ? 6
-                              : isSmallScreen
-                              ? 4
-                              : 5,
-                        ),
-                        Text(
-                          'Available Questions',
-                          style: TextStyle(
-                            color: Colors.grey[600],
-                            fontSize: isLargeDesktop
-                                ? 13
-                                : isDesktop
-                                ? 12
-                                : isTablet
-                                ? 11
-                                : isSmallScreen
-                                ? 9
-                                : 10,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                        SizedBox(
-                          width: isLargeDesktop
-                              ? 8
-                              : isDesktop
-                              ? 7
-                              : isTablet
-                              ? 6
-                              : isSmallScreen
-                              ? 4
-                              : 5,
-                        ),
-                        Container(
-                          padding: EdgeInsets.symmetric(
-                            horizontal: isLargeDesktop
-                                ? 8
-                                : isDesktop
-                                ? 7
-                                : isTablet
-                                ? 6
-                                : isSmallScreen
-                                ? 4
-                                : 5,
-                            vertical: isLargeDesktop
-                                ? 4
-                                : isDesktop
-                                ? 3.5
-                                : isTablet
-                                ? 3
-                                : isSmallScreen
-                                ? 2
-                                : 2.5,
-                          ),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF6B5FFF).withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(999),
-                            border: Border.all(
-                              color: const Color(0xFF6B5FFF).withOpacity(0.2),
-                            ),
-                          ),
-                          child: Text(
-                            '${count} Qs',
-                            style: TextStyle(
-                              color: const Color(0xFF6B5FFF),
-                              fontWeight: FontWeight.w700,
-                              fontSize: isLargeDesktop
-                                  ? 12
-                                  : isDesktop
-                                  ? 11
-                                  : isTablet
-                                  ? 10
-                                  : isSmallScreen
-                                  ? 8
-                                  : 9,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  SizedBox(
-                    height: isLargeDesktop
-                        ? 8
-                        : isDesktop
-                        ? 7
-                        : isTablet
-                        ? 6
-                        : isSmallScreen
-                        ? 4
-                        : 5,
-                  ),
-                  SizedBox(
-                    height: isLargeDesktop
-                        ? 44
-                        : isDesktop
-                        ? 40
-                        : isTablet
-                        ? 38
-                        : isSmallScreen
-                        ? 32
-                        : 36,
-                    child: ElevatedButton.icon(
-                      onPressed: onStartQuiz,
-                      icon: Icon(
-                        Icons.play_arrow_rounded,
-                        color: Colors.white,
-                        size: isLargeDesktop
-                            ? 20
-                            : isDesktop
-                            ? 18
-                            : isTablet
-                            ? 17
-                            : isSmallScreen
-                            ? 14
-                            : 16,
-                      ),
-                      label: Text(
-                        'Practice Quiz',
-                        style: TextStyle(
-                          fontWeight: FontWeight.w600,
-                          fontSize: isLargeDesktop
-                              ? 14
-                              : isDesktop
-                              ? 13
-                              : isTablet
-                              ? 12
-                              : isSmallScreen
-                              ? 10
-                              : 11,
-                        ),
-                      ),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF6B5FFF),
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(
-                            isLargeDesktop
-                                ? 10
-                                : isDesktop
-                                ? 9
-                                : isTablet
-                                ? 8
-                                : isSmallScreen
-                                ? 6
-                                : 7,
-                          ),
-                        ),
-                        elevation: 0,
-                        padding: EdgeInsets.symmetric(
-                          horizontal: isLargeDesktop
-                              ? 14
-                              : isDesktop
-                              ? 12
-                              : isTablet
-                              ? 11
-                              : isSmallScreen
-                              ? 8
-                              : 10,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
+              const SizedBox(height: 12),
+              Text(
+                name,
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Theme.of(context).textTheme.titleLarge?.color,
+                ),
+                textAlign: TextAlign.center,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
               ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _CompanyLogo extends StatelessWidget {
-  final String url;
-  const _CompanyLogo({required this.url});
-
-  @override
-  Widget build(BuildContext context) {
-    final resolved = _resolveUrl(url);
-    return CachedNetworkImage(
-      imageUrl: resolved,
-      fit: BoxFit.cover,
-      placeholder: (context, url) => Container(
-        color: const Color(0xFF6B5FFF).withOpacity(0.08),
-        child: const Center(
-          child: CircularProgressIndicator(
-            strokeWidth: 2,
-            valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF6B5FFF)),
+              if (count != null) ...[
+                const SizedBox(height: 8),
+                Text(
+                  '$count Questions',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Theme.of(context).textTheme.bodyMedium?.color,
+                  ),
+                ),
+              ],
+            ],
           ),
         ),
       ),
-      errorWidget: (context, url, error) =>
-          const Icon(Icons.apartment_rounded, color: Color(0xFF6B5FFF)),
     );
-  }
-
-  String _resolveUrl(String raw) {
-    if (raw.startsWith('http://') || raw.startsWith('https://')) return raw;
-    final base = EnvConfig.baseUrl;
-    if (raw.startsWith('/')) return '$base$raw';
-    return '$base/$raw';
   }
 }

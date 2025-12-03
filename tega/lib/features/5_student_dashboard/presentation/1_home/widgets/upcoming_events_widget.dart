@@ -59,8 +59,8 @@ class _UpcomingEventsWidgetState extends State<UpcomingEventsWidget>
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 colors: [
-                  Colors.white,
-                  Color.lerp(Colors.white, Colors.black, 0.02)!,
+                  Theme.of(context).cardColor,
+                  Theme.of(context).cardColor,
                 ],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
@@ -82,22 +82,25 @@ class _UpcomingEventsWidgetState extends State<UpcomingEventsWidget>
                     Container(
                       padding: const EdgeInsets.all(10),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF2196F3).withOpacity(0.1),
+                        color: Colors.blue.withOpacity(0.1),
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      child: const Icon(
+                      child: Icon(
                         Icons.event_rounded,
-                        color: Color(0xFF2196F3),
+                        color: Colors.blue,
                         size: 24,
                       ),
                     ),
                     const SizedBox(width: 12),
-                    const Text(
+                    Text(
                       'Upcoming Events',
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w700,
-                        color: Color(0xFF333333),
+                        color:
+                            Theme.of(context).textTheme.bodyLarge?.color ??
+                            Theme.of(context).textTheme.bodyLarge?.color ??
+                            Colors.black,
                       ),
                     ),
                   ],
@@ -119,7 +122,11 @@ class _UpcomingEventsWidgetState extends State<UpcomingEventsWidget>
                             'No upcoming events',
                             style: TextStyle(
                               fontSize: 14,
-                              color: Colors.grey[600],
+                              color:
+                                  Theme.of(
+                                    context,
+                                  ).textTheme.bodyMedium?.color ??
+                                  Colors.grey[600],
                             ),
                           ),
                         ],
@@ -155,10 +162,10 @@ class _UpcomingEventsWidgetState extends State<UpcomingEventsWidget>
               margin: const EdgeInsets.only(bottom: 12),
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: const Color(0xFF2196F3).withOpacity(0.05),
+                color: Colors.blue.withOpacity(0.05),
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                  color: const Color(0xFF2196F3).withOpacity(0.2),
+                  color: Colors.blue.withOpacity(0.2),
                   width: 1,
                 ),
               ),
@@ -168,7 +175,7 @@ class _UpcomingEventsWidgetState extends State<UpcomingEventsWidget>
                     width: 4,
                     height: 40,
                     decoration: BoxDecoration(
-                      color: const Color(0xFF2196F3),
+                      color: Colors.blue,
                       borderRadius: BorderRadius.circular(2),
                     ),
                   ),
@@ -179,10 +186,13 @@ class _UpcomingEventsWidgetState extends State<UpcomingEventsWidget>
                       children: [
                         Text(
                           event['title'] ?? 'Event',
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.w600,
-                            color: Color(0xFF333333),
+                            color:
+                                Theme.of(context).textTheme.bodyLarge?.color ??
+                                Theme.of(context).textTheme.bodyLarge?.color ??
+                                Colors.black,
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -193,14 +203,22 @@ class _UpcomingEventsWidgetState extends State<UpcomingEventsWidget>
                             Icon(
                               Icons.access_time_rounded,
                               size: 14,
-                              color: Colors.grey[600],
+                              color:
+                                  Theme.of(
+                                    context,
+                                  ).textTheme.bodyMedium?.color ??
+                                  Colors.grey[600],
                             ),
                             const SizedBox(width: 4),
                             Text(
                               event['time'] ?? 'TBD',
                               style: TextStyle(
                                 fontSize: 12,
-                                color: Colors.grey[600],
+                                color:
+                                    Theme.of(
+                                      context,
+                                    ).textTheme.bodyMedium?.color ??
+                                    Colors.grey[600],
                               ),
                             ),
                           ],

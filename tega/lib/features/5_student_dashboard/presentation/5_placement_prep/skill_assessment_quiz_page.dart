@@ -124,28 +124,34 @@ class _SkillAssessmentQuizPageState extends State<SkillAssessmentQuizPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF7F8FC),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         title: Text(widget.moduleTitle),
-        backgroundColor: Colors.white,
+        backgroundColor:
+            Theme.of(context).appBarTheme.backgroundColor ??
+            Theme.of(context).cardColor,
         elevation: 0,
-        foregroundColor: const Color(0xFF1A1A1A),
+        foregroundColor: Theme.of(context).iconTheme.color,
       ),
       floatingActionButton: null,
       body: _loading
-          ? const Center(
-              child: CircularProgressIndicator(color: Color(0xFF6B5FFF)),
+          ? Center(
+              child: CircularProgressIndicator(
+                color: Theme.of(context).primaryColor,
+              ),
             )
           : _error != null
           ? Center(
-              child: Text(_error!, style: const TextStyle(color: Colors.red)),
+              child: Text(_error!, style: TextStyle(color: Colors.red)),
             )
           : _questions.isEmpty
-          ? const Center(child: Text('No questions available'))
+          ? Center(child: Text('No questions available'))
           : (_started
                 ? _buildQuiz()
-                : const Center(
-                    child: CircularProgressIndicator(color: Color(0xFF6B5FFF)),
+                : Center(
+                    child: CircularProgressIndicator(
+                      color: Theme.of(context).primaryColor,
+                    ),
                   )),
     );
   }
@@ -164,7 +170,7 @@ class _SkillAssessmentQuizPageState extends State<SkillAssessmentQuizPage> {
       padding: const EdgeInsets.all(16),
       child: Container(
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: Theme.of(context).cardColor,
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
@@ -173,28 +179,19 @@ class _SkillAssessmentQuizPageState extends State<SkillAssessmentQuizPage> {
               offset: const Offset(0, 6),
             ),
           ],
-          border: Border.all(color: const Color(0xFFEDEDED)),
+          border: Border.all(color: Theme.of(context).dividerColor),
         ),
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Progress
-            Text(
-              'Question ${_currentIndex + 1} of ${_questions.length}',
-              style: const TextStyle(fontWeight: FontWeight.w700),
-            ),
-            const SizedBox(height: 6),
-            LinearProgressIndicator(
-              value: (_currentIndex + 1) / _questions.length,
-              color: const Color(0xFF6B5FFF),
-              backgroundColor: const Color(0xFFEAEAEA),
-              minHeight: 6,
-            ),
             const SizedBox(height: 8),
             Text(
               '$answeredCount answered',
-              style: const TextStyle(color: Colors.grey, fontSize: 12),
+              style: TextStyle(
+                color: Theme.of(context).textTheme.bodyMedium?.color,
+                fontSize: 12,
+              ),
             ),
             const SizedBox(height: 12),
             Wrap(
@@ -211,10 +208,10 @@ class _SkillAssessmentQuizPageState extends State<SkillAssessmentQuizPage> {
             if (questionTitle.isNotEmpty && questionTitle != questionText) ...[
               Text(
                 questionTitle,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
-                  color: Color(0xFF6B7280),
+                  color: Theme.of(context).textTheme.bodyMedium?.color,
                   height: 1.4,
                 ),
               ),
@@ -223,10 +220,10 @@ class _SkillAssessmentQuizPageState extends State<SkillAssessmentQuizPage> {
             // Show the actual question text (description)
             Text(
               questionText,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w700,
-                color: Color(0xFF1A1A1A),
+                color: Theme.of(context).textTheme.titleLarge?.color,
                 height: 1.4,
               ),
             ),
@@ -248,8 +245,8 @@ class _SkillAssessmentQuizPageState extends State<SkillAssessmentQuizPage> {
                   child: OutlinedButton(
                     onPressed: _currentIndex == 0 ? null : _handlePrev,
                     style: OutlinedButton.styleFrom(
-                      side: const BorderSide(color: Color(0xFF6B5FFF)),
-                      foregroundColor: const Color(0xFF6B5FFF),
+                      side: BorderSide(color: Theme.of(context).primaryColor),
+                      foregroundColor: Theme.of(context).primaryColor,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(10),
                       ),
@@ -267,7 +264,7 @@ class _SkillAssessmentQuizPageState extends State<SkillAssessmentQuizPage> {
                         ? null
                         : _handleNext,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF6B5FFF),
+                      backgroundColor: Theme.of(context).primaryColor,
                       foregroundColor: Colors.white,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(10),
@@ -436,7 +433,7 @@ class _SkillAssessmentQuizPageState extends State<SkillAssessmentQuizPage> {
           ),
           child: Container(
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: Theme.of(context).cardColor,
               borderRadius: BorderRadius.circular(16),
               boxShadow: [
                 BoxShadow(
@@ -456,9 +453,12 @@ class _SkillAssessmentQuizPageState extends State<SkillAssessmentQuizPage> {
                     horizontal: 20,
                     vertical: 16,
                   ),
-                  decoration: const BoxDecoration(
+                  decoration: BoxDecoration(
                     gradient: LinearGradient(
-                      colors: [Color(0xFF6B5FFF), Color(0xFF8B7FFF)],
+                      colors: [
+                        Theme.of(context).primaryColor,
+                        Theme.of(context).primaryColor.withOpacity(0.8),
+                      ],
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                     ),
@@ -472,19 +472,19 @@ class _SkillAssessmentQuizPageState extends State<SkillAssessmentQuizPage> {
                       Container(
                         padding: const EdgeInsets.all(10),
                         decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.15),
+                          color: Theme.of(context).cardColor.withOpacity(0.15),
                           shape: BoxShape.circle,
                         ),
-                        child: const Icon(
+                        child: Icon(
                           Icons.emoji_events_rounded,
-                          color: Colors.white,
+                          color: Theme.of(context).cardColor,
                         ),
                       ),
                       const SizedBox(width: 12),
-                      const Text(
+                      Text(
                         'Assessment Result',
                         style: TextStyle(
-                          color: Colors.white,
+                          color: Theme.of(context).cardColor,
                           fontWeight: FontWeight.w700,
                           fontSize: 16,
                         ),
@@ -504,13 +504,13 @@ class _SkillAssessmentQuizPageState extends State<SkillAssessmentQuizPage> {
                           shape: BoxShape.circle,
                           color:
                               (isGood
-                                      ? const Color(0xFF27AE60)
-                                      : const Color(0xFFE74C3C))
+                                      ? Colors.green
+                                      : Theme.of(context).colorScheme.error)
                                   .withOpacity(0.1),
                           border: Border.all(
                             color: isGood
-                                ? const Color(0xFF27AE60)
-                                : const Color(0xFFE74C3C),
+                                ? Colors.green
+                                : Theme.of(context).colorScheme.error,
                             width: 2,
                           ),
                         ),
@@ -524,8 +524,8 @@ class _SkillAssessmentQuizPageState extends State<SkillAssessmentQuizPage> {
                                 fontSize: 24,
                                 fontWeight: FontWeight.w800,
                                 color: isGood
-                                    ? const Color(0xFF27AE60)
-                                    : const Color(0xFFE74C3C),
+                                    ? Colors.green
+                                    : Theme.of(context).colorScheme.error,
                               ),
                             ),
                             Text(
@@ -534,8 +534,8 @@ class _SkillAssessmentQuizPageState extends State<SkillAssessmentQuizPage> {
                                 fontSize: 14,
                                 fontWeight: FontWeight.w600,
                                 color: isGood
-                                    ? const Color(0xFF27AE60)
-                                    : const Color(0xFFE74C3C),
+                                    ? Colors.green
+                                    : Theme.of(context).colorScheme.error,
                               ),
                             ),
                           ],
@@ -544,10 +544,10 @@ class _SkillAssessmentQuizPageState extends State<SkillAssessmentQuizPage> {
                       const SizedBox(height: 12),
                       Text(
                         '$percent%',
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontWeight: FontWeight.w800,
                           fontSize: 18,
-                          color: Color(0xFF1A1A1A),
+                          color: Theme.of(context).textTheme.titleLarge?.color,
                         ),
                       ),
                       const SizedBox(height: 6),
@@ -556,8 +556,8 @@ class _SkillAssessmentQuizPageState extends State<SkillAssessmentQuizPage> {
                             ? 'Great work! Keep it up.'
                             : 'Good try! Review and attempt again.',
                         textAlign: TextAlign.center,
-                        style: const TextStyle(
-                          color: Color(0xFF6B7280),
+                        style: TextStyle(
+                          color: Theme.of(context).textTheme.bodyMedium?.color,
                           fontSize: 13,
                         ),
                       ),
@@ -587,8 +587,10 @@ class _SkillAssessmentQuizPageState extends State<SkillAssessmentQuizPage> {
                             ).pop(); // go back to modules page
                           },
                           style: OutlinedButton.styleFrom(
-                            side: const BorderSide(color: Color(0xFF6B5FFF)),
-                            foregroundColor: const Color(0xFF6B5FFF),
+                            side: BorderSide(
+                              color: Theme.of(context).primaryColor,
+                            ),
+                            foregroundColor: Theme.of(context).primaryColor,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(10),
                             ),
@@ -614,7 +616,7 @@ class _SkillAssessmentQuizPageState extends State<SkillAssessmentQuizPage> {
                             Navigator.of(context).pop();
                           },
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF6B5FFF),
+                            backgroundColor: Theme.of(context).primaryColor,
                             foregroundColor: Colors.white,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(10),
@@ -639,25 +641,27 @@ class _SkillAssessmentQuizPageState extends State<SkillAssessmentQuizPage> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: const Color(0xFF6B5FFF).withOpacity(0.08),
+        color: Theme.of(context).primaryColor.withOpacity(0.08),
         borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: const Color(0xFF6B5FFF).withOpacity(0.2)),
+        border: Border.all(
+          color: Theme.of(context).primaryColor.withOpacity(0.2),
+        ),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           Text(
             '$label: ',
-            style: const TextStyle(
-              color: Color(0xFF6B5FFF),
+            style: TextStyle(
+              color: Theme.of(context).primaryColor,
               fontWeight: FontWeight.w700,
               fontSize: 12,
             ),
           ),
           Text(
             value,
-            style: const TextStyle(
-              color: Color(0xFF1A1A1A),
+            style: TextStyle(
+              color: Theme.of(context).textTheme.titleLarge?.color,
               fontWeight: FontWeight.w600,
               fontSize: 12,
             ),
@@ -685,11 +689,11 @@ class _OptionTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final borderColor = selected
-        ? const Color(0xFF6B5FFF)
-        : const Color(0xFFE4E4E4);
+        ? Theme.of(context).primaryColor
+        : Theme.of(context).dividerColor;
     final fill = selected
-        ? const Color(0xFF6B5FFF).withOpacity(0.06)
-        : Colors.white;
+        ? Theme.of(context).primaryColor.withOpacity(0.06)
+        : Theme.of(context).cardColor;
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(12),
@@ -709,14 +713,16 @@ class _OptionTile extends StatelessWidget {
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 color: selected
-                    ? const Color(0xFF6B5FFF)
-                    : const Color(0xFF6B5FFF).withOpacity(0.1),
+                    ? Theme.of(context).primaryColor
+                    : Theme.of(context).primaryColor.withOpacity(0.1),
               ),
               alignment: Alignment.center,
               child: Text(
                 label,
                 style: TextStyle(
-                  color: selected ? Colors.white : const Color(0xFF6B5FFF),
+                  color: selected
+                      ? Theme.of(context).cardColor
+                      : Theme.of(context).primaryColor,
                   fontWeight: FontWeight.w700,
                   fontSize: 12,
                 ),
@@ -726,9 +732,9 @@ class _OptionTile extends StatelessWidget {
             Expanded(
               child: Text(
                 text,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 14,
-                  color: Color(0xFF1A1A1A),
+                  color: Theme.of(context).textTheme.titleLarge?.color,
                   height: 1.4,
                 ),
               ),

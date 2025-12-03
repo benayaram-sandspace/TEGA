@@ -9,7 +9,7 @@ class OnboardingScreen5 extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(
         child: Column(
           children: [
@@ -19,7 +19,10 @@ class OnboardingScreen5 extends StatelessWidget {
               child: Row(
                 children: [
                   IconButton(
-                    icon: const Icon(Icons.arrow_back, color: Colors.black87),
+                    icon: Icon(
+                      Icons.arrow_back,
+                      color: Theme.of(context).iconTheme.color,
+                    ),
                     onPressed: () {
                       Navigator.pushReplacement(
                         context,
@@ -30,12 +33,13 @@ class OnboardingScreen5 extends StatelessWidget {
                     },
                   ),
                   const Spacer(),
-                  const Text(
+                  Text(
                     "STEP 5 OF 6",
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w500,
-                      color: Colors.black54,
+                      color:
+                          Theme.of(context).textTheme.bodyMedium?.color,
                     ),
                   ),
                 ],
@@ -47,8 +51,10 @@ class OnboardingScreen5 extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 20),
               child: LinearProgressIndicator(
                 value: 5 / 6,
-                backgroundColor: Colors.grey.shade300,
-                valueColor: const AlwaysStoppedAnimation(Color(0xFFFFA726)),
+                backgroundColor: Theme.of(
+                  context,
+                ).dividerColor.withOpacity(0.3),
+                valueColor: AlwaysStoppedAnimation(Theme.of(context).primaryColor),
               ),
             ),
 
@@ -68,25 +74,31 @@ class OnboardingScreen5 extends StatelessWidget {
                     const SizedBox(height: 10),
 
                     // Title
-                    const Text(
+                    Text(
                       "Ramesh, here's your Career Snapshot",
                       style: TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
-                        color: Colors.black87,
+                        color:
+                            Theme.of(context).textTheme.bodyLarge?.color,
                         height: 1.3,
                       ),
                     ),
                     const SizedBox(height: 6),
-                    const Text(
+                    Text(
                       "Based on your responses, we've identified your strengths and growth areas",
-                      style: TextStyle(fontSize: 14, color: Colors.black54),
+                      style: TextStyle(
+                        fontSize: 14,
+                        color:
+                            Theme.of(context).textTheme.bodyMedium?.color,
+                      ),
                     ),
 
                     const SizedBox(height: 20),
 
                     // 🔹 Top Career Domains
                     _buildCard(
+                      context: context,
                       icon: Icons.work,
                       title: "Top Career Domains",
                       children: [
@@ -100,6 +112,7 @@ class OnboardingScreen5 extends StatelessWidget {
 
                     // 🔹 Skill Strengths
                     _buildCard(
+                      context: context,
                       icon: Icons.trending_up,
                       title: "Skill Strengths",
                       children: [
@@ -125,6 +138,7 @@ class OnboardingScreen5 extends StatelessWidget {
 
                     // 🔹 Areas for Growth
                     _buildCard(
+                      context: context,
                       icon: Icons.warning,
                       title: "Areas for Growth",
                       children: [
@@ -147,7 +161,7 @@ class OnboardingScreen5 extends StatelessWidget {
                         );
                       },
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFFFFA726),
+                        backgroundColor: Theme.of(context).primaryColor,
                         minimumSize: const Size(double.infinity, 50),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
@@ -170,15 +184,10 @@ class OnboardingScreen5 extends StatelessWidget {
                           ),
                         );
                       },
-                      icon: const Icon(Icons.edit, color: Colors.black87),
-                      label: const Text(
-                        "Let me tweak this first",
-                        style: TextStyle(fontSize: 15, color: Colors.black87),
-                      ),
-                      style: OutlinedButton.styleFrom(
-                        minimumSize: const Size(double.infinity, 50),
-                        side: BorderSide(color: Colors.grey.shade400),
-                        shape: RoundedRectangleBorder(
+                      icon: Icon(
+                        Icons.edit,
+                        color:
+                            Theme.of(context).iconTheme.color,
                           borderRadius: BorderRadius.circular(12),
                         ),
                       ),
@@ -194,6 +203,7 @@ class OnboardingScreen5 extends StatelessWidget {
   }
 
   Widget _buildCard({
+    required BuildContext context,
     required IconData icon,
     required String title,
     required List<Widget> children,
@@ -202,11 +212,11 @@ class OnboardingScreen5 extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Theme.of(context).shadowColor.withOpacity(0.05),
             blurRadius: 6,
             offset: const Offset(0, 3),
           ),
@@ -217,14 +227,18 @@ class OnboardingScreen5 extends StatelessWidget {
         children: [
           Row(
             children: [
-              Icon(icon, color: Colors.black87),
+              Icon(
+                icon,
+                color: Theme.of(context).iconTheme.color,
+              ),
               const SizedBox(width: 8),
               Text(
                 title,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
-                  color: Colors.black87,
+                  color:
+                      Theme.of(context).textTheme.bodyLarge?.color,
                 ),
               ),
             ],

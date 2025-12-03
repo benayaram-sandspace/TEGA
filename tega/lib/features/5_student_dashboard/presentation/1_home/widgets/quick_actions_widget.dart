@@ -80,22 +80,25 @@ class _QuickActionsWidgetState extends State<QuickActionsWidget>
                     Container(
                       padding: const EdgeInsets.all(10),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF6B5FFF).withOpacity(0.1),
+                        color: Theme.of(context).primaryColor.withOpacity(0.1),
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      child: const Icon(
+                      child: Icon(
                         Icons.bolt_rounded,
-                        color: Color(0xFF6B5FFF),
+                        color: Theme.of(context).primaryColor,
                         size: 24,
                       ),
                     ),
+
                     const SizedBox(width: 12),
-                    const Text(
+                    Text(
                       'Quick Actions',
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w700,
-                        color: Color(0xFF333333),
+                        color:
+                            Theme.of(context).textTheme.bodyLarge?.color ??
+                            Colors.black,
                       ),
                     ),
                   ],
@@ -108,7 +111,7 @@ class _QuickActionsWidgetState extends State<QuickActionsWidget>
                         context,
                         'Take an Exam',
                         Icons.quiz_rounded,
-                        const Color(0xFF6B5FFF),
+                        Theme.of(context).primaryColor,
                         () {
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(content: Text('Navigate to Exams')),
@@ -122,7 +125,7 @@ class _QuickActionsWidgetState extends State<QuickActionsWidget>
                         context,
                         'Browse Jobs',
                         Icons.work_outline_rounded,
-                        const Color(0xFF2196F3),
+                        Colors.blue,
                         () {
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(content: Text('Navigate to Jobs')),
@@ -137,7 +140,7 @@ class _QuickActionsWidgetState extends State<QuickActionsWidget>
                   context,
                   'Build Resume',
                   Icons.description_outlined,
-                  const Color(0xFF4CAF50),
+                  Colors.green,
                   'Coming Soon',
                 ),
               ],

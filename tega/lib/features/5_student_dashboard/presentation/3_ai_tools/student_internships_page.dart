@@ -405,7 +405,7 @@ class _InternshipsPageState extends State<InternshipsPage> {
                     });
                     Navigator.pop(context);
                   },
-                  selectedColor: const Color(0xFF6B5FFF),
+                  selectedColor: Theme.of(context).primaryColor,
                   labelStyle: TextStyle(
                     color: isSelected ? Colors.white : Colors.black87,
                     fontSize: isLargeDesktop
@@ -520,8 +520,10 @@ class _InternshipsPageState extends State<InternshipsPage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const CircularProgressIndicator(
-              valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF6B5FFF)),
+            CircularProgressIndicator(
+              valueColor: AlwaysStoppedAnimation<Color>(
+                Theme.of(context).primaryColor,
+              ),
             ),
             SizedBox(
               height: isLargeDesktop
@@ -546,7 +548,7 @@ class _InternshipsPageState extends State<InternshipsPage> {
                     : isSmallScreen
                     ? 14
                     : 16,
-                color: Colors.grey[600],
+                color: Theme.of(context).textTheme.bodyMedium?.color,
                 fontWeight: FontWeight.w500,
               ),
             ),
@@ -675,10 +677,13 @@ class _InternshipsPageState extends State<InternshipsPage> {
             : 24,
       ),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
+        gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [Color(0xFF6B5FFF), Color(0xFF8B7FFF)],
+          colors: [
+            Theme.of(context).primaryColor,
+            Theme.of(context).primaryColorLight,
+          ],
         ),
         borderRadius: BorderRadius.circular(
           isLargeDesktop
@@ -693,7 +698,7 @@ class _InternshipsPageState extends State<InternshipsPage> {
         ),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF6B5FFF).withOpacity(0.3),
+            color: Theme.of(context).primaryColor.withOpacity(0.3),
             blurRadius: isLargeDesktop
                 ? 24
                 : isDesktop

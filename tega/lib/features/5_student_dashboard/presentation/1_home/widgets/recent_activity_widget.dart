@@ -59,13 +59,13 @@ class _RecentActivityWidgetState extends State<RecentActivityWidget>
   Color _getColorForType(String type) {
     switch (type) {
       case 'lecture_completed':
-        return const Color(0xFF4CAF50);
+        return Colors.green;
       case 'exam_taken':
-        return const Color(0xFF2196F3);
+        return Colors.blue;
       case 'assignment_submitted':
-        return const Color(0xFFFF9800);
+        return Colors.orange;
       default:
-        return const Color(0xFF6B5FFF);
+        return Theme.of(context).primaryColor;
     }
   }
 
@@ -85,8 +85,8 @@ class _RecentActivityWidgetState extends State<RecentActivityWidget>
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 colors: [
-                  Colors.white,
-                  Color.lerp(Colors.white, Colors.black, 0.02)!,
+                  Theme.of(context).cardColor,
+                  Theme.of(context).cardColor,
                 ],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
@@ -108,22 +108,25 @@ class _RecentActivityWidgetState extends State<RecentActivityWidget>
                     Container(
                       padding: const EdgeInsets.all(10),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF4CAF50).withOpacity(0.1),
+                        color: Colors.green.withOpacity(0.1),
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      child: const Icon(
+                      child: Icon(
                         Icons.history_rounded,
-                        color: Color(0xFF4CAF50),
+                        color: Colors.green,
                         size: 24,
                       ),
                     ),
                     const SizedBox(width: 12),
-                    const Text(
+                    Text(
                       'Recent Activity',
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w700,
-                        color: Color(0xFF333333),
+                        color:
+                            Theme.of(context).textTheme.bodyLarge?.color ??
+                            Theme.of(context).textTheme.bodyLarge?.color ??
+                            Colors.black,
                       ),
                     ),
                   ],
@@ -145,7 +148,11 @@ class _RecentActivityWidgetState extends State<RecentActivityWidget>
                             'No recent activity',
                             style: TextStyle(
                               fontSize: 14,
-                              color: Colors.grey[600],
+                              color:
+                                  Theme.of(
+                                    context,
+                                  ).textTheme.bodyMedium?.color ??
+                                  Colors.grey[600],
                             ),
                           ),
                         ],
@@ -217,10 +224,13 @@ class _RecentActivityWidgetState extends State<RecentActivityWidget>
                       children: [
                         Text(
                           activity['title'] ?? 'Activity',
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 13,
                             fontWeight: FontWeight.w600,
-                            color: Color(0xFF333333),
+                            color:
+                                Theme.of(context).textTheme.bodyLarge?.color ??
+                                Theme.of(context).textTheme.bodyLarge?.color ??
+                                Colors.black,
                           ),
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
@@ -230,7 +240,9 @@ class _RecentActivityWidgetState extends State<RecentActivityWidget>
                           activity['time'] ?? 'Recently',
                           style: TextStyle(
                             fontSize: 11,
-                            color: Colors.grey[600],
+                            color:
+                                Theme.of(context).textTheme.bodyMedium?.color ??
+                                Colors.grey[600],
                           ),
                         ),
                       ],

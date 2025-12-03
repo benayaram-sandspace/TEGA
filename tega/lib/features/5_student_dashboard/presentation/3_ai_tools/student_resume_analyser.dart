@@ -25,7 +25,7 @@ class _ResumeAnalysisPageState extends State<ResumeAnalysisPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text("✅ Uploaded: ${result.files.single.name}"),
-          backgroundColor: Colors.deepPurple,
+          backgroundColor: Theme.of(context).primaryColor,
           duration: const Duration(seconds: 2),
         ),
       );
@@ -36,15 +36,21 @@ class _ResumeAnalysisPageState extends State<ResumeAnalysisPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          icon: Icon(
+            Icons.arrow_back,
+            color: Theme.of(context).iconTheme.color,
+          ),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
+        title: Text(
           "Create New Analysis",
-          style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
+          style: TextStyle(
+            color: Theme.of(context).textTheme.bodyLarge?.color,
+            fontWeight: FontWeight.bold,
+          ),
         ),
         centerTitle: true,
       ),
@@ -57,7 +63,7 @@ class _ResumeAnalysisPageState extends State<ResumeAnalysisPage> {
               width: double.infinity,
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: Colors.grey[200],
+                color: Theme.of(context).cardColor,
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Column(
@@ -70,18 +76,18 @@ class _ResumeAnalysisPageState extends State<ResumeAnalysisPage> {
                     fit: BoxFit.cover,
                   ),
                   const SizedBox(height: 12),
-                  const Text(
+                  Text(
                     "Step 1: Upload Your Resume",
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
-                      color: Colors.black87,
+                      color: Theme.of(context).textTheme.bodyLarge?.color,
                     ),
                   ),
                   const SizedBox(height: 12),
                   ElevatedButton(
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.deepPurple,
+                      backgroundColor: Theme.of(context).primaryColor,
                       padding: const EdgeInsets.symmetric(
                         horizontal: 20,
                         vertical: 10,
@@ -108,7 +114,7 @@ class _ResumeAnalysisPageState extends State<ResumeAnalysisPage> {
               width: double.infinity,
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: Colors.grey[200],
+                color: Theme.of(context).cardColor,
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Image.network(
@@ -126,7 +132,7 @@ class _ResumeAnalysisPageState extends State<ResumeAnalysisPage> {
               width: double.infinity,
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.deepPurple,
+                  backgroundColor: Theme.of(context).primaryColor,
                   padding: const EdgeInsets.symmetric(
                     horizontal: 16,
                     vertical: 14,
@@ -139,16 +145,16 @@ class _ResumeAnalysisPageState extends State<ResumeAnalysisPage> {
                   // Dummy analysis action
                   if (uploadedFileName == null) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
+                      SnackBar(
                         content: Text("⚠️ Please upload a resume first"),
-                        backgroundColor: Colors.redAccent,
+                        backgroundColor: Theme.of(context).colorScheme.error,
                       ),
                     );
                   } else {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
                         content: Text("🔍 Analyzing $uploadedFileName ..."),
-                        backgroundColor: Colors.deepPurple,
+                        backgroundColor: Theme.of(context).primaryColor,
                       ),
                     );
                   }

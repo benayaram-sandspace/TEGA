@@ -530,14 +530,16 @@ class _StudentProfilePageState extends State<StudentProfilePage> {
   Widget build(BuildContext context) {
     if (_isLoading) {
       return Scaffold(
-        backgroundColor: const Color(0xFFF8F9FA),
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         appBar: AppBar(
-          backgroundColor: Colors.white,
+          backgroundColor:
+              Theme.of(context).appBarTheme.backgroundColor ??
+              Theme.of(context).cardColor,
           elevation: 0,
           leading: IconButton(
             icon: Icon(
               Icons.arrow_back,
-              color: Colors.black87,
+              color: Theme.of(context).iconTheme.color,
               size: isLargeDesktop
                   ? 28
                   : isDesktop
@@ -553,7 +555,7 @@ class _StudentProfilePageState extends State<StudentProfilePage> {
           title: Text(
             "Profile",
             style: TextStyle(
-              color: Colors.black87,
+              color: Theme.of(context).textTheme.titleLarge?.color,
               fontWeight: FontWeight.bold,
               fontSize: isLargeDesktop
                   ? 22
@@ -569,7 +571,7 @@ class _StudentProfilePageState extends State<StudentProfilePage> {
         ),
         body: Center(
           child: CircularProgressIndicator(
-            color: const Color(0xFF6B5FFF),
+            color: Theme.of(context).primaryColor,
             strokeWidth: isLargeDesktop
                 ? 4
                 : isDesktop
@@ -587,14 +589,16 @@ class _StudentProfilePageState extends State<StudentProfilePage> {
     // Show error state if there's an error and no profile data
     if (_errorMessage != null && _profileData == null) {
       return Scaffold(
-        backgroundColor: const Color(0xFFF8F9FA),
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         appBar: AppBar(
-          backgroundColor: Colors.white,
+          backgroundColor:
+              Theme.of(context).appBarTheme.backgroundColor ??
+              Theme.of(context).cardColor,
           elevation: 0,
           leading: IconButton(
             icon: Icon(
               Icons.arrow_back,
-              color: Colors.black87,
+              color: Theme.of(context).iconTheme.color,
               size: isLargeDesktop
                   ? 28
                   : isDesktop
@@ -610,7 +614,7 @@ class _StudentProfilePageState extends State<StudentProfilePage> {
           title: Text(
             "Profile",
             style: TextStyle(
-              color: Colors.black87,
+              color: Theme.of(context).textTheme.titleLarge?.color,
               fontWeight: FontWeight.bold,
               fontSize: isLargeDesktop
                   ? 22
@@ -629,7 +633,7 @@ class _StudentProfilePageState extends State<StudentProfilePage> {
     }
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F9FA),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: CustomScrollView(
         slivers: [
           _buildSliverAppBar(),
@@ -742,14 +746,14 @@ class _StudentProfilePageState extends State<StudentProfilePage> {
       floating: false,
       pinned: false,
       elevation: 0,
-      backgroundColor: const Color(0xFF6B5FFF),
+      backgroundColor: Theme.of(context).primaryColor,
       automaticallyImplyLeading: false,
       actions: [
         if (!_isEditing) ...[
           IconButton(
             icon: Icon(
               Icons.edit,
-              color: Colors.white,
+              color: Theme.of(context).colorScheme.onPrimary,
               size: isLargeDesktop
                   ? 28
                   : isDesktop
@@ -771,7 +775,7 @@ class _StudentProfilePageState extends State<StudentProfilePage> {
           IconButton(
             icon: Icon(
               Icons.close,
-              color: Colors.white,
+              color: Theme.of(context).colorScheme.onPrimary,
               size: isLargeDesktop
                   ? 28
                   : isDesktop
@@ -841,11 +845,14 @@ class _StudentProfilePageState extends State<StudentProfilePage> {
       ],
       flexibleSpace: FlexibleSpaceBar(
         background: Container(
-          decoration: const BoxDecoration(
+          decoration: BoxDecoration(
             gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
-              colors: [Color(0xFF6B5FFF), Color(0xFF4A47A3)],
+              colors: [
+                Theme.of(context).primaryColor,
+                Theme.of(context).primaryColorDark,
+              ],
             ),
           ),
           child: SafeArea(
@@ -891,7 +898,7 @@ class _StudentProfilePageState extends State<StudentProfilePage> {
                           ? 20
                           : 24,
                       fontWeight: FontWeight.bold,
-                      color: Colors.white,
+                      color: Theme.of(context).colorScheme.onPrimary,
                     ),
                   ),
                   SizedBox(
@@ -929,7 +936,9 @@ class _StudentProfilePageState extends State<StudentProfilePage> {
                             : isSmallScreen
                             ? 12
                             : 14,
-                        color: Colors.white70,
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.onPrimary.withOpacity(0.7),
                       ),
                       textAlign: TextAlign.center,
                       maxLines: 2,

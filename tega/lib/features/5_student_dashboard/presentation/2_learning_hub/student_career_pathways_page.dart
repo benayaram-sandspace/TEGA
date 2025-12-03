@@ -30,19 +30,22 @@ class _CareerPathwaysPageState extends State<CareerPathwaysPage>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF3F6F8),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         scrolledUnderElevation: 0,
         elevation: 0,
-        backgroundColor: const Color(0xFFF3F6F8),
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.black),
+          icon: Icon(
+            Icons.arrow_back_ios_new,
+            color: Theme.of(context).iconTheme.color,
+          ),
           onPressed: () => Navigator.of(context).pop(),
         ),
-        title: const Text(
+        title: Text(
           'Career Pathways',
           style: TextStyle(
-            color: Colors.black,
+            color: Theme.of(context).textTheme.bodyLarge?.color,
             fontWeight: FontWeight.bold,
             fontSize: 22,
           ),
@@ -53,7 +56,10 @@ class _CareerPathwaysPageState extends State<CareerPathwaysPage>
           IconButton(
             icon: Stack(
               children: [
-                const Icon(Icons.filter_list, color: Colors.black),
+                Icon(
+                  Icons.filter_list,
+                  color: Theme.of(context).iconTheme.color,
+                ),
                 if (showOnlyRecommended)
                   Positioned(
                     right: 0,
@@ -61,8 +67,8 @@ class _CareerPathwaysPageState extends State<CareerPathwaysPage>
                     child: Container(
                       width: 8,
                       height: 8,
-                      decoration: const BoxDecoration(
-                        color: Colors.red,
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).colorScheme.error,
                         shape: BoxShape.circle,
                       ),
                     ),
@@ -75,14 +81,17 @@ class _CareerPathwaysPageState extends State<CareerPathwaysPage>
           IconButton(
             icon: Stack(
               children: [
-                const Icon(Icons.notifications_outlined, color: Colors.black),
+                Icon(
+                  Icons.notifications_outlined,
+                  color: Theme.of(context).iconTheme.color,
+                ),
                 Positioned(
                   right: 0,
                   top: 0,
                   child: Container(
                     padding: const EdgeInsets.all(2),
-                    decoration: const BoxDecoration(
-                      color: Colors.red,
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.error,
                       shape: BoxShape.circle,
                     ),
                     constraints: const BoxConstraints(
@@ -109,15 +118,18 @@ class _CareerPathwaysPageState extends State<CareerPathwaysPage>
             margin: const EdgeInsets.all(20),
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [Color(0xFF6C63FF), Color(0xFF8B85FF)],
+              gradient: LinearGradient(
+                colors: [
+                  Theme.of(context).primaryColor,
+                  Theme.of(context).primaryColor.withOpacity(0.8),
+                ],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
               borderRadius: BorderRadius.circular(16),
               boxShadow: [
                 BoxShadow(
-                  color: const Color(0xFF6C63FF).withOpacity(0.3),
+                  color: Theme.of(context).primaryColor.withOpacity(0.3),
                   spreadRadius: 2,
                   blurRadius: 10,
                   offset: const Offset(0, 4),
@@ -189,11 +201,11 @@ class _CareerPathwaysPageState extends State<CareerPathwaysPage>
           Container(
             margin: const EdgeInsets.symmetric(horizontal: 20),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: Theme.of(context).cardColor,
               borderRadius: BorderRadius.circular(12),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.grey.withOpacity(0.1),
+                  color: Theme.of(context).shadowColor.withOpacity(0.1),
                   spreadRadius: 1,
                   blurRadius: 4,
                 ),
@@ -201,9 +213,9 @@ class _CareerPathwaysPageState extends State<CareerPathwaysPage>
             ),
             child: TabBar(
               controller: _tabController,
-              indicatorColor: const Color(0xFF6C63FF),
-              labelColor: const Color(0xFF6C63FF),
-              unselectedLabelColor: Colors.grey,
+              indicatorColor: Theme.of(context).primaryColor,
+              labelColor: Theme.of(context).primaryColor,
+              unselectedLabelColor: Theme.of(context).disabledColor,
               indicatorWeight: 3,
               tabs: const [
                 Tab(text: 'Explore'),
@@ -231,7 +243,7 @@ class _CareerPathwaysPageState extends State<CareerPathwaysPage>
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _showAICareerAssistant(context),
-        backgroundColor: const Color(0xFF6C63FF),
+        backgroundColor: Theme.of(context).primaryColor,
         icon: const Icon(Icons.psychology),
         label: const Text('AI Career Assistant'),
       ),
@@ -248,11 +260,11 @@ class _CareerPathwaysPageState extends State<CareerPathwaysPage>
             // Search with voice input
             Container(
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: Theme.of(context).cardColor,
                 borderRadius: BorderRadius.circular(12),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.grey.withOpacity(0.1),
+                    color: Theme.of(context).shadowColor.withOpacity(0.1),
                     spreadRadius: 2,
                     blurRadius: 8,
                     offset: const Offset(0, 3),
@@ -261,11 +273,14 @@ class _CareerPathwaysPageState extends State<CareerPathwaysPage>
               ),
               child: Row(
                 children: [
-                  const Expanded(
+                  Expanded(
                     child: TextField(
                       decoration: InputDecoration(
                         hintText: 'Search careers, skills, or companies...',
-                        prefixIcon: Icon(Icons.search, color: Colors.grey),
+                        prefixIcon: Icon(
+                          Icons.search,
+                          color: Theme.of(context).disabledColor,
+                        ),
                         border: InputBorder.none,
                         contentPadding: EdgeInsets.symmetric(
                           vertical: 15,
@@ -275,7 +290,10 @@ class _CareerPathwaysPageState extends State<CareerPathwaysPage>
                     ),
                   ),
                   IconButton(
-                    icon: const Icon(Icons.mic, color: Color(0xFF6C63FF)),
+                    icon: Icon(
+                      Icons.mic,
+                      color: Theme.of(context).primaryColor,
+                    ),
                     onPressed: () {},
                   ),
                 ],
@@ -290,12 +308,12 @@ class _CareerPathwaysPageState extends State<CareerPathwaysPage>
               height: 120,
               child: ListView(
                 scrollDirection: Axis.horizontal,
-                children: const [
+                children: [
                   TrendingCareerCard(
                     title: 'AI Engineer',
                     growth: '+45%',
                     salary: '\$150K - \$250K',
-                    color: Color(0xFF6C63FF),
+                    color: Theme.of(context).primaryColor,
                   ),
                   SizedBox(width: 12),
                   TrendingCareerCard(
@@ -428,11 +446,11 @@ class _CareerPathwaysPageState extends State<CareerPathwaysPage>
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: Theme.of(context).cardColor,
               borderRadius: BorderRadius.circular(16),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.grey.withOpacity(0.1),
+                  color: Theme.of(context).shadowColor.withOpacity(0.1),
                   spreadRadius: 2,
                   blurRadius: 8,
                 ),
@@ -446,19 +464,25 @@ class _CareerPathwaysPageState extends State<CareerPathwaysPage>
                     Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFE8E7FF),
+                        color: Theme.of(context).primaryColor.withOpacity(0.1),
                         shape: BoxShape.circle,
                       ),
-                      child: const Icon(Icons.person, color: Color(0xFF6C63FF)),
+                      child: Icon(
+                        Icons.person,
+                        color: Theme.of(context).primaryColor,
+                      ),
                     ),
                     const SizedBox(width: 12),
-                    const Expanded(
+                    Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
                             'Current Role',
-                            style: TextStyle(color: Colors.grey, fontSize: 12),
+                            style: TextStyle(
+                              color: Theme.of(context).disabledColor,
+                              fontSize: 12,
+                            ),
                           ),
                           Text(
                             'Senior Software Engineer',
@@ -517,11 +541,11 @@ class _CareerPathwaysPageState extends State<CareerPathwaysPage>
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: Theme.of(context).cardColor,
               borderRadius: BorderRadius.circular(16),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.grey.withOpacity(0.1),
+                  color: Theme.of(context).shadowColor.withOpacity(0.1),
                   spreadRadius: 2,
                   blurRadius: 8,
                 ),
@@ -799,7 +823,7 @@ class _CareerPathwaysPageState extends State<CareerPathwaysPage>
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               decoration: BoxDecoration(
-                color: Colors.grey.shade100,
+                color: Theme.of(context).dividerColor.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(30),
               ),
               child: Row(
@@ -813,7 +837,10 @@ class _CareerPathwaysPageState extends State<CareerPathwaysPage>
                     ),
                   ),
                   IconButton(
-                    icon: const Icon(Icons.send, color: Color(0xFF6C63FF)),
+                    icon: Icon(
+                      Icons.send,
+                      color: Theme.of(context).primaryColor,
+                    ),
                     onPressed: () {},
                   ),
                 ],
@@ -909,11 +936,11 @@ class CompanySpotlightCard extends StatelessWidget {
       width: 200,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
+            color: Theme.of(context).shadowColor.withOpacity(0.1),
             spreadRadius: 2,
             blurRadius: 8,
           ),
@@ -928,7 +955,7 @@ class CompanySpotlightCard extends StatelessWidget {
                 width: 40,
                 height: 40,
                 decoration: BoxDecoration(
-                  color: Colors.grey.shade200,
+                  color: Theme.of(context).dividerColor.withOpacity(0.2),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Center(
@@ -959,7 +986,7 @@ class CompanySpotlightCard extends StatelessWidget {
                         Text(
                           ' $rating',
                           style: TextStyle(
-                            color: Colors.grey.shade600,
+                            color: Theme.of(context).disabledColor,
                             fontSize: 12,
                           ),
                         ),
@@ -1035,10 +1062,10 @@ class CareerRoadmapItem extends StatelessWidget {
               height: 24,
               decoration: BoxDecoration(
                 color: isCurrent
-                    ? const Color(0xFF6C63FF)
+                    ? Theme.of(context).primaryColor
                     : isCompleted
                     ? Colors.green
-                    : Colors.grey.shade300,
+                    : Theme.of(context).disabledColor.withOpacity(0.3),
                 shape: BoxShape.circle,
               ),
               child: isCompleted
@@ -1051,7 +1078,9 @@ class CareerRoadmapItem extends StatelessWidget {
               Container(
                 width: 2,
                 height: 60,
-                color: isCompleted ? Colors.green : Colors.grey.shade300,
+                color: isCompleted
+                    ? Colors.green
+                    : Theme.of(context).disabledColor.withOpacity(0.3),
               ),
           ],
         ),
@@ -1061,12 +1090,14 @@ class CareerRoadmapItem extends StatelessWidget {
             margin: const EdgeInsets.only(bottom: 20),
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: isCurrent ? const Color(0xFFE8E7FF) : Colors.white,
+              color: isCurrent
+                  ? Theme.of(context).primaryColor.withOpacity(0.1)
+                  : Theme.of(context).cardColor,
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
                 color: isCurrent
-                    ? const Color(0xFF6C63FF)
-                    : Colors.grey.shade200,
+                    ? Theme.of(context).primaryColor
+                    : Theme.of(context).dividerColor,
               ),
             ),
             child: Column(
@@ -1077,13 +1108,18 @@ class CareerRoadmapItem extends StatelessWidget {
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 16,
-                    color: isCurrent ? const Color(0xFF6C63FF) : Colors.black,
+                    color: isCurrent
+                        ? Theme.of(context).primaryColor
+                        : Theme.of(context).textTheme.bodyLarge?.color,
                   ),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   status,
-                  style: TextStyle(color: Colors.grey.shade600, fontSize: 14),
+                  style: TextStyle(
+                    color: Theme.of(context).disabledColor,
+                    fontSize: 14,
+                  ),
                 ),
               ],
             ),
@@ -1135,7 +1171,7 @@ class SkillProgressItem extends StatelessWidget {
             Container(
               height: 8,
               decoration: BoxDecoration(
-                color: Colors.grey.shade200,
+                color: Theme.of(context).dividerColor.withOpacity(0.2),
                 borderRadius: BorderRadius.circular(4),
               ),
             ),
@@ -1144,7 +1180,7 @@ class SkillProgressItem extends StatelessWidget {
               child: Container(
                 height: 8,
                 decoration: BoxDecoration(
-                  color: const Color(0xFF6C63FF),
+                  color: Theme.of(context).primaryColor,
                   borderRadius: BorderRadius.circular(4),
                 ),
               ),
@@ -1164,11 +1200,17 @@ class SkillProgressItem extends StatelessWidget {
           children: [
             Text(
               'Current: $currentLevel%',
-              style: TextStyle(color: Colors.grey.shade600, fontSize: 11),
+              style: TextStyle(
+                color: Theme.of(context).disabledColor,
+                fontSize: 11,
+              ),
             ),
             Text(
               'Required: $requiredLevel%',
-              style: TextStyle(color: Colors.grey.shade600, fontSize: 11),
+              style: TextStyle(
+                color: Theme.of(context).disabledColor,
+                fontSize: 11,
+              ),
             ),
           ],
         ),
@@ -1198,11 +1240,11 @@ class MentorCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
+            color: Theme.of(context).shadowColor.withOpacity(0.1),
             spreadRadius: 2,
             blurRadius: 8,
           ),
@@ -1212,11 +1254,11 @@ class MentorCard extends StatelessWidget {
         children: [
           CircleAvatar(
             radius: 30,
-            backgroundColor: const Color(0xFFE8E7FF),
+            backgroundColor: Theme.of(context).primaryColor.withOpacity(0.1),
             child: Text(
               name.split(' ').map((e) => e[0]).join(),
-              style: const TextStyle(
-                color: Color(0xFF6C63FF),
+              style: TextStyle(
+                color: Theme.of(context).primaryColor,
                 fontWeight: FontWeight.bold,
               ),
             ),
@@ -1235,13 +1277,16 @@ class MentorCard extends StatelessWidget {
                 ),
                 Text(
                   role,
-                  style: TextStyle(color: Colors.grey.shade600, fontSize: 14),
+                  style: TextStyle(
+                    color: Theme.of(context).disabledColor,
+                    fontSize: 14,
+                  ),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   expertise,
-                  style: const TextStyle(
-                    color: Color(0xFF6C63FF),
+                  style: TextStyle(
+                    color: Theme.of(context).primaryColor,
                     fontSize: 12,
                   ),
                 ),
@@ -1254,7 +1299,7 @@ class MentorCard extends StatelessWidget {
                     Text(
                       '• $sessions sessions',
                       style: TextStyle(
-                        color: Colors.grey.shade600,
+                        color: Theme.of(context).disabledColor,
                         fontSize: 12,
                       ),
                     ),
@@ -1266,7 +1311,7 @@ class MentorCard extends StatelessWidget {
           ElevatedButton(
             onPressed: () {},
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF6C63FF),
+              backgroundColor: Theme.of(context).primaryColor,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(8),
               ),
@@ -1302,11 +1347,11 @@ class CourseCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
+            color: Theme.of(context).shadowColor.withOpacity(0.1),
             spreadRadius: 2,
             blurRadius: 8,
           ),
@@ -1318,12 +1363,12 @@ class CourseCard extends StatelessWidget {
             width: 60,
             height: 60,
             decoration: BoxDecoration(
-              color: const Color(0xFFE8E7FF),
+              color: Theme.of(context).primaryColor.withOpacity(0.1),
               borderRadius: BorderRadius.circular(12),
             ),
-            child: const Icon(
+            child: Icon(
               Icons.play_circle_filled,
-              color: Color(0xFF6C63FF),
+              color: Theme.of(context).primaryColor,
               size: 30,
             ),
           ),
@@ -1345,7 +1390,7 @@ class CourseCard extends StatelessWidget {
                     Text(
                       provider,
                       style: TextStyle(
-                        color: Colors.grey.shade600,
+                        color: Theme.of(context).disabledColor,
                         fontSize: 14,
                       ),
                     ),
@@ -1353,7 +1398,7 @@ class CourseCard extends StatelessWidget {
                     Text(
                       '• $duration',
                       style: TextStyle(
-                        color: Colors.grey.shade600,
+                        color: Theme.of(context).disabledColor,
                         fontSize: 14,
                       ),
                     ),
@@ -1395,10 +1440,10 @@ class CourseCard extends StatelessWidget {
             children: [
               Text(
                 price,
-                style: const TextStyle(
+                style: TextStyle(
                   fontWeight: FontWeight.bold,
                   fontSize: 18,
-                  color: Color(0xFF6C63FF),
+                  color: Theme.of(context).primaryColor,
                 ),
               ),
               const SizedBox(height: 4),
@@ -1441,11 +1486,11 @@ class CertificationCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
+            color: Theme.of(context).shadowColor.withOpacity(0.1),
             spreadRadius: 2,
             blurRadius: 8,
           ),
@@ -1483,7 +1528,7 @@ class CertificationCard extends StatelessWidget {
                     Text(
                       'by $organization',
                       style: TextStyle(
-                        color: Colors.grey.shade600,
+                        color: Theme.of(context).disabledColor,
                         fontSize: 14,
                       ),
                     ),
@@ -1501,7 +1546,10 @@ class CertificationCard extends StatelessWidget {
                 children: [
                   Text(
                     'Validity',
-                    style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
+                    style: TextStyle(
+                      color: Theme.of(context).disabledColor,
+                      fontSize: 12,
+                    ),
                   ),
                   Text(
                     validityPeriod,
@@ -1517,7 +1565,10 @@ class CertificationCard extends StatelessWidget {
                 children: [
                   Text(
                     'Exam Fee',
-                    style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
+                    style: TextStyle(
+                      color: Theme.of(context).disabledColor,
+                      fontSize: 12,
+                    ),
                   ),
                   Text(
                     examFee,
@@ -1533,7 +1584,10 @@ class CertificationCard extends StatelessWidget {
                 children: [
                   Text(
                     'Popularity',
-                    style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
+                    style: TextStyle(
+                      color: Theme.of(context).disabledColor,
+                      fontSize: 12,
+                    ),
                   ),
                   Row(
                     children: [
@@ -1542,7 +1596,9 @@ class CertificationCard extends StatelessWidget {
                         height: 4,
                         child: LinearProgressIndicator(
                           value: popularity / 100,
-                          backgroundColor: Colors.grey.shade200,
+                          backgroundColor: Theme.of(
+                            context,
+                          ).dividerColor.withOpacity(0.2),
                           valueColor: const AlwaysStoppedAnimation<Color>(
                             Colors.green,
                           ),
@@ -1589,10 +1645,10 @@ class NotificationItem extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: const Color(0xFFE8E7FF),
+              color: Theme.of(context).primaryColor.withOpacity(0.1),
               shape: BoxShape.circle,
             ),
-            child: Icon(icon, color: const Color(0xFF6C63FF), size: 20),
+            child: Icon(icon, color: Theme.of(context).primaryColor, size: 20),
           ),
           const SizedBox(width: 12),
           Expanded(

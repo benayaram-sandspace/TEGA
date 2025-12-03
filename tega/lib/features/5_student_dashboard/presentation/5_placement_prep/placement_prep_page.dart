@@ -121,13 +121,13 @@ class _PlacementPrepPageState extends State<PlacementPrepPage> {
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
-      return const Center(
-        child: CircularProgressIndicator(color: Color(0xFF6B5FFF)),
+      return Center(
+        child: CircularProgressIndicator(color: Theme.of(context).primaryColor),
       );
     }
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: CustomScrollView(
         slivers: [
           // Modern Header with Hero Section
@@ -190,10 +190,14 @@ class _PlacementPrepPageState extends State<PlacementPrepPage> {
               : 16,
         ),
         decoration: BoxDecoration(
-          gradient: const LinearGradient(
+          gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [Color(0xFF6B5FFF), Color(0xFF9C88FF), Color(0xFFB19CD9)],
+            colors: [
+              Theme.of(context).primaryColor,
+              Color(0xFF9C88FF),
+              Color(0xFFB19CD9),
+            ],
           ),
           borderRadius: BorderRadius.circular(
             isLargeDesktop
@@ -208,7 +212,7 @@ class _PlacementPrepPageState extends State<PlacementPrepPage> {
           ),
           boxShadow: [
             BoxShadow(
-              color: const Color(0xFF6B5FFF).withOpacity(0.3),
+              color: Theme.of(context).primaryColor.withOpacity(0.3),
               blurRadius: isLargeDesktop
                   ? 24
                   : isDesktop
@@ -248,7 +252,7 @@ class _PlacementPrepPageState extends State<PlacementPrepPage> {
                     : 10,
               ),
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.2),
+                color: Theme.of(context).cardColor.withOpacity(0.2),
                 borderRadius: BorderRadius.circular(
                   isLargeDesktop
                       ? 18
@@ -263,7 +267,7 @@ class _PlacementPrepPageState extends State<PlacementPrepPage> {
               ),
               child: Icon(
                 Icons.rocket_launch_rounded,
-                color: Colors.white,
+                color: Theme.of(context).cardColor,
                 size: isLargeDesktop
                     ? 36
                     : isDesktop
@@ -300,7 +304,7 @@ class _PlacementPrepPageState extends State<PlacementPrepPage> {
                       ? 14
                       : 16,
                   fontWeight: FontWeight.w600,
-                  color: Colors.white,
+                  color: Theme.of(context).cardColor,
                 ),
                 maxLines: isLargeDesktop || isDesktop
                     ? 3
@@ -348,7 +352,9 @@ class _PlacementPrepPageState extends State<PlacementPrepPage> {
                     ? 18
                     : 20,
                 fontWeight: FontWeight.bold,
-                color: const Color(0xFF1A1A1A),
+                color:
+                    Theme.of(context).textTheme.titleLarge?.color ??
+                    Colors.black,
               ),
             ),
             SizedBox(
@@ -372,141 +378,123 @@ class _PlacementPrepPageState extends State<PlacementPrepPage> {
   Widget _buildModernActionCards() {
     final actions = [
       {
-        'title': 'Take Skill Assessment',
-        'description':
-            'Evaluate your technical skills with comprehensive tests',
-        'icon': Icons.assessment_rounded,
-        'color': const Color(0xFF667eea),
+        'title': 'Skill Assessment',
+        'description': 'Test your knowledge with topic-wise assessments',
+        'icon': Icons.assignment_turned_in_rounded,
+        'color': Color(0xFF667eea),
         'onTap': _handleTakeSkillAssessment,
-        'status': 'Available',
         'isAvailable': true,
+        'status': 'Available',
       },
       {
-        'title': 'Company Specific Revision',
-        'description': 'Practice questions tailored for specific companies',
-        'icon': Icons.business_center_rounded,
-        'color': const Color(0xFF11998e),
+        'title': 'Company Specific',
+        'description': 'Practice questions asked by top companies',
+        'icon': Icons.business_rounded,
+        'color': Color(0xFF764ba2),
         'onTap': _handleCompanySpecificRevision,
-        'status': 'Available',
         'isAvailable': true,
+        'status': 'Available',
       },
       {
-        'title': 'Start Mock Interview',
-        'description': 'AI-powered interview practice with real-time feedback',
-        'icon': Icons.videocam_rounded,
-        'color': const Color(0xFFee0979),
+        'title': 'Mock Interview',
+        'description': 'Practice with AI-driven mock interviews',
+        'icon': Icons.record_voice_over_rounded,
+        'color': Color(0xFF6B5FFF),
         'onTap': _handleStartMockInterview,
-        'status': 'Coming Soon',
         'isAvailable': false,
+        'status': 'Coming Soon',
       },
     ];
 
     return Column(
       children: actions.map((action) {
-        return Container(
-          margin: EdgeInsets.only(
-            bottom: action == actions.last
-                ? 0
-                : (isLargeDesktop
-                      ? 20
-                      : isDesktop
-                      ? 16
-                      : isTablet
-                      ? 14
-                      : isSmallScreen
-                      ? 10
-                      : 12),
-          ),
-          child: _buildModernActionCard(
-            title: action['title'] as String,
-            description: action['description'] as String,
-            icon: action['icon'] as IconData,
-            color: action['color'] as Color,
-            onTap: action['onTap'] as VoidCallback,
-            status: action['status'] as String,
-            isAvailable: action['isAvailable'] as bool,
-          ),
+        return _buildActionCard(
+          title: action['title'] as String,
+          description: action['description'] as String,
+          icon: action['icon'] as IconData,
+          color: action['color'] as Color,
+          onTap: action['onTap'] as VoidCallback,
+          isAvailable: action['isAvailable'] as bool,
+          status: action['status'] as String,
         );
       }).toList(),
     );
   }
 
-  Widget _buildModernActionCard({
+  Widget _buildActionCard({
     required String title,
     required String description,
     required IconData icon,
     required Color color,
     required VoidCallback onTap,
-    required String status,
     required bool isAvailable,
+    required String status,
   }) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: isAvailable ? onTap : null,
-        borderRadius: BorderRadius.circular(
-          isLargeDesktop
-              ? 20
+    return GestureDetector(
+      onTap: isAvailable ? onTap : null,
+      child: Container(
+        margin: EdgeInsets.only(
+          bottom: isLargeDesktop
+              ? 24
               : isDesktop
-              ? 16
+              ? 20
               : isTablet
-              ? 14
+              ? 16
               : isSmallScreen
-              ? 10
-              : 12,
+              ? 12
+              : 16,
         ),
-        child: Container(
+        decoration: BoxDecoration(
+          color: Theme.of(context).cardColor,
+          borderRadius: BorderRadius.circular(
+            isLargeDesktop
+                ? 24
+                : isDesktop
+                ? 20
+                : isTablet
+                ? 16
+                : isSmallScreen
+                ? 12
+                : 16,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Theme.of(context).shadowColor.withOpacity(0.05),
+              blurRadius: isLargeDesktop
+                  ? 24
+                  : isDesktop
+                  ? 20
+                  : isTablet
+                  ? 16
+                  : isSmallScreen
+                  ? 8
+                  : 12,
+              offset: Offset(
+                0,
+                isLargeDesktop
+                    ? 10
+                    : isDesktop
+                    ? 8
+                    : isTablet
+                    ? 6
+                    : isSmallScreen
+                    ? 3
+                    : 4,
+              ),
+            ),
+          ],
+        ),
+        child: Padding(
           padding: EdgeInsets.all(
             isLargeDesktop
                 ? 24
                 : isDesktop
                 ? 20
                 : isTablet
-                ? 18
+                ? 16
                 : isSmallScreen
                 ? 12
                 : 16,
-          ),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(
-              isLargeDesktop
-                  ? 20
-                  : isDesktop
-                  ? 16
-                  : isTablet
-                  ? 14
-                  : isSmallScreen
-                  ? 10
-                  : 12,
-            ),
-            border: Border.all(color: color.withOpacity(0.2), width: 1),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.05),
-                blurRadius: isLargeDesktop
-                    ? 16
-                    : isDesktop
-                    ? 12
-                    : isTablet
-                    ? 10
-                    : isSmallScreen
-                    ? 6
-                    : 8,
-                offset: Offset(
-                  0,
-                  isLargeDesktop
-                      ? 6
-                      : isDesktop
-                      ? 4
-                      : isTablet
-                      ? 3
-                      : isSmallScreen
-                      ? 2
-                      : 2,
-                ),
-              ),
-            ],
           ),
           child: Row(
             children: [
@@ -581,7 +569,11 @@ class _PlacementPrepPageState extends State<PlacementPrepPage> {
                                   ? 14
                                   : 16,
                               fontWeight: FontWeight.bold,
-                              color: const Color(0xFF1A1A1A),
+                              color:
+                                  Theme.of(
+                                    context,
+                                  ).textTheme.titleLarge?.color ??
+                                  Colors.black,
                             ),
                             maxLines: isLargeDesktop || isDesktop
                                 ? 3
@@ -672,7 +664,9 @@ class _PlacementPrepPageState extends State<PlacementPrepPage> {
                             : isSmallScreen
                             ? 11
                             : 12,
-                        color: Colors.grey[600],
+                        color:
+                            Theme.of(context).textTheme.bodyMedium?.color ??
+                            Colors.grey,
                         height: 1.4,
                       ),
                       maxLines: isLargeDesktop || isDesktop
@@ -700,7 +694,7 @@ class _PlacementPrepPageState extends State<PlacementPrepPage> {
                 isAvailable
                     ? Icons.arrow_forward_ios_rounded
                     : Icons.lock_rounded,
-                color: isAvailable ? color : Colors.grey[400],
+                color: isAvailable ? color : Theme.of(context).disabledColor,
                 size: isLargeDesktop
                     ? 24
                     : isDesktop

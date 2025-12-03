@@ -89,15 +89,17 @@ class _StartPaymentPageState extends State<StartPaymentPage> {
           content: Text(
             isCancelled ? 'Payment cancelled' : 'Payment failed: $msg',
           ),
-          backgroundColor: isCancelled ? Colors.grey : Colors.red,
+          backgroundColor: isCancelled
+              ? Colors.grey
+              : Theme.of(context).colorScheme.error,
           behavior: SnackBarBehavior.floating,
         ),
       );
     } catch (_) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
+        SnackBar(
           content: Text('Payment failed'),
-          backgroundColor: Colors.red,
+          backgroundColor: Theme.of(context).colorScheme.error,
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -386,9 +388,9 @@ class _StartPaymentPageState extends State<StartPaymentPage> {
     final courseId = _courseIdController.text.trim();
     if (courseId.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
+        SnackBar(
           content: Text('Course ID missing'),
-          backgroundColor: Colors.red,
+          backgroundColor: Theme.of(context).colorScheme.error,
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -450,7 +452,7 @@ class _StartPaymentPageState extends State<StartPaymentPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Failed: $e'),
-          backgroundColor: Colors.red,
+          backgroundColor: Theme.of(context).colorScheme.error,
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -485,12 +487,12 @@ class _StartPaymentPageState extends State<StartPaymentPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: null,
       body: _loadingCourses
           ? Center(
               child: CircularProgressIndicator(
-                color: const Color(0xFF9C88FF),
+                color: Theme.of(context).primaryColor,
                 strokeWidth: isLargeDesktop
                     ? 4
                     : isDesktop
@@ -530,7 +532,7 @@ class _StartPaymentPageState extends State<StartPaymentPage> {
                           : isSmallScreen
                           ? 48
                           : 56,
-                      color: const Color(0xFF9C88FF),
+                      color: Theme.of(context).primaryColor,
                     ),
                     SizedBox(
                       height: isLargeDesktop
@@ -555,7 +557,10 @@ class _StartPaymentPageState extends State<StartPaymentPage> {
                             : isSmallScreen
                             ? 16
                             : 18,
-                        color: const Color(0xFF2C3E50),
+                        color:
+                            Theme.of(context).textTheme.bodyLarge?.color ??
+                            Theme.of(context).textTheme.bodyLarge?.color ??
+                            Colors.black,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -573,8 +578,8 @@ class _StartPaymentPageState extends State<StartPaymentPage> {
                     OutlinedButton(
                       onPressed: () => _loadCourses(forceRefresh: true),
                       style: OutlinedButton.styleFrom(
-                        foregroundColor: const Color(0xFF9C88FF),
-                        side: const BorderSide(color: Color(0xFF9C88FF)),
+                        foregroundColor: Theme.of(context).primaryColor,
+                        side: BorderSide(color: Theme.of(context).primaryColor),
                         padding: EdgeInsets.symmetric(
                           horizontal: isLargeDesktop
                               ? 32
@@ -617,7 +622,7 @@ class _StartPaymentPageState extends State<StartPaymentPage> {
             )
           : RefreshIndicator(
               onRefresh: () => _loadCourses(forceRefresh: true),
-              color: const Color(0xFF9C88FF),
+              color: Theme.of(context).primaryColor,
               child: ListView.builder(
                 padding: EdgeInsets.fromLTRB(
                   isLargeDesktop
@@ -780,7 +785,7 @@ class _CourseCard extends StatelessWidget {
       ),
       child: Container(
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: Theme.of(context).cardColor,
           borderRadius: BorderRadius.circular(
             isLargeDesktop
                 ? 16
@@ -793,7 +798,7 @@ class _CourseCard extends StatelessWidget {
                 : 12,
           ),
           border: Border.all(
-            color: owned ? const Color(0xFF4CAF50) : const Color(0xFFE5E7EB),
+            color: owned ? Colors.green : Theme.of(context).dividerColor,
             width: owned
                 ? (isLargeDesktop || isDesktop
                       ? 2.5
@@ -813,8 +818,8 @@ class _CourseCard extends StatelessWidget {
           boxShadow: [
             BoxShadow(
               color: owned
-                  ? const Color(0xFF4CAF50).withOpacity(0.08)
-                  : Colors.black.withOpacity(0.03),
+                  ? Colors.green.withOpacity(0.08)
+                  : Theme.of(context).shadowColor.withOpacity(0.03),
               blurRadius: isLargeDesktop
                   ? 12
                   : isDesktop
@@ -885,7 +890,9 @@ class _CourseCard extends StatelessWidget {
                                 : 4,
                           ),
                           decoration: BoxDecoration(
-                            color: const Color(0xFF9C88FF).withOpacity(0.1),
+                            color: Theme.of(
+                              context,
+                            ).primaryColor.withOpacity(0.1),
                             borderRadius: BorderRadius.circular(
                               isLargeDesktop
                                   ? 8
@@ -900,7 +907,7 @@ class _CourseCard extends StatelessWidget {
                           ),
                           child: Icon(
                             Icons.quiz,
-                            color: const Color(0xFF9C88FF),
+                            color: Theme.of(context).primaryColor,
                             size: isLargeDesktop
                                 ? 18
                                 : isDesktop
@@ -926,7 +933,10 @@ class _CourseCard extends StatelessWidget {
                                 : isSmallScreen
                                 ? 12
                                 : 14,
-                            color: const Color(0xFF1F2937),
+                            color:
+                                Theme.of(context).textTheme.bodyLarge?.color ??
+                                Theme.of(context).textTheme.bodyLarge?.color ??
+                                Colors.black,
                             letterSpacing: 0.3,
                             height: 1.2,
                           ),
@@ -955,7 +965,10 @@ class _CourseCard extends StatelessWidget {
                     Text(
                       priceText,
                       style: TextStyle(
-                        color: const Color(0xFF1F2937),
+                        color:
+                            Theme.of(context).textTheme.bodyLarge?.color ??
+                            Theme.of(context).textTheme.bodyLarge?.color ??
+                            Colors.black,
                         fontSize: isLargeDesktop
                             ? 18
                             : isDesktop
@@ -986,7 +999,7 @@ class _CourseCard extends StatelessWidget {
                         if (owned) ...[
                           Icon(
                             Icons.check_circle_rounded,
-                            color: const Color(0xFF4CAF50),
+                            color: Colors.green,
                             size: isLargeDesktop
                                 ? 18
                                 : isDesktop
@@ -1013,8 +1026,8 @@ class _CourseCard extends StatelessWidget {
                           owned ? 'Purchased' : 'Available',
                           style: TextStyle(
                             color: owned
-                                ? const Color(0xFF4CAF50)
-                                : const Color(0xFF2196F3),
+                                ? Colors.green
+                                : Theme.of(context).primaryColor,
                             fontSize: isLargeDesktop
                                 ? 13
                                 : isDesktop
@@ -1049,7 +1062,10 @@ class _CourseCard extends StatelessWidget {
               Text(
                 description,
                 style: TextStyle(
-                  color: const Color(0xFF6B7280),
+                  color:
+                      Theme.of(context).textTheme.bodyMedium?.color ??
+                      Theme.of(context).textTheme.bodyMedium?.color ??
+                      Colors.grey,
                   fontSize: isLargeDesktop
                       ? 15
                       : isDesktop
@@ -1093,7 +1109,7 @@ class _CourseCard extends StatelessWidget {
                         : 4,
                   ),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFF3F4F6),
+                    color: Theme.of(context).dividerColor.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(
                       isLargeDesktop
                           ? 8
@@ -1108,7 +1124,10 @@ class _CourseCard extends StatelessWidget {
                   ),
                   child: Icon(
                     isExam ? Icons.access_time : Icons.calendar_today_outlined,
-                    color: const Color(0xFF6B7280),
+                    color:
+                        Theme.of(context).textTheme.bodyMedium?.color ??
+                        Theme.of(context).textTheme.bodyMedium?.color ??
+                        Colors.grey,
                     size: isLargeDesktop
                         ? 16
                         : isDesktop
@@ -1136,7 +1155,10 @@ class _CourseCard extends StatelessWidget {
                       ? '${durationMinutes} min'
                       : _formatDuration(durationMinutes),
                   style: TextStyle(
-                    color: const Color(0xFF6B7280),
+                    color:
+                        Theme.of(context).textTheme.bodyMedium?.color ??
+                        Theme.of(context).textTheme.bodyMedium?.color ??
+                        Colors.grey,
                     fontSize: isLargeDesktop
                         ? 14
                         : isDesktop

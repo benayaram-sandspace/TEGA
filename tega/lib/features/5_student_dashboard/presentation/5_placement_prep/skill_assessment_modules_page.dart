@@ -164,7 +164,7 @@ class _SkillAssessmentModulesPageState
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         title: Text(
           'Skill Assessments',
@@ -181,13 +181,17 @@ class _SkillAssessmentModulesPageState
             fontWeight: FontWeight.bold,
           ),
         ),
-        backgroundColor: Colors.white,
+        backgroundColor:
+            Theme.of(context).appBarTheme.backgroundColor ??
+            Theme.of(context).cardColor,
         elevation: 0,
-        foregroundColor: const Color(0xFF1A1A1A),
+        foregroundColor: Theme.of(context).iconTheme.color,
       ),
       body: _isLoading
-          ? const Center(
-              child: CircularProgressIndicator(color: Color(0xFF6B5FFF)),
+          ? Center(
+              child: CircularProgressIndicator(
+                color: Theme.of(context).primaryColor,
+              ),
             )
           : _errorMessage != null
           ? Center(
@@ -293,7 +297,7 @@ class _SkillAssessmentModulesPageState
                       onPressed: () =>
                           _loadSkillAssessments(forceRefresh: true),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF6B5FFF),
+                        backgroundColor: Theme.of(context).primaryColor,
                         foregroundColor: Colors.white,
                         padding: EdgeInsets.symmetric(
                           horizontal: isLargeDesktop
@@ -461,7 +465,7 @@ class _SkillAssessmentModulesPageState
             : 12,
       ),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(
           isLargeDesktop
               ? 20
@@ -554,7 +558,7 @@ class _SkillAssessmentModulesPageState
                             : 10,
                       ),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF667eea).withOpacity(0.1),
+                        color: Theme.of(context).primaryColor.withOpacity(0.1),
                         borderRadius: BorderRadius.circular(
                           isLargeDesktop
                               ? 16
@@ -569,7 +573,7 @@ class _SkillAssessmentModulesPageState
                       ),
                       child: Icon(
                         Icons.assessment_rounded,
-                        color: const Color(0xFF667eea),
+                        color: Theme.of(context).primaryColor,
                         size: isLargeDesktop
                             ? 32
                             : isDesktop
@@ -609,7 +613,9 @@ class _SkillAssessmentModulesPageState
                                   ? 14
                                   : 16,
                               fontWeight: FontWeight.bold,
-                              color: const Color(0xFF1A1A1A),
+                              color: Theme.of(
+                                context,
+                              ).textTheme.titleLarge?.color,
                             ),
                             maxLines: isLargeDesktop || isDesktop
                                 ? 3
@@ -763,8 +769,8 @@ class _SkillAssessmentModulesPageState
                   LinearProgressIndicator(
                     value: progress / 100,
                     backgroundColor: Colors.grey[200],
-                    valueColor: const AlwaysStoppedAnimation<Color>(
-                      Color(0xFF667eea),
+                    valueColor: AlwaysStoppedAnimation<Color>(
+                      Theme.of(context).primaryColor,
                     ),
                     minHeight: isLargeDesktop
                         ? 8

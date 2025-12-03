@@ -751,9 +751,9 @@ class _VideoPlayerPageState extends State<VideoPlayerPage>
                                 color: Colors.black.withValues(alpha: 0.6),
                                 shape: BoxShape.circle,
                               ),
-                              child: const CircularProgressIndicator(
+                              child: CircularProgressIndicator(
                                 valueColor: AlwaysStoppedAnimation<Color>(
-                                  Color(0xFF6B5FFF),
+                                  Theme.of(context).primaryColor,
                                 ),
                                 strokeWidth: 3,
                               ),

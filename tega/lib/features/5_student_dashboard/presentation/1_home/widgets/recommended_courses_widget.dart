@@ -61,8 +61,8 @@ class _RecommendedCoursesWidgetState extends State<RecommendedCoursesWidget>
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 colors: [
-                  Colors.white,
-                  Color.lerp(Colors.white, Colors.black, 0.02)!,
+                  Theme.of(context).cardColor,
+                  Theme.of(context).cardColor,
                 ],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
@@ -84,22 +84,25 @@ class _RecommendedCoursesWidgetState extends State<RecommendedCoursesWidget>
                     Container(
                       padding: const EdgeInsets.all(10),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF6B5FFF).withOpacity(0.1),
+                        color: Theme.of(context).primaryColor.withOpacity(0.1),
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      child: const Icon(
+                      child: Icon(
                         Icons.school_rounded,
-                        color: Color(0xFF6B5FFF),
+                        color: Theme.of(context).primaryColor,
                         size: 24,
                       ),
                     ),
                     const SizedBox(width: 12),
-                    const Text(
+                    Text(
                       'Recommended for You',
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w700,
-                        color: Color(0xFF333333),
+                        color:
+                            Theme.of(context).textTheme.bodyLarge?.color ??
+                            Theme.of(context).textTheme.bodyLarge?.color ??
+                            Colors.black,
                       ),
                     ),
                   ],
@@ -121,7 +124,11 @@ class _RecommendedCoursesWidgetState extends State<RecommendedCoursesWidget>
                             'No recommendations available',
                             style: TextStyle(
                               fontSize: 14,
-                              color: Colors.grey[600],
+                              color:
+                                  Theme.of(
+                                    context,
+                                  ).textTheme.bodyMedium?.color ??
+                                  Colors.grey[600],
                             ),
                           ),
                         ],
@@ -156,9 +163,12 @@ class _RecommendedCoursesWidgetState extends State<RecommendedCoursesWidget>
             child: Container(
               margin: const EdgeInsets.only(bottom: 12),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: Theme.of(context).cardColor,
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: const Color(0xFFE0E0E0), width: 1),
+                border: Border.all(
+                  color: Theme.of(context).dividerColor,
+                  width: 1,
+                ),
               ),
               child: Row(
                 children: [
@@ -170,28 +180,28 @@ class _RecommendedCoursesWidgetState extends State<RecommendedCoursesWidget>
                     child: Container(
                       width: 80,
                       height: 80,
-                      color: const Color(0xFF6B5FFF).withOpacity(0.1),
+                      color: Theme.of(context).primaryColor.withOpacity(0.1),
                       child: course['image'] != null
                           ? CachedNetworkImage(
                               imageUrl: course['image'],
                               fit: BoxFit.cover,
-                              placeholder: (context, url) => const Center(
+                              placeholder: (context, url) => Center(
                                 child: CircularProgressIndicator(
                                   strokeWidth: 2,
                                   valueColor: AlwaysStoppedAnimation<Color>(
-                                    Color(0xFF6B5FFF),
+                                    Theme.of(context).primaryColor,
                                   ),
                                 ),
                               ),
-                              errorWidget: (context, url, error) => const Icon(
+                              errorWidget: (context, url, error) => Icon(
                                 Icons.image_outlined,
-                                color: Color(0xFF6B5FFF),
+                                color: Theme.of(context).primaryColor,
                                 size: 32,
                               ),
                             )
-                          : const Icon(
+                          : Icon(
                               Icons.school_rounded,
-                              color: Color(0xFF6B5FFF),
+                              color: Theme.of(context).primaryColor,
                               size: 32,
                             ),
                     ),
@@ -204,10 +214,17 @@ class _RecommendedCoursesWidgetState extends State<RecommendedCoursesWidget>
                         children: [
                           Text(
                             course['title'] ?? 'Course',
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.w600,
-                              color: Color(0xFF333333),
+                              color:
+                                  Theme.of(
+                                    context,
+                                  ).textTheme.bodyLarge?.color ??
+                                  Theme.of(
+                                    context,
+                                  ).textTheme.bodyLarge?.color ??
+                                  Colors.black,
                             ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
@@ -217,7 +234,11 @@ class _RecommendedCoursesWidgetState extends State<RecommendedCoursesWidget>
                             course['instructor'] ?? 'Instructor',
                             style: TextStyle(
                               fontSize: 12,
-                              color: Colors.grey[600],
+                              color:
+                                  Theme.of(
+                                    context,
+                                  ).textTheme.bodyMedium?.color ??
+                                  Colors.grey[600],
                             ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
@@ -233,24 +254,39 @@ class _RecommendedCoursesWidgetState extends State<RecommendedCoursesWidget>
                               const SizedBox(width: 4),
                               Text(
                                 '${course['rating'] ?? 4.5}',
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 12,
                                   fontWeight: FontWeight.w600,
-                                  color: Color(0xFF333333),
+                                  color:
+                                      Theme.of(
+                                        context,
+                                      ).textTheme.bodyLarge?.color ??
+                                      Theme.of(
+                                        context,
+                                      ).textTheme.bodyLarge?.color ??
+                                      Colors.black,
                                 ),
                               ),
                               const SizedBox(width: 12),
                               Icon(
                                 Icons.access_time_rounded,
                                 size: 14,
-                                color: Colors.grey[600],
+                                color:
+                                    Theme.of(
+                                      context,
+                                    ).textTheme.bodyMedium?.color ??
+                                    Colors.grey[600],
                               ),
                               const SizedBox(width: 4),
                               Text(
                                 course['duration'] ?? '4 weeks',
                                 style: TextStyle(
                                   fontSize: 12,
-                                  color: Colors.grey[600],
+                                  color:
+                                      Theme.of(
+                                        context,
+                                      ).textTheme.bodyMedium?.color ??
+                                      Colors.grey[600],
                                 ),
                               ),
                             ],

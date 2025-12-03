@@ -74,8 +74,8 @@ class _AchievementsWidgetState extends State<AchievementsWidget>
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 colors: [
-                  Colors.white,
-                  Color.lerp(Colors.white, Colors.black, 0.02)!,
+                  Theme.of(context).cardColor,
+                  Theme.of(context).cardColor,
                 ],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
@@ -97,22 +97,25 @@ class _AchievementsWidgetState extends State<AchievementsWidget>
                     Container(
                       padding: const EdgeInsets.all(10),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFFF9800).withOpacity(0.1),
+                        color: Colors.orange.withOpacity(0.1),
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      child: const Icon(
+                      child: Icon(
                         Icons.emoji_events_rounded,
-                        color: Color(0xFFFF9800),
+                        color: Colors.orange,
                         size: 24,
                       ),
                     ),
                     const SizedBox(width: 12),
-                    const Text(
+                    Text(
                       'Achievements',
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w700,
-                        color: Color(0xFF333333),
+                        color:
+                            Theme.of(context).textTheme.bodyLarge?.color ??
+                            Theme.of(context).textTheme.bodyLarge?.color ??
+                            Colors.black,
                       ),
                     ),
                   ],
@@ -134,7 +137,11 @@ class _AchievementsWidgetState extends State<AchievementsWidget>
                             'Start your journey to earn achievements',
                             style: TextStyle(
                               fontSize: 14,
-                              color: Colors.grey[600],
+                              color:
+                                  Theme.of(
+                                    context,
+                                  ).textTheme.bodyMedium?.color ??
+                                  Colors.grey[600],
                             ),
                             textAlign: TextAlign.center,
                           ),
@@ -182,7 +189,7 @@ class _AchievementsWidgetState extends State<AchievementsWidget>
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: isEarned
-                      ? [const Color(0xFFFF9800), const Color(0xFFFFA726)]
+                      ? [Colors.orange, Colors.orangeAccent]
                       : [Colors.grey[300]!, Colors.grey[400]!],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
@@ -191,7 +198,7 @@ class _AchievementsWidgetState extends State<AchievementsWidget>
                 boxShadow: [
                   if (isEarned)
                     BoxShadow(
-                      color: const Color(0xFFFF9800).withOpacity(0.3),
+                      color: Colors.orange.withOpacity(0.3),
                       blurRadius: 8,
                       offset: const Offset(0, 2),
                     ),

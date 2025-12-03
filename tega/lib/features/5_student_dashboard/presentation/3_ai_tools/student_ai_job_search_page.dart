@@ -399,10 +399,13 @@ class _JobRecommendationScreenState extends State<JobRecommendationScreen>
             : 20,
       ),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
+        gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [Color(0xFF6B5FFF), Color(0xFF8F7FFF)],
+          colors: [
+            Theme.of(context).primaryColor,
+            Theme.of(context).primaryColorLight,
+          ],
         ),
         borderRadius: BorderRadius.circular(
           isLargeDesktop
@@ -417,7 +420,7 @@ class _JobRecommendationScreenState extends State<JobRecommendationScreen>
         ),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF6B5FFF).withOpacity(0.3),
+            color: Theme.of(context).primaryColor.withOpacity(0.3),
             blurRadius: isLargeDesktop
                 ? 24
                 : isDesktop
@@ -549,18 +552,16 @@ class _JobRecommendationScreenState extends State<JobRecommendationScreen>
           title: 'Active Jobs',
           value: _activeJobs.toString(),
           icon: Icons.work_rounded,
-          color: const Color(0xFF4CAF50),
-          gradient: const LinearGradient(
-            colors: [Color(0xFF4CAF50), Color(0xFF66BB6A)],
-          ),
+          color: Colors.green,
+          gradient: LinearGradient(colors: [Colors.green, Colors.greenAccent]),
         ),
         _buildStatCard(
           title: 'Companies',
           value: _companies.toString(),
           icon: Icons.business_rounded,
-          color: const Color(0xFF2196F3),
-          gradient: const LinearGradient(
-            colors: [Color(0xFF2196F3), Color(0xFF42A5F5)],
+          color: Colors.blue,
+          gradient: LinearGradient(
+            colors: [Colors.blue, Colors.lightBlueAccent],
           ),
         ),
       ],
@@ -768,7 +769,7 @@ class _JobRecommendationScreenState extends State<JobRecommendationScreen>
             ),
             prefixIcon: Icon(
               Icons.search,
-              color: const Color(0xFF6B5FFF),
+              color: Theme.of(context).primaryColor,
               size: isLargeDesktop
                   ? 28
                   : isDesktop

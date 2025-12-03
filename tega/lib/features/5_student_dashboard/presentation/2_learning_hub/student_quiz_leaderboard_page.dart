@@ -8,15 +8,18 @@ class LeaderboardPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         automaticallyImplyLeading: false,
-        backgroundColor: Colors.white,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         elevation: 0,
         title: Row(
           children: [
             IconButton(
-              icon: const Icon(Icons.arrow_back, color: Colors.black87),
+              icon: Icon(
+                Icons.arrow_back,
+                color: Theme.of(context).iconTheme.color,
+              ),
               onPressed: () {
                 // Redirect to student home page
                 Navigator.pushAndRemoveUntil(
@@ -28,12 +31,12 @@ class LeaderboardPage extends StatelessWidget {
                 );
               },
             ),
-            const Text(
+            Text(
               "Leaderboard",
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w700,
-                color: Colors.black87,
+                color: Theme.of(context).textTheme.bodyLarge?.color,
               ),
             ),
           ],
@@ -48,9 +51,9 @@ class LeaderboardPage extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
-                _buildTab("All Students", true),
-                _buildTab("My Branch", false),
-                _buildTab("My College", false),
+                _buildTab(context, "All Students", true),
+                _buildTab(context, "My Branch", false),
+                _buildTab(context, "My College", false),
               ],
             ),
             const SizedBox(height: 20),
@@ -59,11 +62,11 @@ class LeaderboardPage extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: Theme.of(context).cardColor,
                 borderRadius: BorderRadius.circular(12),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
+                    color: Theme.of(context).shadowColor.withOpacity(0.05),
                     blurRadius: 8,
                     offset: const Offset(0, 3),
                   ),
@@ -71,16 +74,35 @@ class LeaderboardPage extends StatelessWidget {
               ),
               child: Column(
                 children: [
-                  _buildLeaderboardTile(1, "Sarah Johnson", "3,240 XP", "👑"),
-                  _buildLeaderboardTile(2, "Mike Chen", "2,980 XP", ""),
                   _buildLeaderboardTile(
+                    context,
+                    1,
+                    "Sarah Johnson",
+                    "3,240 XP",
+                    "👑",
+                  ),
+                  _buildLeaderboardTile(
+                    context,
+                    2,
+                    "Mike Chen",
+                    "2,980 XP",
+                    "",
+                  ),
+                  _buildLeaderboardTile(
+                    context,
                     42,
                     "You",
                     "2,450 XP",
                     "⬆️3",
                     isHighlighted: true,
                   ),
-                  _buildLeaderboardTile(43, "James Wilson", "2,430 XP", ""),
+                  _buildLeaderboardTile(
+                    context,
+                    43,
+                    "James Wilson",
+                    "2,430 XP",
+                    "",
+                  ),
                 ],
               ),
             ),
@@ -91,11 +113,11 @@ class LeaderboardPage extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: Theme.of(context).cardColor,
                 borderRadius: BorderRadius.circular(12),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
+                    color: Theme.of(context).shadowColor.withOpacity(0.05),
                     blurRadius: 8,
                     offset: const Offset(0, 3),
                   ),
@@ -104,9 +126,9 @@ class LeaderboardPage extends StatelessWidget {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: [
-                  _buildStat("Total XP", "2,450"),
-                  _buildStat("Rank", "#42"),
-                  _buildStat("Top %", "15%"),
+                  _buildStat(context, "Total XP", "2,450"),
+                  _buildStat(context, "Rank", "#42"),
+                  _buildStat(context, "Top %", "15%"),
                 ],
               ),
             ),
@@ -116,11 +138,13 @@ class LeaderboardPage extends StatelessWidget {
     );
   }
 
-  Widget _buildTab(String label, bool isActive) {
+  Widget _buildTab(BuildContext context, String label, bool isActive) {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 14),
       decoration: BoxDecoration(
-        color: isActive ? const Color(0xFF6B5FFF) : Colors.grey[200],
+        color: isActive
+            ? Theme.of(context).primaryColor
+            : Theme.of(context).dividerColor,
         borderRadius: BorderRadius.circular(20),
       ),
       child: Text(
@@ -128,13 +152,16 @@ class LeaderboardPage extends StatelessWidget {
         style: TextStyle(
           fontSize: 13,
           fontWeight: FontWeight.w600,
-          color: isActive ? Colors.white : Colors.black54,
+          color: isActive
+              ? Colors.white
+              : Theme.of(context).textTheme.bodyMedium?.color,
         ),
       ),
     );
   }
 
   Widget _buildLeaderboardTile(
+    BuildContext context,
     int rank,
     String name,
     String xp,
@@ -145,7 +172,9 @@ class LeaderboardPage extends StatelessWidget {
       margin: const EdgeInsets.symmetric(vertical: 6),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: isHighlighted ? const Color(0xFFF5F3FF) : Colors.transparent,
+        color: isHighlighted
+            ? Theme.of(context).primaryColor.withOpacity(0.1)
+            : Colors.transparent,
         borderRadius: BorderRadius.circular(10),
       ),
       child: Row(
@@ -155,7 +184,9 @@ class LeaderboardPage extends StatelessWidget {
             style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.bold,
-              color: isHighlighted ? const Color(0xFF6B5FFF) : Colors.black87,
+              color: isHighlighted
+                  ? Theme.of(context).primaryColor
+                  : Theme.of(context).textTheme.bodyLarge?.color,
             ),
           ),
           const SizedBox(width: 12),
@@ -169,15 +200,19 @@ class LeaderboardPage extends StatelessWidget {
           Expanded(
             child: Text(
               name,
-              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: Theme.of(context).textTheme.bodyLarge?.color,
+              ),
             ),
           ),
           Text(
             xp,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w500,
-              color: Colors.black54,
+              color: Theme.of(context).textTheme.bodyMedium?.color,
             ),
           ),
           if (badge.isNotEmpty) ...[
@@ -189,21 +224,24 @@ class LeaderboardPage extends StatelessWidget {
     );
   }
 
-  Widget _buildStat(String label, String value) {
+  Widget _buildStat(BuildContext context, String label, String value) {
     return Column(
       children: [
         Text(
           value,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.bold,
-            color: Color(0xFF6B5FFF),
+            color: Theme.of(context).primaryColor,
           ),
         ),
         const SizedBox(height: 4),
         Text(
           label,
-          style: const TextStyle(fontSize: 13, color: Colors.black54),
+          style: TextStyle(
+            fontSize: 13,
+            color: Theme.of(context).textTheme.bodyMedium?.color,
+          ),
         ),
       ],
     );
