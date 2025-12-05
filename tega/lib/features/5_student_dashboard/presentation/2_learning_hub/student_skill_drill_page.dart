@@ -144,7 +144,7 @@ class SkillDrillPage extends StatelessWidget {
             width: double.infinity,
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-              gradient: const LinearGradient(
+              gradient: LinearGradient(
                 colors: [
                   Theme.of(context).primaryColor,
                   Theme.of(context).primaryColorDark,
@@ -225,7 +225,7 @@ class SkillDrillPage extends StatelessWidget {
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                gradient: const LinearGradient(
+                gradient: LinearGradient(
                   colors: [
                     Theme.of(context).primaryColorLight,
                     Theme.of(context).primaryColor,

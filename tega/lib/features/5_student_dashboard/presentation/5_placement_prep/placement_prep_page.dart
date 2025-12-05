@@ -193,11 +193,7 @@ class _PlacementPrepPageState extends State<PlacementPrepPage> {
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [
-              Theme.of(context).primaryColor,
-              Color(0xFF9C88FF),
-              Color(0xFFB19CD9),
-            ],
+            colors: [Theme.of(context).primaryColor, Color(0xFF6B5FFF)],
           ),
           borderRadius: BorderRadius.circular(
             isLargeDesktop

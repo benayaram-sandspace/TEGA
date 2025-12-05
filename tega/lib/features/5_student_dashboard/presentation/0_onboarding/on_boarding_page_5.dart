@@ -38,8 +38,7 @@ class OnboardingScreen5 extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w500,
-                      color:
-                          Theme.of(context).textTheme.bodyMedium?.color,
+                      color: Theme.of(context).textTheme.bodyMedium?.color,
                     ),
                   ),
                 ],
@@ -54,7 +53,9 @@ class OnboardingScreen5 extends StatelessWidget {
                 backgroundColor: Theme.of(
                   context,
                 ).dividerColor.withOpacity(0.3),
-                valueColor: AlwaysStoppedAnimation(Theme.of(context).primaryColor),
+                valueColor: AlwaysStoppedAnimation(
+                  Theme.of(context).primaryColor,
+                ),
               ),
             ),
 
@@ -79,8 +80,7 @@ class OnboardingScreen5 extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
-                        color:
-                            Theme.of(context).textTheme.bodyLarge?.color,
+                        color: Theme.of(context).textTheme.bodyLarge?.color,
                         height: 1.3,
                       ),
                     ),
@@ -89,8 +89,7 @@ class OnboardingScreen5 extends StatelessWidget {
                       "Based on your responses, we've identified your strengths and growth areas",
                       style: TextStyle(
                         fontSize: 14,
-                        color:
-                            Theme.of(context).textTheme.bodyMedium?.color,
+                        color: Theme.of(context).textTheme.bodyMedium?.color,
                       ),
                     ),
 
@@ -186,10 +185,20 @@ class OnboardingScreen5 extends StatelessWidget {
                       },
                       icon: Icon(
                         Icons.edit,
-                        color:
-                            Theme.of(context).iconTheme.color,
+                        color: Theme.of(context).iconTheme.color,
+                      ),
+                      label: Text(
+                        "Edit Responses",
+                        style: TextStyle(
+                          color: Theme.of(context).textTheme.bodyLarge?.color,
+                        ),
+                      ),
+                      style: OutlinedButton.styleFrom(
+                        minimumSize: const Size(double.infinity, 50),
+                        shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
+                        side: BorderSide(color: Theme.of(context).dividerColor),
                       ),
                     ),
                   ],
@@ -227,18 +236,14 @@ class OnboardingScreen5 extends StatelessWidget {
         children: [
           Row(
             children: [
-              Icon(
-                icon,
-                color: Theme.of(context).iconTheme.color,
-              ),
+              Icon(icon, color: Theme.of(context).iconTheme.color),
               const SizedBox(width: 8),
               Text(
                 title,
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
-                  color:
-                      Theme.of(context).textTheme.bodyLarge?.color,
+                  color: Theme.of(context).textTheme.bodyLarge?.color,
                 ),
               ),
             ],

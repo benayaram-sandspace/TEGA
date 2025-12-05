@@ -407,7 +407,9 @@ class _InternshipsPageState extends State<InternshipsPage> {
                   },
                   selectedColor: Theme.of(context).primaryColor,
                   labelStyle: TextStyle(
-                    color: isSelected ? Colors.white : Colors.black87,
+                    color: isSelected
+                        ? Colors.white
+                        : Theme.of(context).textTheme.bodyLarge?.color,
                     fontSize: isLargeDesktop
                         ? 17
                         : isDesktop
@@ -680,10 +682,7 @@ class _InternshipsPageState extends State<InternshipsPage> {
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [
-            Theme.of(context).primaryColor,
-            Theme.of(context).primaryColorLight,
-          ],
+          colors: [Theme.of(context).primaryColor, Color(0xFF6B5FFF)],
         ),
         borderRadius: BorderRadius.circular(
           isLargeDesktop
@@ -1200,6 +1199,7 @@ class _InternshipsPageState extends State<InternshipsPage> {
                     : isSmallScreen
                     ? 11
                     : 13,
+                color: Colors.black87,
               ),
               items: _sortOptions.map((option) {
                 return DropdownMenuItem(
@@ -1240,6 +1240,7 @@ class _InternshipsPageState extends State<InternshipsPage> {
                               : isSmallScreen
                               ? 11
                               : 13,
+                          color: Colors.black87,
                         ),
                       ),
                     ],

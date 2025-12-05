@@ -1136,10 +1136,7 @@ class _StudentHomePageState extends State<StudentHomePage>
       padding: headerPadding,
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [
-            Theme.of(context).primaryColor,
-            Theme.of(context).primaryColorDark,
-          ],
+          colors: [Theme.of(context).primaryColor, Color(0xFF6B5FFF)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -1170,7 +1167,7 @@ class _StudentHomePageState extends State<StudentHomePage>
           Text(
             _currentUser?.name ?? 'Student',
             style: TextStyle(
-              color: Theme.of(context).cardColor,
+              color: Colors.white,
               fontWeight: FontWeight.bold,
               fontSize: nameFontSize,
             ),
@@ -1181,7 +1178,7 @@ class _StudentHomePageState extends State<StudentHomePage>
           Text(
             display,
             style: TextStyle(
-              color: Theme.of(context).cardColor.withOpacity(0.8),
+              color: Colors.white.withOpacity(0.8),
               fontSize: detailFontSize,
             ),
             maxLines: isSmallScreen ? 1 : 2,

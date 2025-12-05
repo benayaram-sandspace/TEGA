@@ -11,7 +11,7 @@ class SkillGraphPage extends StatelessWidget {
         automaticallyImplyLeading: true,
         elevation: 0,
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-        title: const Text(
+        title: Text(
           "Skill Graph",
           style: TextStyle(
             fontSize: 18,
@@ -33,7 +33,7 @@ class SkillGraphPage extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // ===== Top Section =====
-            const Text(
+            Text(
               "Hi Ramesh,",
               style: TextStyle(
                 fontSize: 20,
@@ -42,7 +42,7 @@ class SkillGraphPage extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 6),
-            const Text(
+            Text(
               "Here's your career map!",
               style: TextStyle(
                 fontSize: 15,
@@ -77,7 +77,7 @@ class SkillGraphPage extends StatelessWidget {
             // Skill Snapshot
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: const [
+              children: [
                 Text(
                   "Your Skill Snapshot",
                   style: TextStyle(
@@ -138,7 +138,7 @@ class SkillGraphPage extends StatelessWidget {
                   ),
                   side: BorderSide(color: Theme.of(context).primaryColor),
                 ),
-                child: const Text(
+                child: Text(
                   "Find Career Paths",
                   style: TextStyle(
                     fontSize: 15,
@@ -168,7 +168,7 @@ class SkillGraphPage extends StatelessWidget {
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
-                      children: const [
+                      children: [
                         Text(
                           "Learning SQL could unlock 3 new career paths for you",
                           style: TextStyle(
@@ -191,7 +191,7 @@ class SkillGraphPage extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(width: 6),
-                  const Text(
+                  Text(
                     "Explore",
                     style: TextStyle(
                       fontSize: 13,
@@ -221,7 +221,7 @@ class SkillGraphPage extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
+                  Text(
                     "Choose a skill to learn",
                     style: TextStyle(
                       fontSize: 15,
@@ -316,12 +316,12 @@ class SkillGraphPage extends StatelessWidget {
             const SizedBox(height: 20),
 
             // Career Path Upgrades
-            const Text(
+            Text(
               "Career Path Upgrades",
               style: TextStyle(
                 fontSize: 15,
                 fontWeight: FontWeight.w700,
-                color: Colors.black87,
+                color: Theme.of(context).textTheme.bodyLarge?.color,
               ),
             ),
             const SizedBox(height: 12),

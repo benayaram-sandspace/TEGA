@@ -677,7 +677,7 @@ class _MyResultsPageState extends State<MyResultsPage>
                     : 20,
               ),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: Theme.of(context).cardColor,
                 borderRadius: BorderRadius.circular(
                   isLargeDesktop
                       ? 24
@@ -691,7 +691,7 @@ class _MyResultsPageState extends State<MyResultsPage>
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
+                    color: Theme.of(context).shadowColor.withOpacity(0.05),
                     blurRadius: isLargeDesktop
                         ? 20
                         : isDesktop
@@ -737,7 +737,7 @@ class _MyResultsPageState extends State<MyResultsPage>
                         : isSmallScreen
                         ? 45
                         : 50,
-                    color: Colors.grey[200],
+                    color: Theme.of(context).dividerColor,
                   ),
                   Expanded(
                     child: _buildModernStatItem(
@@ -758,7 +758,7 @@ class _MyResultsPageState extends State<MyResultsPage>
                         : isSmallScreen
                         ? 45
                         : 50,
-                    color: Colors.grey[200],
+                    color: Theme.of(context).dividerColor,
                   ),
                   Expanded(
                     child: _buildModernStatItem(
@@ -779,7 +779,7 @@ class _MyResultsPageState extends State<MyResultsPage>
                         : isSmallScreen
                         ? 45
                         : 50,
-                    color: Colors.grey[200],
+                    color: Theme.of(context).dividerColor,
                   ),
                   Expanded(
                     child: _buildModernStatItem(
@@ -894,7 +894,7 @@ class _MyResultsPageState extends State<MyResultsPage>
                 : isSmallScreen
                 ? 9
                 : 11,
-            color: Colors.grey[600],
+            color: Theme.of(context).textTheme.bodyMedium?.color,
             fontWeight: FontWeight.w500,
           ),
           textAlign: TextAlign.center,
@@ -936,7 +936,7 @@ class _MyResultsPageState extends State<MyResultsPage>
                         ? 18
                         : 20,
                     fontWeight: FontWeight.bold,
-                    color: const Color(0xFF1A1A1A),
+                    color: Theme.of(context).textTheme.titleLarge?.color,
                   ),
                 ),
                 Container(
@@ -1008,7 +1008,7 @@ class _MyResultsPageState extends State<MyResultsPage>
             // Search Bar
             Container(
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: Theme.of(context).cardColor,
                 borderRadius: BorderRadius.circular(
                   isLargeDesktop
                       ? 16
@@ -1022,7 +1022,7 @@ class _MyResultsPageState extends State<MyResultsPage>
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
+                    color: Theme.of(context).shadowColor.withOpacity(0.05),
                     blurRadius: isLargeDesktop
                         ? 12
                         : isDesktop
@@ -1364,7 +1364,7 @@ class _MyResultsPageState extends State<MyResultsPage>
 
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(
           isLargeDesktop
               ? 20
@@ -1378,7 +1378,7 @@ class _MyResultsPageState extends State<MyResultsPage>
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Theme.of(context).shadowColor.withOpacity(0.05),
             blurRadius: isLargeDesktop
                 ? 16
                 : isDesktop
@@ -1506,7 +1506,9 @@ class _MyResultsPageState extends State<MyResultsPage>
                                     ? 14
                                     : 16,
                                 fontWeight: FontWeight.bold,
-                                color: const Color(0xFF1A1A1A),
+                                color: Theme.of(
+                                  context,
+                                ).textTheme.titleLarge?.color,
                               ),
                               maxLines: isLargeDesktop || isDesktop
                                   ? 2
@@ -1591,7 +1593,7 @@ class _MyResultsPageState extends State<MyResultsPage>
                               : isSmallScreen
                               ? 11
                               : 12,
-                          color: Colors.grey[600],
+                          color: Theme.of(context).textTheme.bodyMedium?.color,
                           fontWeight: FontWeight.w500,
                         ),
                       ),
@@ -1641,7 +1643,9 @@ class _MyResultsPageState extends State<MyResultsPage>
                                   : isSmallScreen
                                   ? 9
                                   : 11,
-                              color: Colors.grey[600],
+                              color: Theme.of(
+                                context,
+                              ).textTheme.bodyMedium?.color,
                             ),
                           ),
                         ],
@@ -1696,7 +1700,7 @@ class _MyResultsPageState extends State<MyResultsPage>
               : isSmallScreen
               ? 10
               : 12,
-          color: Colors.grey[600],
+          color: Theme.of(context).textTheme.bodyMedium?.color,
         ),
         SizedBox(
           width: isLargeDesktop || isDesktop
@@ -1720,7 +1724,7 @@ class _MyResultsPageState extends State<MyResultsPage>
                   : isSmallScreen
                   ? 9
                   : 11,
-              color: Colors.grey[600],
+              color: Theme.of(context).textTheme.bodyMedium?.color,
             ),
             overflow: TextOverflow.ellipsis,
           ),
@@ -2116,7 +2120,7 @@ class _MyResultsPageState extends State<MyResultsPage>
                       : isSmallScreen
                       ? 10
                       : 11,
-                  color: Colors.grey[600],
+                  color: Theme.of(context).textTheme.bodyMedium?.color,
                 ),
               ),
               SizedBox(
@@ -2141,7 +2145,7 @@ class _MyResultsPageState extends State<MyResultsPage>
                       ? 12
                       : 13,
                   fontWeight: FontWeight.w600,
-                  color: const Color(0xFF333333),
+                  color: Theme.of(context).textTheme.bodyLarge?.color,
                 ),
                 maxLines: isLargeDesktop || isDesktop
                     ? 3
@@ -2188,7 +2192,7 @@ class _MyResultsPageState extends State<MyResultsPage>
                   : isSmallScreen
                   ? 14
                   : 16,
-              color: Colors.grey[600],
+              color: Theme.of(context).textTheme.bodyMedium?.color,
               fontWeight: FontWeight.w500,
             ),
           ),
@@ -2256,7 +2260,7 @@ class _MyResultsPageState extends State<MyResultsPage>
                     ? 16
                     : 18,
                 fontWeight: FontWeight.bold,
-                color: Colors.grey[700],
+                color: Theme.of(context).textTheme.bodyMedium?.color,
               ),
               textAlign: TextAlign.center,
             ),
@@ -2284,7 +2288,7 @@ class _MyResultsPageState extends State<MyResultsPage>
                       : isSmallScreen
                       ? 11
                       : 12,
-                  color: Colors.grey[600],
+                  color: Theme.of(context).textTheme.bodyMedium?.color,
                 ),
                 textAlign: TextAlign.center,
                 maxLines: isLargeDesktop || isDesktop
@@ -2489,7 +2493,7 @@ class _MyResultsPageState extends State<MyResultsPage>
                       ? 16
                       : 18,
                   fontWeight: FontWeight.w700,
-                  color: const Color(0xFF333333),
+                  color: Theme.of(context).textTheme.bodyLarge?.color,
                 ),
                 textAlign: TextAlign.center,
               ),
@@ -2516,7 +2520,7 @@ class _MyResultsPageState extends State<MyResultsPage>
                       : isSmallScreen
                       ? 11
                       : 12,
-                  color: Colors.grey[600],
+                  color: Theme.of(context).textTheme.bodyMedium?.color,
                 ),
                 textAlign: TextAlign.center,
               ),
@@ -2686,7 +2690,7 @@ class _MyResultsPageState extends State<MyResultsPage>
                     ? 18
                     : 20,
                 fontWeight: FontWeight.w700,
-                color: const Color(0xFF333333),
+                color: Theme.of(context).textTheme.bodyLarge?.color,
               ),
               textAlign: TextAlign.center,
             ),
@@ -2713,7 +2717,7 @@ class _MyResultsPageState extends State<MyResultsPage>
                     : isSmallScreen
                     ? 11
                     : 12,
-                color: Colors.grey[600],
+                color: Theme.of(context).textTheme.bodyMedium?.color,
                 height: 1.5,
               ),
               textAlign: TextAlign.center,

@@ -1125,7 +1125,7 @@ class _ResumeBuilderPageState extends State<ResumeBuilderPage>
                     ),
                     IconButton(
                       onPressed: () => _addCertification(),
-                      icon: const Icon(
+                      icon: Icon(
                         Icons.add_circle,
                         color: Theme.of(context).primaryColor,
                         size: 28,
@@ -1174,7 +1174,7 @@ class _ResumeBuilderPageState extends State<ResumeBuilderPage>
             const SizedBox(width: 10),
             Text(
               label,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 15,
                 fontWeight: FontWeight.w700,
                 color: Theme.of(context).textTheme.bodyLarge?.color,
@@ -1202,7 +1202,7 @@ class _ResumeBuilderPageState extends State<ResumeBuilderPage>
               setState(() {});
               _updateResumeData();
             },
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 15,
               fontWeight: FontWeight.w500,
               color: Theme.of(context).textTheme.bodyLarge?.color,
@@ -1226,7 +1226,7 @@ class _ResumeBuilderPageState extends State<ResumeBuilderPage>
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: const BorderSide(
+                borderSide: BorderSide(
                   color: Theme.of(context).primaryColor,
                   width: 2,
                 ),
@@ -1389,7 +1389,7 @@ class _ResumeBuilderPageState extends State<ResumeBuilderPage>
     if (_selectedTemplate == null) {
       return Container(
         color: Theme.of(context).scaffoldBackgroundColor,
-        child: const Center(
+        child: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [

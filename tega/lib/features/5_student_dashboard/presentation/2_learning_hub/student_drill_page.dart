@@ -77,7 +77,7 @@ class DrillDetailPage extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 10),
-            const Text(
+            Text(
               'Current Streak',
               style: TextStyle(
                 color: Theme.of(context).textTheme.bodyMedium?.color,

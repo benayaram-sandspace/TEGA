@@ -124,18 +124,24 @@ class _OnboardingScreen4State extends State<OnboardingScreen4> {
                         Container(
                           height: 8,
                           decoration: BoxDecoration(
-                            color: Theme.of(
-                              context,
-                            ).dividerColor.withOpacity(0.2),
+                            color: Theme.of(context).dividerColor.withOpacity(0.2),
                             borderRadius: BorderRadius.circular(4),
                           ),
-                            );
-                          },
                         ),
-                      ),
-                    ],
+                        FractionallySizedBox(
+                          widthFactor: 4 / 6, // Step 4 of 6
+                          child: Container(
+                            height: 8,
+                            decoration: BoxDecoration(
+                              color: Theme.of(context).primaryColor,
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
+                ],
               ),
 
               // ✅ Bottom "Next" button (disabled until all questions answered)

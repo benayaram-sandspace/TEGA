@@ -849,10 +849,7 @@ class _StudentProfilePageState extends State<StudentProfilePage> {
             gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
-              colors: [
-                Theme.of(context).primaryColor,
-                Theme.of(context).primaryColorDark,
-              ],
+              colors: [Theme.of(context).primaryColor, Color(0xFF6B5FFF)],
             ),
           ),
           child: SafeArea(
@@ -898,7 +895,7 @@ class _StudentProfilePageState extends State<StudentProfilePage> {
                           ? 20
                           : 24,
                       fontWeight: FontWeight.bold,
-                      color: Theme.of(context).colorScheme.onPrimary,
+                      color: Colors.white,
                     ),
                   ),
                   SizedBox(
@@ -936,9 +933,7 @@ class _StudentProfilePageState extends State<StudentProfilePage> {
                             : isSmallScreen
                             ? 12
                             : 14,
-                        color: Theme.of(
-                          context,
-                        ).colorScheme.onPrimary.withOpacity(0.7),
+                        color: Colors.white.withOpacity(0.9),
                       ),
                       textAlign: TextAlign.center,
                       maxLines: 2,
@@ -990,7 +985,7 @@ class _StudentProfilePageState extends State<StudentProfilePage> {
             : 20,
       ),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(
           isLargeDesktop
               ? 20
@@ -1004,7 +999,7 @@ class _StudentProfilePageState extends State<StudentProfilePage> {
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
+            color: Theme.of(context).shadowColor.withOpacity(0.05),
             spreadRadius: isLargeDesktop || isDesktop ? 1.5 : 1,
             blurRadius: isLargeDesktop
                 ? 12
@@ -1100,7 +1095,7 @@ class _StudentProfilePageState extends State<StudentProfilePage> {
                         ? 16
                         : 18,
                     fontWeight: FontWeight.bold,
-                    color: Colors.black87,
+                    color: Theme.of(context).textTheme.titleLarge?.color,
                   ),
                 ),
               ),
@@ -1191,7 +1186,7 @@ class _StudentProfilePageState extends State<StudentProfilePage> {
             : 20,
       ),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(
           isLargeDesktop
               ? 20
@@ -1205,7 +1200,7 @@ class _StudentProfilePageState extends State<StudentProfilePage> {
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
+            color: Theme.of(context).shadowColor.withOpacity(0.05),
             spreadRadius: isLargeDesktop || isDesktop ? 1.5 : 1,
             blurRadius: isLargeDesktop
                 ? 12
@@ -1301,7 +1296,7 @@ class _StudentProfilePageState extends State<StudentProfilePage> {
                         ? 16
                         : 18,
                     fontWeight: FontWeight.bold,
-                    color: Colors.black87,
+                    color: Theme.of(context).textTheme.titleLarge?.color,
                   ),
                 ),
               ),
@@ -1384,7 +1379,7 @@ class _StudentProfilePageState extends State<StudentProfilePage> {
             : 20,
       ),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(
           isLargeDesktop
               ? 20
@@ -1398,7 +1393,7 @@ class _StudentProfilePageState extends State<StudentProfilePage> {
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
+            color: Theme.of(context).shadowColor.withOpacity(0.05),
             spreadRadius: isLargeDesktop || isDesktop ? 1.5 : 1,
             blurRadius: isLargeDesktop
                 ? 12
@@ -1494,7 +1489,7 @@ class _StudentProfilePageState extends State<StudentProfilePage> {
                         ? 16
                         : 18,
                     fontWeight: FontWeight.bold,
-                    color: Colors.black87,
+                    color: Theme.of(context).textTheme.titleLarge?.color,
                   ),
                 ),
               ),
@@ -1565,7 +1560,7 @@ class _StudentProfilePageState extends State<StudentProfilePage> {
             : 20,
       ),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(
           isLargeDesktop
               ? 20
@@ -1579,7 +1574,7 @@ class _StudentProfilePageState extends State<StudentProfilePage> {
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
+            color: Theme.of(context).shadowColor.withOpacity(0.05),
             spreadRadius: isLargeDesktop || isDesktop ? 1.5 : 1,
             blurRadius: isLargeDesktop
                 ? 12
@@ -1675,7 +1670,7 @@ class _StudentProfilePageState extends State<StudentProfilePage> {
                         ? 16
                         : 18,
                     fontWeight: FontWeight.bold,
-                    color: Colors.black87,
+                    color: Theme.of(context).textTheme.titleLarge?.color,
                   ),
                 ),
               ),
@@ -1772,7 +1767,7 @@ class _StudentProfilePageState extends State<StudentProfilePage> {
             : 20,
       ),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(
           isLargeDesktop
               ? 20
@@ -1786,7 +1781,7 @@ class _StudentProfilePageState extends State<StudentProfilePage> {
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
+            color: Theme.of(context).shadowColor.withOpacity(0.05),
             spreadRadius: isLargeDesktop || isDesktop ? 1.5 : 1,
             blurRadius: isLargeDesktop
                 ? 12
@@ -1882,7 +1877,7 @@ class _StudentProfilePageState extends State<StudentProfilePage> {
                         ? 16
                         : 18,
                     fontWeight: FontWeight.bold,
-                    color: Colors.black87,
+                    color: Theme.of(context).textTheme.titleLarge?.color,
                   ),
                 ),
               ),
@@ -1983,7 +1978,7 @@ class _StudentProfilePageState extends State<StudentProfilePage> {
             : 20,
       ),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(
           isLargeDesktop
               ? 20
@@ -1997,7 +1992,7 @@ class _StudentProfilePageState extends State<StudentProfilePage> {
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
+            color: Theme.of(context).shadowColor.withOpacity(0.05),
             spreadRadius: isLargeDesktop || isDesktop ? 1.5 : 1,
             blurRadius: isLargeDesktop
                 ? 12
@@ -2093,7 +2088,7 @@ class _StudentProfilePageState extends State<StudentProfilePage> {
                         ? 16
                         : 18,
                     fontWeight: FontWeight.bold,
-                    color: Colors.black87,
+                    color: Theme.of(context).textTheme.titleLarge?.color,
                   ),
                 ),
               ),
@@ -2195,7 +2190,7 @@ class _StudentProfilePageState extends State<StudentProfilePage> {
                   ? 14
                   : 16,
               fontWeight: FontWeight.bold,
-              color: Colors.black87,
+              color: Theme.of(context).textTheme.titleLarge?.color,
             ),
           ),
           SizedBox(
@@ -2275,7 +2270,7 @@ class _StudentProfilePageState extends State<StudentProfilePage> {
             : 20,
       ),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(
           isLargeDesktop
               ? 20
@@ -2289,7 +2284,7 @@ class _StudentProfilePageState extends State<StudentProfilePage> {
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
+            color: Theme.of(context).shadowColor.withOpacity(0.05),
             spreadRadius: isLargeDesktop || isDesktop ? 1.5 : 1,
             blurRadius: isLargeDesktop
                 ? 12
@@ -2385,7 +2380,7 @@ class _StudentProfilePageState extends State<StudentProfilePage> {
                         ? 16
                         : 18,
                     fontWeight: FontWeight.bold,
-                    color: Colors.black87,
+                    color: Theme.of(context).textTheme.titleLarge?.color,
                   ),
                 ),
               ),
@@ -2510,7 +2505,7 @@ class _StudentProfilePageState extends State<StudentProfilePage> {
                 : isSmallScreen
                 ? 18
                 : 20,
-            color: Colors.grey[600],
+            color: Theme.of(context).iconTheme.color,
           ),
           SizedBox(
             width: isLargeDesktop
@@ -2539,7 +2534,7 @@ class _StudentProfilePageState extends State<StudentProfilePage> {
                         : isSmallScreen
                         ? 11
                         : 12,
-                    color: Colors.grey[600],
+                    color: Theme.of(context).textTheme.bodyMedium?.color,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
@@ -2571,7 +2566,7 @@ class _StudentProfilePageState extends State<StudentProfilePage> {
                               : isSmallScreen
                               ? 13
                               : 14,
-                          color: Colors.black87,
+                          color: Theme.of(context).textTheme.bodyLarge?.color,
                           fontWeight: FontWeight.w500,
                         ),
                         validator: (value) {
@@ -2740,7 +2735,7 @@ class _StudentProfilePageState extends State<StudentProfilePage> {
                               : 14,
                           color: controller.text.isEmpty
                               ? Colors.grey[400]
-                              : Colors.black87,
+                              : Theme.of(context).textTheme.bodyLarge?.color,
                           fontWeight: FontWeight.w500,
                         ),
                         maxLines: maxLines,
@@ -2790,7 +2785,7 @@ class _StudentProfilePageState extends State<StudentProfilePage> {
                 : isSmallScreen
                 ? 18
                 : 20,
-            color: Colors.grey[600],
+            color: Theme.of(context).iconTheme.color,
           ),
           SizedBox(
             width: isLargeDesktop
@@ -2819,7 +2814,7 @@ class _StudentProfilePageState extends State<StudentProfilePage> {
                         : isSmallScreen
                         ? 11
                         : 12,
-                    color: Colors.grey[600],
+                    color: Theme.of(context).textTheme.bodyMedium?.color,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
@@ -2908,7 +2903,9 @@ class _StudentProfilePageState extends State<StudentProfilePage> {
                                       : isSmallScreen
                                       ? 13
                                       : 14,
-                                  color: Colors.black87,
+                                  color: Theme.of(
+                                    context,
+                                  ).textTheme.bodyLarge?.color,
                                   fontWeight: FontWeight.w500,
                                 ),
                               ),
@@ -2924,7 +2921,7 @@ class _StudentProfilePageState extends State<StudentProfilePage> {
                                     : isSmallScreen
                                     ? 14
                                     : 16,
-                                color: Colors.grey[600],
+                                color: Theme.of(context).iconTheme.color,
                               ),
                             ],
                           ),
@@ -2944,7 +2941,7 @@ class _StudentProfilePageState extends State<StudentProfilePage> {
                               : 14,
                           color: displayValue == 'Not provided'
                               ? Colors.grey[400]
-                              : Colors.black87,
+                              : Theme.of(context).textTheme.bodyLarge?.color,
                           fontWeight: FontWeight.w500,
                         ),
                       ),
@@ -2992,7 +2989,7 @@ class _StudentProfilePageState extends State<StudentProfilePage> {
                 : isSmallScreen
                 ? 18
                 : 20,
-            color: Colors.grey[600],
+            color: Theme.of(context).iconTheme.color,
           ),
           SizedBox(
             width: isLargeDesktop
@@ -3021,7 +3018,7 @@ class _StudentProfilePageState extends State<StudentProfilePage> {
                         : isSmallScreen
                         ? 11
                         : 12,
-                    color: Colors.grey[600],
+                    color: Theme.of(context).textTheme.bodyMedium?.color,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
@@ -3174,7 +3171,7 @@ class _StudentProfilePageState extends State<StudentProfilePage> {
                               : 14,
                           color: currentValue.isEmpty
                               ? Colors.grey[400]
-                              : Colors.black87,
+                              : Theme.of(context).textTheme.bodyLarge?.color,
                           fontWeight: FontWeight.w500,
                         ),
                       ),

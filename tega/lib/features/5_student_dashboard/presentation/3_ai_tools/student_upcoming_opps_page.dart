@@ -1590,7 +1590,7 @@ class _AllOpportunitiesScreenState extends State<AllOpportunitiesScreen>
                                 ),
                                 child: Text(
                                   '${opp.matchPercentage.round()}%',
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     color: Theme.of(
                                       context,
                                     ).colorScheme.onPrimary,

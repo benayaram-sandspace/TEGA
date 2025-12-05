@@ -38,6 +38,20 @@ class _HelpSupportPageState extends State<HelpSupportPage> {
     // Future: Load categories and articles from API if needed
   }
 
+  Future<void> _launchUrl(String urlString) async {
+    final Uri url = Uri.parse(urlString);
+    if (!await launchUrl(url, mode: LaunchMode.externalApplication)) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Could not launch $urlString'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -165,6 +179,8 @@ class _HelpSupportPageState extends State<HelpSupportPage> {
               title: 'Getting Started',
               description:
                   'Learn how to create an account, enroll in courses, and navigate the platform.',
+              onTap: () =>
+                  _launchUrl('https://tegaedu.com/help/getting-started'),
             ),
             _buildCategoryCard(
               icon: Icons.person_outline,
@@ -172,6 +188,7 @@ class _HelpSupportPageState extends State<HelpSupportPage> {
               title: 'Account & Profile',
               description:
                   'Manage your account settings, update profile information, and change passwords.',
+              onTap: () => _launchUrl('https://tegaedu.com/help/account'),
             ),
             _buildCategoryCard(
               icon: Icons.school_outlined,
@@ -179,6 +196,7 @@ class _HelpSupportPageState extends State<HelpSupportPage> {
               title: 'Courses & Learning',
               description:
                   'Access course materials, submit assignments, and track your progress.',
+              onTap: () => _launchUrl('https://tegaedu.com/help/courses'),
             ),
             _buildCategoryCard(
               icon: Icons.payment_outlined,
@@ -186,6 +204,7 @@ class _HelpSupportPageState extends State<HelpSupportPage> {
               title: 'Payments & Refunds',
               description:
                   'Information about payment methods, refunds, and billing issues.',
+              onTap: () => _launchUrl('https://tegaedu.com/help/payments'),
             ),
             _buildCategoryCard(
               icon: Icons.support_agent,
@@ -193,6 +212,7 @@ class _HelpSupportPageState extends State<HelpSupportPage> {
               title: 'Technical Support',
               description:
                   'Troubleshoot technical issues with the platform and system requirements.',
+              onTap: () => _launchUrl('https://tegaedu.com/help/technical'),
             ),
             _buildCategoryCard(
               icon: Icons.verified_outlined,
@@ -200,6 +220,7 @@ class _HelpSupportPageState extends State<HelpSupportPage> {
               title: 'Certificates & Credentials',
               description:
                   'Access and verify your course completion certificates.',
+              onTap: () => _launchUrl('https://tegaedu.com/help/certificates'),
             ),
           ],
         ),
@@ -212,77 +233,78 @@ class _HelpSupportPageState extends State<HelpSupportPage> {
     required Color iconColor,
     required String title,
     required String description,
+    required VoidCallback onTap,
   }) {
-    return Container(
-      padding: EdgeInsets.all(
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(
         isLargeDesktop
-            ? 20
-            : isDesktop
-            ? 18
-            : isTablet
             ? 16
-            : isSmallScreen
+            : isDesktop
             ? 14
-            : 16,
+            : isTablet
+            ? 12
+            : isSmallScreen
+            ? 10
+            : 12,
       ),
-      decoration: BoxDecoration(
-        color: Theme.of(context).cardColor,
-        borderRadius: BorderRadius.circular(
+      child: Container(
+        padding: EdgeInsets.all(
           isLargeDesktop
-              ? 16
+              ? 20
               : isDesktop
-              ? 14
+              ? 18
               : isTablet
-              ? 12
+              ? 16
               : isSmallScreen
-              ? 10
-              : 12,
+              ? 14
+              : 16,
         ),
-        boxShadow: [
-          BoxShadow(
-            color: Theme.of(context).shadowColor.withOpacity(0.05),
-            blurRadius: isLargeDesktop
-                ? 12
+        decoration: BoxDecoration(
+          color: Theme.of(context).cardColor,
+          borderRadius: BorderRadius.circular(
+            isLargeDesktop
+                ? 16
                 : isDesktop
-                ? 10
+                ? 14
                 : isTablet
-                ? 8
+                ? 12
                 : isSmallScreen
-                ? 6
-                : 10,
-            offset: Offset(
-              0,
-              isLargeDesktop
-                  ? 3
-                  : isDesktop
-                  ? 2.5
-                  : isTablet
-                  ? 2
-                  : isSmallScreen
-                  ? 1.5
-                  : 2,
-            ),
+                ? 10
+                : 12,
           ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            padding: EdgeInsets.all(
-              isLargeDesktop
-                  ? 10
+          boxShadow: [
+            BoxShadow(
+              color: Theme.of(context).shadowColor.withOpacity(0.05),
+              blurRadius: isLargeDesktop
+                  ? 12
                   : isDesktop
-                  ? 9
+                  ? 10
                   : isTablet
                   ? 8
                   : isSmallScreen
-                  ? 7
-                  : 8,
+                  ? 6
+                  : 10,
+              offset: Offset(
+                0,
+                isLargeDesktop
+                    ? 3
+                    : isDesktop
+                    ? 2.5
+                    : isTablet
+                    ? 2
+                    : isSmallScreen
+                    ? 1.5
+                    : 2,
+              ),
             ),
-            decoration: BoxDecoration(
-              color: iconColor.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              padding: EdgeInsets.all(
                 isLargeDesktop
                     ? 10
                     : isDesktop
@@ -293,79 +315,93 @@ class _HelpSupportPageState extends State<HelpSupportPage> {
                     ? 7
                     : 8,
               ),
-            ),
-            child: Icon(
-              icon,
-              color: iconColor,
-              size: isLargeDesktop
-                  ? 28
-                  : isDesktop
-                  ? 26
-                  : isTablet
-                  ? 24
-                  : isSmallScreen
-                  ? 22
-                  : 24,
-            ),
-          ),
-          SizedBox(
-            height: isLargeDesktop
-                ? 14
-                : isDesktop
-                ? 12
-                : isTablet
-                ? 12
-                : isSmallScreen
-                ? 10
-                : 12,
-          ),
-          Text(
-            title,
-            style: TextStyle(
-              color: const Color(0xFF111827),
-              fontSize: isLargeDesktop
-                  ? 18
-                  : isDesktop
-                  ? 17
-                  : isTablet
-                  ? 16
-                  : isSmallScreen
-                  ? 15
-                  : 16,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          SizedBox(
-            height: isLargeDesktop
-                ? 6
-                : isDesktop
-                ? 5
-                : isTablet
-                ? 4
-                : isSmallScreen
-                ? 3
-                : 4,
-          ),
-          Expanded(
-            child: Text(
-              description,
-              style: TextStyle(
-                color: Theme.of(context).textTheme.bodyMedium?.color,
-                fontSize: isLargeDesktop
-                    ? 14
-                    : isDesktop
-                    ? 13
-                    : isTablet
-                    ? 12
-                    : isSmallScreen
-                    ? 11
-                    : 12,
+              decoration: BoxDecoration(
+                color: iconColor.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(
+                  isLargeDesktop
+                      ? 10
+                      : isDesktop
+                      ? 9
+                      : isTablet
+                      ? 8
+                      : isSmallScreen
+                      ? 7
+                      : 8,
+                ),
               ),
-              maxLines: isSmallScreen ? 4 : 3,
-              overflow: TextOverflow.ellipsis,
+              child: Icon(
+                icon,
+                color: iconColor,
+                size: isLargeDesktop
+                    ? 28
+                    : isDesktop
+                    ? 26
+                    : isTablet
+                    ? 24
+                    : isSmallScreen
+                    ? 22
+                    : 24,
+              ),
             ),
-          ),
-        ],
+            SizedBox(
+              height: isLargeDesktop
+                  ? 14
+                  : isDesktop
+                  ? 12
+                  : isTablet
+                  ? 12
+                  : isSmallScreen
+                  ? 10
+                  : 12,
+            ),
+            Text(
+              title,
+              style: TextStyle(
+                color: Theme.of(context).textTheme.bodyLarge?.color,
+                fontSize: isLargeDesktop
+                    ? 18
+                    : isDesktop
+                    ? 17
+                    : isTablet
+                    ? 16
+                    : isSmallScreen
+                    ? 15
+                    : 16,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            SizedBox(
+              height: isLargeDesktop
+                  ? 6
+                  : isDesktop
+                  ? 5
+                  : isTablet
+                  ? 4
+                  : isSmallScreen
+                  ? 3
+                  : 4,
+            ),
+            Expanded(
+              child: Text(
+                description,
+                style: TextStyle(
+                  color: Theme.of(context).textTheme.bodyMedium?.color,
+                  fontSize: isLargeDesktop
+                      ? 14
+                      : isDesktop
+                      ? 13
+                      : isTablet
+                      ? 12
+                      : isSmallScreen
+                      ? 11
+                      : 12,
+                ),
+                maxLines: isSmallScreen ? 4 : 3,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -444,17 +480,30 @@ class _HelpSupportPageState extends State<HelpSupportPage> {
           ),
           child: Column(
             children: [
-              _buildArticleItem('How to reset your password'),
+              _buildArticleItem(
+                'How to reset your password',
+                'https://tegaedu.com/help/article/reset-password',
+              ),
               _buildDivider(),
-              _buildArticleItem('System requirements for online learning'),
+              _buildArticleItem(
+                'System requirements for online learning',
+                'https://tegaedu.com/help/article/system-requirements',
+              ),
               _buildDivider(),
-              _buildArticleItem('How to download course materials'),
+              _buildArticleItem(
+                'How to download course materials',
+                'https://tegaedu.com/help/article/download-materials',
+              ),
               _buildDivider(),
               _buildArticleItem(
                 'Understanding the course completion certificate',
+                'https://tegaedu.com/help/article/certificate-info',
               ),
               _buildDivider(),
-              _buildArticleItem('Troubleshooting video playback issues'),
+              _buildArticleItem(
+                'Troubleshooting video playback issues',
+                'https://tegaedu.com/help/article/video-playback',
+              ),
             ],
           ),
         ),
@@ -462,59 +511,78 @@ class _HelpSupportPageState extends State<HelpSupportPage> {
     );
   }
 
-  Widget _buildArticleItem(String title) {
-    return Padding(
-      padding: EdgeInsets.symmetric(
-        horizontal: isLargeDesktop
-            ? 20
-            : isDesktop
-            ? 18
-            : isTablet
-            ? 16
-            : isSmallScreen
-            ? 14
-            : 16,
-        vertical: isLargeDesktop
-            ? 16
-            : isDesktop
-            ? 14
-            : isTablet
-            ? 12
-            : isSmallScreen
-            ? 10
-            : 12,
-      ),
-      child: Row(
-        children: [
-          Icon(
-            Icons.description_outlined,
-            color: Theme.of(context).disabledColor,
-            size: isLargeDesktop
-                ? 24
-                : isDesktop
-                ? 22
-                : isTablet
-                ? 20
-                : isSmallScreen
-                ? 18
-                : 20,
-          ),
-          SizedBox(
-            width: isLargeDesktop
-                ? 16
-                : isDesktop
-                ? 14
-                : isTablet
-                ? 12
-                : isSmallScreen
-                ? 10
-                : 12,
-          ),
-          Expanded(
-            child: Text(
-              title,
+  Widget _buildArticleItem(String title, String url) {
+    return InkWell(
+      onTap: () => _launchUrl(url),
+      child: Padding(
+        padding: EdgeInsets.symmetric(
+          horizontal: isLargeDesktop
+              ? 20
+              : isDesktop
+              ? 18
+              : isTablet
+              ? 16
+              : isSmallScreen
+              ? 14
+              : 16,
+          vertical: isLargeDesktop
+              ? 16
+              : isDesktop
+              ? 14
+              : isTablet
+              ? 12
+              : isSmallScreen
+              ? 10
+              : 12,
+        ),
+        child: Row(
+          children: [
+            Icon(
+              Icons.description_outlined,
+              color: Theme.of(context).disabledColor,
+              size: isLargeDesktop
+                  ? 24
+                  : isDesktop
+                  ? 22
+                  : isTablet
+                  ? 20
+                  : isSmallScreen
+                  ? 18
+                  : 20,
+            ),
+            SizedBox(
+              width: isLargeDesktop
+                  ? 16
+                  : isDesktop
+                  ? 14
+                  : isTablet
+                  ? 12
+                  : isSmallScreen
+                  ? 10
+                  : 12,
+            ),
+            Expanded(
+              child: Text(
+                title,
+                style: TextStyle(
+                  color: Theme.of(context).textTheme.bodyMedium?.color,
+                  fontSize: isLargeDesktop
+                      ? 16
+                      : isDesktop
+                      ? 15
+                      : isTablet
+                      ? 14
+                      : isSmallScreen
+                      ? 13
+                      : 14,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+            Text(
+              'Read →',
               style: TextStyle(
-                color: Theme.of(context).textTheme.bodyMedium?.color,
+                color: const Color(0xFF3B82F6),
                 fontSize: isLargeDesktop
                     ? 16
                     : isDesktop
@@ -527,24 +595,8 @@ class _HelpSupportPageState extends State<HelpSupportPage> {
                 fontWeight: FontWeight.w500,
               ),
             ),
-          ),
-          Text(
-            'Read →',
-            style: TextStyle(
-              color: const Color(0xFF3B82F6),
-              fontSize: isLargeDesktop
-                  ? 16
-                  : isDesktop
-                  ? 15
-                  : isTablet
-                  ? 14
-                  : isSmallScreen
-                  ? 13
-                  : 14,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -869,7 +921,7 @@ class _HelpSupportPageState extends State<HelpSupportPage> {
   Future<void> _launchEmail() async {
     final Uri emailUri = Uri(
       scheme: 'mailto',
-      path: 'support@tega.com',
+      path: 'tega@sandspacetechnologies.com',
       query: 'subject=Support Request',
     );
 
@@ -879,7 +931,7 @@ class _HelpSupportPageState extends State<HelpSupportPage> {
   }
 
   Future<void> _launchPhone() async {
-    final Uri phoneUri = Uri(scheme: 'tel', path: '+91-9876543210');
+    final Uri phoneUri = Uri(scheme: 'tel', path: '+91-8143001777');
 
     if (await canLaunchUrl(phoneUri)) {
       await launchUrl(phoneUri);

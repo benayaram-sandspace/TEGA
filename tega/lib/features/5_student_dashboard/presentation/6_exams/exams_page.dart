@@ -541,7 +541,7 @@ class _ExamsPageState extends State<ExamsPage>
     final isNoInternet = _errorMessage == 'No internet connection';
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: Center(
         child: Padding(
           padding: EdgeInsets.all(
@@ -753,7 +753,7 @@ class _ExamsPageState extends State<ExamsPage>
                     ? 18
                     : 20,
                 fontWeight: FontWeight.bold,
-                color: const Color(0xFF1A1A1A),
+                color: Theme.of(context).textTheme.titleLarge?.color,
               ),
             ),
             SizedBox(
@@ -1417,7 +1417,7 @@ class _ExamsPageState extends State<ExamsPage>
                         ? 18
                         : 20,
                     fontWeight: FontWeight.bold,
-                    color: const Color(0xFF1A1A1A),
+                    color: Theme.of(context).textTheme.titleLarge?.color,
                   ),
                 ),
                 Container(
@@ -1516,7 +1516,7 @@ class _ExamsPageState extends State<ExamsPage>
         // Search Bar
         Container(
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: Theme.of(context).cardColor,
             borderRadius: BorderRadius.circular(
               isLargeDesktop
                   ? 16
@@ -1530,7 +1530,7 @@ class _ExamsPageState extends State<ExamsPage>
             ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.05),
+                color: Theme.of(context).shadowColor.withOpacity(0.05),
                 blurRadius: isLargeDesktop
                     ? 12
                     : isDesktop
@@ -1850,7 +1850,7 @@ class _ExamsPageState extends State<ExamsPage>
 
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(
           isLargeDesktop
               ? 20
@@ -1864,7 +1864,7 @@ class _ExamsPageState extends State<ExamsPage>
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Theme.of(context).shadowColor.withOpacity(0.05),
             blurRadius: isLargeDesktop
                 ? 16
                 : isDesktop
@@ -1997,7 +1997,9 @@ class _ExamsPageState extends State<ExamsPage>
                                     ? 14
                                     : 16,
                                 fontWeight: FontWeight.bold,
-                                color: const Color(0xFF1A1A1A),
+                                color: Theme.of(
+                                  context,
+                                ).textTheme.titleLarge?.color,
                               ),
                               maxLines: isLargeDesktop || isDesktop
                                   ? 2
@@ -2269,7 +2271,7 @@ class _ExamsPageState extends State<ExamsPage>
             : 32,
       ),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(
           isLargeDesktop
               ? 28
@@ -2283,7 +2285,7 @@ class _ExamsPageState extends State<ExamsPage>
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Theme.of(context).shadowColor.withOpacity(0.05),
             blurRadius: isLargeDesktop
                 ? 14
                 : isDesktop
@@ -2381,7 +2383,7 @@ class _ExamsPageState extends State<ExamsPage>
                   ? 18
                   : 20,
               fontWeight: FontWeight.bold,
-              color: const Color(0xFF1A1A1A),
+              color: Theme.of(context).textTheme.titleLarge?.color,
             ),
           ),
           SizedBox(
@@ -2581,7 +2583,7 @@ class _ExamsPageState extends State<ExamsPage>
             : 32,
       ),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(
           isLargeDesktop
               ? 28
@@ -2595,7 +2597,7 @@ class _ExamsPageState extends State<ExamsPage>
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Theme.of(context).shadowColor.withOpacity(0.05),
             blurRadius: isLargeDesktop
                 ? 14
                 : isDesktop
@@ -2693,7 +2695,7 @@ class _ExamsPageState extends State<ExamsPage>
                   ? 18
                   : 20,
               fontWeight: FontWeight.bold,
-              color: const Color(0xFF1A1A1A),
+              color: Theme.of(context).textTheme.titleLarge?.color,
             ),
           ),
           SizedBox(
@@ -3370,7 +3372,7 @@ class _ExamsPageState extends State<ExamsPage>
                   : isSmallScreen
                   ? 12
                   : 13,
-              color: Colors.grey[700],
+              color: Theme.of(context).textTheme.bodyMedium?.color,
             ),
             maxLines: isLargeDesktop || isDesktop
                 ? 2

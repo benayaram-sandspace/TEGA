@@ -169,7 +169,7 @@ class _QuestionPageState extends State<QuestionPage> {
               ),
               Row(
                 children: [
-                  const Icon(
+                  Icon(
                     Icons.timer_outlined,
                     size: 18,
                     color: Theme.of(context).textTheme.bodyMedium?.color,
@@ -378,7 +378,7 @@ class ExplanationPage extends StatelessWidget {
         elevation: 0,
         title: Text(
           "Question $questionNumber of $total",
-          style: const TextStyle(
+          style: TextStyle(
             color: Theme.of(context).textTheme.bodyLarge?.color,
             fontWeight: FontWeight.w700,
             fontSize: 15,
@@ -482,7 +482,7 @@ class QuizCompletedPage extends StatelessWidget {
         automaticallyImplyLeading: false,
         elevation: 0,
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-        title: const Text(
+        title: Text(
           "Results",
           style: TextStyle(color: Theme.of(context).textTheme.bodyLarge?.color, fontWeight: FontWeight.w700),
         ),

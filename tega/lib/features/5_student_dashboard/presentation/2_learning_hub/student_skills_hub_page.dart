@@ -405,7 +405,7 @@ class _ActivitySection extends StatelessWidget {
                       if (value % 20 == 0) {
                         return Text(
                           '${value.toInt()}',
-                          style: const TextStyle(
+                          style: TextStyle(
                             color: Theme.of(context).hintColor,
                             fontSize: 10,
                           ),

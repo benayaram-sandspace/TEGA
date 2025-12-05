@@ -37,7 +37,7 @@ class SettingsPage extends StatelessWidget {
     final isSmallScreen = SettingsPage.isSmallScreen(context);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF7F8FC),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(
         child: ListView(
           padding: EdgeInsets.symmetric(
@@ -119,7 +119,7 @@ class SettingsPage extends StatelessWidget {
     final isSmallScreen = SettingsPage.isSmallScreen(context);
 
     final Color primary = const Color(0xFF6B5FFF);
-    final Color text = const Color(0xFF111827);
+
     return Container(
       margin: EdgeInsets.symmetric(
         horizontal: isLargeDesktop
@@ -142,7 +142,9 @@ class SettingsPage extends StatelessWidget {
             : 5,
       ),
       decoration: BoxDecoration(
-        color: selected ? primary.withOpacity(0.08) : Colors.white,
+        color: selected
+            ? primary.withOpacity(0.08)
+            : Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(
           isLargeDesktop
               ? 16
@@ -203,7 +205,9 @@ class SettingsPage extends StatelessWidget {
         title: Text(
           label,
           style: TextStyle(
-            color: selected ? primary : text,
+            color: selected
+                ? primary
+                : Theme.of(context).textTheme.bodyLarge?.color,
             fontWeight: FontWeight.w600,
             fontSize: isLargeDesktop
                 ? 18
@@ -251,7 +255,7 @@ class _SecuritySettingsPageState extends State<SecuritySettingsPage> {
   final _newPasswordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
   bool _isLoading = false;
-  bool _obscureCurrent = true;
+
   bool _obscureNew = true;
   bool _obscureConfirm = true;
 
@@ -422,14 +426,14 @@ class _SecuritySettingsPageState extends State<SecuritySettingsPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF7F8FC),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: Theme.of(context).cardColor,
         elevation: 0,
         title: Text(
           'Security',
           style: TextStyle(
-            color: const Color(0xFF111827),
+            color: Theme.of(context).textTheme.bodyLarge?.color,
             fontWeight: FontWeight.w700,
             fontSize: isLargeDesktop
                 ? 22
@@ -445,7 +449,7 @@ class _SecuritySettingsPageState extends State<SecuritySettingsPage> {
         leading: IconButton(
           icon: Icon(
             Icons.arrow_back,
-            color: const Color(0xFF111827),
+            color: Theme.of(context).iconTheme.color,
             size: isLargeDesktop
                 ? 28
                 : isDesktop
@@ -507,7 +511,7 @@ class _SecuritySettingsPageState extends State<SecuritySettingsPage> {
             : 14,
       ),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(
           isLargeDesktop
               ? 16
@@ -565,7 +569,7 @@ class _SecuritySettingsPageState extends State<SecuritySettingsPage> {
                   Text(
                     'Password Management',
                     style: TextStyle(
-                      color: const Color(0xFF111827),
+                      color: Theme.of(context).textTheme.bodyLarge?.color,
                       fontSize: isLargeDesktop
                           ? 22
                           : isDesktop
@@ -595,9 +599,10 @@ class _SecuritySettingsPageState extends State<SecuritySettingsPage> {
                 controller: _currentPasswordController,
                 label: 'Current Password',
                 hint: '••••••••••',
-                obscure: _obscureCurrent,
-                onToggle: () =>
-                    setState(() => _obscureCurrent = !_obscureCurrent),
+                obscure: true,
+                onToggle: () {},
+                readOnly: true,
+                showToggle: false,
                 autofillHints: const [AutofillHints.password],
               ),
               SizedBox(
@@ -727,6 +732,9 @@ class _SecuritySettingsPageState extends State<SecuritySettingsPage> {
     required String hint,
     required bool obscure,
     required VoidCallback onToggle,
+
+    bool readOnly = false,
+    bool showToggle = true,
     String? Function(String?)? validator,
     Iterable<String>? autofillHints,
   }) {
@@ -736,7 +744,7 @@ class _SecuritySettingsPageState extends State<SecuritySettingsPage> {
         Text(
           label,
           style: TextStyle(
-            color: const Color(0xFF374151),
+            color: Theme.of(context).textTheme.bodyMedium?.color,
             fontWeight: FontWeight.w600,
             fontSize: isLargeDesktop
                 ? 16
@@ -763,6 +771,7 @@ class _SecuritySettingsPageState extends State<SecuritySettingsPage> {
         TextFormField(
           controller: controller,
           obscureText: obscure,
+          readOnly: readOnly,
           autofillHints: autofillHints,
           validator:
               validator ??
@@ -851,24 +860,26 @@ class _SecuritySettingsPageState extends State<SecuritySettingsPage> {
               ),
               borderSide: const BorderSide(color: Color(0xFF6B5FFF)),
             ),
-            suffixIcon: IconButton(
-              icon: Icon(
-                obscure
-                    ? Icons.visibility_outlined
-                    : Icons.visibility_off_outlined,
-                color: const Color(0xFF9CA3AF),
-                size: isLargeDesktop
-                    ? 22
-                    : isDesktop
-                    ? 20
-                    : isTablet
-                    ? 18
-                    : isSmallScreen
-                    ? 16
-                    : 18,
-              ),
-              onPressed: onToggle,
-            ),
+            suffixIcon: showToggle
+                ? IconButton(
+                    icon: Icon(
+                      obscure
+                          ? Icons.visibility_outlined
+                          : Icons.visibility_off_outlined,
+                      color: const Color(0xFF9CA3AF),
+                      size: isLargeDesktop
+                          ? 22
+                          : isDesktop
+                          ? 20
+                          : isTablet
+                          ? 18
+                          : isSmallScreen
+                          ? 16
+                          : 18,
+                    ),
+                    onPressed: onToggle,
+                  )
+                : null,
           ),
         ),
       ],
@@ -1437,14 +1448,14 @@ class _AccountSettingsPageState extends State<AccountSettingsPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF7F8FC),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: Theme.of(context).cardColor,
         elevation: 0,
         title: Text(
           'Account Information',
           style: TextStyle(
-            color: const Color(0xFF111827),
+            color: Theme.of(context).textTheme.bodyLarge?.color,
             fontWeight: FontWeight.w700,
             fontSize: isLargeDesktop
                 ? 22
@@ -1460,7 +1471,7 @@ class _AccountSettingsPageState extends State<AccountSettingsPage> {
         leading: IconButton(
           icon: Icon(
             Icons.arrow_back,
-            color: const Color(0xFF111827),
+            color: Theme.of(context).iconTheme.color,
             size: isLargeDesktop
                 ? 28
                 : isDesktop
@@ -1770,7 +1781,7 @@ class _AccountSettingsPageState extends State<AccountSettingsPage> {
         Text(
           label,
           style: TextStyle(
-            color: const Color(0xFF6B7280),
+            color: Theme.of(context).textTheme.bodyMedium?.color,
             fontSize: isLargeDesktop
                 ? 15
                 : isDesktop
@@ -1817,7 +1828,7 @@ class _AccountSettingsPageState extends State<AccountSettingsPage> {
                 : 10,
           ),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: Theme.of(context).cardColor,
             borderRadius: BorderRadius.circular(
               isLargeDesktop
                   ? 10
@@ -1843,7 +1854,7 @@ class _AccountSettingsPageState extends State<AccountSettingsPage> {
           child: Text(
             value,
             style: TextStyle(
-              color: const Color(0xFF111827),
+              color: Theme.of(context).textTheme.bodyLarge?.color,
               fontSize: isLargeDesktop
                   ? 16
                   : isDesktop
@@ -1879,7 +1890,7 @@ class _AccountSettingsPageState extends State<AccountSettingsPage> {
             : 12,
       ),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(
           isLargeDesktop
               ? 12
@@ -1906,7 +1917,7 @@ class _AccountSettingsPageState extends State<AccountSettingsPage> {
         children: [
           Icon(
             icon,
-            color: const Color(0xFF9CA3AF),
+            color: Theme.of(context).iconTheme.color?.withOpacity(0.6),
             size: isLargeDesktop
                 ? 24
                 : isDesktop
@@ -1934,7 +1945,7 @@ class _AccountSettingsPageState extends State<AccountSettingsPage> {
               Text(
                 label,
                 style: TextStyle(
-                  color: const Color(0xFF6B7280),
+                  color: Theme.of(context).textTheme.bodyMedium?.color,
                   fontSize: isLargeDesktop
                       ? 13
                       : isDesktop
@@ -1949,7 +1960,7 @@ class _AccountSettingsPageState extends State<AccountSettingsPage> {
               Text(
                 value,
                 style: TextStyle(
-                  color: const Color(0xFF111827),
+                  color: Theme.of(context).textTheme.bodyLarge?.color,
                   fontWeight: FontWeight.w600,
                   fontSize: isLargeDesktop
                       ? 15

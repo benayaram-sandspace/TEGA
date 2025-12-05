@@ -402,10 +402,7 @@ class _JobRecommendationScreenState extends State<JobRecommendationScreen>
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [
-            Theme.of(context).primaryColor,
-            Theme.of(context).primaryColorLight,
-          ],
+          colors: [Theme.of(context).primaryColor, Color(0xFF6B5FFF)],
         ),
         borderRadius: BorderRadius.circular(
           isLargeDesktop
@@ -1091,7 +1088,7 @@ class _JobRecommendationScreenState extends State<JobRecommendationScreen>
                     ? 18
                     : 20,
                 fontWeight: FontWeight.w700,
-                color: const Color(0xFF333333),
+                color: Theme.of(context).textTheme.bodyLarge?.color,
               ),
             ),
             SizedBox(
